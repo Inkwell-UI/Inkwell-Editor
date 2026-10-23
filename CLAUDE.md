@@ -14,7 +14,7 @@ Use yarn (not npm).
 
 - `yarn compile:sample`: compiles `samples/hud-minimal` to `build/sample.swf` (git-ignored) through `src/main/swf` and the wrapper, for in-game testing. Needs the same Java/FFDec/jar as above. See `docs/swf-compiler.md`.
 - `yarn dev` also starts the Figma sync server (127.0.0.1:8787-8790, session token shown in the window). Env: `INKWELL_FFDEC`, `INKWELL_JAVA`, `INKWELL_PROJECT`. See `docs/sync-server.md` for the manual test with the Figma plugin.
-- Spec package: `@inkwell-ui/spec` is `file:../Inkwell-Spec` (sibling checkout, branch feat/ir-text, specVersion 2). Run `yarn build` there if its `dist` is missing or stale, then `yarn install --force` here to re-copy it.
+- Spec package: `@inkwell-ui/spec` is `file:../Inkwell-Spec` (sibling checkout, branch feat/swf-per-frame, specVersion 3, protocol 2). Run `yarn build` there if its `dist` is missing or stale, then `yarn install --force` here to re-copy it.
 
 Run test + typecheck before finishing any change. `electron` downloads its binary in a postinstall; if `yarn dev` says "Electron uninstall", run `node node_modules/electron/install.js`.
 
@@ -26,6 +26,7 @@ Electron, React, React Flow, Knotwork (`@nicklaj/knotwork`, pinned to a GitHub t
 
 ## Rules that are easy to break
 
+- **One SWF per top-level Figma frame** (`swfs/<name>/`, `build/<name>.swf`); one project = one mod = several SWFs. Loose top-level layers are linted `unreachable-node`; swfs of deleted frames are orphaned, never deleted.
 - **Figma owns visuals.** Never edit the visual IR in the editor. Behavior (scripts, roles, anchoring overrides, bindings, instance names, focus) lives only in the overlay, keyed by Figma node ID.
 - **Shared formats are defined in inkwell-spec.** Never define or change the IR, sync protocol, debug protocol, menu JSON/INI or pack manifest here; change the spec first, then consume the new version.
 - **Never drop unknown data:** IR `extra`, nodes from missing packs, unknown contract entries all survive load and save.

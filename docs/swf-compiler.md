@@ -1,6 +1,6 @@
 # SWF compiler (`src/main/swf`)
 
-Compiles a spec IR `Swf` (types from `@inkwell-ui/spec`) into a SWF. Milestone 0.1 scope: frames, shapes, text.
+Compiles one spec IR `Swf` (one per top-level Figma frame; the sync server builds each independently into `<project>/build/<name>.swf`) (types from `@inkwell-ui/spec`) into a SWF. Milestone 0.1 scope: frames, shapes, text.
 
 ```
 compileSwf(ir, { modId, buildDir, ffdec, outPath?, instanceNames? }) -> { swfPath, lint: LintIssue[], timings }
@@ -8,7 +8,7 @@ compileSwf(ir, { modId, buildDir, ffdec, outPath?, instanceNames? }) -> { swfPat
 
 `LintIssue = { severity: 'error' | 'warning' | 'info', code, message, nodeId }`. Errors block export (the SWF is still written, minus the offending node). Stages `codegen`, `swf`, `ffdec` are measured with `createStageTimer`; `ffdec` is absent when there is nothing for FFDec to fill in.
 
-**Dependency note.** `@inkwell-ui/spec` is `file:../Inkwell-Spec`, a sibling checkout (branch `feat/foundations`). If its `dist` is missing or stale, run `yarn build` there, then `yarn install --force` here. The compiler imports types only; the CLI script validates with the spec's Zod `Swf`.
+**Dependency note.** `@inkwell-ui/spec` is `file:../Inkwell-Spec`, a sibling checkout (branch `feat/swf-per-frame`, specVersion 3). If its `dist` is missing or stale, run `yarn build` there, then `yarn install --force` here. The compiler imports types only; the CLI script validates with the spec's Zod `Swf`.
 
 ## Pipeline
 
@@ -21,12 +21,12 @@ compileSwf(ir, { modId, buildDir, ffdec, outPath?, instanceNames? }) -> { swfPat
 - **Frame**: nested frames become sprites placed with an instance name (layer name sanitized, deduplicated, or the overlay `instanceName` via `instanceNames`). The root frame's children go on the main timeline. Child order is depth order. Position, rotation and opacity (alpha colour transform).
 - **Shape**: cubic paths stay cubic in the SVG `d` (FFDec converts to quadratics, lint warning `curve-approximated`); all subpaths in one even-odd path; solid fills with alpha; solid strokes (centered). Inside/outside strokes draw centered with warning `stroke-alignment-approximated`. Gradient fills draw as their first stop (warning); image fills are skipped (warning).
 - **Text** (spec "Text mapping"): `DefineEditText` with `fontId`, `useOutlines`, `ImportAssets2` of the alias from `gfxfontlib.swf` (one tag per alias, as vanilla: in game only the first asset of a multi-asset tag resolved, the others drew boxes); never `fontClass`, dynamic, read-only. Auto width = `autoSize`, no wrap. Auto height = wrap + multiline + `autoSize`. Fixed = fixed field (wraps). Font size, colour (run fill, solid), alignment, 2px gutter compensation (field grown 4px, moved -2,-2), line height to `leading` (`px - size * 1.2`, percent first converted to px, ratio provisional), letter spacing to px (percent: `size * pct / 100`, via `TextFormat.letterSpacing`).
-- **Font alias**: `Everywhere / Medium / 18` becomes `$EverywhereMediumFont` (trailing number = size preset, dropped); a raw `$...Font` also works. Known aliases are the names in vanilla's `fontconfig.txt` (`text.ts`, `KNOWN_ALIASES`). Anything else is lint ERROR `font-unmapped` and the field is omitted.
+- **Font alias** (`resolveFont` in `text.ts`), in this order: (a) the Figma text style name (`font.styleName`) when it is alias-shaped, e.g. `Everywhere / Medium / 18` -> `$EverywhereMediumFont` (trailing number = size preset, dropped; a raw `$...Font` also works); (b) the font `family/style` the same way (family `Everywhere`, style `Medium` -> `$EverywhereMediumFont`); (c) the fallback table `fallbackAlias`, with a lint WARNING `font-fallback`: Inter, Roboto, Arial, Helvetica, Open Sans, Lato, Montserrat, Segoe, SF Pro, Calibri, Verdana, Tahoma, Noto Sans, Poppins, Source Sans -> `$EverywhereFont` (bold/black/heavy -> `$EverywhereBoldFont`, medium/semibold -> `$EverywhereMediumFont`); names containing mono/courier/consol/menlo/monaco/fira code -> `$ConsoleFont`; names containing script/hand/brush/cursive (and a few known) -> `$HandwrittenFont`; (d) otherwise lint ERROR `font-unmapped` and the field is omitted. Known aliases are the names in vanilla's `fontconfig.txt` (`KNOWN_ALIASES`). Fallback and unmapped messages quote the original Figma font and text style name.
 - **Generated AS2** (only when needed): class `mods.<modId>.<SwfId>Layout` in `__Packages`, exported from an empty sprite, called from `frame_1/DoAction.as`. Sets `_global.gfxExtensions = true`, then per text node, inside `try/catch` that `trace`s a string with the node id: `verticalAlign` (center/bottom), `textAutoSize` (shrink/fit), letter spacing. Each block carries a `// node <id> "<layer>"` comment.
 
 ## Text layout fields
 
-Read from the spec IR `Text` node (specVersion 2): `align`, `verticalAlign`, `lineHeight` (`auto` | px | percent of font size), `letterSpacing` (px | percent of font size), `textFit` (`none`|`shrink`|`fit`, GFx `textAutoSize`) and `truncate`. `loadProject` runs the spec's `migrate()` on v1 projects, which moves the old `extra.text` keys into these fields. Text decoration is not in the IR and is no longer linted.
+Read from the spec IR `Text` node (specVersion 2+): `align`, `verticalAlign`, `lineHeight` (`auto` | px | percent of font size), `letterSpacing` (px | percent of font size), `textFit` (`none`|`shrink`|`fit`, GFx `textAutoSize`) and `truncate`. `loadProject` runs the spec's `migrate()` on v1 projects, which moves the old `extra.text` keys into these fields. Text decoration is not in the IR and is no longer linted.
 
 ## Not supported (reported, compile continues)
 
