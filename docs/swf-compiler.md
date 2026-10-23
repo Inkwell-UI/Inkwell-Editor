@@ -42,3 +42,7 @@ Nothing here has been loaded in Skyrim. Open questions: rotation direction (Figm
 ## Sample
 
 `yarn compile:sample` compiles `samples/hud-minimal` (swf `hud`: a panel rectangle with a stroke and a centred label) to `build/sample.swf`.
+
+## In-game test sheet
+
+`yarn compile:ingame` regenerates `samples/ingame-test` (swfs `ingametest` 1920x1080 and `ingametest720` 1280x720, both from `scripts/ingame-test-sheet.ts` with one scale factor) and compiles them to `build/ingametest.swf` and `build/ingametest720.swf`. It prints lint and timings; any lint error is printed loudly and the exit code is 1. The sheet has captioned sections A-J on a dark background: alpha + stroke, ellipse/curve/triangle, a 30 degree rotation (should rise to the right), all font aliases, sizes, alignment, auto/fixed sizing, line height, letter spacing, vertical align and textFit. Nothing on it has been seen in game yet. Layout is pure (`buildSheet`), so changing the sheet means editing that file only.

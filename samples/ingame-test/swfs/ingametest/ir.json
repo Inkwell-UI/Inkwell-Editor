@@ -1,0 +1,4107 @@
+{
+  "specVersion": 2,
+  "id": "ingametest",
+  "name": "Ingame Test",
+  "target": {
+    "kind": "hudWidget"
+  },
+  "stage": {
+    "width": 1920,
+    "height": 1080
+  },
+  "root": "1:1",
+  "nodes": {
+    "1:1": {
+      "id": "1:1",
+      "name": "root",
+      "parent": null,
+      "children": [
+        "1:2",
+        "1:3",
+        "1:4",
+        "1:5",
+        "1:6",
+        "1:7",
+        "1:8",
+        "1:9",
+        "1:10",
+        "1:11",
+        "1:12",
+        "1:13",
+        "1:14",
+        "1:15",
+        "1:16",
+        "1:17",
+        "1:18",
+        "1:19",
+        "1:20",
+        "1:21",
+        "1:22",
+        "1:23",
+        "1:24",
+        "1:25",
+        "1:26",
+        "1:27",
+        "1:28",
+        "1:29",
+        "1:30",
+        "1:31",
+        "1:32",
+        "1:33",
+        "1:34",
+        "1:35",
+        "1:36",
+        "1:37",
+        "1:38",
+        "1:39",
+        "1:40",
+        "1:41",
+        "1:42",
+        "1:43",
+        "1:44",
+        "1:45",
+        "1:46",
+        "1:47",
+        "1:48",
+        "1:49",
+        "1:50",
+        "1:51",
+        "1:52",
+        "1:53",
+        "1:54",
+        "1:55",
+        "1:56",
+        "1:57",
+        "1:58",
+        "1:59",
+        "1:60",
+        "1:61",
+        "1:62",
+        "1:63",
+        "1:64",
+        "1:65",
+        "1:66",
+        "1:67",
+        "1:68",
+        "1:69",
+        "1:70",
+        "1:71",
+        "1:72",
+        "1:73",
+        "1:74",
+        "1:75"
+      ],
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "frame",
+      "clipContent": false
+    },
+    "1:2": {
+      "id": "1:2",
+      "name": "background",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 1920,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 1920,
+            "y": 1080
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 1080
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.0784313725490196,
+            "g": 0.08627450980392157,
+            "b": 0.10980392156862745
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:3": {
+      "id": "1:3",
+      "name": "title",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 8,
+        "width": 1296,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "INKWELL COMPILER TEST SHEET - Ingame Test (1920x1080) - compare each item with its caption",
+      "runs": [
+        {
+          "start": 0,
+          "end": 90,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:4": {
+      "id": "1:4",
+      "name": "H A",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 50,
+        "width": 1080,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "A  panel: 50% red fill + 3px centred yellow stroke over a white bar (bar must show through the fill)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 100,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:5": {
+      "id": "1:5",
+      "name": "bar",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 130,
+        "y": 84,
+        "width": 150,
+        "height": 90,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 150,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 150,
+            "y": 90
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 90
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.9490196078431372,
+            "g": 0.9490196078431372,
+            "b": 0.9490196078431372
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:6": {
+      "id": "1:6",
+      "name": "panel",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 80,
+        "width": 200,
+        "height": 100,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 100
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 100
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.8784313725490196,
+            "g": 0.22745098039215686,
+            "b": 0.22745098039215686
+          },
+          "opacity": 0.5
+        }
+      ],
+      "strokes": [
+        {
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8823529411764706,
+              "b": 0.2901960784313726
+            }
+          },
+          "weight": 3,
+          "alignment": "center"
+        }
+      ]
+    },
+    "1:7": {
+      "id": "1:7",
+      "name": "H B",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 200,
+        "width": 594,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "B  cyan ellipse | magenta curved leaf | orange triangle",
+      "runs": [
+        {
+          "start": 0,
+          "end": 55,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:8": {
+      "id": "1:8",
+      "name": "ellipse",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 230,
+        "width": 100,
+        "height": 70,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 50,
+            "y": 0
+          },
+          {
+            "op": "C",
+            "x1": 77.62,
+            "y1": 0,
+            "x2": 100,
+            "y2": 15.67,
+            "x": 100,
+            "y": 35
+          },
+          {
+            "op": "C",
+            "x1": 100,
+            "y1": 54.33,
+            "x2": 77.62,
+            "y2": 70,
+            "x": 50,
+            "y": 70
+          },
+          {
+            "op": "C",
+            "x1": 22.39,
+            "y1": 70,
+            "x2": 0,
+            "y2": 54.33,
+            "x": 0,
+            "y": 35
+          },
+          {
+            "op": "C",
+            "x1": 0,
+            "y1": 15.67,
+            "x2": 22.39,
+            "y2": 0,
+            "x": 50,
+            "y": 0
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.15294117647058825,
+            "g": 0.7803921568627451,
+            "b": 0.8509803921568627
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:9": {
+      "id": "1:9",
+      "name": "leaf",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 160,
+        "y": 230,
+        "width": 120,
+        "height": 70,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 70
+          },
+          {
+            "op": "C",
+            "x1": 10,
+            "y1": 0,
+            "x2": 80,
+            "y2": 0,
+            "x": 120,
+            "y": 0
+          },
+          {
+            "op": "C",
+            "x1": 110,
+            "y1": 70,
+            "x2": 40,
+            "y2": 70,
+            "x": 0,
+            "y": 70
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.8784313725490196,
+            "g": 0.25098039215686274,
+            "b": 0.7529411764705882
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:10": {
+      "id": "1:10",
+      "name": "triangle",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 310,
+        "y": 230,
+        "width": 100,
+        "height": 70,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 50,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 100,
+            "y": 70
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 70
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 1,
+            "g": 0.5411764705882353,
+            "b": 0.12156862745098039
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:11": {
+      "id": "1:11",
+      "name": "H C",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 320,
+        "width": 940,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "C  green rect rotated 30 deg (Figma counterclockwise): expected to lean UP to the right",
+      "runs": [
+        {
+          "start": 0,
+          "end": 87,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:12": {
+      "id": "1:12",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 342,
+        "width": 922,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "grey rect = same box unrotated, same top-left corner. Green rises to the right = correct; green falls to the right = sign wrong.",
+      "runs": [
+        {
+          "start": 0,
+          "end": 128,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:13": {
+      "id": "1:13",
+      "name": "unrotated reference",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 60,
+        "y": 450,
+        "width": 160,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 160,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 160,
+            "y": 60
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.2901960784313726,
+            "g": 0.30980392156862746,
+            "b": 0.3607843137254902
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:14": {
+      "id": "1:14",
+      "name": "rotated 30",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 60,
+        "y": 450,
+        "width": 160,
+        "height": 60,
+        "rotation": 30
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 160,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 160,
+            "y": 60
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.24705882352941178,
+            "g": 0.7490196078431373,
+            "b": 0.37254901960784315
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:15": {
+      "id": "1:15",
+      "name": "H D",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 540,
+        "width": 692,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "D  one row per font alias (small label, then the size 24 sample)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 64,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:16": {
+      "id": "1:16",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 566,
+        "width": 108,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "$EverywhereFont",
+      "runs": [
+        {
+          "start": 0,
+          "end": 15,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:17": {
+      "id": "1:17",
+      "name": "sample $EverywhereFont",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 582,
+        "width": 375,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Sphinx of black quartz 123",
+      "runs": [
+        {
+          "start": 0,
+          "end": 26,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:18": {
+      "id": "1:18",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 614,
+        "width": 152,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "$EverywhereMediumFont",
+      "runs": [
+        {
+          "start": 0,
+          "end": 21,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:19": {
+      "id": "1:19",
+      "name": "sample $EverywhereMediumFont",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 630,
+        "width": 375,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Sphinx of black quartz 123",
+      "runs": [
+        {
+          "start": 0,
+          "end": 26,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereMediumFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:20": {
+      "id": "1:20",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 662,
+        "width": 137,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "$EverywhereBoldFont",
+      "runs": [
+        {
+          "start": 0,
+          "end": 19,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:21": {
+      "id": "1:21",
+      "name": "sample $EverywhereBoldFont",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 678,
+        "width": 375,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Sphinx of black quartz 123",
+      "runs": [
+        {
+          "start": 0,
+          "end": 26,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:22": {
+      "id": "1:22",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 710,
+        "width": 87,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "$ConsoleFont",
+      "runs": [
+        {
+          "start": 0,
+          "end": 12,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:23": {
+      "id": "1:23",
+      "name": "sample $ConsoleFont",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 726,
+        "width": 375,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Sphinx of black quartz 123",
+      "runs": [
+        {
+          "start": 0,
+          "end": 26,
+          "font": {
+            "kind": "alias",
+            "name": "$ConsoleFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:24": {
+      "id": "1:24",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 758,
+        "width": 94,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "$DialogueFont",
+      "runs": [
+        {
+          "start": 0,
+          "end": 13,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:25": {
+      "id": "1:25",
+      "name": "sample $DialogueFont",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 774,
+        "width": 375,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Sphinx of black quartz 123",
+      "runs": [
+        {
+          "start": 0,
+          "end": 26,
+          "font": {
+            "kind": "alias",
+            "name": "$DialogueFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:26": {
+      "id": "1:26",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 806,
+        "width": 116,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "$HandwrittenFont",
+      "runs": [
+        {
+          "start": 0,
+          "end": 16,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:27": {
+      "id": "1:27",
+      "name": "sample $HandwrittenFont",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 822,
+        "width": 375,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Sphinx of black quartz 123",
+      "runs": [
+        {
+          "start": 0,
+          "end": 26,
+          "font": {
+            "kind": "alias",
+            "name": "$HandwrittenFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:28": {
+      "id": "1:28",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 854,
+        "width": 80,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "$DragonFont",
+      "runs": [
+        {
+          "start": 0,
+          "end": 11,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:29": {
+      "id": "1:29",
+      "name": "sample $DragonFont",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 870,
+        "width": 375,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Sphinx of black quartz 123",
+      "runs": [
+        {
+          "start": 0,
+          "end": 26,
+          "font": {
+            "kind": "alias",
+            "name": "$DragonFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:30": {
+      "id": "1:30",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 908,
+        "width": 224,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "$EverywhereFont at 12 / 18 / 36",
+      "runs": [
+        {
+          "start": 0,
+          "end": 31,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:31": {
+      "id": "1:31",
+      "name": "size 12",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 30,
+        "y": 926,
+        "width": 51,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Size 12",
+      "runs": [
+        {
+          "start": 0,
+          "end": 7,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:32": {
+      "id": "1:32",
+      "name": "size 18",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 110,
+        "y": 926,
+        "width": 76,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Size 18",
+      "runs": [
+        {
+          "start": 0,
+          "end": 7,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:33": {
+      "id": "1:33",
+      "name": "size 36",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 220,
+        "y": 926,
+        "width": 152,
+        "height": 45,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Size 36",
+      "runs": [
+        {
+          "start": 0,
+          "end": 7,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 36,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:34": {
+      "id": "1:34",
+      "name": "H E",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 50,
+        "width": 486,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "E  align left | center | right in 400px boxes",
+      "runs": [
+        {
+          "start": 0,
+          "end": 45,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:35": {
+      "id": "1:35",
+      "name": "box left",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 80,
+        "width": 400,
+        "height": 40,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 400,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 400,
+            "y": 40
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 40
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.16862745098039217,
+            "g": 0.2901960784313726,
+            "b": 0.47843137254901963
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:36": {
+      "id": "1:36",
+      "name": "align left",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 80,
+        "width": 400,
+        "height": 40,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Aligned left",
+      "runs": [
+        {
+          "start": 0,
+          "end": 12,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "fixed",
+      "align": "left",
+      "verticalAlign": "center",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:37": {
+      "id": "1:37",
+      "name": "box center",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 130,
+        "width": 400,
+        "height": 40,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 400,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 400,
+            "y": 40
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 40
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.1803921568627451,
+            "g": 0.4196078431372549,
+            "b": 0.30980392156862746
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:38": {
+      "id": "1:38",
+      "name": "align center",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 130,
+        "width": 400,
+        "height": 40,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Aligned center",
+      "runs": [
+        {
+          "start": 0,
+          "end": 14,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "fixed",
+      "align": "center",
+      "verticalAlign": "center",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:39": {
+      "id": "1:39",
+      "name": "box right",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 180,
+        "width": 400,
+        "height": 40,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 400,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 400,
+            "y": 40
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 40
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.4196078431372549,
+            "g": 0.1803921568627451,
+            "b": 0.3686274509803922
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:40": {
+      "id": "1:40",
+      "name": "align right",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 180,
+        "width": 400,
+        "height": 40,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Aligned right",
+      "runs": [
+        {
+          "start": 0,
+          "end": 13,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "fixed",
+      "align": "right",
+      "verticalAlign": "center",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:41": {
+      "id": "1:41",
+      "name": "H F",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 240,
+        "width": 918,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "F  autoWidth (one line) | autoHeight (wraps in 300px) | fixed 300x40 (wraps, cut off)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 85,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:42": {
+      "id": "1:42",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 266,
+        "width": 65,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "autoWidth",
+      "runs": [
+        {
+          "start": 0,
+          "end": 9,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:43": {
+      "id": "1:43",
+      "name": "f autoWidth",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 282,
+        "width": 303,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Auto width stays on one line",
+      "runs": [
+        {
+          "start": 0,
+          "end": 28,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:44": {
+      "id": "1:44",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 316,
+        "width": 598,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "autoHeight: 300px wide, about 4 lines, box grows (blue rect is the 300x90 estimate)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 83,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:45": {
+      "id": "1:45",
+      "name": "f box",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 332,
+        "width": 300,
+        "height": 90,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 300,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 300,
+            "y": 90
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 90
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.16862745098039217,
+            "g": 0.2901960784313726,
+            "b": 0.47843137254901963
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:46": {
+      "id": "1:46",
+      "name": "f autoHeight",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 332,
+        "width": 300,
+        "height": 90,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "The quick brown fox jumps over the lazy dog while the five boxing wizards jump quickly. Pack my box with five dozen liquor jugs.",
+      "runs": [
+        {
+          "start": 0,
+          "end": 128,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoHeight",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:47": {
+      "id": "1:47",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 436,
+        "width": 461,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "fixed 300x40: only about two lines fit (green rect is the field)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 64,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:48": {
+      "id": "1:48",
+      "name": "f fixed box",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 452,
+        "width": 300,
+        "height": 40,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 300,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 300,
+            "y": 40
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 40
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.1803921568627451,
+            "g": 0.4196078431372549,
+            "b": 0.30980392156862746
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:49": {
+      "id": "1:49",
+      "name": "f fixed",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 452,
+        "width": 300,
+        "height": 40,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "The quick brown fox jumps over the lazy dog while the five boxing wizards jump quickly. Pack my box with five dozen liquor jugs.",
+      "runs": [
+        {
+          "start": 0,
+          "end": 128,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "fixed",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:50": {
+      "id": "1:50",
+      "name": "H G",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 520,
+        "width": 735,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "G  line height: auto | 150% (same paragraph; 150% is visibly looser)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 68,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:51": {
+      "id": "1:51",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 546,
+        "width": 29,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "auto",
+      "runs": [
+        {
+          "start": 0,
+          "end": 4,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:52": {
+      "id": "1:52",
+      "name": "g auto",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 562,
+        "width": 300,
+        "height": 90,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "The quick brown fox jumps over the lazy dog while the five boxing wizards jump quickly. Pack my box with five dozen liquor jugs.",
+      "runs": [
+        {
+          "start": 0,
+          "end": 128,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoHeight",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:53": {
+      "id": "1:53",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 670,
+        "width": 29,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "150%",
+      "runs": [
+        {
+          "start": 0,
+          "end": 4,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:54": {
+      "id": "1:54",
+      "name": "g 150",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 686,
+        "width": 300,
+        "height": 110,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "The quick brown fox jumps over the lazy dog while the five boxing wizards jump quickly. Pack my box with five dozen liquor jugs.",
+      "runs": [
+        {
+          "start": 0,
+          "end": 128,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoHeight",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "percent",
+        "value": 150
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:55": {
+      "id": "1:55",
+      "name": "H H",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 50,
+        "width": 681,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "H  letter spacing 0 | 10% | 30% (each wider than the one above)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 63,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:56": {
+      "id": "1:56",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 76,
+        "width": 15,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "0%",
+      "runs": [
+        {
+          "start": 0,
+          "end": 2,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:57": {
+      "id": "1:57",
+      "name": "ls 0",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 92,
+        "width": 231,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Spacing WAVE 123",
+      "runs": [
+        {
+          "start": 0,
+          "end": 16,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "percent",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:58": {
+      "id": "1:58",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 132,
+        "width": 22,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "10%",
+      "runs": [
+        {
+          "start": 0,
+          "end": 3,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:59": {
+      "id": "1:59",
+      "name": "ls 10",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 148,
+        "width": 231,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Spacing WAVE 123",
+      "runs": [
+        {
+          "start": 0,
+          "end": 16,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "percent",
+        "value": 10
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:60": {
+      "id": "1:60",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 188,
+        "width": 22,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "30%",
+      "runs": [
+        {
+          "start": 0,
+          "end": 3,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:61": {
+      "id": "1:61",
+      "name": "ls 30",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 204,
+        "width": 231,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Spacing WAVE 123",
+      "runs": [
+        {
+          "start": 0,
+          "end": 16,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "percent",
+        "value": 30
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:62": {
+      "id": "1:62",
+      "name": "H I",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 260,
+        "width": 638,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "I  vertical align top | center | bottom in 150px tall boxes",
+      "runs": [
+        {
+          "start": 0,
+          "end": 59,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:63": {
+      "id": "1:63",
+      "name": "v box top",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 290,
+        "width": 130,
+        "height": 150,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 130,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 130,
+            "y": 150
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 150
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.16862745098039217,
+            "g": 0.2901960784313726,
+            "b": 0.47843137254901963
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:64": {
+      "id": "1:64",
+      "name": "v top",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 290,
+        "width": 130,
+        "height": 150,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "top",
+      "runs": [
+        {
+          "start": 0,
+          "end": 3,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "fixed",
+      "align": "center",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:65": {
+      "id": "1:65",
+      "name": "v box center",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1120,
+        "y": 290,
+        "width": 130,
+        "height": 150,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 130,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 130,
+            "y": 150
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 150
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.1803921568627451,
+            "g": 0.4196078431372549,
+            "b": 0.30980392156862746
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:66": {
+      "id": "1:66",
+      "name": "v center",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1120,
+        "y": 290,
+        "width": 130,
+        "height": 150,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "center",
+      "runs": [
+        {
+          "start": 0,
+          "end": 6,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "fixed",
+      "align": "center",
+      "verticalAlign": "center",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:67": {
+      "id": "1:67",
+      "name": "v box bottom",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1270,
+        "y": 290,
+        "width": 130,
+        "height": 150,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 130,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 130,
+            "y": 150
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 150
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.4196078431372549,
+            "g": 0.1803921568627451,
+            "b": 0.3686274509803922
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:68": {
+      "id": "1:68",
+      "name": "v bottom",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1270,
+        "y": 290,
+        "width": 130,
+        "height": 150,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "bottom",
+      "runs": [
+        {
+          "start": 0,
+          "end": 6,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "fixed",
+      "align": "center",
+      "verticalAlign": "bottom",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:69": {
+      "id": "1:69",
+      "name": "H J",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 470,
+        "width": 1286,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "J  textFit none (overflows/cut) | shrink | fit, long text in 200x60 boxes (shrink and fit: whole text visible, smaller)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 119,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:70": {
+      "id": "1:70",
+      "name": "fit box none",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 500,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 60
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.47843137254901963,
+            "g": 0.35294117647058826,
+            "b": 0.16862745098039217
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:71": {
+      "id": "1:71",
+      "name": "fit none",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 500,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "This long sentence has to be made smaller to fit the little box.",
+      "runs": [
+        {
+          "start": 0,
+          "end": 64,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "fixed",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:72": {
+      "id": "1:72",
+      "name": "fit box shrink",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1190,
+        "y": 500,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 60
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.47843137254901963,
+            "g": 0.35294117647058826,
+            "b": 0.16862745098039217
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:73": {
+      "id": "1:73",
+      "name": "fit shrink",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1190,
+        "y": 500,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "This long sentence has to be made smaller to fit the little box.",
+      "runs": [
+        {
+          "start": 0,
+          "end": 64,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "fixed",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "shrink",
+      "truncate": false
+    },
+    "1:74": {
+      "id": "1:74",
+      "name": "fit box fit",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1410,
+        "y": 500,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 60
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.47843137254901963,
+            "g": 0.35294117647058826,
+            "b": 0.16862745098039217
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:75": {
+      "id": "1:75",
+      "name": "fit fit",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1410,
+        "y": 500,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "This long sentence has to be made smaller to fit the little box.",
+      "runs": [
+        {
+          "start": 0,
+          "end": 64,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 1,
+              "b": 1
+            }
+          }
+        }
+      ],
+      "sizing": "fixed",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "fit",
+      "truncate": false
+    }
+  }
+}

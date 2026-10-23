@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "build:wrapper": "node tools/ffdec-wrapper/build-wrapper.mjs",
-    "compile:sample": "tsx scripts/compile-sample.ts"
+    "compile:sample": "tsx scripts/compile-sample.ts",
+    "compile:ingame": "tsx scripts/compile-ingame.ts"
   },
   "dependencies": {
     "@inkwell-ui/spec": "file:../Inkwell-Spec",

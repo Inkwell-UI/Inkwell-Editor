@@ -1,0 +1,7 @@
+{
+  "author": "Inkwell",
+  "deploy": { "path": "C:/Modding/MO2/overwrite", "preset": "mo2" },
+  "modId": "IngameTest",
+  "name": "Ingame Test",
+  "version": "0.1.0"
+}
