@@ -25,7 +25,13 @@ export function fontAlias(name: string): string | undefined {
   const words = t.split('/').map((s) => s.trim().replace(/\s+/g, '')).filter(Boolean)
   if (words.length && /^\d+(\.\d+)?$/.test(words.at(-1)!)) words.pop()
   const alias = '$' + words.join('') + 'Font'
-  return words.length && KNOWN_ALIASES.has(alias) ? alias : undefined
+  if (words.length && KNOWN_ALIASES.has(alias)) return alias
+  // the fonts extracted from the game are named Everywhere/Light and <Face>/Regular: Light is $EverywhereFont, Regular is the face's only style
+  if (words.length > 1 && /^(light|regular)$/i.test(words.at(-1)!)) {
+    const base = '$' + words.slice(0, -1).join('') + 'Font'
+    if (KNOWN_ALIASES.has(base)) return base
+  }
+  return undefined
 }
 
 const BOLD = /bold|black|heavy/i
