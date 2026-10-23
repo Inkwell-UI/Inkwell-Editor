@@ -71,6 +71,9 @@ async function startSync(): Promise<void> {
     looseCount = loose.length
     update({ swfCount: infos.length, orphanedCount: infos.filter((i) => i.orphaned).length, lintCount: lintTotal() })
   })
+  // debug: with INKWELL_SCREENSHOT the project's swfs are built right away, so a preview exists without the Figma plugin
+  if (process.env['INKWELL_SCREENSHOT'])
+    for (const [name, ir] of Object.entries(initial)) pipeline.onChange(ir.id, ir, name).catch((e: unknown) => console.error('[inkwell] initial build failed:', e))
   update({ swfCount: server.swfs().length })
   update({ server: 'listening', port: server.port, token: server.token })
 }

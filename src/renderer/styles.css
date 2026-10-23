@@ -30,9 +30,11 @@ body { font: 13px system-ui, sans-serif; color: var(--fg); background: var(--bg)
 .ruffle-host { overflow: hidden; }
 .safe-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 .safe-rect { position: absolute; box-sizing: border-box; border: 1px dashed; }
-.safe-rect span { position: absolute; left: 3px; top: 1px; font-size: 10px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 0 2px; }
+.safe-rect span { position: absolute; bottom: 1px; font-size: 10px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 0 2px; }
 .safe-action { border-color: #f0b400; }
+.safe-action span { right: 3px; }
 .safe-title { border-color: #19c37d; }
+.safe-title span { left: 3px; }
 .shim-badge { border: 1px solid var(--info); border-radius: 4px; padding: 2px 6px; background: #eef5fc; }
 .shim-badge summary { cursor: pointer; }
 .shim-badge ul { margin: 2px 0 4px; padding-left: 18px; }
