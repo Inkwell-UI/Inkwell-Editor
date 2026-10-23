@@ -13,7 +13,7 @@ foreach ($v in @{ A = 'import'; B = 'class'; C = 'define'; D = 'import' }.GetEnu
   $isD = $v.Name -eq 'D'
   $base = "$b\base-$($v.Name).swf"; $mid = "$b\shapes-$($v.Name).swf"; $out = "$b\InkwellSpike$($v.Name).swf"; $as2 = "$b\as2-$($v.Name)"
   # per-variant copy of the AS2 tree with the VARIANT tag prepended to the frame script
-  Remove-Item -Recurse -Force $as2 -ErrorAction SilentlyContinue; Copy-Item -Recurse "$PSScriptRoot\src\as2" $as2
+  Remove-Item -Recurse -Force $as2 -ErrorAction SilentlyContinue; Copy-Item -Recurse $(if ($isD) { "$PSScriptRoot\src\as2-d" } else { "$PSScriptRoot\src\as2" }) $as2
   $fs = "$as2\frame_1\DoAction.as"; [IO.File]::WriteAllText($fs, "var VARIANT = `"$($v.Name)`";`n" + [IO.File]::ReadAllText($fs))  # no BOM
   Remove-Item $out -ErrorAction SilentlyContinue
   $sw = [Diagnostics.Stopwatch]::StartNew()
