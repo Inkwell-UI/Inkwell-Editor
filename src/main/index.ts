@@ -1,7 +1,9 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { IPC } from '../shared/ipc'
+import type { DeployScope, DeployTargetId } from '../shared/deploy'
+import type { PathSettingKey, SettingKey } from '../shared/doctor'
 import type { OverlayDoc } from '../shared/overlay'
 import type { PreviewFontBlob, PreviewRendered } from '../shared/preview'
 import type { OpenResult, UiEvent } from '../shared/projectState'
@@ -108,6 +110,22 @@ ipcMain.handle(IPC.strictSet, (_e, on: boolean) => session.setStrictMode(on))
 ipcMain.handle(IPC.buildAll, () => session.buildAll())
 ipcMain.handle(IPC.previewDetach, (_e, detached: boolean) => setDetached(detached))
 ipcMain.handle(IPC.previewDetached, () => !!previewWin && !previewWin.isDestroyed())
+ipcMain.handle(IPC.doctorRun, () => session.runDoctor())
+ipcMain.handle(IPC.doctorBenchmark, () => session.runBenchmark())
+ipcMain.handle(IPC.doctorBuildCache, () => session.buildVanillaCache())
+ipcMain.handle(IPC.doctorFirstLaunch, () => session.doctorFirstLaunch())
+ipcMain.handle(IPC.settingsGet, () => session.getSettings())
+ipcMain.handle(IPC.settingsSet, (_e, key: SettingKey, value: string | null) => session.setSetting(key, value))
+ipcMain.handle(IPC.settingsBrowse, async (_e, key: PathSettingKey, folder: boolean, title: string) => {
+  const r = await dialog.showOpenDialog(win!, { title, properties: folder ? ['openDirectory'] : ['openFile'] })
+  return r.canceled || !r.filePaths[0] ? null : session.setSetting(key, r.filePaths[0])
+})
+// only https pages the editor itself names (fix actions); never a renderer-supplied scheme
+ipcMain.handle(IPC.openExternal, (_e, url: string) => (url.startsWith('https://') ? shell.openExternal(url) : undefined))
+ipcMain.handle(IPC.deployTargets, () => session.deployTargets())
+ipcMain.handle(IPC.deployPrepare, (_e, id: DeployTargetId, scope: DeployScope, active?: string) => session.deployPrepare(id, scope, active))
+ipcMain.handle(IPC.deployCommit, (_e, token: string) => session.deployCommit(token))
+ipcMain.handle(IPC.deployCancel, () => session.deployCancel())
 // selection and active SWF: relayed to every other window
 ipcMain.on(IPC.uiEvent, (e, ev: UiEvent) => {
   for (const w of BrowserWindow.getAllWindows()) if (w.webContents !== e.sender && !w.isDestroyed()) w.webContents.send(IPC.uiEvent, ev)

@@ -24,6 +24,7 @@ export function validateSettings(raw: unknown): StoredSettings {
     const v = r[k]
     if (typeof v === 'string' && v.trim() && !/[\0\r\n]/.test(v)) out[k] = v.trim()
   }
+  if (r['doctorSeen'] === true) out.doctorSeen = true
   const dc = r['deployConfirmed']
   if (dc && typeof dc === 'object' && !Array.isArray(dc)) {
     const m: Record<string, string[]> = {}

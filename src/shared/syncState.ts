@@ -1,3 +1,4 @@
+import type { DeployState } from './deploy'
 import type { BuildTiming } from './timing'
 
 /** What the main process tells the renderer about the Figma sync server. */
@@ -22,6 +23,10 @@ export interface SyncUiState {
   lint?: LintRow[]
   /** FFDec / Java / wrapper availability (the status bar and the Setup Doctor stub). */
   ffdec?: FfdecState
+  /** Progress or result of the last Deploy (status bar and toast). */
+  deploy?: DeployState
+  /** Increases with every Deploy state change. */
+  deploySeq?: number
   /** Increases with every finished build; `timing` belongs to `timingSwf`. */
   buildSeq?: number
   timingSwf?: string

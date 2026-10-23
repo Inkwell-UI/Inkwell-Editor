@@ -28,6 +28,18 @@ const api: InkwellApi = {
   onPreviewDetached: (cb) => on(IPC.previewDetached, cb),
   sendUiEvent: (e) => ipcRenderer.send(IPC.uiEvent, e),
   onUiEvent: (cb) => on(IPC.uiEvent, cb),
-  onFigmaSelection: (cb) => on(IPC.figmaSelection, cb)
+  onFigmaSelection: (cb) => on(IPC.figmaSelection, cb),
+  runDoctor: () => ipcRenderer.invoke(IPC.doctorRun),
+  runBenchmark: () => ipcRenderer.invoke(IPC.doctorBenchmark),
+  buildVanillaCache: () => ipcRenderer.invoke(IPC.doctorBuildCache),
+  doctorFirstLaunch: () => ipcRenderer.invoke(IPC.doctorFirstLaunch),
+  getSettings: () => ipcRenderer.invoke(IPC.settingsGet),
+  setSetting: (k, v) => ipcRenderer.invoke(IPC.settingsSet, k, v),
+  browseSetting: (k, folder, title) => ipcRenderer.invoke(IPC.settingsBrowse, k, folder, title),
+  openExternal: (url) => ipcRenderer.invoke(IPC.openExternal, url),
+  getDeployTargets: () => ipcRenderer.invoke(IPC.deployTargets),
+  prepareDeploy: (t, s, a) => ipcRenderer.invoke(IPC.deployPrepare, t, s, a),
+  commitDeploy: (token) => ipcRenderer.invoke(IPC.deployCommit, token),
+  cancelDeploy: () => ipcRenderer.invoke(IPC.deployCancel)
 }
 contextBridge.exposeInMainWorld('inkwell', api)

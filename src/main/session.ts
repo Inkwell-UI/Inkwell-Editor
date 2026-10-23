@@ -8,12 +8,17 @@ import type { PreviewBuild, PreviewRendered } from '../shared/preview'
 import type { OpenResult, ProjectState, RecentProject } from '../shared/projectState'
 import { flattenReports, type SwfReport, type SyncUiState } from '../shared/syncState'
 import { ffdecState } from '../shared/ffdec'
+import type { DeployResult, DeployScope, DeployState, DeployTargetId, DeployTargetInfo, PrepareResult } from '../shared/deploy'
+import type { BenchmarkResult, BuildCacheResult, CheckResult, ResolvedSettings, SettingKey, StoredSettings } from '../shared/doctor'
+import { buildCacheAction, runBenchmark, runDoctor, type DoctorContext } from './doctor'
+import { createDeployService } from './deploy/service'
+import { loadSettings, patchSettings, resolveSettings, saveSettings } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { loadProject, type ProjectMeta } from './project'
 import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
 import { writeProjectSetting } from './project/settings'
-import { createBuildPipeline, envConfig } from './sync/buildPipeline'
+import { createBuildPipeline } from './sync/buildPipeline'
 import { startSyncServer, type Layer, type SwfInfo } from './sync/syncServer'
 
 export interface SessionDeps {
@@ -54,7 +59,15 @@ export function createSession(deps: SessionDeps) {
   let server: Awaited<ReturnType<typeof startSyncServer>> | undefined
   let pipeline: ReturnType<typeof createBuildPipeline> | undefined
   let failBuilds = false // screenshot driver only: makes the next builds throw
-  const cfg = envConfig()
+  // settings: stored in <userData>/settings.json, INKWELL_* environment variables override; read live so a change needs no restart
+  const settingsFile = join(deps.userData, 'settings.json')
+  let stored: StoredSettings = {}
+  const settingsReady = loadSettings(settingsFile).then((s) => void (stored = s))
+  const resolved = (): ResolvedSettings => resolveSettings(stored)
+  const cfg = {
+    get javaPath(): string { return resolved().javaPath },
+    get ffdecDir(): string { return resolved().ffdecDir }
+  }
   const jarPath = join(deps.appPath, 'tools/ffdec-wrapper/build/ffdec-wrapper.jar')
   let fontSet: PreviewFontSet | undefined
   // Installed Skyrim fonts are read-only input; INKWELL_PREVIEW_FONTS=bundled|installed|auto forces the source.
@@ -68,10 +81,13 @@ export function createSession(deps: SessionDeps) {
   const refreshFfdec = (): void =>
     update({ ffdec: ffdecState({ installed: existsSync(join(cfg.ffdecDir, 'lib', 'ffdec_lib.jar')), jarBuilt: existsSync(jarPath), javaOk, everBuilt }) })
   // `java -version` once, off the main thread; a missing Java makes builds fail with a clear status instead of a crash
-  execFile(cfg.javaPath, ['-version'], { timeout: 8000, windowsHide: true }, (err) => {
-    javaOk = !err
-    refreshFfdec()
-  })
+  const probeJava = (): void => {
+    execFile(cfg.javaPath, ['-version'], { timeout: 8000, windowsHide: true }, (err) => {
+      javaOk = !err
+      refreshFfdec()
+    })
+  }
+  void settingsReady.then(probeJava)
 
   let pushTimer: ReturnType<typeof setTimeout> | undefined
   const projectState = (): ProjectState | null => {
@@ -181,6 +197,7 @@ export function createSession(deps: SessionDeps) {
 
   /** Switch to `dir` (or to no project). Everything of the previous project is dropped. */
   async function open(dir: string | undefined): Promise<OpenResult> {
+    await settingsReady
     const keep = server ? { port: server.port, token: server.token } : undefined
     try {
       await stopServer()
@@ -205,6 +222,35 @@ export function createSession(deps: SessionDeps) {
     }
   }
 
+  let deployState = 0
+  const reportDeploy = (s: DeployState): void => update({ deploy: s, deploySeq: ++deployState })
+  const deploy = createDeployService({
+    userData: deps.userData,
+    appPath: deps.appPath,
+    project: () => {
+      const p = projectState()
+      if (!p || !meta) return undefined
+      return {
+        dir: p.dir, name: p.name, modId: p.modId, deploy: meta.deploy,
+        swfs: p.swfs.map((s) => ({
+          name: s.name, orphaned: s.orphaned, kind: s.ir.target.kind, ir: s.ir,
+          instanceNames: Object.fromEntries((Object.entries(s.overlay.nodes ?? {}) as [string, { instanceName?: string }][]).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName] as [string, string]] : [])))
+        }))
+      }
+    },
+    settings: () => ({ stored, resolved: resolved() }),
+    saveStored: async (s) => {
+      stored = s
+      await saveSettings(settingsFile, s)
+    },
+    ffdec: () => {
+      if (!pipeline) throw new Error('No project is open.')
+      return pipeline.getFfdec()
+    },
+    report: reportDeploy
+  })
+  const doctorCtx = (): DoctorContext => ({ settings: resolved(), appPath: deps.appPath, userData: deps.userData, ...(projectDir ? { projectDir } : {}), pluginConnections: state.connections })
+
   async function remember(r: RecentProject): Promise<void> {
     await saveRecent(recentFile, addRecent(await loadRecent(recentFile), r)).catch(() => undefined)
   }
@@ -212,6 +258,36 @@ export function createSession(deps: SessionDeps) {
   return {
     open,
     getSync: (): SyncUiState => state,
+    getSettings: async (): Promise<ResolvedSettings> => (await settingsReady, resolved()),
+    /** Stores one setting; a change of Java or FFDec re-probes and restarts the build pipeline so the next build uses it. */
+    async setSetting(key: SettingKey, value: string | null): Promise<ResolvedSettings> {
+      await settingsReady
+      const before = JSON.stringify([cfg.javaPath, cfg.ffdecDir])
+      stored = patchSettings(stored, { [key]: value })
+      await saveSettings(settingsFile, stored)
+      if (JSON.stringify([cfg.javaPath, cfg.ffdecDir]) !== before) {
+        probeJava()
+        refreshFfdec()
+        if (projectDir) await open(projectDir)
+      }
+      return resolved()
+    },
+    runDoctor: async (): Promise<CheckResult[]> => (await settingsReady, runDoctor(doctorCtx())),
+    runBenchmark: async (): Promise<BenchmarkResult> => (await settingsReady, runBenchmark(doctorCtx())),
+    buildVanillaCache: async (): Promise<BuildCacheResult> => (await settingsReady, buildCacheAction(doctorCtx())),
+    /** True once: the first launch where a check fails. */
+    async doctorFirstLaunch(): Promise<boolean> {
+      await settingsReady
+      if (stored.doctorSeen) return false
+      const failed = (await runDoctor(doctorCtx())).some((c) => c.status === 'fail')
+      stored = { ...stored, doctorSeen: true }
+      await saveSettings(settingsFile, stored).catch(() => undefined)
+      return failed
+    },
+    deployTargets: (): DeployTargetInfo[] => deploy.targets(),
+    deployPrepare: (id: DeployTargetId, scope: DeployScope, active?: string): Promise<PrepareResult> => deploy.prepare(id, scope, active),
+    deployCommit: (token: string): Promise<DeployResult> => deploy.commit(token),
+    deployCancel: (): void => deploy.cancel(),
     getProject: projectState,
     getPreviews: (): PreviewBuild[] => [...previews.values()],
     getPreviewFonts: () => fonts().fonts,

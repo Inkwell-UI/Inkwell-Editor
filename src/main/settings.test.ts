@@ -8,6 +8,8 @@ describe('settings', () => {
   it('validates: unknown keys, wrong types and empty strings are dropped', () => {
     expect(validateSettings({ ffdecDir: ' C:\\F ', javaPath: 5, nope: 'x', papyrusExe: '', mo2ModName: 'Mod' })).toEqual({ ffdecDir: 'C:\\F', mo2ModName: 'Mod' })
     expect(validateSettings('x')).toEqual({})
+    expect(validateSettings({ doctorSeen: true })).toEqual({ doctorSeen: true })
+    expect(validateSettings({ doctorSeen: 'yes' })).toEqual({})
     expect(validateSettings({ deployConfirmed: { a: ['t', 3] } })).toEqual({ deployConfirmed: { a: ['t'] } })
   })
   it('defaults, stored values, and env overrides (with sources)', () => {

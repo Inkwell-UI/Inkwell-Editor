@@ -9,6 +9,8 @@ import { planDeploy, type DeployPlan, type SwfLike } from './plan'
 import { readManifest, staleFiles, writeDeploy } from './write'
 
 export interface DeploySwf extends SwfLike {
+  /** Overlay instance names by node id (they feed the compiler). */
+  instanceNames?: Record<string, string>
   ir: Swf
 }
 
@@ -53,7 +55,7 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
     for (const s of i.swfs.filter((x) => !x.orphaned && (!i.only || x.name === i.only))) {
       if (s.kind === 'hudWidget') {
         const r = await compileWidget(s.ir, {
-          modId: i.modId, widgetName: plan.widgets[s.name]!, buildDir: join(i.buildDir, 'deploy', s.name), ffdec: i.ffdec,
+          modId: i.modId, widgetName: plan.widgets[s.name]!, ...(s.instanceNames ? { instanceNames: s.instanceNames } : {}), buildDir: join(i.buildDir, 'deploy', s.name), ffdec: i.ffdec,
           ...(i.papyrusExe ? { papyrusExe: i.papyrusExe } : {}), ...(i.stubsDir ? { stubsDir: i.stubsDir } : {})
         })
         const errs = r.lint.filter((l) => l.severity === 'error')

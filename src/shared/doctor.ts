@@ -32,6 +32,8 @@ export interface CheckResult {
 export interface StoredSettings extends Partial<Record<SettingKey, string>> {
   /** Project folder (lower case) -> deploy targets the user has confirmed once. */
   deployConfirmed?: Record<string, string[]>
+  /** The first-launch Setup Doctor has been shown (or was not needed). */
+  doctorSeen?: boolean
 }
 
 export type SettingSource = 'env' | 'settings' | 'default'

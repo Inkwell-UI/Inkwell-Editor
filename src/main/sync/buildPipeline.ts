@@ -52,12 +52,15 @@ export function createBuildPipeline(cfg: PipelineConfig) {
   let project: Promise<Project> | undefined
   let ffdec: { build: Parameters<typeof compileSwf>[1]['ffdec']['build']; stop?: () => void } | undefined
 
-  async function onChange(swfId: string, ir: Parameters<typeof compileSwf>[0], name: string): Promise<ChangeResult> {
-    // Missing FFDec is a clear error status, not a crash; the server keeps running.
-    if (!cfg.ffdec && !existsSync(join(cfg.ffdecDir, 'lib', 'ffdec_lib.jar')))
-      throw new Error(`FFDec not found in "${cfg.ffdecDir}". Install it or set INKWELL_FFDEC.`)
+  /** The resident wrapper (created on first use; shared with Deploy). A missing FFDec is a clear error status, not a crash; the server keeps running. */
+  function getFfdec(): NonNullable<typeof ffdec> {
+    if (!cfg.ffdec && !existsSync(join(cfg.ffdecDir, 'lib', 'ffdec_lib.jar'))) throw new Error(`FFDec not found in "${cfg.ffdecDir}". Install it or set INKWELL_FFDEC.`)
     if (!cfg.ffdec && !existsSync(cfg.jarPath)) throw new Error(`FFDec wrapper jar missing (${cfg.jarPath}). Run "yarn build:wrapper".`)
-    ffdec ??= cfg.ffdec ?? createFfdecWrapper({ javaPath: cfg.javaPath, ffdecDir: cfg.ffdecDir, jarPath: cfg.jarPath })
+    return (ffdec ??= cfg.ffdec ?? createFfdecWrapper({ javaPath: cfg.javaPath, ffdecDir: cfg.ffdecDir, jarPath: cfg.jarPath }))
+  }
+
+  async function onChange(swfId: string, ir: Parameters<typeof compileSwf>[0], name: string): Promise<ChangeResult> {
+    const ffdec = getFfdec()
 
     const timer = createStageTimer()
     timer.start('sync')
@@ -106,5 +109,5 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     return { issues: r.lint.map((l) => ({ code: l.code, message: l.message, nodeId: l.nodeId, severity: l.severity })) }
   }
 
-  return { onChange, stop: (): void => ffdec?.stop?.() }
+  return { onChange, getFfdec, stop: (): void => ffdec?.stop?.() }
 }

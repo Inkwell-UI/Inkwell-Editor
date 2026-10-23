@@ -1,3 +1,5 @@
+import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, PrepareResult } from './deploy'
+import type { BenchmarkResult, BuildCacheResult, CheckResult, PathSettingKey, ResolvedSettings, SettingKey } from './doctor'
 import type { OverlayDoc } from './overlay'
 import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from './preview'
 import type { OpenResult, ProjectState, RecentProject, UiEvent } from './projectState'
@@ -23,7 +25,19 @@ export const IPC = {
   previewDetach: 'preview:detach',
   previewDetached: 'preview:detached',
   uiEvent: 'ui:event',
-  figmaSelection: 'figma:selection'
+  figmaSelection: 'figma:selection',
+  doctorRun: 'doctor:run',
+  doctorBenchmark: 'doctor:benchmark',
+  doctorBuildCache: 'doctor:buildCache',
+  doctorFirstLaunch: 'doctor:firstLaunch',
+  settingsGet: 'settings:get',
+  settingsSet: 'settings:set',
+  settingsBrowse: 'settings:browse',
+  openExternal: 'app:openExternal',
+  deployTargets: 'deploy:targets',
+  deployPrepare: 'deploy:prepare',
+  deployCommit: 'deploy:commit',
+  deployCancel: 'deploy:cancel'
 } as const
 
 export type SaveOverlayResult = { ok: true } | { ok: false; error: string }
@@ -66,4 +80,28 @@ export interface InkwellApi {
   onUiEvent(cb: (e: UiEvent) => void): () => void
   /** The layers selected in Figma (the plugin's `selection` message). */
   onFigmaSelection(cb: (ids: string[]) => void): () => void
+
+  /** Setup Doctor (UX 5.3): every check, in parallel; never rejects. */
+  runDoctor(): Promise<CheckResult[]>
+  /** Cold CLI vs wrapper first job vs warm median on the test fixture. User-triggered. */
+  runBenchmark(): Promise<BenchmarkResult>
+  buildVanillaCache(): Promise<BuildCacheResult>
+  /** True once, on the first launch where any check fails (main marks it as seen either way). */
+  doctorFirstLaunch(): Promise<boolean>
+  /** Settings as used (stored value, overridden by INKWELL_* variables, else default) with where each came from. */
+  getSettings(): Promise<ResolvedSettings>
+  /** `null` removes a stored value. Returns the settings as used afterwards. */
+  setSetting(key: SettingKey, value: string | null): Promise<ResolvedSettings>
+  /** Native folder or file dialog (title from the renderer), stores the choice; resolves with the new settings, or null when cancelled. */
+  browseSetting(key: PathSettingKey, folder: boolean, title: string): Promise<ResolvedSettings | null>
+  /** Opens an https page in the browser. */
+  openExternal(url: string): Promise<void>
+
+  /** Deploy targets of the open project with their exact paths (MO2 only; the others are listed with a reason). */
+  getDeployTargets(): Promise<DeployTargetInfo[]>
+  /** Compiles and checks everything for a deploy, writes nothing. `needsConfirm` is true for a folder not confirmed for this project yet. */
+  prepareDeploy(target: DeployTargetId, scope: DeployScope, activeSwf?: string): Promise<PrepareResult>
+  /** Writes what `prepareDeploy` returned a token for. */
+  commitDeploy(token: string): Promise<DeployResult>
+  cancelDeploy(): Promise<void>
 }
