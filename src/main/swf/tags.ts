@@ -208,7 +208,7 @@ export function placeObject2(p: Placement): Buffer {
     const fx = (v: number) => Math.round(v * 65536)
     const c = fx(Math.cos(r))
     const s = fx(Math.sin(r))
-    const n = Math.max(sbits(c), sbits(s))
+    const n = Math.max(sbits(c), sbits(s), sbits(-s)) // -s too: at exactly 90 deg, +65536 needs one bit more than -65536
     m.u(1, 1); m.u(n, 5); m.s(c, n); m.s(c, n) // scale x/y = cos
     m.u(1, 1); m.u(n, 5); m.s(s, n); m.s(-s, n) // rotateSkew0 = sin, rotateSkew1 = -sin
   } else if (p.scale !== undefined && p.scale !== 1) {

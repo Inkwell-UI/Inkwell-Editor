@@ -64,6 +64,13 @@ describe('tag writer', () => {
     expect(inner.readUInt16LE(0) >> 6).toBe(T.TAG.PlaceObject2)
   })
 
+  it('PlaceObject2 at exactly +-90 degrees keeps a rotation (no mirroring from an overflowing skew field)', () => {
+    for (const [deg, skew] of [[90, [1, -1]], [-90, [-1, 1]]] as const) {
+      const p = readPlace({ code: T.TAG.PlaceObject2, body: T.placeObject2({ depth: 1, charId: 1, x: 0, y: 0, rotation: deg }).subarray(2) })
+      expect(p.matrix).toMatchObject({ scale: [0, 0], skew })
+    }
+  })
+
   it('sbits', () => {
     expect([0, 1, -1, 2, -2, 3, 127, -128, 128].map(T.sbits)).toEqual([1, 2, 1, 3, 2, 3, 8, 8, 9])
   })
