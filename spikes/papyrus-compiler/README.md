@@ -1,6 +1,18 @@
 # Spike 7: Papyrus compiler (russo-2025) with from-scratch header stubs
 
-Status: **compile and structural comparison done. Round 1 in-game: pex loads and runs, but SkyUI refused the widget (script not derived). Round 2 (base + Instance fix) UNVERIFIED, awaiting human test.**
+Status: **FINAL (2026-10-23, SPIKES.md sections 1, 2, 8, 9). PARTIAL: compile PASS; in-game widget PASS on SkyUI 6.11 and SkyUI 5.2; label text visible after the variant-A font fix; the official-compiler pex was never loaded in game (comparison is static only). The widget script is hand-written "generated-style" (no codegen exists yet).**
+
+## Final in-game results
+Evidence: `Papyrus.0-3.log`, `skse64.log` and owner observations (screenshots relayed, not seen by the agent).
+- **Round 1 (SkyUI 6.11):** russo pex loaded and ran (`Inkwell_SpikeWidget ... INITIALIZED`), SkyUI showed "must extend a base script type" (owner-reported); fixed by the base + Instance pair.
+- **Round 2:** `WidgetLoadFailure`, then `WidgetInitFailure` (SWF lacked the `widget` clip), then after the fix `OnWidgetReset at 1100.000000,60.000000`; skse64.log `[Inkwell] setHudMetrics`, `setRootPath exported/`, `setLabel INKWELL WIDGET`. Red bar top-right (owner screenshot). Deployed `Scripts\*.pex` are the russo builds (1273 / 486 B).
+- **SkyUI 5.2 retest (installed 5.2.0.0SE, same deployed files, no rebuild):** the widget registers and draws with no changes; `OnWidgetReset` ran at 1100,60; the SWF received `setHudMetrics`, `setRootPath`, `setLabel`, `setModes`; no `WidgetLoadFailure`, `WidgetInitFailure` or "must extend" messages. Confirms the spec's 5.2 target and that scripts compiled against SkyUI 6 sources run on 5.2. A real 5.1 install is untested.
+- **Label font fix (commit c93d485): verified in-game (owner screenshot).** With the variant-A encoding the bar reads "INKWELL WIDGET" in Skyrim's menu font. The "Inkwell widget ready" `Debug.Notification` also appeared this time; earlier misses unexplained (likely fired while loading; never confirmed).
+- **Compiler comparison:** russo v0.0.4 ~3 ms, pex 1273 B + 486 B; official CK compiler 1456 B + 606 B, 0 errors. Same functions/ops/strings; russo uses fewer temps. Only russo's pex was proven in game.
+- **Owner decisions (SPIKES.md section 7):** do NOT bundle the compiler; the user points Inkwell at a compiler (russo's or the CK's) and Inkwell runs it as a separate process. The russo zip has no LICENSE and bundles Bethesda binaries, so it must not be shipped as-is.
+- **Codegen findings:** two scripts (`X` + `XInstance extends X` on the quest); SWF under `Interface\exported\widgets\<path>`; SWF root needs a `widget` clip with `setHudMetrics`, `setRootPath`, `onModeChange`, `setX...`; stubs must declare full properties where the real script does (an `auto` stub silently emits field stores, not `propset`); generate stubs from the installed SkyUI/SKSE scripts or pin them with a golden test.
+- **Still open:** the hand-written ESP loads but was never opened in xEdit/CK; official pex never run in game.
+
 
 ## Question
 Can russo-2025's `papyrus-compiler` (MIT) compile a generated SkyUI-style HUD widget script using ONLY minimal header stubs written from scratch (no Creation Kit files, no Bethesda `.psc`, no SkyUI source copied)?
@@ -70,16 +82,16 @@ CK fallback: new ESL plugin with master SkyUI_SE.esp; new Quest `InkwellSpikeQue
 - **Notification timing:** `Debug.Notification("... ready")` in `OnWidgetReset` only fires after the widget manager registers the widget; `OnWidgetInit` and the `INITIALIZED` trace fire earlier regardless.
 
 ## Result
-Compile: PASS. Structural equivalence: PASS by inspection. In-game: round 1 ran but was rejected by SkyUI (fixed above); round 2 UNVERIFIED.
+Compile: PASS. Structural equivalence: PASS by inspection. In-game: PASS on SkyUI 6.11 and 5.2, label text visible (see "Final in-game results").
 
 ## Risks / not checked
-- The hand-written esp (VMAD quest-fragment trailer) may be malformed; not validated in xEdit or CK.
+- The hand-written esp loads in game but was never validated in xEdit or CK.
 - The SWF's AS2 relies on unqualified `place()` using the timeline as `this`; it omits SkyUI's HUD-metrics scaling and `HudElements` registration, so it may mis-position or ignore HUD modes.
-- SkyUI's interface was read from the community clone, which may differ from the installed 5.2 SE.
+- SkyUI's interface was read from the community clone (6.x); the widget then ran on both 6.11 and 5.2.
 - The russo release ships no LICENSE file.
 
 ## Findings from the in-game round 2 (widget SWF contract)
 - SkyUI's `WidgetLoader.onLoadInit` fails with `WidgetInitFailure` unless the loaded SWF's root (the holder) has a child clip instance named `widget`. It then calls `widget.setHudMetrics(m)`, `widget.setRootPath(p)` and (via the holder) `widget.onModeChange(mode)`. `SKI_WidgetBase` builds `WidgetRoot` = `_root.WidgetContainer.<id>.widget`, so every `UI.Invoke*(WidgetRoot + ".setX")` (setLabel, setHAnchor, setPositionX, ...) targets methods on that `widget` clip, not the SWF root.
 - `gen-widget.mjs` now emits a DefineSprite (shape + dynamic TextField `label`) placed at root as `widget`; `src/as2/frame_1/DoAction.as` attaches the methods to it. `skse.Log` is used only behind `typeof` + try/catch.
-- Widget folder is `Interface\exported\widgets\` (not `exported\`); `GetWidgetSource` stays `Inkwell/InkwellSpikeWidget.swf`. Verified with `ffdec -swf2xml`: root PlaceObject2 has `name="widget"`. Not re-tested in game.
-- **Widget text encoding (variant A):** the old `fontClass` / device-font encoding of the `label` field draws nothing in Skyrim's GFx (ffdec spike). `gen-widget.mjs` now emits the in-game-proven variant A: `ImportAssets2` of `$EverywhereMediumFont` from `gfxfontlib.swf` into local id 3, and `DefineEditText fontId=3 hasFontClass=false useOutlines=true`. Verified with `ffdec -swf2xml`; `widget`/`label` clip contract unchanged. Not re-tested in game: expect a red bar top-right reading `INKWELL WIDGET`.
+- Widget folder is `Interface\exported\widgets\` (not `exported\`); `GetWidgetSource` stays `Inkwell/InkwellSpikeWidget.swf`. Verified with `ffdec -swf2xml`: root PlaceObject2 has `name="widget"`. Verified in game (SkyUI 6.11 and 5.2).
+- **Widget text encoding (variant A):** the old `fontClass` / device-font encoding of the `label` field draws nothing in Skyrim's GFx (ffdec spike). `gen-widget.mjs` now emits the in-game-proven variant A: `ImportAssets2` of `$EverywhereMediumFont` from `gfxfontlib.swf` into local id 3, and `DefineEditText fontId=3 hasFontClass=false useOutlines=true`. Verified with `ffdec -swf2xml`; `widget`/`label` clip contract unchanged. Verified in game: the red bar reads `INKWELL WIDGET`.
