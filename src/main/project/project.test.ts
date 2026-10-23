@@ -46,6 +46,18 @@ describe('project format', () => {
     expect(await files(dir)).toEqual(first)
   })
 
+  it('save deletes swf folders no longer in the project', async () => {
+    const dir = await tmp()
+    await cp(sample, dir, { recursive: true })
+    const p = await loadProject(dir)
+    p.swfs['gone'] = p.swfs['hud']!
+    await saveProject(dir, p)
+    expect(Object.keys((await loadProject(dir)).swfs).sort()).toEqual(['gone', 'hud'])
+    delete p.swfs['gone']
+    await saveProject(dir, p)
+    expect(Object.keys((await loadProject(dir)).swfs)).toEqual(['hud'])
+  })
+
   it('rejects invalid project.json', async () => {
     const dir = await tmp()
     await writeFile(join(dir, 'project.json'), '{"name":1}')

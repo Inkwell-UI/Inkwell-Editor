@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { z } from 'zod'
 
@@ -54,7 +54,6 @@ export async function loadProject(dir: string): Promise<Project> {
   return packsLock === undefined ? { meta, swfs } : { meta, swfs, packsLock }
 }
 
-// shortcut: swf folders removed from the project are not deleted on save; add when the editor can delete a swf.
 export async function saveProject(dir: string, project: Project): Promise<void> {
   const meta = ProjectMetaSchema.parse(project.meta)
   await Promise.all(['figma', 'shared'].map((d) => mkdir(join(dir, d), { recursive: true })))
@@ -64,6 +63,11 @@ export async function saveProject(dir: string, project: Project): Promise<void> 
     await mkdir(d, { recursive: true })
     await writeFile(join(d, 'ir.json'), stableStringify(swf.ir))
     await writeFile(join(d, 'overlay.json'), stableStringify(swf.overlay))
+  }
+  // Owner decision: swf folders no longer in the project are deleted.
+  const existing = await readdir(join(dir, 'swfs'), { withFileTypes: true }).catch(() => [])
+  for (const e of existing.filter((e) => e.isDirectory() && !Object.hasOwn(project.swfs, e.name))) {
+    await rm(join(dir, 'swfs', e.name), { recursive: true, force: true })
   }
   if (project.packsLock !== undefined) await writeFile(join(dir, 'packs.lock'), project.packsLock)
 }
