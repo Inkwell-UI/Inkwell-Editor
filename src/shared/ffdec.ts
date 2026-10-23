@@ -7,3 +7,6 @@ export function ffdecState(f: { installed: boolean; jarBuilt: boolean; javaOk: b
   if (!f.javaOk) return { status: 'notFound', reason: 'java' }
   return { status: f.everBuilt ? 'warm' : 'cold' }
 }
+
+/** The FFDec version the wrapper is pinned to (PINNED in tools/ffdec-wrapper/src/com/inkwell/Wrapper.java; a test keeps them equal). */
+export const FFDEC_PINNED = '26.3.0'
