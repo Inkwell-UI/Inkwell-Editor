@@ -1,6 +1,9 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { Swf } from '@inkwell-ui/spec'
+import { IPC } from '../shared/ipc'
+import type { PreviewBuild, PreviewRendered } from '../shared/preview'
 import { PRODUCT_NAME } from '../shared/product'
 import { flattenReports, type SwfReport, type SyncUiState } from '../shared/syncState'
 import { loadProject } from './project'
@@ -12,7 +15,7 @@ let win: BrowserWindow | undefined
 const update = (patch: Partial<SyncUiState>): void => {
   state = { ...state, ...patch }
   // closing the app closes the plugin's socket, which calls update() after the window is gone
-  if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) win.webContents.send('sync:update', state)
+  if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) win.webContents.send(IPC.syncUpdate, state)
 }
 
 function createWindow(): void {
@@ -32,6 +35,9 @@ let looseCount = 0
 const lintTotal = (): number => [...lintBySwf.values()].reduce((a, b) => a + b, 0) + looseCount
 
 const reports = new Map<string, SwfReport>() // swf id -> latest build
+const previews = new Map<string, PreviewBuild>() // swf id -> latest preview build (the renderer restores from this after a reload)
+let previewSeq = 0
+let latestSeq = 0
 let server: Awaited<ReturnType<typeof startSyncServer>> | undefined
 let pipeline: ReturnType<typeof createBuildPipeline> | undefined
 
@@ -47,7 +53,12 @@ async function startSync(): Promise<void> {
     jarPath: join(app.getAppPath(), 'tools/ffdec-wrapper/build/ffdec-wrapper.jar'),
     onBuild: (_p, timing, _n, report) => {
       reports.set(report.swfId, report)
-      update({ timing, ...flattenReports(reports.values()) })
+      update({ timing, previewMs: undefined, ...flattenReports(reports.values()) })
+    },
+    onPreview: (p) => {
+      const build = { ...p, seq: (latestSeq = ++previewSeq) }
+      previews.set(build.swfId, build)
+      if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) win.webContents.send(IPC.previewBuild, build)
     }
   })
   server = await startSyncServer({ editorVersion: app.getVersion(), initial, onChange: pipeline.onChange })
@@ -64,7 +75,18 @@ async function startSync(): Promise<void> {
   update({ server: 'listening', port: server.port, token: server.token })
 }
 
-ipcMain.handle('sync:get', () => state)
+ipcMain.handle(IPC.syncGet, () => state)
+ipcMain.handle(IPC.previewGet, () => [...previews.values()])
+let shot = process.env['INKWELL_SCREENSHOT'] // debug: save the window after the first rendered preview, then quit
+ipcMain.on(IPC.previewRendered, (_e, r: PreviewRendered) => {
+  if (r.seq === latestSeq) update({ previewMs: r.ms })
+  if (shot && win) {
+    const out = shot
+    shot = undefined
+    // two frames for the panels to repaint with the timing before the capture
+    setTimeout(() => void win!.webContents.capturePage().then((img) => writeFile(out, img.toPNG())).finally(() => app.exit(0)), 500)
+  }
+})
 void app.whenReady().then(() => {
   createWindow()
   startSync().catch((e: unknown) => update({ server: 'error', error: e instanceof Error ? e.message : String(e) }))

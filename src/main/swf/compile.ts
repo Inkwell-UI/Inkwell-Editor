@@ -22,6 +22,8 @@ export interface CompileResult {
   lint: LintIssue[]
   /** Font resolution per text node (not part of `lint`). */
   fonts: (Generated['fonts'][number] & { swfId: string })[]
+  /** Text nodes that use GFx TextField extensions (see Generated). */
+  gfxTextExtensions: number
   timings: BuildTiming
 }
 
@@ -65,5 +67,5 @@ export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<Compile
     await copyFile(base, swfPath) // nothing for FFDec to fill in
   }
   const lint = g.lint.map((l) => ({ ...l, nodeName: ir.nodes[l.nodeId]?.name }))
-  return { swfPath, lint, fonts: g.fonts.map((f) => ({ ...f, swfId: ir.id })), timings: timer.finishBuild() }
+  return { swfPath, lint, fonts: g.fonts.map((f) => ({ ...f, swfId: ir.id })), gfxTextExtensions: g.gfxTextExtensions, timings: timer.finishBuild() }
 }

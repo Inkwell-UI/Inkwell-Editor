@@ -1,11 +1,17 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { SyncUiState } from '../shared/syncState'
+import { IPC, type InkwellApi } from '../shared/ipc'
 
-contextBridge.exposeInMainWorld('inkwell', {
-  getSync: (): Promise<SyncUiState> => ipcRenderer.invoke('sync:get'),
-  onSync: (cb: (s: SyncUiState) => void): (() => void) => {
-    const h = (_e: unknown, s: SyncUiState): void => cb(s)
-    ipcRenderer.on('sync:update', h)
-    return () => ipcRenderer.removeListener('sync:update', h)
-  }
-})
+const on = <T>(channel: string, cb: (v: T) => void): (() => void) => {
+  const h = (_e: unknown, v: T): void => cb(v)
+  ipcRenderer.on(channel, h)
+  return () => ipcRenderer.removeListener(channel, h)
+}
+
+const api: InkwellApi = {
+  getSync: () => ipcRenderer.invoke(IPC.syncGet),
+  onSync: (cb) => on(IPC.syncUpdate, cb),
+  getPreviewBuilds: () => ipcRenderer.invoke(IPC.previewGet),
+  onPreviewBuild: (cb) => on(IPC.previewBuild, cb),
+  reportPreviewRendered: (r) => ipcRenderer.send(IPC.previewRendered, r)
+}
+contextBridge.exposeInMainWorld('inkwell', api)

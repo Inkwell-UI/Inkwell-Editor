@@ -11,6 +11,8 @@ export interface SyncUiState {
   /** Message of the first issue when build is 'error'. */
   buildError?: string
   timing?: BuildTiming
+  /** Renderer-measured build-ready -> Ruffle first frame (ms) for the latest build; absent until it renders (or when no preview panel is open). */
+  previewMs?: number
   /** Lint issues over all swfs plus loose layers. */
   lintCount: number
   swfCount: number
