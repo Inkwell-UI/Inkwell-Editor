@@ -175,7 +175,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
 
   const tags = [
     T.setBackgroundColor(0, 0, 0),
-    ...(fonts.size ? [T.importAssets2('gfxfontlib.swf', [...fonts].map(([name, id]) => ({ id, name })))] : []),
+    ...[...fonts].map(([name, id]) => T.importAssets2('gfxfontlib.swf', { id, name })),
     ...defs,
     ...extra,
     ...mainPlaces,

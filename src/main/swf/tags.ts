@@ -93,9 +93,12 @@ export function sprite(id: number, controlTags: Buffer[] = []): Buffer {
 export const exportAssets = (items: { id: number; name: string }[]): Buffer =>
   tag(TAG.ExportAssets, cat(u16(items.length), ...items.flatMap((i) => [u16(i.id), str(i.name)])))
 
-/** ImportAssets2: font aliases imported from gfxfontlib.swf into local character ids (exactly as vanilla menus). */
-export const importAssets2 = (url: string, items: { id: number; name: string }[]): Buffer =>
-  tag(TAG.ImportAssets2, cat(str(url), u8(1), u8(0), u16(items.length), ...items.flatMap((i) => [u16(i.id), str(i.name)])))
+/**
+ * ImportAssets2 of ONE asset (a font alias from gfxfontlib.swf into a local character id). Vanilla menus use one tag per font; with several
+ * assets in one tag only the first resolved in game, the rest drew .notdef boxes (in-game test sheet, 2026-10-23).
+ */
+export const importAssets2 = (url: string, item: { id: number; name: string }): Buffer =>
+  tag(TAG.ImportAssets2, cat(str(url), u8(1), u8(0), u16(1), u16(item.id), str(item.name)))
 
 /**
  * Placeholder DefineShape3 (RGBA, so the imported fills keep their alpha): a filled rect with the node's bounds. `-importShapes` replaces the geometry but KEEPS these bounds

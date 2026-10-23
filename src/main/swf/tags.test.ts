@@ -32,8 +32,8 @@ describe('tag writer', () => {
     })
   })
 
-  it('ImportAssets2 imports aliases from gfxfontlib.swf into local ids', () => {
-    const t = parseSwf(T.writeSwf({ widthPx: 1, heightPx: 1, tags: [T.importAssets2('gfxfontlib.swf', [{ id: 2, name: '$EverywhereMediumFont' }]), T.endTag()] })).tags[0]!
+  it('ImportAssets2 imports one alias from gfxfontlib.swf into a local id', () => {
+    const t = parseSwf(T.writeSwf({ widthPx: 1, heightPx: 1, tags: [T.importAssets2('gfxfontlib.swf', { id: 2, name: '$EverywhereMediumFont' }), T.endTag()] })).tags[0]!
     expect(t.code).toBe(T.TAG.ImportAssets2)
     expect(readImportAssets2(t)).toEqual({ url: 'gfxfontlib.swf', items: [{ id: 2, name: '$EverywhereMediumFont' }] })
   })
