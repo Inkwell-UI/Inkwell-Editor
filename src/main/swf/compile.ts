@@ -24,10 +24,12 @@ export interface CompileResult {
   fonts: (Generated['fonts'][number] & { swfId: string })[]
   /** Text nodes that use GFx TextField extensions (see Generated). */
   gfxTextExtensions: number
+  /** Images the game SWF loads from DDS at runtime (dds mode); see Generated. */
+  ddsImages: number
   timings: BuildTiming
 }
 
-/** Compiles the supported nodes (frames, shapes, text) of an IR into a SWF. Stages: codegen (IR -> tags/SVG/AS2), swf (files), ffdec. */
+/** Compiles the supported nodes (frames, shapes, text, images) of an IR into a SWF. Stages: codegen (IR -> tags/SVG/AS2), swf (files), ffdec. */
 export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<CompileResult> {
   const timer = createStageTimer()
   const key = ident(ir.id)
@@ -76,5 +78,5 @@ export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<Compile
     await copyFile(base, swfPath) // nothing for FFDec to fill in
   }
   const lint = g.lint.map((l) => ({ ...l, nodeName: ir.nodes[l.nodeId]?.name }))
-  return { swfPath, lint, fonts: g.fonts.map((f) => ({ ...f, swfId: ir.id })), gfxTextExtensions: g.gfxTextExtensions, timings: timer.finishBuild() }
+  return { swfPath, lint, fonts: g.fonts.map((f) => ({ ...f, swfId: ir.id })), gfxTextExtensions: g.gfxTextExtensions, ddsImages: g.ddsImages, timings: timer.finishBuild() }
 }

@@ -1,5 +1,6 @@
 // Tag-level SWF writer: only the tags the compiler needs. Promoted from the 0.0 spike generator (spikes/ffdec-compile/gen-swf.mjs).
 // Everything is uncompressed FWS v10. Layout rules follow the SWF 19 spec; FFDec fills in shape geometry and AS2 afterwards.
+import { deflateSync } from 'node:zlib'
 
 export const TWIP = 20
 export const twips = (px: number): number => Math.round(px * TWIP)
@@ -64,6 +65,7 @@ export const TAG = {
   End: 0,
   ShowFrame: 1,
   DefineShape3: 32,
+  DefineBitsLossless2: 36,
   SetBackgroundColor: 9,
   DoAction: 12,
   PlaceObject2: 26,
@@ -132,6 +134,67 @@ export function defineShapePlaceholder(id: number, wPx: number, hPx: number): Bu
   }
   b.u(0, 6) // end of shape
   return tag(TAG.DefineShape3, cat(u16(id), rect(0, twips(wPx), 0, twips(hPx)), u8(1), u8(0), Buffer.from([0x20, 0x20, 0x20, 0xff]), u8(0), b.done()))
+}
+
+/** DefineBitsLossless2, format 5: zlib-compressed premultiplied ARGB (the SWF spec's requirement for this tag). `rgba` is straight RGBA. */
+export function defineBitsLossless2(id: number, img: { width: number; height: number; rgba: Buffer }): Buffer {
+  const argb = Buffer.alloc(img.width * img.height * 4)
+  for (let i = 0; i < argb.length; i += 4) {
+    const a = img.rgba[i + 3]!
+    argb[i] = a
+    argb[i + 1] = Math.round((img.rgba[i]! * a) / 255)
+    argb[i + 2] = Math.round((img.rgba[i + 1]! * a) / 255)
+    argb[i + 3] = Math.round((img.rgba[i + 2]! * a) / 255)
+  }
+  return tag(TAG.DefineBitsLossless2, cat(u16(id), u8(5), u16(img.width), u16(img.height), deflateSync(argb)))
+}
+
+export interface BitmapShapeSpec {
+  id: number
+  bitmapId: number
+  /** The drawn rectangle in px (the shape's local space). */
+  rect: { x: number; y: number; w: number; h: number }
+  /** Bitmap pixel -> px: uniform scale and offset of the bitmap's top-left corner. */
+  scale: number
+  tx: number
+  ty: number
+  /** Repeating (tile) instead of clipped. Both smoothed. */
+  repeat?: boolean
+}
+
+/** DefineShape3: one rectangle filled with a bitmap. The fill matrix is in twips per bitmap pixel (20 = 1:1). */
+export function defineBitmapShape(s: BitmapShapeSpec): Buffer {
+  const x0 = twips(s.rect.x), y0 = twips(s.rect.y), w = Math.min(Math.max(twips(s.rect.w), 1), 65000), h = Math.min(Math.max(twips(s.rect.h), 1), 65000) // edge deltas fit 17 bits
+  const m = new Bits()
+  const f = Math.round(s.scale * TWIP * 65536)
+  const ns = sbits(f)
+  m.u(1, 1); m.u(ns, 5); m.s(f, ns); m.s(f, ns) // HasScale
+  m.u(0, 1) // no rotate/skew
+  const tx = twips(s.tx), ty = twips(s.ty)
+  const nt = Math.max(sbits(tx), sbits(ty))
+  m.u(nt, 5); m.s(tx, nt); m.s(ty, nt)
+  const fill = cat(u8(1), u8(s.repeat ? 0x40 : 0x41), u16(s.bitmapId), m.done())
+
+  const b = new Bits()
+  b.u(1, 4) // numFillBits
+  b.u(0, 4) // numLineBits
+  b.u(0, 1); b.u(0, 1); b.u(0, 1) // style change: no new styles, no line style
+  b.u(1, 1) // fill1 (right of a clockwise path on screen = inside)
+  b.u(0, 1) // fill0
+  b.u(1, 1) // moveTo
+  const nm = Math.max(sbits(x0), sbits(y0))
+  b.u(nm, 5); b.s(x0, nm); b.s(y0, nm)
+  b.u(1, 1) // fill1 = style 1
+  const nb = Math.min(Math.max(sbits(w), sbits(h), 2), 17)
+  for (const [dx, dy] of [[w, 0], [0, h], [-w, 0], [0, -h]] as const) {
+    b.u(1, 1); b.u(1, 1) // straight edge
+    b.u(nb - 2, 4)
+    b.u(1, 1) // general line
+    b.s(dx, nb)
+    b.s(dy, nb)
+  }
+  b.u(0, 6) // end of shape
+  return tag(TAG.DefineShape3, cat(u16(s.id), rect(x0, x0 + w, y0, y0 + h), fill, u8(0), b.done()))
 }
 
 /**

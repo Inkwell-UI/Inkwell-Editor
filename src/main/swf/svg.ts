@@ -30,7 +30,7 @@ export function pathData(paths: Shape['paths']): string {
 function solid(f: Fill, nodeId: string, lint: LintIssue[]): { color: string; opacity: number } | undefined {
   if (f.type === 'solid') return { color: hex(f.color), opacity: (f.color.a ?? 1) * (f.opacity ?? 1) }
   if (f.type === 'image') {
-    lint.push(issue('warning', 'fill-unsupported', nodeId, 'Image fills are not supported yet; the fill is skipped.'))
+    lint.push(issue('warning', 'fill-unsupported', nodeId, 'Image fills compile only on rectangles without a stroke (image layers) and on frames; this fill is skipped.'))
     return undefined
   }
   const s = f.stops[0]

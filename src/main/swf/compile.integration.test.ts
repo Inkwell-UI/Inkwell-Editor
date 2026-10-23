@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
 import { compileSwf } from './compile'
+import { syntheticPng } from '../images/synthetic'
 import { frame, rectShape, swf, textNode } from './ir.testutil'
 
 const ffdecDir = process.env['INKWELL_FFDEC'] ?? 'C:\\Program Files (x86)\\FFDec'
@@ -72,6 +73,38 @@ describe.skipIf(!can)('compileSwf (real FFDec)', () => {
       const font = /<item type="DefineFont3Tag"[\s\S]*?<\/item>\s*(?=<item type="DefineEditTextTag")/.exec(xml)?.[0] ?? ''
       expect(font).toContain('Barlow Test')
       expect(font.match(/<item type="SHAPE"/g)?.length).toBe(96) // printable ASCII + e-acute
+    } finally {
+      ffdec.stop()
+    }
+  }, 60_000)
+
+  it('images: the embedded bitmap survives FFDec next to imported shapes and AS2; dds mode compiles the loader class', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
+    const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
+    try {
+      const img = syntheticPng(64, 64)
+      const node = { ...rectShape('i'), name: 'logo', type: 'image', asset: img.hash, scaleMode: 'fit' } as unknown as Parameters<typeof swf>[0][number]
+      const ir = swf([frame('f', ['s', 'i', 't']), rectShape('s'), node, textNode('t', { verticalAlign: 'center' })], { id: 'itesti' })
+      const images = (h: string) => (h === img.hash ? img.image : undefined)
+      const xmlOf = (p: string): string => {
+        const x = join(dir, `${Math.random()}.xml`)
+        execFileSync(javaPath, ['-jar', join(ffdecDir, 'ffdec-cli.jar'), '-swf2xml', p, x], { stdio: 'ignore' })
+        return readFileSync(x, 'utf8')
+      }
+      const e = await compileSwf(ir, { modId: 'ItestMod', buildDir: dir, ffdec, images })
+      expect(e.lint).toEqual([])
+      const xml = xmlOf(e.swfPath)
+      expect(xml).toMatch(/<item type="DefineBitsLossless2Tag"[^>]*bitmapFormat="5"[^>]*bitmapHeight="64"/)
+      expect(xml).toMatch(/fillStyleType="65"/) // clipped bitmap fill (0x41)
+      expect(xml).toMatch(/name="logo"/)
+      expect(xml).toContain('__Packages.mods.ItestMod.ItestiLayout')
+
+      const d = await compileSwf(ir, { modId: 'ItestMod', buildDir: dir, outPath: join(dir, 'dds.swf'), ffdec, images, imageMode: 'dds' })
+      expect(d.ddsImages).toBe(1)
+      const dx = xmlOf(d.swfPath)
+      expect(dx).not.toContain('DefineBitsLossless2Tag')
+      expect(dx).toContain('__Packages.mods.ItestMod.ItestiImages')
+      expect(dx).toMatch(/name="logo"/)
     } finally {
       ffdec.stop()
     }

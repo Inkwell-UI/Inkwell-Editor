@@ -181,11 +181,11 @@ describe('generate', () => {
       expect(g.shapes[0]!.svg).toContain('stroke-width="4"')
     })
 
-    it('image/instance/component nodes -> unsupported-node warning, compile continues', () => {
+    it('instance/component nodes -> unsupported-node warning; an image without its asset -> image-missing-asset; compile continues', () => {
       const img = { ...rectShape('i'), type: 'image', asset: 'h', scaleMode: 'fill' } as never
       const inst = { ...rectShape('n'), type: 'instance', component: 'c' } as never
       const g = gen([frame('f', ['i', 'n', 's']), img, inst, rectShape('s')])
-      expect(g.lint.map((l) => [l.severity, l.code, l.nodeId])).toEqual([['warning', 'unsupported-node', 'i'], ['warning', 'unsupported-node', 'n']])
+      expect(g.lint.map((l) => [l.severity, l.code, l.nodeId])).toEqual([['error', 'image-missing-asset', 'i'], ['warning', 'unsupported-node', 'n']])
       expect(g.shapes.map((s) => s.nodeId)).toEqual(['s'])
     })
 
