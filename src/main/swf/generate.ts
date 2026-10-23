@@ -1,5 +1,5 @@
 import type { Swf } from '@inkwell-ui/spec'
-import { ddsRel, type ImageMode } from '../images/assets'
+import { ddsRel, isAssetHash, type ImageMode } from '../images/assets'
 import type { Rgba } from '../images/png'
 import { ident } from '../../shared/overlay'
 import { issue, type LintIssue } from './lint'
@@ -217,7 +217,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     if (want === 'crop') lint.push(issue('warning', 'image-scale-mode', nodeId, 'Scale mode CROP is drawn as FILL (the crop rectangle is not applied).'))
     else if (want === 'tile') lint.push(issue('warning', 'image-scale-mode', nodeId, imageMode === 'embedded' ? 'Scale mode TILE repeats the image at its own pixel size (the Figma tile scale is not applied).' : 'Scale mode TILE is drawn as FILL in dds mode.'))
     else if (want !== 'fill' && want !== 'fit') lint.push(issue('warning', 'image-scale-mode', nodeId, `Unknown scale mode "${want}"; drawn as FILL.`))
-    const img = opts.images?.(hash)
+    const img = isAssetHash(hash) ? opts.images?.(hash) : undefined // the hash becomes a file name (dds) and an asset key
     if (!img) {
       lint.push(issue('error', 'image-missing-asset', nodeId, `Image ${hash.slice(0, 8)} is not in the project's assets (missing or unreadable); it syncs from Figma while the plugin is connected.`))
       return undefined
