@@ -46,6 +46,22 @@ describe('project format', () => {
     expect(await files(dir)).toEqual(first)
   })
 
+  it('opens a v1 project through the spec migration', async () => {
+    const dir = await tmp()
+    await cp(sample, dir, { recursive: true })
+    const f = join(dir, 'swfs/hud/ir.json')
+    const ir = JSON.parse(await readFile(f, 'utf8'))
+    ir.specVersion = 1
+    const { align, verticalAlign, ...label } = ir.nodes['1:3']
+    ir.nodes['1:3'] = { ...label, extra: { text: { align, verticalAlign } } }
+    await writeFile(f, JSON.stringify(ir))
+    const loaded = (await loadProject(dir)).swfs['hud']!.ir as any
+    expect(loaded.specVersion).toBe(2)
+    expect(loaded.nodes['1:3']).toMatchObject({ align: 'center', verticalAlign: 'center' })
+    expect(loaded.nodes['1:3'].extra).toBeUndefined()
+    expect(loaded.extra).toEqual({ fromFuturePack: { a: 1 } })
+  })
+
   it('save deletes swf folders no longer in the project', async () => {
     const dir = await tmp()
     await cp(sample, dir, { recursive: true })

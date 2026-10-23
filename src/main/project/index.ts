@@ -1,5 +1,6 @@
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { migrate, SPEC_VERSION } from '@inkwell-ui/spec'
 import { z } from 'zod'
 
 // project.json is editor-owned. Unknown keys are kept (looseObject) so they survive load -> save.
@@ -39,6 +40,11 @@ export function stableStringify(value: unknown): string {
 
 const readJson = async (path: string): Promise<unknown> => JSON.parse(await readFile(path, 'utf8'))
 
+const upgrade = (ir: unknown): unknown =>
+  ir && typeof ir === 'object' && typeof (ir as { specVersion?: unknown }).specVersion === 'number' && (ir as { specVersion: number }).specVersion < SPEC_VERSION
+    ? migrate(ir as { specVersion: number })
+    : ir
+
 export async function loadProject(dir: string): Promise<Project> {
   const meta = ProjectMetaSchema.parse(await readJson(join(dir, 'project.json')))
   const swfs: Project['swfs'] = {}
@@ -46,7 +52,8 @@ export async function loadProject(dir: string): Promise<Project> {
   const entries = await readdir(swfDir, { withFileTypes: true }).catch(() => [])
   for (const e of entries.filter((e) => e.isDirectory())) {
     swfs[e.name] = {
-      ir: OpaqueObject.parse(await readJson(join(swfDir, e.name, 'ir.json'))),
+      // Old projects open through the spec's migrations (specVersion is saved back as current).
+      ir: OpaqueObject.parse(await readJson(join(swfDir, e.name, 'ir.json')).then(upgrade)),
       overlay: OpaqueObject.parse(await readJson(join(swfDir, e.name, 'overlay.json')))
     }
   }

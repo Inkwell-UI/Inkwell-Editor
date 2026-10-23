@@ -32,18 +32,13 @@
       "visible": true
     },
     "1:3": {
+      "align": "center",
       "anchor": {
         "h": "left",
         "v": "top"
       },
       "children": [],
       "content": "Hello",
-      "extra": {
-        "text": {
-          "align": "center",
-          "verticalAlign": "center"
-        }
-      },
       "id": "1:3",
       "name": "label",
       "opacity": 1,
@@ -76,6 +71,7 @@
         "y": 40
       },
       "type": "text",
+      "verticalAlign": "center",
       "visible": true
     },
     "1:4": {
@@ -153,7 +149,7 @@
     }
   },
   "root": "1:2",
-  "specVersion": 1,
+  "specVersion": 2,
   "stage": {
     "height": 1080,
     "width": 1920
