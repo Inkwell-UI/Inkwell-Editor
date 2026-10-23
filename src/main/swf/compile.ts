@@ -53,11 +53,20 @@ export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<Compile
   await mkdir(dirname(swfPath), { recursive: true })
   timer.end('swf')
 
-  if (g.shapes.length || g.as2.length) {
+  if (g.embeddedFonts.length) {
+    await mkdir(join(dir, 'fonts'), { recursive: true })
+    for (const f of g.embeddedFonts) {
+      await writeFile(join(dir, 'fonts', `${f.charId}.ttf`), opts.previewFontBytes!(f.name)!)
+      await writeFile(join(dir, 'fonts', `${f.charId}.txt`), f.chars, 'utf8')
+    }
+  }
+
+  if (g.shapes.length || g.as2.length || g.embeddedFonts.length) {
     timer.start('ffdec')
     const r = await opts.ffdec.build({
       base,
       ...(g.shapes.length ? { shapes: join(dir, 'shapes') } : {}),
+      ...(g.embeddedFonts.length ? { fonts: join(dir, 'fonts') } : {}),
       ...(g.as2.length ? { scripts: join(dir, 'as2') } : {}),
       out: swfPath
     })

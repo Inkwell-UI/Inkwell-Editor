@@ -20,6 +20,11 @@ export interface GenerateOptions {
   preview?: boolean
   /** Preview only: device font name per alias (a font Ruffle has loaded by name); default `previewDeviceFont` (_sans, _typewriter, _serif). */
   previewFont?: (alias: string) => string
+  /**
+   * Preview only: TTF bytes for a font name. A name that has bytes is EMBEDDED (placeholder DefineFont3 + fontId + outlines; the glyphs are
+   * imported by the FFDec `fonts` step), because Ruffle draws device-font text nothing when rotated or alpha-blended. Others stay device fonts.
+   */
+  previewFontBytes?: (fontName: string) => Buffer | undefined
 }
 
 export interface Generated {
@@ -33,9 +38,13 @@ export interface Generated {
   /** One entry per text node: how its font resolved. Not lint. */
   fonts: (FontInfo & { nodeId: string; nodeName: string })[]
   stage: { width: number; height: number }
+  /** Preview only: embedded fonts (placeholder character id, font name, characters to import: the text plus printable ASCII). */
+  embeddedFonts: { charId: number; name: string; chars: string }[]
   /** Text nodes that need GFx TextField extensions (verticalAlign, textAutoSize, letterSpacing); Ruffle ignores the first two. */
   gfxTextExtensions: number
 }
+
+const ASCII = Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)).join('')
 
 /** AS2 identifier from free text: invalid characters become `_`, a leading digit gets a `_` prefix. */
 export const ident = (s: string): string => {
@@ -89,6 +98,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   const lint: LintIssue[] = []
   const defs: Buffer[] = []
   const shapes: Generated['shapes'] = []
+  const embedded = new Map<string, { charId: number; chars: Set<string> }>() // preview: font name -> placeholder DefineFont3
   const fonts = new Map<string, number>() // alias -> local character id (ImportAssets2)
   const scripts: ScriptItem[] = []
   const fontRows: Generated['fonts'] = []
@@ -151,12 +161,25 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
         if (m.font) fontRows.push({ ...m.font, nodeId: cid, nodeName: n.name })
         if (!m.text) continue
         let fontId = 0
+        let fontClass: string | undefined
         if (!opts.preview) {
           fontId = fonts.get(m.text.alias) ?? alloc()
           fonts.set(m.text.alias, fontId)
+        } else {
+          const fname = (opts.previewFont ?? previewDeviceFont)(m.text.alias)
+          if (opts.previewFontBytes?.(fname)) {
+            let e = embedded.get(fname)
+            if (!e) {
+              e = { charId: alloc(), chars: new Set(ASCII) }
+              embedded.set(fname, e)
+              defs.push(T.defineFont3Placeholder(e.charId, fname))
+            }
+            for (const c of m.text.field.text) if (c !== '\r') e.chars.add(c)
+            fontId = e.charId
+          } else fontClass = fname
         }
         const id = alloc()
-        defs.push(T.defineEditText({ ...m.text.field, id, fontId, ...(opts.preview ? { fontClass: (opts.previewFont ?? previewDeviceFont)(m.text.alias) } : {}) }))
+        defs.push(T.defineEditText({ ...m.text.field, id, fontId, ...(fontClass ? { fontClass } : {}) }))
         // the gutter offset is in the node's own (possibly rotated) space
         const r = (rot * Math.PI) / 180
         const { x: gx, y: gy } = m.text.gutter
@@ -228,5 +251,6 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     T.showFrame(),
     T.endTag()
   ]
-  return { tags, shapes, as2, lint, fonts: fontRows, stage, gfxTextExtensions: scripts.length }
+  const embeddedFonts = [...embedded].map(([name, e]) => ({ charId: e.charId, name, chars: [...e.chars].join('') }))
+  return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length }
 }

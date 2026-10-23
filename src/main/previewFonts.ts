@@ -46,6 +46,8 @@ export interface PreviewFontSet {
   fonts: PreviewFont[]
   /** Device font name for an alias; `_sans` for an alias no face covers. */
   nameFor(alias: string): string
+  /** TTF bytes of a font name returned by `nameFor` (preview glyph embedding); undefined for device fonts. */
+  bytesFor(fontName: string): Buffer | undefined
   /** Badge labels of the faces used by `aliases` that are not the real Skyrim font. */
   approximated(aliases: Iterable<string>): string[]
 }
@@ -121,6 +123,7 @@ export function resolvePreviewFonts(o: ResolveOptions): PreviewFontSet {
   return {
     fonts: [...new Map([...byAlias.values()].map((f) => [f.family, f])).values()],
     nameFor: (alias) => byAlias.get(alias)?.family ?? '_sans',
+    bytesFor: (name) => [...byAlias.values()].find((f) => f.family === name)?.bytes,
     approximated: (aliases) => [...new Set([...aliases].flatMap((a) => { const f = byAlias.get(a); return f && (f.source === 'bundled') ? [f.face.label] : [] }))]
   }
 }

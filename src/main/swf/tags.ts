@@ -68,6 +68,7 @@ export const TAG = {
   DoAction: 12,
   PlaceObject2: 26,
   DefineEditText: 37,
+  DefineFont3: 75,
   DefineSprite: 39,
   ExportAssets: 56,
   DoInitAction: 59,
@@ -131,6 +132,16 @@ export function defineShapePlaceholder(id: number, wPx: number, hPx: number): Bu
   }
   b.u(0, 6) // end of shape
   return tag(TAG.DefineShape3, cat(u16(id), rect(0, twips(wPx), 0, twips(hPx)), u8(1), u8(0), Buffer.from([0x20, 0x20, 0x20, 0xff]), u8(0), b.done()))
+}
+
+/**
+ * Preview only: DefineFont3 with zero glyphs (wide offsets and codes, layout block). FFDec's font import (`fonts` job) adds the glyph
+ * outlines afterwards. Ruffle renders text that references it by id with outlines, so rotation, alpha and masks work (device text does not).
+ */
+export function defineFont3Placeholder(id: number, name: string, ascentPx = 0.9, descentPx = 0.3): Buffer {
+  const nm = Buffer.from(name, 'utf8').subarray(0, 255)
+  // flags: HasLayout | WideOffsets | WideCodes; no glyphs, so the code table offset is just its own 4 bytes
+  return tag(TAG.DefineFont3, cat(u16(id), u8(0x80 | 0x08 | 0x04), u8(0), u8(nm.length), nm, u16(0), u32(4), s16(Math.round(ascentPx * 1024 * 20)), s16(Math.round(descentPx * 1024 * 20)), s16(0), u16(0)))
 }
 
 export interface EditTextSpec {

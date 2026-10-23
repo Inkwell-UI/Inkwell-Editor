@@ -55,4 +55,25 @@ describe.skipIf(!can)('compileSwf (real FFDec)', () => {
       ffdec.stop()
     }
   }, 60_000)
+
+  it('preview: a rotated text uses an embedded font whose glyphs FFDec imported from the TTF (subset only)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
+    const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
+    try {
+      const ttf = readFileSync(resolve(__dirname, '../../../resources/preview-fonts/BarlowCondensed-Regular.ttf'))
+      const ir = swf([frame('f', ['t']), textNode('t', { content: 'Hi é', transform: { x: 5, y: 6, width: 120, height: 30, rotation: 30 } })], { id: 'itestp' })
+      const r = await compileSwf(ir, { modId: 'ItestMod', buildDir: dir, ffdec, preview: true, previewFont: () => 'Barlow Test', previewFontBytes: () => ttf })
+      const xmlPath = join(dir, 'out.xml')
+      execFileSync(javaPath, ['-jar', join(ffdecDir, 'ffdec-cli.jar'), '-swf2xml', r.swfPath, xmlPath], { stdio: 'ignore' })
+      const xml = readFileSync(xmlPath, 'utf8')
+      const edit = /<item type="DefineEditTextTag"[^>]*>/.exec(xml)?.[0] ?? ''
+      expect(edit).toMatch(/useOutlines="true"/)
+      expect(edit).toMatch(/hasFontClass="false"/)
+      const font = /<item type="DefineFont3Tag"[\s\S]*?<\/item>\s*(?=<item type="DefineEditTextTag")/.exec(xml)?.[0] ?? ''
+      expect(font).toContain('Barlow Test')
+      expect(font.match(/<item type="SHAPE"/g)?.length).toBe(96) // printable ASCII + e-acute
+    } finally {
+      ffdec.stop()
+    }
+  }, 60_000)
 })

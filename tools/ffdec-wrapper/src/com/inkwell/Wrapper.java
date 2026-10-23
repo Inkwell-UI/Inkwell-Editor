@@ -4,6 +4,7 @@ import com.jpexs.decompiler.flash.ApplicationInfo;
 import com.jpexs.decompiler.flash.SWF;
 import com.jpexs.decompiler.flash.importers.AS2ScriptImporter;
 import com.jpexs.decompiler.flash.importers.svg.SvgImporter;
+import com.jpexs.decompiler.flash.tags.base.FontTag;
 import com.jpexs.decompiler.flash.tags.base.ShapeTag;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -13,13 +14,14 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Resident FFDec build wrapper. One JSON object per line on stdin, one per line on stdout.
- * In:  {"id":"1","base":"in.swf","shapes":"dir?","scripts":"dir?","out":"out.swf"}  or  {"cmd":"cancel","id":"1"}
+ * In:  {"id":"1","base":"in.swf","shapes":"dir?","fonts":"dir?","scripts":"dir?","out":"out.swf"}  or  {"cmd":"cancel","id":"1"}
  * Out: {"ready":true,"ffdec":"26.3.0","pinned":"26.3.0","match":true}, then {"id":"1","ok":true,"ms":12.3} / {"id":"1","ok":false,"error":"..."}
  * Runs on the user's FFDec (ffdec_lib on the classpath); contains none of it.
  */
 public class Wrapper {
     static final String PINNED = "26.3.0";
     static final Map<String, String> POISON = new HashMap<String, String>();
+    static final Map<String, java.awt.Font> FONTS = new HashMap<String, java.awt.Font>();
     static PrintStream out;
     static final LinkedBlockingDeque<Map<String, String>> queue = new LinkedBlockingDeque<Map<String, String>>();
 
@@ -95,6 +97,27 @@ public class Wrapper {
         return b.toString();
     }
 
+    /** Folder of `<fontCharacterId>.ttf` + `<id>.txt` (the characters to embed, UTF-8): fills placeholder DefineFont tags with glyph outlines. */
+    static void importFonts(SWF swf, File dir) throws Exception {
+        File[] files = dir.listFiles();
+        if (files == null) throw new IOException("fonts folder not found: " + dir);
+        Arrays.sort(files);
+        for (File f : files) {
+            if (!f.getName().endsWith(".ttf")) continue;
+            String stem = f.getName().replace(".ttf", "");
+            Object ch = swf.getCharacter(Integer.parseInt(stem));
+            if (!(ch instanceof FontTag)) throw new IOException("character " + stem + " is not a font (" + f.getName() + ")");
+            FontTag tag = (FontTag) ch;
+            byte[] bytes = Files.readAllBytes(f.toPath());
+            // createFont(File) keeps the file locked on Windows (the build folder is wiped on the next build) and each call leaves a temp copy until exit: read bytes, cache by content
+            String key = bytes.length + ":" + Arrays.hashCode(bytes);
+            java.awt.Font font = FONTS.get(key);
+            if (font == null) { font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new ByteArrayInputStream(bytes)); FONTS.put(key, font); }
+            String chars = new String(Files.readAllBytes(new File(dir, stem + ".txt").toPath()), StandardCharsets.UTF_8);
+            for (int i = 0; i < chars.length(); i++) tag.addCharacter(chars.charAt(i), font);
+        }
+    }
+
     static void build(Map<String, String> job) throws Exception {
         String base = job.get("base"), outPath = job.get("out");
         if (base == null || outPath == null) throw new IllegalArgumentException("job needs base and out");
@@ -113,6 +136,8 @@ public class Wrapper {
                 new SvgImporter().importSvg((ShapeTag) ch, new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8), true);
             }
         }
+        String fonts = job.get("fonts");
+        if (fonts != null) importFonts(swf, new File(fonts));
         String scripts = job.get("scripts");
         if (scripts != null) new AS2ScriptImporter().importScripts(scripts, swf.getASMs(true));
         Path o = Paths.get(outPath), tmp = Paths.get(outPath + ".tmp"); // never leave a half-written output
@@ -122,6 +147,7 @@ public class Wrapper {
 
     public static void main(String[] args) throws Exception {
         out = new PrintStream(new FileOutputStream(FileDescriptor.out), false, "UTF-8");
+        System.setProperty("java.awt.headless", "true");
         System.setOut(System.err); // FFDec prints to stdout; keep the protocol channel clean
         final String ver = ApplicationInfo.version;
         final boolean match = PINNED.equals(ver);

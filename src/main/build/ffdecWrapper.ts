@@ -8,6 +8,8 @@ export interface FfdecJob {
   base: string
   /** Folder of `<characterId>.svg` files replacing shapes in base. */
   shapes?: string
+  /** Folder of `<fontCharacterId>.ttf` + `<id>.txt` (characters to embed): glyph outlines imported into placeholder DefineFont tags. */
+  fonts?: string
   /** Folder of AS2 sources (frame_N/DoAction.as, __Packages/...). */
   scripts?: string
   out: string

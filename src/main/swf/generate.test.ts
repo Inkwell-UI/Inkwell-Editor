@@ -63,6 +63,51 @@ describe('generate preview', () => {
   })
 })
 
+describe('generate preview: embedded glyph outlines', () => {
+  const ttf = Buffer.from('ttf')
+  const bytes = (n: string) => (n === 'Face A' || n === 'Face B' ? ttf : undefined)
+  const nodes = () => [
+    frame('f', ['a', 'b', 'c', 'd']),
+    textNode('a', { content: 'Caf\u00e9\nx' }),
+    textNode('b', { content: 'Ab' }),
+    textNode('c', { content: 'zz' }, 'Everywhere / Bold / 18'),
+    textNode('d', { content: 'dev' }, 'Console / 18')
+  ]
+  const g = generate(swf(nodes()), { modId: 'M', preview: true, previewFont: (a) => (a === '$EverywhereMediumFont' ? 'Face A' : a === '$EverywhereBoldFont' ? 'Face B' : '_typewriter'), previewFontBytes: bytes })
+  const tags = parseSwf(writeSwf({ widthPx: 1920, heightPx: 1080, tags: g.tags })).tags
+  const fields = tags.filter((t) => t.code === TAG.DefineEditText).map(readEditText)
+
+  it('text with font bytes references a placeholder DefineFont3 by id with outlines and no device font name', () => {
+    const fonts = tags.filter((t) => t.code === TAG.DefineFont3)
+    expect(fonts).toHaveLength(2) // one per face, shared by the two Face A fields
+    expect(g.embeddedFonts.map((f) => f.name)).toEqual(['Face A', 'Face B'])
+    expect(fields[0]).toMatchObject({ hasFont: true, hasFontClass: false, fontClass: undefined, useOutlines: true, fontId: g.embeddedFonts[0]!.charId })
+    expect(fields[1]!.fontId).toBe(fields[0]!.fontId)
+    expect(fields[2]!.fontId).toBe(g.embeddedFonts[1]!.charId)
+    // the font is defined before the first field that uses it
+    expect(tags.findIndex((t) => t.code === TAG.DefineFont3)).toBeLessThan(tags.findIndex((t) => t.code === TAG.DefineEditText))
+    expect(fonts[0]!.body.readUInt16LE(0)).toBe(g.embeddedFonts[0]!.charId)
+  })
+
+  it('a face without font bytes stays a device font', () => {
+    expect(fields[3]).toMatchObject({ hasFontClass: true, fontClass: '_typewriter', fontId: 0, useOutlines: false })
+  })
+
+  it('subset: printable ASCII plus the characters of the text nodes using the face, no CR/LF, no duplicates', () => {
+    const a = g.embeddedFonts[0]!.chars
+    expect(a).toContain('A')
+    expect(a).toContain('\u00e9')
+    expect(a).not.toMatch(/[\r\n]/)
+    expect(a.length).toBe(95 + 1) // ASCII + e-acute
+    expect(new Set(a).size).toBe(a.length)
+    expect(g.embeddedFonts[1]!.chars.length).toBe(95)
+  })
+
+  it('the game SWF never embeds (previewFontBytes is preview-only)', () => {
+    expect(generate(swf(nodes()), { modId: 'M', previewFontBytes: bytes }).embeddedFonts).toEqual([])
+  })
+})
+
 describe('generate', () => {
   it('frame + rect + text: tags, ids, names, imports', () => {
     const g = gen([frame('f', ['s', 't']), rectShape('s'), textNode('t')])

@@ -45,6 +45,7 @@ describe('build pipeline: preview', () => {
     const fonts: PreviewFontSet = {
       fonts: [],
       nameFor: (a) => (a === '$EverywhereMediumFont' ? 'Test Face' : '_sans'),
+      bytesFor: () => undefined,
       approximated: () => ['Everywhere Medium']
     }
     const r = await run(false, { ...fonts, fonts: [{ face: { aliases: [], label: 'x', bundled: 'x' }, source: 'bundled', family: 'Test Face', bytes: secret }] })
