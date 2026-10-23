@@ -41,6 +41,22 @@ Each line looks like `[AS2] inkwellTrace([InkwellSpike A] ...)`. Per variant:
 
 Expected if the diagnosis holds: A visible in Skyrim's font; B invisible with textWidth 0; C and RUNTIMEFIELD visible if GFx maps glyph-less/embedFonts names through fontconfig (unknown; if they work, Inkwell can skip the import tag).
 
+## Variant D: do the GFx TextField extensions CHANGE what is drawn? (`InkwellSpikeD.swf`, K = 37, `inkwell_spike_d.json`)
+
+Run 2 only proved `verticalAlign`, `verticalAutoSize`, `textAutoSize`, `shadowStyle` exist as properties (read back, reject bogus values). D checks the visual effect. Font encoding = variant A (ImportAssets2 `gfxfontlib.swf` `$EverywhereMediumFont`, fontId, useOutlines, no fontClass) for every field, labels included. Sources: `gen-swf.mjs` layout `d` (the `BOXES` table), `src/as2-d/frame_1/DoAction.as`; `./build.ps1 -Only D -Deploy` (build.ps1 without `-Only` builds A-D).
+
+Screen: dark blue 1280x720, all boxes have a 1px white border (`TextField.border`), a label line above each box names the setting, right half (x>=700) is an `info` field with the numbers (same lines go to `Inkwell.log` as `[InkwellSpike D] ...`).
+
+| Row | Boxes (fixed size, same text each) | Extension WORKS | IGNORED |
+| --- | --- | --- | --- |
+| 1 `verticalAlign` | 3 boxes 200x150, text `Short text`: top / center / bottom | text hugs the top edge / sits in the middle / hugs the bottom edge | text is at the top in all three |
+| 2 `textAutoSize` | 3 boxes 200x70 with 4 sentences of 16 px text, word wrap: none / shrink / fit | `none` overflows (clipped, `maxscroll`>1); `shrink` has smaller glyphs that fit inside the border; `fit` also fits (it may also grow small text, here the text is already too big) | all three look like `none` (clipped, same glyph size) |
+| 3 `shadowStyle` | 3 boxes 200x60 on a grey background, white 28 px `Shadow`: no shadowStyle / `shadowStyle='shadow'` / `'shadow'` plus every numeric `shadow*` property that natively exists | boxes 2 and 3 show a dark drop shadow behind the glyphs, box 1 does not (box 3 may differ if the extra props exist) | all three identical |
+
+Log numbers per box: `name: <prop>=<readback> | before w/h/maxscroll | after textWidth textHeight maxscroll _height _width fontsize`. Effective `textAutoSize` shrink/fit changes `fontsize` or `textWidth/textHeight` vs `none` and `maxscroll` goes to 1; effective `verticalAlign` leaves numbers unchanged (only the drawing differs). `SHADOWPROPS typeof before set` lists which guessed shadow parameter names (`shadowColor`, `shadowAlpha`, `shadowBlurX/Y`, `shadowAngle`, `shadowDistance`, `shadowStrength`, `shadowOffsetX/Y`, `shadowBlur`, `shadowParams`, `shadowQuality`) exist natively; the names are guesses (no GFx 3 docs available offline), `undefined` = not native.
+
+Ruffle: not rendered. Ruffle cannot resolve the `gfxfontlib.swf` import (A-encoding renders blank there) and has no extensions, so it proves nothing. Static check only: `-header` (v10, 1280x720, FWS, 9326 bytes), `-dumpAS2`, 20 DefineEditText tags + the ImportAssets2.
+
 ## Questions
 
 1. Can FFDec's CLI build a trivial SWF (one shape, one dynamic `$EverywhereFont` TextField, AS2 classes) from committed sources, and how long does that take cold (fresh JVM) vs warm (long-lived JVM)?
