@@ -52,6 +52,10 @@ export function fallbackAlias(figmaName: string): string | undefined {
   return undefined
 }
 
+/** Preview-only font shim: Ruffle cannot load gfxfontlib.swf, so aliases map to its built-in device fonts (sizes, colours and layout stay). */
+export const previewDeviceFont = (alias: string): string =>
+  alias === '$ConsoleFont' ? '_typewriter' : /Handwritten|Dragon|Falmer|Dwemer|Daedric|MageScript/.test(alias) ? '_serif' : '_sans'
+
 const ALIGN = { left: 0, right: 1, center: 2, justify: 3 } as const
 
 export interface TextScript {

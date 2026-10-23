@@ -75,11 +75,12 @@ export function readEditText(t: RawTag) {
     hasFontClass: !!(f2 & 0x80), autoSize: !!(f2 & 0x40), hasLayout: !!(f2 & 0x20), wasStatic: !!(f2 & 4), html: !!(f2 & 2), useOutlines: !!(f2 & 1)
   }
   const fontId = o.hasFont ? r.u16() : undefined
+  const fontClass = o.hasFontClass ? r.str() : undefined
   const fontHeight = r.u16()
   const color = { r: r.u8(), g: r.u8(), b: r.u8(), a: r.u8() }
   const layout = { align: r.u8(), leftMargin: r.u16(), rightMargin: r.u16(), indent: r.u16(), leading: r.s16() }
   r.str()
-  return { ...o, fontId, fontHeight, color, layout, text: r.str() }
+  return { ...o, fontId, fontClass, fontHeight, color, layout, text: r.str() }
 }
 
 export function readPlace(t: RawTag) {

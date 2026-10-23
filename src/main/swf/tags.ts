@@ -140,6 +140,8 @@ export interface EditTextSpec {
   hPx: number
   /** Character id of the imported font (ImportAssets2). */
   fontId: number
+  /** Preview only: a device font class (`_sans`...) instead of fontId + outlines. Draws nothing in Skyrim; Ruffle renders it. */
+  fontClass?: string
   sizePx: number
   color: { r: number; g: number; b: number; a: number }
   text: string
@@ -158,12 +160,13 @@ export interface EditTextSpec {
  */
 export function defineEditText(t: EditTextSpec): Buffer {
   const f1 = 0x80 | (t.wordWrap ? 0x40 : 0) | (t.multiline ? 0x20 : 0) | 0x08 | 0x04 | 0x01
-  const f2 = (t.autoSize ? 0x40 : 0) | 0x20 | 0x01
+  // device font (preview): HasFontClass, no UseOutlines
+  const f2 = (t.autoSize ? 0x40 : 0) | 0x20 | (t.fontClass ? 0x80 : 0x01)
   return tag(
     TAG.DefineEditText,
     cat(
       u16(t.id), rect(0, twips(t.wPx), 0, twips(t.hPx)), u8(f1), u8(f2),
-      u16(t.fontId), u16(twips(t.sizePx)), Buffer.from([t.color.r, t.color.g, t.color.b, t.color.a]),
+      u16(t.fontClass ? 0 : t.fontId), t.fontClass ? str(t.fontClass) : Buffer.alloc(0), u16(twips(t.sizePx)), Buffer.from([t.color.r, t.color.g, t.color.b, t.color.a]),
       u8(t.align), u16(0), u16(0), u16(0), s16(twips(t.leadingPx)), // layout: align, margins, indent, leading
       str(''), str(t.text)
     )

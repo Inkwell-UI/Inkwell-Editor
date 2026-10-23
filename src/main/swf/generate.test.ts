@@ -1,11 +1,51 @@
 import { describe, expect, it } from 'vitest'
 import { generate } from './generate'
+import { previewDeviceFont } from './text'
 import { frame, rectShape, swf, textNode } from './ir.testutil'
 import { parseSwf, readEditText, readImportAssets2, readPlace } from './swfReader.testutil'
 import { TAG, writeSwf } from './tags'
 
 const gen = (nodes: Parameters<typeof swf>[0], over: Record<string, unknown> = {}) => generate(swf(nodes, over), { modId: 'MyMod' })
 const tagsOf = (g: ReturnType<typeof gen>) => parseSwf(writeSwf({ widthPx: 1920, heightPx: 1080, tags: g.tags })).tags
+
+describe('generate preview', () => {
+  const nodes = () => [frame('f', ['s', 't']), rectShape('s'), textNode('t', { verticalAlign: 'center' })]
+  const game = generate(swf(nodes()), { modId: 'M' })
+  const prev = generate(swf(nodes()), { modId: 'M', preview: true })
+  const tags = (g: typeof game) => parseSwf(writeSwf({ widthPx: 1920, heightPx: 1080, tags: g.tags })).tags
+
+  it('text uses a device font: no ImportAssets2, no font id, no outlines', () => {
+    const t = tags(prev)
+    expect(t.some((x) => x.code === TAG.ImportAssets2)).toBe(false)
+    expect(readEditText(t.find((x) => x.code === TAG.DefineEditText)!)).toMatchObject({ hasFont: true, hasFontClass: true, fontClass: '_sans', fontId: 0, useOutlines: false, fontHeight: 360 })
+    expect(tags(game).some((x) => x.code === TAG.ImportAssets2)).toBe(true) // the game build is unchanged
+  })
+
+  it('same content: same size, colour, alignment, layout and placements', () => {
+    const [a, b] = [game, prev].map((g) => tags(g))
+    const strip = (e: ReturnType<typeof readEditText>) => ({ ...e, id: 0, fontId: 0, fontClass: undefined, hasFontClass: false, useOutlines: false })
+    expect(strip(readEditText(b!.find((x) => x.code === TAG.DefineEditText)!))).toEqual(strip(readEditText(a!.find((x) => x.code === TAG.DefineEditText)!)))
+    const places = (t: typeof a) => t!.filter((x) => x.code === TAG.PlaceObject2).map(readPlace).map((p) => ({ ...p, charId: 0 })) // ids differ: the preview has no font character
+    expect(places(b)).toEqual(places(a))
+    expect(prev.stage).toEqual(game.stage)
+    expect(prev.gfxTextExtensions).toBe(1)
+  })
+
+  it('shims run first in the frame code; widget mode is ignored (design frame at design size)', () => {
+    const p = generate(swf(nodes()), { modId: 'M', preview: true, widget: true })
+    const code = p.as2.find((f) => f.path === 'frame_1/DoAction.as')!.source
+    expect(code.indexOf('_global.skse')).toBeLessThan(code.indexOf('.apply(this)'))
+    expect(code).toContain('_global.Inkwell')
+    expect(code).not.toContain('Widget.install')
+    expect(p.stage).toEqual({ width: 1920, height: 1080 })
+  })
+
+  it('font shim maps aliases to device fonts', () => {
+    expect(previewDeviceFont('$ConsoleFont')).toBe('_typewriter')
+    expect(previewDeviceFont('$HandwrittenFont')).toBe('_serif')
+    expect(previewDeviceFont('$EverywhereBoldFont')).toBe('_sans')
+  })
+})
 
 describe('generate', () => {
   it('frame + rect + text: tags, ids, names, imports', () => {
