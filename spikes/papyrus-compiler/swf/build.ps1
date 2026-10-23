@@ -5,7 +5,7 @@ param([switch]$Deploy, [string]$FFDec = 'C:\Program Files (x86)\FFDec',
 $ErrorActionPreference = 'Stop'
 $b = "$PSScriptRoot\build"; New-Item -ItemType Directory -Force $b | Out-Null
 $out = "$b\InkwellSpikeWidget.swf"
-node "$PSScriptRoot\gen-widget.mjs" "$b\base.swf" class 10
+node "$PSScriptRoot\gen-widget.mjs" "$b\base.swf" 10
 & "$FFDec\ffdec-cli.exe" -importShapes "$b\base.swf" "$b\shapes.swf" "$PSScriptRoot\src\shapes" | Out-Null
 & "$FFDec\ffdec-cli.exe" -importScript "$b\shapes.swf" $out "$PSScriptRoot\src\as2" | Out-Null
 if (-not (Test-Path $out)) { throw 'FFDec produced no output' }
