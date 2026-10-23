@@ -8,9 +8,11 @@
     "build": "electron-vite build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build:wrapper": "node tools/ffdec-wrapper/build-wrapper.mjs"
+    "build:wrapper": "node tools/ffdec-wrapper/build-wrapper.mjs",
+    "compile:sample": "tsx scripts/compile-sample.ts"
   },
   "dependencies": {
+    "@inkwell-ui/spec": "file:../Inkwell-Spec",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "zod": "^4.6.7",
@@ -24,6 +26,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "electron": "^45.0.0",
     "electron-vite": "^6.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"

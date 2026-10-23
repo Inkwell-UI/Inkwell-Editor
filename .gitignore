@@ -3,3 +3,4 @@ out
 dist
 tools/ffdec-wrapper/build
 scratch
+build
