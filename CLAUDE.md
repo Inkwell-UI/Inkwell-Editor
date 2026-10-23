@@ -10,6 +10,7 @@ Use yarn (not npm).
 - `yarn build`: production build to `out/`.
 - `yarn test`: Vitest (`src/**/*.test.ts`).
 - `yarn typecheck`: `tsc --noEmit`, strict.
+- `yarn build:wrapper`: compiles `tools/ffdec-wrapper` to `build/ffdec-wrapper.jar` (git-ignored). Needs a JDK 9+ (portable Temurin 17 in `C:\dev\jdk`, outside the repo, or set `INKWELL_JDK`); `--release 8` so the jar runs on the user's JRE. The FFDec integration test needs `java` on PATH (or `INKWELL_JAVA`) and skips unless FFDec and the jar exist. See `docs/ffdec-wrapper.md`.
 
 Run test + typecheck before finishing any change. `electron` downloads its binary in a postinstall; if `yarn dev` says "Electron uninstall", run `node node_modules/electron/install.js`.
 
