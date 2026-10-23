@@ -1,0 +1,58 @@
+/*
+ * The one theme file: every color of the editor is a variable here. Components and styles.css only use var(--...).
+ * Dark theme. Text/background pairs are chosen for at least 4.5:1 contrast (--fg, --fg-dim and --fg-faint on --surface-*; --on-accent on --accent).
+ */
+:root {
+  color-scheme: dark;
+
+  /* surfaces */
+  --bg: #14161a;
+  --surface-1: #1b1e24;
+  --surface-2: #232730;
+  --surface-3: #2c313c;
+  --sunken: #101216;
+  --stage-bg: #000000;
+  --line: #2f3541;
+  --line-strong: #444c5c;
+
+  /* text */
+  --fg: #e8eaee;
+  --fg-dim: #aab0bd;
+  --fg-faint: #8f97a6;
+  --on-accent: #08111f;
+
+  /* accent and states */
+  --accent: #6cb4ff;
+  --accent-bg: #1c3452;
+  --focus: #9ccfff;
+  --ok: #4cd694;
+  --warn: #f2b84b;
+  --err: #ff7b7b;
+  --info: #7cb7ff;
+  --off: #868e9d;
+  --ok-bg: #12301f;
+  --warn-bg: #3a2c0c;
+  --err-bg: #3a1417;
+  --info-bg: #14283f;
+  --hover: rgba(255, 255, 255, 0.07);
+  --press: rgba(255, 255, 255, 0.12);
+  --backdrop: rgba(5, 7, 10, 0.62);
+  --shadow: rgba(0, 0, 0, 0.5);
+
+  /* preview stage overlays */
+  --stage-outline: #3a4150;
+  --safe-action: #f0b400;
+  --safe-title: #19c37d;
+  --safe-label-bg: rgba(0, 0, 0, 0.65);
+  --safe-label-fg: #ffffff;
+  --inspect-hover: #6cb4ff;
+  --inspect-hover-bg: rgba(108, 180, 255, 0.12);
+  --inspect-selected: #ffd166;
+  --inspect-selected-bg: rgba(255, 209, 102, 0.14);
+
+  /* graph pin colors (Zone 4 will use them) */
+  --pin-exec: #ffffff;
+  --pin-bool: #ff7b7b;
+  --pin-number: #7ef0b2;
+  --pin-string: #f6a6ff;
+}

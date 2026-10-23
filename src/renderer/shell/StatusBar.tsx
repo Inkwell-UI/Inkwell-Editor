@@ -1,0 +1,74 @@
+import { Check } from 'lucide-react'
+import { useUndo } from '../hooks/useUndo'
+import { useSyncState } from '../hooks/useSyncState'
+import { specLabel, timingLine } from '../model/statusBar'
+import { useDialogStore } from '../state/dialogStore'
+import { useTimingStore } from '../state/timingStore'
+import { strings } from '../strings'
+import { Popover } from '../ui/Popover'
+
+/**
+ * Zone 6B (UX 4.6): spec version, last build with every stage and the Ruffle time (amber above one second edit-to-preview; click for the
+ * last 50 builds), FFDec status (warm / cold / not found, linking to the Setup Doctor stub), packs, and which undo history is active.
+ */
+export function StatusBar() {
+  const sync = useSyncState()
+  const history = useTimingStore((s) => s.history)
+  const last = history.at(-1)
+  const line = last ? timingLine(last) : undefined
+  const ffdec = sync?.ffdec
+  const undo = useUndo()
+  const show = useDialogStore((s) => s.show)
+  return (
+    <footer className="statusbar" aria-label={strings.status.label}>
+      <span className="item" title={strings.status.specTip}><Check size={13} aria-hidden="true" /> {specLabel()}</span>
+      <Popover
+        up
+        label={strings.status.historyTitle}
+        trigger={(p) => (
+          <button type="button" className={`item item-button${line?.amber ? ' is-amber' : ''}`} {...p} data-testid="timing" title={strings.status.historyTip}>
+            {line ? (
+              <>
+                {strings.status.lastBuild}: <strong>{line.total}</strong> <span className="mono">[{line.parts.map(([n, v]) => `${strings.status.stage(n)} ${v}`).join(' · ')}]</span>
+                {line.amber && <span className="amber-note"> {strings.status.overTarget}</span>}
+              </>
+            ) : strings.status.noBuilds}
+          </button>
+        )}
+      >
+        <div className="details history">
+          <h3>{strings.status.historyTitle}</h3>
+          {history.length === 0 ? (
+            <p className="empty">{strings.status.noBuilds}</p>
+          ) : (
+            <table>
+              <thead><tr>{strings.status.historyCols.map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
+              <tbody>
+                {[...history].reverse().map((r) => {
+                  const l = timingLine(r)
+                  return (
+                    <tr key={r.seq} className={l.amber ? 'is-amber' : undefined}>
+                      <td>{r.seq}</td><td>{r.swfName}</td><td className="mono">{l.total}</td>
+                      <td className="mono">{l.parts.map(([n, v]) => `${strings.status.stage(n)} ${v}`).join(' · ')}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+          <p className="dim">{strings.status.historyNote}</p>
+        </div>
+      </Popover>
+      {ffdec?.status === 'notFound' ? (
+        <button type="button" className="item item-button is-error" onClick={() => show('setupDoctor')} data-testid="ffdec" title={strings.status.openDoctor}>
+          {strings.status.ffdecNotFound}
+        </button>
+      ) : (
+        <span className="item" data-testid="ffdec">{strings.status.ffdec(ffdec?.status)}</span>
+      )}
+      <span className="item">{strings.status.packs}</span>
+      <span className="spacer" />
+      <span className="item" title={strings.status.undoTip(undo.swfName)} data-testid="undo-scope">{strings.status.undo}</span>
+    </footer>
+  )
+}

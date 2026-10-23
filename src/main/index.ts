@@ -1,101 +1,121 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { Swf } from '@inkwell-ui/spec'
 import { IPC } from '../shared/ipc'
-import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from '../shared/preview'
+import type { OverlayDoc } from '../shared/overlay'
+import type { PreviewFontBlob, PreviewRendered } from '../shared/preview'
+import type { OpenResult, UiEvent } from '../shared/projectState'
 import { PRODUCT_NAME } from '../shared/product'
-import { flattenReports, type SwfReport, type SyncUiState } from '../shared/syncState'
-import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
-import { loadProject } from './project'
-import { createBuildPipeline, envConfig } from './sync/buildPipeline'
-import { startSyncServer, type Layer, type SwfInfo } from './sync/syncServer'
+import { copyExample, createProject } from './project/lifecycle'
+import { runShots } from './screenshotDriver'
+import { createSession } from './session'
 
-let state: SyncUiState = { server: 'starting', connections: 0, build: 'idle', lintCount: 0, swfCount: 0, orphanedCount: 0 }
 let win: BrowserWindow | undefined
-const update = (patch: Partial<SyncUiState>): void => {
-  state = { ...state, ...patch }
-  // closing the app closes the plugin's socket, which calls update() after the window is gone
-  if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) win.webContents.send(IPC.syncUpdate, state)
+let previewWin: BrowserWindow | undefined
+
+const broadcast = (channel: string, payload: unknown): void => {
+  // closing the app closes the plugin's socket, which updates state after the windows are gone
+  for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed() && !w.webContents.isDestroyed()) w.webContents.send(channel, payload)
+}
+const session = createSession({ appPath: app.getAppPath(), userData: app.getPath('userData'), editorVersion: app.getVersion(), broadcast })
+
+/** Both windows run the same renderer; `?panel=preview` makes it show only the preview stage. */
+function load(w: BrowserWindow, panel?: 'preview'): void {
+  if (process.env['ELECTRON_RENDERER_URL']) void w.loadURL(process.env['ELECTRON_RENDERER_URL'] + (panel ? `?panel=${panel}` : ''))
+  else void w.loadFile(join(__dirname, '../renderer/index.html'), panel ? { query: { panel } } : undefined)
 }
 
 function createWindow(): void {
   win = new BrowserWindow({
-    width: 1100,
-    height: 720,
+    width: 1440,
+    height: 900,
+    minWidth: 960,
+    minHeight: 600,
     title: PRODUCT_NAME,
+    backgroundColor: '#14161a',
     webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true }
   })
-  if (process.env['ELECTRON_RENDERER_URL']) void win.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  else void win.loadFile(join(__dirname, '../renderer/index.html'))
+  win.on('closed', () => {
+    win = undefined
+    previewWin?.close() // the popped-out preview does not outlive the editor
+  })
+  load(win)
 }
 
-// Lint issues per swf (from its last build) + loose layers; the window shows the total.
-const lintBySwf = new Map<string, number>()
-let looseCount = 0
-const lintTotal = (): number => [...lintBySwf.values()].reduce((a, b) => a + b, 0) + looseCount
-
-const reports = new Map<string, SwfReport>() // swf id -> latest build
-const previews = new Map<string, PreviewBuild>() // swf id -> latest preview build (the renderer restores from this after a reload)
-let previewSeq = 0
-let latestSeq = 0
-let server: Awaited<ReturnType<typeof startSyncServer>> | undefined
-let pipeline: ReturnType<typeof createBuildPipeline> | undefined
-let previewFontSet: PreviewFontSet | undefined
-// Installed Skyrim fonts are read-only input; INKWELL_PREVIEW_FONTS=bundled|installed|auto forces the source.
-const previewFonts = (): PreviewFontSet =>
-  (previewFontSet ??= resolvePreviewFonts({
-    mode: modeFromEnv(process.env['INKWELL_PREVIEW_FONTS']),
-    bundledDir: join(app.getAppPath(), 'resources/preview-fonts'),
-    ...(defaultInstalledDir() ? { installedDir: defaultInstalledDir()! } : {})
-  }))
-
-async function startSync(): Promise<void> {
-  // INKWELL_PROJECT: project folder whose swfs/<name>/ir.json seeds the store and receives what Figma sends.
-  const projectDir = process.env['INKWELL_PROJECT']
-  const initial: Record<string, Swf> = {}
-  if (projectDir) for (const [name, s] of Object.entries((await loadProject(projectDir)).swfs)) initial[name] = Swf.parse(s.ir)
-  pipeline = createBuildPipeline({
-    ...envConfig(),
-    previewFonts: previewFonts(),
-    ...(projectDir ? { projectDir } : {}),
-    buildDir: projectDir ? join(projectDir, 'build') : join(app.getPath('userData'), 'build'),
-    jarPath: join(app.getAppPath(), 'tools/ffdec-wrapper/build/ffdec-wrapper.jar'),
-    onBuild: (_p, timing, _n, report) => {
-      reports.set(report.swfId, report)
-      update({ timing, previewMs: undefined, ...flattenReports(reports.values()) })
-    },
-    onPreview: (p) => {
-      const build = { ...p, seq: (latestSeq = ++previewSeq) }
-      previews.set(build.swfId, build)
-      if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) win.webContents.send(IPC.previewBuild, build)
-    }
+/** Pop-out: the same renderer in its own window, fed by the same IPC (sync state, preview builds, project, UI events). Closing it re-docks. */
+function setDetached(detached: boolean): void {
+  if (!detached) {
+    previewWin?.close()
+    return
+  }
+  if (previewWin && !previewWin.isDestroyed()) return previewWin.focus()
+  previewWin = new BrowserWindow({
+    width: 1100,
+    height: 680,
+    minWidth: 480,
+    minHeight: 320,
+    title: `${PRODUCT_NAME} - Preview`,
+    backgroundColor: '#14161a',
+    autoHideMenuBar: true,
+    webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true }
   })
-  server = await startSyncServer({ editorVersion: app.getVersion(), initial, onChange: pipeline.onChange })
-  server.events.on('connections', (connections: number) => update({ connections }))
-  server.events.on('status', (s: { swfId?: string; state: 'compiling' | 'synced' | 'error'; issues?: { message: string }[] }) => {
-    if (s.swfId && s.state !== 'compiling') lintBySwf.set(s.swfId, s.issues?.length ?? 0)
-    update({ build: s.state, buildError: s.state === 'error' ? s.issues?.[0]?.message : undefined, lintCount: lintTotal() })
+  previewWin.on('closed', () => {
+    previewWin = undefined
+    broadcast(IPC.previewDetached, false)
   })
-  server.events.on('swfs', (infos: SwfInfo[], loose: Layer[]) => {
-    looseCount = loose.length
-    update({ swfCount: infos.length, orphanedCount: infos.filter((i) => i.orphaned).length, lintCount: lintTotal() })
-  })
-  // debug: with INKWELL_SCREENSHOT the project's swfs are built right away, so a preview exists without the Figma plugin
-  if (process.env['INKWELL_SCREENSHOT'])
-    for (const [name, ir] of Object.entries(initial)) pipeline.onChange(ir.id, ir, name).catch((e: unknown) => console.error('[inkwell] initial build failed:', e))
-  update({ swfCount: server.swfs().length })
-  update({ server: 'listening', port: server.port, token: server.token })
+  load(previewWin, 'preview')
+  broadcast(IPC.previewDetached, true)
 }
 
-ipcMain.handle(IPC.syncGet, () => state)
+const pickFolder = async (title: string): Promise<string | undefined> => {
+  const r = await dialog.showOpenDialog(win!, { title, properties: ['openDirectory', 'createDirectory'] })
+  return r.canceled ? undefined : r.filePaths[0]
+}
+const cancelled: OpenResult = { ok: false, cancelled: true }
+const attempt = async (fn: () => Promise<OpenResult>): Promise<OpenResult> => fn().catch((e: unknown) => ({ ok: false, error: e instanceof Error ? e.message : String(e) }))
+
+ipcMain.handle(IPC.syncGet, () => session.getSync())
 ipcMain.handle(IPC.previewFonts, (): PreviewFontBlob[] =>
-  previewFonts().fonts.map((f) => ({ name: f.family, bytes: f.bytes.buffer.slice(f.bytes.byteOffset, f.bytes.byteOffset + f.bytes.byteLength) as ArrayBuffer }))
+  session.getPreviewFonts().map((f) => ({ name: f.family, bytes: f.bytes.buffer.slice(f.bytes.byteOffset, f.bytes.byteOffset + f.bytes.byteLength) as ArrayBuffer }))
 )
-ipcMain.handle(IPC.previewGet, () => [...previews.values()])
+ipcMain.handle(IPC.previewGet, () => session.getPreviews())
+ipcMain.handle(IPC.projectGet, () => session.getProject())
+ipcMain.handle(IPC.projectRecent, () => session.recent())
+ipcMain.handle(IPC.projectOpen, (_e, dir: string | undefined, title: string | undefined) =>
+  attempt(async () => {
+    const d = dir ?? (await pickFolder(title ?? 'Open project'))
+    return d ? session.open(d) : cancelled
+  })
+)
+ipcMain.handle(IPC.projectNew, (_e, title: string) =>
+  attempt(async () => {
+    const d = await pickFolder(title)
+    if (!d) return cancelled
+    await createProject(d)
+    return session.open(d)
+  })
+)
+ipcMain.handle(IPC.projectExample, (_e, title: string) =>
+  attempt(async () => {
+    const d = await pickFolder(title)
+    if (!d) return cancelled
+    await copyExample(join(app.getAppPath(), 'samples/hud-minimal'), d)
+    return session.open(d)
+  })
+)
+ipcMain.handle(IPC.overlaySave, (_e, swfName: string, doc: OverlayDoc) => session.saveOverlay(swfName, doc))
+ipcMain.handle(IPC.strictSet, (_e, on: boolean) => session.setStrictMode(on))
+ipcMain.handle(IPC.buildAll, () => session.buildAll())
+ipcMain.handle(IPC.previewDetach, (_e, detached: boolean) => setDetached(detached))
+ipcMain.handle(IPC.previewDetached, () => !!previewWin && !previewWin.isDestroyed())
+// selection and active SWF: relayed to every other window
+ipcMain.on(IPC.uiEvent, (e, ev: UiEvent) => {
+  for (const w of BrowserWindow.getAllWindows()) if (w.webContents !== e.sender && !w.isDestroyed()) w.webContents.send(IPC.uiEvent, ev)
+})
+
 let shot = process.env['INKWELL_SCREENSHOT'] // debug: save the window after the first rendered preview, then quit
 ipcMain.on(IPC.previewRendered, (_e, r: PreviewRendered) => {
-  if (r.seq === latestSeq) update({ previewMs: r.ms })
+  session.onPreviewRendered(r)
   if (shot && win) {
     const out = shot
     shot = undefined
@@ -103,12 +123,15 @@ ipcMain.on(IPC.previewRendered, (_e, r: PreviewRendered) => {
     setTimeout(() => void win!.webContents.capturePage().then((img) => writeFile(out, img.toPNG())).finally(() => app.exit(0)), 500)
   }
 })
-void app.whenReady().then(() => {
+
+void app.whenReady().then(async () => {
   createWindow()
-  startSync().catch((e: unknown) => update({ server: 'error', error: e instanceof Error ? e.message : String(e) }))
+  // INKWELL_PROJECT: open this project at start (otherwise the start screen shows)
+  const dir = process.env['INKWELL_PROJECT']
+  await session.open(dir)
+  if (dir && process.env['INKWELL_SCREENSHOT']) session.debug.seedBuilds() // debug: a preview exists without the Figma plugin
+  const shotsDir = process.env['INKWELL_SHOTS_DIR']
+  if (shotsDir) void runShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, previewWin: () => previewWin, session }).catch((e: unknown) => { console.error('[inkwell] screenshots failed:', e); app.exit(1) })
 })
 app.on('window-all-closed', () => app.quit())
-app.on('will-quit', () => {
-  pipeline?.stop()
-  void server?.close()
-})
+app.on('will-quit', () => void session.stop())

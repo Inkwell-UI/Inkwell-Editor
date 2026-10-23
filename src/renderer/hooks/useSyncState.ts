@@ -1,13 +1,7 @@
-import { useEffect, useState } from 'react'
 import type { SyncUiState } from '../../shared/syncState'
-import { inkwell } from './api'
+import { useSyncStore } from '../state/syncStore'
 
-/** Live sync/build state from the main process (undefined until the first answer). Any panel may call this; there is nothing to pass in. */
+/** Live sync/build state from the main process (undefined until the first answer). Fed by the bridge; any panel may call this. */
 export function useSyncState(): SyncUiState | undefined {
-  const [s, setS] = useState<SyncUiState>()
-  useEffect(() => {
-    void inkwell?.getSync().then(setS)
-    return inkwell?.onSync(setS)
-  }, [])
-  return s
+  return useSyncStore((s) => s.sync)
 }

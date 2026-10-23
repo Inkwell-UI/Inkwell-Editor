@@ -1,5 +1,4 @@
 import { SPEC_VERSION } from '@inkwell-ui/spec'
-import type { FfdecState } from '../../shared/syncState'
 import { editToPreview, isOverTarget, type BuildRecord } from './timingHistory'
 
 export const formatMs = (ms: number): string => (ms < 1 ? '<1 ms' : ms < 10 ? `${ms.toFixed(1)} ms` : `${Math.round(ms)} ms`)
@@ -29,10 +28,4 @@ export function timingLine(r: BuildRecord): TimingLine {
   return { total: formatMs(editToPreview(r)), parts, amber: isOverTarget(r) }
 }
 
-/** FFDec status from facts (main computes the facts; kept pure so it is testable). `warm` = the resident wrapper has run a build. */
-export function ffdecState(f: { installed: boolean; jarBuilt: boolean; javaOk: boolean; everBuilt: boolean }): FfdecState {
-  if (!f.installed) return { status: 'notFound', reason: 'ffdec' }
-  if (!f.jarBuilt) return { status: 'notFound', reason: 'wrapper' }
-  if (!f.javaOk) return { status: 'notFound', reason: 'java' }
-  return { status: f.everBuilt ? 'warm' : 'cold' }
-}
+export { ffdecState } from '../../shared/ffdec'

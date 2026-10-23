@@ -1,5 +1,6 @@
 import { promoteStrict, SEVERITY_RANK, type Severity } from '../../shared/lint'
 import type { LayerRef, LintRow, SyncUiState } from '../../shared/syncState'
+import { strings } from '../strings'
 
 /** One row of the Lint & Budget dock. The single validation source is the main process; this only merges its feeds and applies display rules. */
 export interface DockRow {
@@ -47,8 +48,7 @@ export function buildDockRows(input: {
   })
 }
 
-/** Same wording as the plugin's status (syncServer UNREACHABLE_MESSAGE) but without the quoted name; strings live in the UI. */
-const unreachableMessage = (name: string): string => `"${name}": this layer is not inside an exported frame.`
+const unreachableMessage = strings.dock.unreachable
 
 export interface DockFilter {
   severity: 'all' | Severity

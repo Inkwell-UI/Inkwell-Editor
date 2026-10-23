@@ -9,6 +9,7 @@ export const ProjectMetaSchema = z.looseObject({
   modId: z.string(),
   version: z.string(),
   author: z.string().optional(),
+  strictMode: z.boolean().optional(),
   deploy: z.looseObject({
     preset: z.enum(['mo2', 'vortex', 'folder']),
     path: z.string()

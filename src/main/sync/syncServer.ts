@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { WebSocketServer, type WebSocket } from 'ws'
+import { promoteStrict } from '../../shared/lint'
 import {
   ackHello,
   applyPatch,
@@ -32,6 +33,8 @@ export interface SyncServerOptions {
   debounceMs?: number
   /** Called once per debounced burst of patches to a swf. `name` is its folder / output name. A throw becomes an error status. */
   onChange?: (swfId: string, ir: Swf, name: string) => Promise<ChangeResult | void> | ChangeResult | void
+  /** Strict Mode (design spec): while true, warnings count as errors in the build status (the build gate). Read on every build. */
+  strict?: () => boolean
 }
 
 export type SyncStatus = { swfId?: string; state: 'compiling' | 'synced' | 'error'; issues?: SyncIssue[] }
@@ -119,8 +122,9 @@ export async function startSyncServer(opts: SyncServerOptions) {
         ...(r?.issues ?? []),
         ...unreachableNodes(e.ir).map((id) => ({ code: 'unreachable-node', severity: 'warning', nodeId: id, message: `"${e.ir.nodes[id]!.name}": ${UNREACHABLE_MESSAGE}.` }))
       ]
-      const errors = issues.some((i) => (i as { severity?: string }).severity === 'error')
-      broadcast({ swfId, state: errors ? 'error' : 'synced', ...(issues.length ? { issues } : {}) })
+      const shown = promoteStrict(issues, opts.strict?.() ?? false)
+      const errors = shown.some((i) => (i as { severity?: string }).severity === 'error')
+      broadcast({ swfId, state: errors ? 'error' : 'synced', ...(shown.length ? { issues: shown } : {}) })
     } catch (err) {
       broadcast({ swfId, state: 'error', issues: [{ code: 'build_failed', message: err instanceof Error ? err.message : String(err) }] })
     }
@@ -173,7 +177,10 @@ export async function startSyncServer(opts: SyncServerOptions) {
       if (ack.ok) {
         ready.add(ws)
         events.emit('connections', ready.size)
-      } else ws.close(1008, 'version mismatch')
+      } else {
+        events.emit('handshakeFailed', ack.error ?? 'version mismatch')
+        ws.close(1008, 'version mismatch')
+      }
       return
     }
     if (!ready.has(ws)) return send(ws, { type: 'error', code: 'no_hello', message: 'Send hello first' })
@@ -219,7 +226,7 @@ export async function startSyncServer(opts: SyncServerOptions) {
     }
   }
 
-  const wss = await listen(opts.ports ?? SYNC_PORTS, token)
+  const wss = await listen(opts.ports ?? SYNC_PORTS, token, (reason) => events.emit('rejected', reason))
   wss.on('connection', (ws) => {
     ws.on('message', (data) => {
       try {
@@ -242,6 +249,14 @@ export async function startSyncServer(opts: SyncServerOptions) {
     ir: (swfId: string): Swf | undefined => store.get(swfId)?.ir,
     selection: (): readonly string[] => selection,
     connections: (): number => ready.size,
+    /** Queues a build of one swf (debounced like a patch), e.g. after its overlay changed. */
+    rebuild: (swfId: string): void => schedule(swfId),
+    /** Queues every swf that still has a Figma frame; returns how many. */
+    rebuildAll: (): number => {
+      const ids = [...store].filter(([, e]) => !e.orphaned && e.ir.nodes[e.ir.root]).map(([id]) => id)
+      ids.forEach(schedule)
+      return ids.length
+    },
     close: async (): Promise<void> => {
       clearTimeout(timer)
       for (const ws of wss.clients) ws.terminate()
@@ -251,7 +266,7 @@ export async function startSyncServer(opts: SyncServerOptions) {
 }
 
 /** First free port of the list wins; the last port's error is thrown. */
-async function listen(ports: readonly number[], token: string): Promise<WebSocketServer> {
+async function listen(ports: readonly number[], token: string, onReject: (reason: string) => void): Promise<WebSocketServer> {
   let last: unknown
   for (const port of ports) {
     try {
@@ -260,10 +275,10 @@ async function listen(ports: readonly number[], token: string): Promise<WebSocke
           host: '127.0.0.1', // never 0.0.0.0
           port,
           verifyClient: ({ origin, req }, done) => {
-            if (!ALLOWED_ORIGINS.has(origin)) return done(false, 403, 'bad origin')
+            if (!ALLOWED_ORIGINS.has(origin)) return onReject('origin'), done(false, 403, 'bad origin')
             const given = Buffer.from(new URL(req.url ?? '/', 'ws://x').searchParams.get('token') ?? '')
             const want = Buffer.from(token)
-            if (given.length !== want.length || !timingSafeEqual(given, want)) return done(false, 401, 'bad token')
+            if (given.length !== want.length || !timingSafeEqual(given, want)) return onReject('token'), done(false, 401, 'bad token')
             done(true)
           }
         })

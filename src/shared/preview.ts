@@ -34,6 +34,6 @@ export interface PreviewRendered {
   ms: number
 }
 
-/** The four aspect ratios of 1.0 (width / height). */
-export const ASPECTS = { '16:9': 16 / 9, '16:10': 16 / 10, '21:9': 21 / 9, '32:9': 32 / 9 } as const
+/** The aspect ratios of the stage (width / height). 4K is 3840x2160, so the same shape as 16:9 (design spec: "Resolutions and safe zones"). */
+export const ASPECTS = { '16:9': 16 / 9, '16:10': 16 / 10, '21:9': 21 / 9, '32:9': 32 / 9, '4K': 16 / 9 } as const
 export type AspectId = keyof typeof ASPECTS

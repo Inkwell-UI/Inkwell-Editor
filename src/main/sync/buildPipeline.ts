@@ -6,6 +6,7 @@ import type { SwfReport } from '../../shared/syncState'
 import { createStageTimer, type BuildTiming } from '../../shared/timing'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
 import { loadProject, saveProject, type Project } from '../project'
+import { exclusive } from '../project/lock'
 import type { PreviewFontSet } from '../previewFonts'
 import { compileSwf } from '../swf/compile'
 import type { ChangeResult } from './syncServer'
@@ -63,17 +64,23 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     let instanceNames: Record<string, string> = {}
     let modId = 'inkwell'
     if (cfg.projectDir) {
-      const p = await (project ??= loadProject(cfg.projectDir))
-      // folder = swf name; a renamed frame moves its folder (and overlay) along. Swfs whose frame is gone are never removed here.
-      const prev = Object.keys(p.swfs).find((k) => k !== name && p.swfs[k]!.ir['id'] === swfId)
-      const overlay = (p.swfs[name] ?? (prev ? p.swfs[prev] : undefined))?.overlay ?? {}
-      if (prev) delete p.swfs[prev]
-      modId = p.meta.modId
-      const nodes = (overlay['nodes'] ?? {}) as Record<string, { instanceName?: string }>
-      instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : [])))
-      // The editor never edits the visual IR: this stores exactly what Figma sent.
-      p.swfs[name] = { ir: ir as unknown as Record<string, unknown>, overlay }
-      await saveProject(cfg.projectDir, p)
+      const dir = cfg.projectDir
+      // Exclusive with overlay saves from the editor UI, and the overlay is re-read from disk (the UI may have saved since the project was cached).
+      await exclusive(async () => {
+        const p = await (project ??= loadProject(dir))
+        // folder = swf name; a renamed frame moves its folder (and overlay) along. Swfs whose frame is gone are never removed here.
+        const prev = Object.keys(p.swfs).find((k) => k !== name && p.swfs[k]!.ir['id'] === swfId)
+        let overlay = (p.swfs[name] ?? (prev ? p.swfs[prev] : undefined))?.overlay ?? {}
+        const onDisk = await readFile(join(dir, 'swfs', prev ?? name, 'overlay.json'), 'utf8').then((t) => JSON.parse(t) as unknown, () => undefined)
+        if (onDisk && typeof onDisk === 'object' && !Array.isArray(onDisk)) overlay = onDisk as Record<string, unknown>
+        if (prev) delete p.swfs[prev]
+        modId = p.meta.modId
+        const nodes = (overlay['nodes'] ?? {}) as Record<string, { instanceName?: string }>
+        instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : [])))
+        // The editor never edits the visual IR: this stores exactly what Figma sent.
+        p.swfs[name] = { ir: ir as unknown as Record<string, unknown>, overlay }
+        await saveProject(dir, p)
+      })
     }
     timer.end('sync')
     const sync = timer.finishBuild()
