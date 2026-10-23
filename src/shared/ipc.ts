@@ -1,5 +1,5 @@
 import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, PrepareResult } from './deploy'
-import type { BenchmarkResult, BuildCacheResult, CheckResult, PathSettingKey, ResolvedSettings, SettingKey } from './doctor'
+import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, PathSettingKey, ResolvedSettings, SetSettingResult, SettingKey } from './doctor'
 import type { OverlayDoc } from './overlay'
 import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from './preview'
 import type { OpenResult, ProjectState, RecentProject, UiEvent } from './projectState'
@@ -81,8 +81,8 @@ export interface InkwellApi {
   /** The layers selected in Figma (the plugin's `selection` message). */
   onFigmaSelection(cb: (ids: string[]) => void): () => void
 
-  /** Setup Doctor (UX 5.3): every check, in parallel; never rejects. */
-  runDoctor(): Promise<CheckResult[]>
+  /** Setup Doctor (UX 5.3): every check (or only `only`), in parallel; never rejects. */
+  runDoctor(only?: CheckId[]): Promise<CheckResult[]>
   /** Cold CLI vs wrapper first job vs warm median on the test fixture. User-triggered. */
   runBenchmark(): Promise<BenchmarkResult>
   buildVanillaCache(): Promise<BuildCacheResult>
@@ -90,10 +90,10 @@ export interface InkwellApi {
   doctorFirstLaunch(): Promise<boolean>
   /** Settings as used (stored value, overridden by INKWELL_* variables, else default) with where each came from. */
   getSettings(): Promise<ResolvedSettings>
-  /** `null` removes a stored value. Returns the settings as used afterwards. */
-  setSetting(key: SettingKey, value: string | null): Promise<ResolvedSettings>
-  /** Native folder or file dialog (title from the renderer), stores the choice; resolves with the new settings, or null when cancelled. */
-  browseSetting(key: PathSettingKey, folder: boolean, title: string): Promise<ResolvedSettings | null>
+  /** `null` removes a stored value. Returns the settings as used afterwards, or the reason it was refused or could not be written. */
+  setSetting(key: SettingKey, value: string | null): Promise<SetSettingResult>
+  /** Native folder or file dialog (title from the renderer), stores the choice; `cancelled` when the dialog was closed. */
+  browseSetting(key: PathSettingKey, folder: boolean, title: string): Promise<SetSettingResult>
   /** Opens an https page in the browser. */
   openExternal(url: string): Promise<void>
 

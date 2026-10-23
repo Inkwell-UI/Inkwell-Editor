@@ -9,10 +9,10 @@ import type { OpenResult, ProjectState, RecentProject } from '../shared/projectS
 import { flattenReports, type SwfReport, type SyncUiState } from '../shared/syncState'
 import { ffdecState } from '../shared/ffdec'
 import type { DeployResult, DeployScope, DeployState, DeployTargetId, DeployTargetInfo, PrepareResult } from '../shared/deploy'
-import type { BenchmarkResult, BuildCacheResult, CheckResult, ResolvedSettings, SettingKey, StoredSettings } from '../shared/doctor'
+import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, ResolvedSettings, SetSettingResult, SettingKey, StoredSettings } from '../shared/doctor'
 import { buildCacheAction, runBenchmark, runDoctor, type DoctorContext } from './doctor'
 import { createDeployService } from './deploy/service'
-import { loadSettings, patchSettings, resolveSettings, saveSettings } from './settings'
+import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { loadProject, type ProjectMeta } from './project'
 import { writeOverlay } from './project/overlayFile'
@@ -82,10 +82,16 @@ export function createSession(deps: SessionDeps) {
     update({ ffdec: ffdecState({ installed: existsSync(join(cfg.ffdecDir, 'lib', 'ffdec_lib.jar')), jarBuilt: existsSync(jarPath), javaOk, everBuilt }) })
   // `java -version` once, off the main thread; a missing Java makes builds fail with a clear status instead of a crash
   const probeJava = (): void => {
-    execFile(cfg.javaPath, ['-version'], { timeout: 8000, windowsHide: true }, (err) => {
-      javaOk = !err
+    // spawn can throw synchronously on Windows (EFTYPE, UNKNOWN: a file that is not a program); that is a missing Java, not a crash
+    try {
+      execFile(cfg.javaPath, ['-version'], { timeout: 8000, windowsHide: true }, (err) => {
+        javaOk = !err
+        refreshFfdec()
+      })
+    } catch {
+      javaOk = false
       refreshFfdec()
-    })
+    }
   }
   void settingsReady.then(probeJava)
 
@@ -249,7 +255,13 @@ export function createSession(deps: SessionDeps) {
     },
     report: reportDeploy
   })
-  const doctorCtx = (): DoctorContext => ({ settings: resolved(), appPath: deps.appPath, userData: deps.userData, ...(projectDir ? { projectDir } : {}), pluginConnections: state.connections })
+  let writeQueue: Promise<void> = Promise.resolve()
+  const viewSettings = async (): Promise<ResolvedSettings> => {
+    await settingsReady
+    const r = resolved()
+    return { ...r, problems: await settingProblems(r) }
+  }
+  const doctorCtx = (): DoctorContext => ({ settings: resolved(), appPath: deps.appPath, userData: deps.userData, ...(projectDir ? { projectDir } : {}), pluginConnections: state.connections, ...(meta ? { projectName: meta.name } : {}) })
 
   async function remember(r: RecentProject): Promise<void> {
     await saveRecent(recentFile, addRecent(await loadRecent(recentFile), r)).catch(() => undefined)
@@ -258,21 +270,37 @@ export function createSession(deps: SessionDeps) {
   return {
     open,
     getSync: (): SyncUiState => state,
-    getSettings: async (): Promise<ResolvedSettings> => (await settingsReady, resolved()),
-    /** Stores one setting; a change of Java or FFDec re-probes and restarts the build pipeline so the next build uses it. */
-    async setSetting(key: SettingKey, value: string | null): Promise<ResolvedSettings> {
-      await settingsReady
-      const before = JSON.stringify([cfg.javaPath, cfg.ffdecDir])
-      stored = patchSettings(stored, { [key]: value })
-      await saveSettings(settingsFile, stored)
-      if (JSON.stringify([cfg.javaPath, cfg.ffdecDir]) !== before) {
-        probeJava()
-        refreshFfdec()
-        if (projectDir) await open(projectDir)
-      }
-      return resolved()
+    getSettings: viewSettings,
+    /**
+     * Stores one setting and returns the settings as used (with `problems`), or the reason it could not be stored: never a bare rejection.
+     * Calls are serialised (blur and Enter both commit; two overlapping writes of one file lose one of them on Windows). A change of Java or FFDec
+     * re-probes and restarts the build pipeline so the next build uses it.
+     */
+    setSetting(key: SettingKey, value: string | null): Promise<SetSettingResult> {
+      const job = writeQueue.then(async (): Promise<SetSettingResult> => {
+        await settingsReady
+        const refused = value === null ? undefined : refuseReason(key, value)
+        if (refused) return { ok: false, error: refused }
+        const before = JSON.stringify([cfg.javaPath, cfg.ffdecDir])
+        const prev = stored
+        stored = patchSettings(stored, { [key]: value === null ? null : normalizeValue(value)! })
+        try {
+          await saveSettings(settingsFile, stored)
+        } catch (e) {
+          stored = prev
+          return { ok: false, error: `The setting could not be saved to ${settingsFile}: ${e instanceof Error ? e.message : String(e)}` }
+        }
+        if (JSON.stringify([cfg.javaPath, cfg.ffdecDir]) !== before) {
+          probeJava()
+          refreshFfdec()
+          if (projectDir) await open(projectDir).catch(() => undefined)
+        }
+        return { ok: true, settings: await viewSettings() }
+      })
+      writeQueue = job.then(() => undefined, () => undefined)
+      return job.catch((e: unknown) => ({ ok: false, error: e instanceof Error ? e.message : String(e) }))
     },
-    runDoctor: async (): Promise<CheckResult[]> => (await settingsReady, runDoctor(doctorCtx())),
+    runDoctor: async (only?: CheckId[]): Promise<CheckResult[]> => (await settingsReady, runDoctor(doctorCtx(), only)),
     runBenchmark: async (): Promise<BenchmarkResult> => (await settingsReady, runBenchmark(doctorCtx())),
     buildVanillaCache: async (): Promise<BuildCacheResult> => (await settingsReady, buildCacheAction(doctorCtx())),
     /** True once: the first launch where a check fails. */

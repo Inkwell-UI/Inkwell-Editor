@@ -3,12 +3,13 @@ import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { IPC } from '../shared/ipc'
 import type { DeployScope, DeployTargetId } from '../shared/deploy'
-import type { PathSettingKey, SettingKey } from '../shared/doctor'
+import type { CheckId, PathSettingKey, SetSettingResult, SettingKey } from '../shared/doctor'
 import type { OverlayDoc } from '../shared/overlay'
 import type { PreviewFontBlob, PreviewRendered } from '../shared/preview'
 import type { OpenResult, UiEvent } from '../shared/projectState'
 import { PRODUCT_NAME } from '../shared/product'
 import { copyExample, createProject } from './project/lifecycle'
+import { runDoctorDriver } from './screenshotDoctor'
 import { runShots } from './screenshotDriver'
 import { runSetupShots } from './screenshotSetup'
 import { createSession } from './session'
@@ -111,15 +112,24 @@ ipcMain.handle(IPC.strictSet, (_e, on: boolean) => session.setStrictMode(on))
 ipcMain.handle(IPC.buildAll, () => session.buildAll())
 ipcMain.handle(IPC.previewDetach, (_e, detached: boolean) => setDetached(detached))
 ipcMain.handle(IPC.previewDetached, () => !!previewWin && !previewWin.isDestroyed())
-ipcMain.handle(IPC.doctorRun, () => session.runDoctor())
+ipcMain.handle(IPC.doctorRun, (_e, only?: CheckId[]) => session.runDoctor(only))
 ipcMain.handle(IPC.doctorBenchmark, () => session.runBenchmark())
 ipcMain.handle(IPC.doctorBuildCache, () => session.buildVanillaCache())
 ipcMain.handle(IPC.doctorFirstLaunch, () => session.doctorFirstLaunch())
 ipcMain.handle(IPC.settingsGet, () => session.getSettings())
 ipcMain.handle(IPC.settingsSet, (_e, key: SettingKey, value: string | null) => session.setSetting(key, value))
-ipcMain.handle(IPC.settingsBrowse, async (_e, key: PathSettingKey, folder: boolean, title: string) => {
-  const r = await dialog.showOpenDialog(win!, { title, properties: folder ? ['openDirectory'] : ['openFile'] })
-  return r.canceled || !r.filePaths[0] ? null : session.setSetting(key, r.filePaths[0])
+// debug only (INKWELL_DOCTOR_DRIVER): the driver answers the native dialog (a path, or null = cancelled) because a script cannot click it
+const debugDialog: { answer: string | null | undefined } = { answer: undefined }
+ipcMain.handle(IPC.settingsBrowse, async (_e, key: PathSettingKey, folder: boolean, title: string): Promise<SetSettingResult> => {
+  try {
+    const stub = process.env['INKWELL_DOCTOR_DRIVER'] ? debugDialog.answer : undefined
+    debugDialog.answer = undefined
+    const r = stub !== undefined ? { canceled: stub === null, filePaths: stub ? [stub] : [] } : await dialog.showOpenDialog(win!, { title, properties: folder ? ['openDirectory'] : ['openFile'] })
+    if (r.canceled || !r.filePaths[0]) return { ok: true, settings: await session.getSettings(), cancelled: true }
+    return await session.setSetting(key, r.filePaths[0])
+  } catch (e) {
+    return { ok: false, error: `The file dialog failed: ${e instanceof Error ? e.message : String(e)}` }
+  }
 })
 // only https pages the editor itself names (fix actions); never a renderer-supplied scheme
 ipcMain.handle(IPC.openExternal, (_e, url: string) => (url.startsWith('https://') ? shell.openExternal(url) : undefined))
@@ -150,7 +160,9 @@ void app.whenReady().then(async () => {
   await session.open(dir)
   if (dir && process.env['INKWELL_SCREENSHOT']) session.debug.seedBuilds() // debug: a preview exists without the Figma plugin
   const shotsDir = process.env['INKWELL_SHOTS_DIR']
-  if (shotsDir && process.env['INKWELL_SHOTS_SETUP'])
+  if (process.env['INKWELL_DOCTOR_DRIVER'])
+    void runDoctorDriver({ outDir: shotsDir ?? join(app.getPath('userData'), 'doctor-shots'), projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, session, dialog: debugDialog }).catch((e: unknown) => { console.error('[driver] failed:', e); app.exit(1) })
+  else if (shotsDir && process.env['INKWELL_SHOTS_SETUP'])
     void runSetupShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] screenshots failed:', e); app.exit(1) })
   else if (shotsDir) void runShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, previewWin: () => previewWin, session }).catch((e: unknown) => { console.error('[inkwell] screenshots failed:', e); app.exit(1) })
 })

@@ -1,9 +1,11 @@
 import { existsSync, statSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
+import { readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import type { CheckResult, ResolvedSettings } from '../../shared/doctor'
+import type { CheckResult, Fix, ResolvedSettings } from '../../shared/doctor'
 import { FFDEC_PINNED } from '../../shared/ffdec'
 import { compilePapyrus } from '../widget/papyrusCompiler'
+import { isGameData } from '../deploy/plan'
+import { modNameProblem } from '../settings'
 import { isInside, vanillaCacheStatus, vanillaCacheRoot } from '../vanilla/cache'
 import { exeVersion, findSkyrim, run, runtimeLabel, type Run } from './skyrim'
 import { readZipEntry } from './zip'
@@ -13,6 +15,8 @@ export interface DoctorContext {
   appPath: string
   userData: string
   projectDir?: string
+  /** Name of the open project: the default mod folder name. */
+  projectName?: string
   /** Figma plugins connected to the sync server right now. */
   pluginConnections: number
   /** Injected in tests; defaults to child_process. */
@@ -32,7 +36,8 @@ const label = {
   skyrim: 'Skyrim install',
   vanilla: 'Vanilla SWF cache',
   projectIgnore: 'Project .gitignore',
-  figma: 'Figma plugin'
+  figma: 'Figma plugin',
+  mo2: 'MO2 deploy folders'
 } as const
 
 /** `openjdk version "1.8.0_504"` -> 8, `"17.0.2"` -> 17, `"21"` -> 21. */
@@ -115,7 +120,8 @@ export async function checkPapyrus(ctx: DoctorContext): Promise<CheckResult> {
   const extra = [{ label: 'Creation Kit sources...', action: { kind: 'browse', setting: 'creationKitSources', folder: true } } as const, { label: 'Get the compiler', action: { kind: 'open', url: RUSSO_PAGE } } as const]
   if (!exe) return { id: 'papyrus', label: label.papyrus, status: 'warn', detail: `Not set. HUD widgets need it to produce .pex files; without it a deploy writes the SWF only. ${note}${ckNote}`, fix: browse, extra: [...extra] }
   if (!existsSync(exe)) return { id: 'papyrus', label: label.papyrus, status: 'fail', detail: `"${exe}" does not exist. ${note}`, fix: browse, extra: [...extra] }
-  const r = await compilePapyrus({ papyrusExe: exe, scripts: [{ name: 'InkwellDoctorProbe', source: PROBE }], workDir: join(ctx.userData, 'doctor', 'papyrus'), stubsDir: stubsPath(ctx.appPath) })
+  const r = await compilePapyrus({ papyrusExe: exe, scripts: [{ name: 'InkwellDoctorProbe', source: PROBE }], workDir: join(ctx.userData, 'doctor', 'papyrus'), stubsDir: stubsPath(ctx.appPath) }).catch((e: unknown) => e instanceof Error ? e : new Error(String(e)))
+  if (r instanceof Error) return { id: 'papyrus', label: label.papyrus, status: 'fail', detail: `"${exe}" could not be started (${r.message}). Is it the real papyrus.exe of the russo-2025 compiler? ${note}`, fix: browse, extra: [...extra] }
   const err = r.lint.find((l) => l.severity === 'error')
   if (err || !r.pex['InkwellDoctorProbe']?.length)
     return { id: 'papyrus', label: label.papyrus, status: 'fail', detail: `Test compile against Inkwell's header stubs failed: ${err?.message ?? 'no .pex produced'}. ${note}`, fix: browse, extra: [...extra] }
@@ -133,14 +139,16 @@ export async function checkSkyrim(ctx: DoctorContext, out: SkyrimFacts = {}): Pr
   const first = found[0]
   if (!first) return { id: 'skyrim', label: label.skyrim, status: 'fail', detail: `Skyrim Special Edition was not found through Steam (registry and libraryfolders.vdf) or GOG${ctx.settings.skyrimPath ? `, and "${ctx.settings.skyrimPath}" has no SkyrimSE.exe` : ''}. Choose the game folder (the one with SkyrimSE.exe).`, fix: manual }
   out.path = first.path
+  const detected = first.source === 'manual' ? {} : { found: { value: first.path, source: 'detected' as const } }
   const ver = await exeVersion(join(first.path, 'SkyrimSE.exe'), ctx.exec)
   const rt = ver ? runtimeLabel(ver) : undefined
   const bsa = join(first.path, 'Data', 'Skyrim - Interface.bsa')
   const others = found.length > 1 ? ` Also found: ${found.slice(1).map((f) => `${f.path} (${f.source})`).join('; ')}.` : ''
-  const head = `${first.path} (${first.source}); SkyrimSE.exe ${ver ?? 'version unreadable'}${rt ? `, runtime ${rt.label}` : ''}.${others}`
+  const ignored = ctx.settings.skyrimPath && first.source !== 'manual' ? `Your setting "${ctx.settings.skyrimPath}" has no SkyrimSE.exe, so the detected install is used instead. ` : ''
+  const head = `${ignored}${first.path} (${first.source}); SkyrimSE.exe ${ver ?? 'version unreadable'}${rt ? `, runtime ${rt.label}` : ''}.${others}`
   if (!existsSync(bsa)) return { id: 'skyrim', label: label.skyrim, status: 'fail', detail: `${head} Data\\Skyrim - Interface.bsa is missing; verify the game files in Steam/GOG.`, fix: manual }
   out.bsa = bsa
-  return { id: 'skyrim', label: label.skyrim, status: rt?.known ? 'pass' : 'warn', detail: `${head} Skyrim - Interface.bsa is present.${rt && !rt.known ? ' Inkwell has not been checked against this runtime.' : ''}`, extra: [manual] }
+  return { id: 'skyrim', label: label.skyrim, status: rt?.known ? 'pass' : 'warn', detail: `${head} Skyrim - Interface.bsa is present.${rt && !rt.known ? ' Inkwell has not been checked against this runtime.' : ''}`, extra: [manual], ...detected }
 }
 
 export async function checkVanilla(ctx: DoctorContext, bsa: string | undefined): Promise<CheckResult> {
@@ -185,7 +193,65 @@ export async function checkFigma(ctx: DoctorContext): Promise<CheckResult> {
   const link = ctx.pluginConnections > 0 ? `A plugin is connected now (${ctx.pluginConnections}).` : 'No plugin is connected right now: in Figma Desktop run Plugins > Development > Inkwell and enter the session token.'
   const copy = { label: 'Copy manifest path', action: { kind: 'copy', text: p } } as const
   const browse = { label: 'Browse for manifest.json', action: { kind: 'browse', setting: 'figmaManifest', folder: false } } as const
-  if (!ok) return { id: 'figma', label: label.figma, status: 'warn', detail: `Plugin manifest not found at ${p}. Check out the Inkwell-Figma repository next to the editor or choose the manifest. ${link}`, fix: browse, extra: [copy] }
-  return { id: 'figma', label: label.figma, status: ctx.pluginConnections > 0 ? 'pass' : 'warn', detail: `Manifest: ${p}. In Figma Desktop import it via Plugins > Development > Import plugin from manifest. ${link}`, fix: copy, extra: [browse] }
+  const found = ctx.settings.figmaManifest ? {} : { found: { value: p, source: 'default' as const } }
+  if (!ok) return { id: 'figma', label: label.figma, status: 'warn', ...found, detail: `Plugin manifest not found at ${p}. Check out the Inkwell-Figma repository next to the editor or choose the manifest. ${link}`, fix: browse, extra: [copy] }
+  return { id: 'figma', label: label.figma, status: ctx.pluginConnections > 0 ? 'pass' : 'warn', ...found, detail: `Manifest: ${p}. In Figma Desktop import it via Plugins > Development > Import plugin from manifest. ${link}`, fix: copy, extra: [browse] }
 }
 
+
+/** Creates and removes a temp file in `dir`; the error text when that fails. */
+async function writeProbe(dir: string): Promise<string | undefined> {
+  const f = join(dir, `.inkwell-write-test-${process.pid}-${Date.now()}`)
+  try {
+    await writeFile(f, 'x', { flag: 'wx' })
+    await unlink(f)
+    return undefined
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e)
+  }
+}
+
+/** One deploy folder: not inside the game's Data folder, exists and is a folder, writable (a temp file is created and removed). `create`: it need not exist (the deploy creates it), so its parent is probed. */
+export async function folderProblem(dir: string, gameDirs: string[], create = false): Promise<string | undefined> {
+  const st = await stat(dir).catch(() => undefined)
+  if (isGameData(resolve(dir), gameDirs)) return `${dir} is inside the game's Data folder. Deploy never writes there; use an MO2 folder (MO2's virtual file system puts the files in the game).`
+  if (st && !st.isDirectory()) return `${dir} is a file, not a folder.`
+  if (!st && !create) return `${dir} does not exist.`
+  const probe = await writeProbe(st ? dir : resolve(dir, '..'))
+  return probe ? `${dir} is not writable: ${probe}` : undefined
+}
+
+export async function checkMo2(ctx: DoctorContext, gameDirs: string[]): Promise<CheckResult> {
+  const { mo2ModsDir: mods, mo2ModName: name, mo2OverwriteDir: over } = ctx.settings
+  const browseMods: Fix = { label: 'Browse for the mods directory', action: { kind: 'browse', setting: 'mo2ModsDir', folder: true } }
+  const browseOver: Fix = { label: 'Browse for the overwrite folder', action: { kind: 'browse', setting: 'mo2OverwriteDir', folder: true } }
+  const done = (status: CheckResult['status'], detail: string, fix?: Fix, extra?: Fix[]): CheckResult => ({ id: 'mo2', label: label.mo2, status, detail, ...(fix ? { fix } : {}), ...(extra ? { extra } : {}) })
+  if (!mods && !over) return done('warn', 'Not set. Deploy writes into an MO2 mod folder (mods directory + mod name) or the MO2 overwrite folder; choose one. It never writes into the game Data folder.', browseMods, [browseOver])
+  const lines: string[] = []
+  let fix: Fix | undefined
+  let failed = false
+  if (mods) {
+    const mod = name ?? ctx.projectName
+    const nameProblem = name ? modNameProblem(name) : undefined
+    const modsProblem = nameProblem ? undefined : await folderProblem(mods, gameDirs)
+    const target = mod ? resolve(mods, mod) : undefined
+    const targetProblem = nameProblem || modsProblem || !target ? undefined : await folderProblem(target, gameDirs, true)
+    failed = !!(nameProblem || modsProblem || targetProblem)
+    if (nameProblem) {
+      fix = { label: 'Clear the mod name', action: { kind: 'clear', setting: 'mo2ModName' } }
+      lines.push(nameProblem)
+    } else if (modsProblem) {
+      fix = browseMods
+      lines.push(`Mods directory: ${modsProblem}`)
+    } else if (targetProblem) {
+      fix = browseMods
+      lines.push(`Mod folder: ${targetProblem}`)
+    } else lines.push(`Mod folder ${target ?? mods} is writable (${name ? 'mod name setting' : mod ? 'mod name defaults to the project name' : 'open a project or set a mod name'}).`)
+  }
+  if (over) {
+    const p = await folderProblem(over, gameDirs)
+    if (p) (fix ??= browseOver, failed = true)
+    lines.push(p ? `Overwrite folder: ${p}` : `Overwrite folder ${over} is writable.`)
+  }
+  return done(failed ? 'fail' : 'pass', lines.join(' '), fix)
+}

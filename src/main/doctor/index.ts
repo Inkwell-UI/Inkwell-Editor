@@ -6,12 +6,12 @@ import { join } from 'node:path'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult } from '../../shared/doctor'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
 import { buildVanillaCache, vanillaCacheRoot } from '../vanilla/cache'
-import { checkFfdec, checkFigma, checkJava, checkPapyrus, checkProjectIgnore, checkSkyrim, checkVanilla, checkWrapper, wrapperJarPath, type DoctorContext, type SkyrimFacts } from './checks'
+import { checkFfdec, checkFigma, checkJava, checkMo2, checkPapyrus, checkProjectIgnore, checkSkyrim, checkVanilla, checkWrapper, wrapperJarPath, type DoctorContext, type SkyrimFacts } from './checks'
 
 export type { DoctorContext } from './checks'
 
-const ORDER: CheckId[] = ['java', 'ffdec', 'wrapper', 'papyrus', 'skyrim', 'vanilla', 'projectIgnore', 'figma']
-const TITLES: Record<CheckId, string> = { java: 'Java', ffdec: 'FFDec', wrapper: 'FFDec wrapper', papyrus: 'Papyrus compiler', skyrim: 'Skyrim install', vanilla: 'Vanilla SWF cache', projectIgnore: 'Project .gitignore', figma: 'Figma plugin' }
+const ORDER: CheckId[] = ['java', 'ffdec', 'wrapper', 'papyrus', 'skyrim', 'vanilla', 'mo2', 'projectIgnore', 'figma']
+const TITLES: Record<CheckId, string> = { java: 'Java', ffdec: 'FFDec', wrapper: 'FFDec wrapper', papyrus: 'Papyrus compiler', skyrim: 'Skyrim install', vanilla: 'Vanilla SWF cache', projectIgnore: 'Project .gitignore', figma: 'Figma plugin', mo2: 'MO2 deploy folders' }
 
 /** A check that throws is a failed check, never a failed doctor. */
 const safe = (id: CheckId, fn: () => Promise<CheckResult>): Promise<CheckResult> =>
@@ -19,21 +19,26 @@ const safe = (id: CheckId, fn: () => Promise<CheckResult>): Promise<CheckResult>
     .then(fn)
     .catch((e: unknown): CheckResult => ({ id, label: TITLES[id], status: 'fail', detail: `The check failed unexpectedly: ${e instanceof Error ? e.message : String(e)}` }))
 
-/** All checks, independent and in parallel (vanilla waits only for the Skyrim lookup it needs). Never throws. */
-export async function runDoctor(ctx: DoctorContext): Promise<CheckResult[]> {
+/** The checks (all, or only `only`), independent and in parallel (vanilla and mo2 wait for the Skyrim lookup they need). Never throws; rows come back in display order. */
+export async function runDoctor(ctx: DoctorContext, only?: CheckId[]): Promise<CheckResult[]> {
+  const want = (id: CheckId): boolean => !only || only.includes(id)
   const sky: SkyrimFacts = {}
-  const skyrim = safe('skyrim', () => checkSkyrim(ctx, sky))
-  const all = await Promise.all([
-    safe('java', () => checkJava(ctx)),
-    safe('ffdec', () => checkFfdec(ctx)),
-    safe('wrapper', () => checkWrapper(ctx)),
-    safe('papyrus', () => checkPapyrus(ctx)),
-    skyrim,
-    skyrim.then(() => safe('vanilla', () => checkVanilla(ctx, sky.bsa))),
-    safe('projectIgnore', () => checkProjectIgnore(ctx)),
-    safe('figma', () => checkFigma(ctx))
-  ])
-  return ORDER.map((id) => all.find((r) => r.id === id)!)
+  const skyrim = want('skyrim') || want('vanilla') || want('mo2') ? safe('skyrim', () => checkSkyrim(ctx, sky)) : undefined
+  const after = (id: CheckId, fn: () => Promise<CheckResult>): Promise<CheckResult> | undefined => (want(id) ? skyrim!.then(() => safe(id, fn)) : undefined)
+  const now = (id: CheckId, fn: () => Promise<CheckResult>): Promise<CheckResult> | undefined => (want(id) ? safe(id, fn) : undefined)
+  const jobs = [
+    now('java', () => checkJava(ctx)),
+    now('ffdec', () => checkFfdec(ctx)),
+    now('wrapper', () => checkWrapper(ctx)),
+    now('papyrus', () => checkPapyrus(ctx)),
+    want('skyrim') ? skyrim : undefined,
+    after('vanilla', () => checkVanilla(ctx, sky.bsa)),
+    after('mo2', () => checkMo2(ctx, sky.path ? [sky.path] : [])),
+    now('projectIgnore', () => checkProjectIgnore(ctx)),
+    now('figma', () => checkFigma(ctx))
+  ]
+  const all = await Promise.all(jobs)
+  return ORDER.flatMap((id) => all.find((r) => r?.id === id) ?? [])
 }
 
 /** Builds the vanilla cache from the detected archive into `<userData>/vanilla-cache/<archiveHash>/`. */

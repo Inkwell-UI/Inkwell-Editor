@@ -316,3 +316,17 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .statusbar .item.is-error { color: var(--err); }
 .dialog-title { position: sticky; top: 0; z-index: 1; background: var(--surface-1); }
 .dialog-title { position: sticky; top: 0; z-index: 1; background: var(--surface-1); }
+
+/* Setup Doctor path fields (one per setting row) */
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+.doctor-fields { margin-top: 6px; }
+.doctor-fields .field { margin: 6px 0; }
+.field-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.field-head label { margin: 0; }
+.source-badge { font-size: 11px; padding: 0 6px; border: 1px solid var(--line); border-radius: 8px; color: var(--fg-dim); }
+.input[readonly] { color: var(--fg-dim); }
+.input.has-problem { border-color: var(--err); }
+.field-msg { display: flex; align-items: flex-start; gap: 4px; overflow-wrap: anywhere; user-select: text; }
+.field-msg > svg { flex: none; margin-top: 2px; }

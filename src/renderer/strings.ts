@@ -372,6 +372,7 @@ export const strings = {
     rerun: 'Re-run',
     rerunTip: 'Run all checks again',
     running: 'Checking...',
+    loadFailed: (e: string) => `The checks could not be run: ${e}`,
     summary: (pass: number, warn: number, fail: number) => `${pass} passed, ${warn} to look at, ${fail} failed`,
     titles: {
       java: 'Java',
@@ -381,7 +382,8 @@ export const strings = {
       skyrim: 'Skyrim install',
       vanilla: 'Vanilla SWF cache',
       projectIgnore: 'Project .gitignore',
-      figma: 'Figma plugin'
+      figma: 'Figma plugin',
+      mo2: 'MO2 deploy folders'
     } as Record<string, string>,
     status: { pass: 'Passed', warn: 'Needs attention', fail: 'Failed', skipped: 'Skipped' } as Record<string, string>,
     rowLabel: (title: string, status: string) => `${title}: ${status}`,
@@ -397,18 +399,33 @@ export const strings = {
     cacheDone: (n: number, mb: string) => `Extracted ${n} SWFs (${mb} MB).`,
     cacheFailed: (e?: string) => `The cache could not be built: ${e ?? 'unknown error'}`,
     browseTitle: (key: string) => `Choose: ${key}`,
-    deployFolders: 'Deploy folders (MO2)',
-    deployFoldersNote: 'Deploy writes only into these folders, never into the game Data folder.',
     fields: {
+      javaPath: 'Path to java.exe',
+      ffdecDir: 'FFDec folder',
+      papyrusExe: 'Path to papyrus.exe',
+      creationKitSources: 'Creation Kit script sources folder (optional)',
+      skyrimPath: 'Skyrim Special Edition folder',
+      figmaManifest: 'Path to the plugin manifest.json',
       mo2ModsDir: 'MO2 mods directory',
       mo2ModName: 'Mod name (folder inside the mods directory; default: the project name)',
       mo2OverwriteDir: 'MO2 overwrite folder'
     } as Record<string, string>,
     notSet: 'not set',
-    fromEnv: 'set by an INKWELL_* environment variable',
+    sources: { env: 'environment variable', settings: 'saved setting', default: 'default', detected: 'detected' } as Record<string, string>,
+    sourceLabel: (src: string, env?: string): string => (src === 'env' && env ? `from ${env}` : strings.doctor.sources[src] ?? src),
+    fromEnv: (env: string) => `Set by the ${env} environment variable, which wins over the saved setting. Unset it and restart Inkwell to edit it here.`,
+    envVars: { ffdecDir: 'INKWELL_FFDEC', javaPath: 'INKWELL_JAVA', papyrusExe: 'INKWELL_PAPYRUS', creationKitSources: 'INKWELL_CK_SOURCES', skyrimPath: 'INKWELL_SKYRIM', figmaManifest: 'INKWELL_FIGMA_MANIFEST', mo2ModsDir: 'INKWELL_MO2_MODS', mo2OverwriteDir: 'INKWELL_MO2_OVERWRITE' } as Record<string, string>,
+    modNamePlaceholder: 'default: the project name',
+    commitHint: 'Press Enter or leave the field to save and check',
+    saving: 'Saving...',
+    checking: 'Checking...',
+    problemLabel: (what: string) => `Problem with ${what}`,
+    errorLabel: (what: string) => `Could not save ${what}`,
     browse: 'Browse',
+    browseTip: (what: string) => `Choose ${what} with the file dialog`,
     clear: 'Clear',
-    clearTip: (what: string) => `Clear ${what}`
+    clearTip: (what: string) => `Clear ${what}`,
+    nothingToClear: 'No saved value to clear'
   },
 
   deploy: {
