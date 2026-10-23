@@ -12,6 +12,7 @@ const api: InkwellApi = {
   onSync: (cb) => on(IPC.syncUpdate, cb),
   getPreviewBuilds: () => ipcRenderer.invoke(IPC.previewGet),
   onPreviewBuild: (cb) => on(IPC.previewBuild, cb),
+  getPreviewFonts: () => ipcRenderer.invoke(IPC.previewFonts),
   reportPreviewRendered: (r) => ipcRenderer.send(IPC.previewRendered, r)
 }
 contextBridge.exposeInMainWorld('inkwell', api)

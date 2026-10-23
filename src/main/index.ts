@@ -3,9 +3,10 @@ import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { Swf } from '@inkwell-ui/spec'
 import { IPC } from '../shared/ipc'
-import type { PreviewBuild, PreviewRendered } from '../shared/preview'
+import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from '../shared/preview'
 import { PRODUCT_NAME } from '../shared/product'
 import { flattenReports, type SwfReport, type SyncUiState } from '../shared/syncState'
+import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { loadProject } from './project'
 import { createBuildPipeline, envConfig } from './sync/buildPipeline'
 import { startSyncServer, type Layer, type SwfInfo } from './sync/syncServer'
@@ -40,6 +41,14 @@ let previewSeq = 0
 let latestSeq = 0
 let server: Awaited<ReturnType<typeof startSyncServer>> | undefined
 let pipeline: ReturnType<typeof createBuildPipeline> | undefined
+let previewFontSet: PreviewFontSet | undefined
+// Installed Skyrim fonts are read-only input; INKWELL_PREVIEW_FONTS=bundled|installed|auto forces the source.
+const previewFonts = (): PreviewFontSet =>
+  (previewFontSet ??= resolvePreviewFonts({
+    mode: modeFromEnv(process.env['INKWELL_PREVIEW_FONTS']),
+    bundledDir: join(app.getAppPath(), 'resources/preview-fonts'),
+    ...(defaultInstalledDir() ? { installedDir: defaultInstalledDir()! } : {})
+  }))
 
 async function startSync(): Promise<void> {
   // INKWELL_PROJECT: project folder whose swfs/<name>/ir.json seeds the store and receives what Figma sends.
@@ -48,6 +57,7 @@ async function startSync(): Promise<void> {
   if (projectDir) for (const [name, s] of Object.entries((await loadProject(projectDir)).swfs)) initial[name] = Swf.parse(s.ir)
   pipeline = createBuildPipeline({
     ...envConfig(),
+    previewFonts: previewFonts(),
     ...(projectDir ? { projectDir } : {}),
     buildDir: projectDir ? join(projectDir, 'build') : join(app.getPath('userData'), 'build'),
     jarPath: join(app.getAppPath(), 'tools/ffdec-wrapper/build/ffdec-wrapper.jar'),
@@ -79,6 +89,9 @@ async function startSync(): Promise<void> {
 }
 
 ipcMain.handle(IPC.syncGet, () => state)
+ipcMain.handle(IPC.previewFonts, (): PreviewFontBlob[] =>
+  previewFonts().fonts.map((f) => ({ name: f.family, bytes: f.bytes.buffer.slice(f.bytes.byteOffset, f.bytes.byteOffset + f.bytes.byteLength) as ArrayBuffer }))
+)
 ipcMain.handle(IPC.previewGet, () => [...previews.values()])
 let shot = process.env['INKWELL_SCREENSHOT'] // debug: save the window after the first rendered preview, then quit
 ipcMain.on(IPC.previewRendered, (_e, r: PreviewRendered) => {

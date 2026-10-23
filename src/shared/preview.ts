@@ -4,6 +4,14 @@ export interface PreviewNotes {
   textExtensions: number
   /** Text nodes drawn with a device font instead of the Skyrim font. */
   textNodes: number
+  /** Skyrim faces drawn with a bundled lookalike (not the installed game font); the badge lists them. */
+  approximated: string[]
+}
+
+/** A font file for the Ruffle preview; `name` is what the preview SWF refers to. */
+export interface PreviewFontBlob {
+  name: string
+  bytes: ArrayBuffer
 }
 
 /** One preview build of one SWF, main -> renderer. */

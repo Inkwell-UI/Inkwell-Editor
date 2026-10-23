@@ -6,6 +6,7 @@ import type { SwfReport } from '../../shared/syncState'
 import { createStageTimer, type BuildTiming } from '../../shared/timing'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
 import { loadProject, saveProject, type Project } from '../project'
+import type { PreviewFontSet } from '../previewFonts'
 import { compileSwf } from '../swf/compile'
 import type { ChangeResult } from './syncServer'
 
@@ -19,6 +20,8 @@ export interface PipelineConfig {
   jarPath: string
   /** Called after every build with the preview SWF bytes (or the reason there are none). A failed preview never fails the build. */
   onPreview?: (p: Omit<PreviewBuild, 'seq'>) => void
+  /** Preview text fonts (see previewFonts.ts); without it the preview uses Ruffle's generic device fonts. */
+  previewFonts?: PreviewFontSet
   /** Tests inject a fake FFDec; the install and jar checks are skipped. */
   ffdec?: { build: Parameters<typeof compileSwf>[1]['ffdec']['build']; stop?: () => void }
   onBuild?: (swfPath: string, timing: BuildTiming, lintCount: number, report: SwfReport) => void
@@ -79,12 +82,12 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     // Preview SWF: same content with device-font text, built after the game SWF. Its failure is reported to the preview panel only.
     const pt = createStageTimer()
     pt.start('preview-build')
-    const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: ir.stage, notes: { textExtensions: 0, textNodes: 0 } }
+    const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: ir.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
     try {
-      const pr = await compileSwf(ir, { modId, instanceNames, buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true })
+      const pr = await compileSwf(ir, { modId, instanceNames, buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor } : {}) })
       const buf = await readFile(pr.swfPath)
       preview.bytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
-      preview.notes = { textExtensions: pr.gfxTextExtensions, textNodes: pr.fonts.length }
+      preview.notes = { textExtensions: pr.gfxTextExtensions, textNodes: pr.fonts.length, approximated: cfg.previewFonts?.approximated(pr.fonts.flatMap((f) => (f.alias ? [f.alias] : []))) ?? [] }
     } catch (e) {
       preview.error = e instanceof Error ? e.message : String(e)
     }

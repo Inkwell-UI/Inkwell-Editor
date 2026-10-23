@@ -18,6 +18,8 @@ export interface GenerateOptions {
    * with the preview shims (skse, gfxExtensions, bridge stubs), and `widget` is ignored: the design frame shows at the design size.
    */
   preview?: boolean
+  /** Preview only: device font name per alias (a font Ruffle has loaded by name); default `previewDeviceFont` (_sans, _typewriter, _serif). */
+  previewFont?: (alias: string) => string
 }
 
 export interface Generated {
@@ -154,7 +156,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
           fonts.set(m.text.alias, fontId)
         }
         const id = alloc()
-        defs.push(T.defineEditText({ ...m.text.field, id, fontId, ...(opts.preview ? { fontClass: previewDeviceFont(m.text.alias) } : {}) }))
+        defs.push(T.defineEditText({ ...m.text.field, id, fontId, ...(opts.preview ? { fontClass: (opts.previewFont ?? previewDeviceFont)(m.text.alias) } : {}) }))
         // the gutter offset is in the node's own (possibly rotated) space
         const r = (rot * Math.PI) / 180
         const { x: gx, y: gy } = m.text.gutter

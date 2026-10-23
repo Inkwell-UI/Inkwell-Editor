@@ -31,6 +31,22 @@ describe('generate preview', () => {
     expect(prev.gfxTextExtensions).toBe(1)
   })
 
+  it('centre-aligned fixed box and auto-width text: field bounds, alignment and placement equal the game SWF (only the font differs)', () => {
+    const ns = () => [
+      frame('f', ['c', 'a']),
+      textNode('c', { sizing: 'fixed', align: 'center', transform: { x: 40, y: 20, width: 250, height: 60, rotation: 0 } }),
+      textNode('a', { sizing: 'autoWidth', align: 'left', transform: { x: 40, y: 100, width: 120, height: 44, rotation: 0 } })
+    ]
+    const fields = (g: typeof game) => tags(g).filter((x) => x.code === TAG.DefineEditText).map(readEditText)
+    const strip = (e: ReturnType<typeof readEditText>) => ({ ...e, id: 0, fontId: 0, fontClass: undefined, hasFontClass: false, useOutlines: false })
+    const a = fields(generate(swf(ns()), { modId: 'M' }))
+    const b = fields(generate(swf(ns()), { modId: 'M', preview: true, previewFont: () => 'Barlow Condensed Regular' }))
+    expect(b.map(strip)).toEqual(a.map(strip))
+    expect(a[0]!.layout.align).toBe(2) // centre
+    expect(a[1]!.autoSize).toBe(true)
+    expect(b.map((e) => e.fontClass)).toEqual(['Barlow Condensed Regular', 'Barlow Condensed Regular'])
+  })
+
   it('shims run first in the frame code; widget mode is ignored (design frame at design size)', () => {
     const p = generate(swf(nodes()), { modId: 'M', preview: true, widget: true })
     const code = p.as2.find((f) => f.path === 'frame_1/DoAction.as')!.source
