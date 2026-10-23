@@ -180,6 +180,8 @@ export interface Placement {
   rotation?: number
   /** 0..1, applied as an alpha multiplier colour transform. */
   alpha?: number
+  /** Uniform scale factor (not combined with `rotation`). */
+  scale?: number
 }
 
 export function placeObject2(p: Placement): Buffer {
@@ -195,6 +197,11 @@ export function placeObject2(p: Placement): Buffer {
     const n = Math.max(sbits(c), sbits(s))
     m.u(1, 1); m.u(n, 5); m.s(c, n); m.s(c, n) // scale x/y = cos
     m.u(1, 1); m.u(n, 5); m.s(s, n); m.s(-s, n) // rotateSkew0 = sin, rotateSkew1 = -sin
+  } else if (p.scale !== undefined && p.scale !== 1) {
+    const f = Math.round(p.scale * 65536)
+    const n = sbits(f)
+    m.u(1, 1); m.u(n, 5); m.s(f, n); m.s(f, n) // HasScale, no rotate/skew
+    m.u(0, 1)
   } else {
     m.u(0, 1); m.u(0, 1)
   }
