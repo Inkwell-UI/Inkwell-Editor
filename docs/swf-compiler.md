@@ -20,20 +20,19 @@ compileSwf(ir, { modId, buildDir, ffdec, outPath?, instanceNames? }) -> { swfPat
 
 - **Frame**: nested frames become sprites placed with an instance name (layer name sanitized, deduplicated, or the overlay `instanceName` via `instanceNames`). The root frame's children go on the main timeline. Child order is depth order. Position, rotation and opacity (alpha colour transform).
 - **Shape**: cubic paths stay cubic in the SVG `d` (FFDec converts to quadratics, lint warning `curve-approximated`); all subpaths in one even-odd path; solid fills with alpha; solid strokes (centered). Inside/outside strokes draw centered with warning `stroke-alignment-approximated`. Gradient fills draw as their first stop (warning); image fills are skipped (warning).
-- **Text** (spec "Text mapping"): `DefineEditText` with `fontId`, `useOutlines`, `ImportAssets2` of the alias from `gfxfontlib.swf`; never `fontClass`, dynamic, read-only. Auto width = `autoSize`, no wrap. Auto height = wrap + multiline + `autoSize`. Fixed = fixed field (wraps). Font size, colour (run fill, solid), alignment, 2px gutter compensation (field grown 4px, moved -2,-2), line height to `leading` (`lineHeight - size * 1.2`, ratio provisional), letter spacing % to px (`size * pct / 100`, via `TextFormat.letterSpacing`).
+- **Text** (spec "Text mapping"): `DefineEditText` with `fontId`, `useOutlines`, `ImportAssets2` of the alias from `gfxfontlib.swf`; never `fontClass`, dynamic, read-only. Auto width = `autoSize`, no wrap. Auto height = wrap + multiline + `autoSize`. Fixed = fixed field (wraps). Font size, colour (run fill, solid), alignment, 2px gutter compensation (field grown 4px, moved -2,-2), line height to `leading` (`px - size * 1.2`, percent first converted to px, ratio provisional), letter spacing to px (percent: `size * pct / 100`, via `TextFormat.letterSpacing`).
 - **Font alias**: `Everywhere / Medium / 18` becomes `$EverywhereMediumFont` (trailing number = size preset, dropped); a raw `$...Font` also works. Known aliases are the names in vanilla's `fontconfig.txt` (`text.ts`, `KNOWN_ALIASES`). Anything else is lint ERROR `font-unmapped` and the field is omitted.
 - **Generated AS2** (only when needed): class `mods.<modId>.<SwfId>Layout` in `__Packages`, exported from an empty sprite, called from `frame_1/DoAction.as`. Sets `_global.gfxExtensions = true`, then per text node, inside `try/catch` that `trace`s a string with the node id: `verticalAlign` (center/bottom), `textAutoSize` (shrink/fit), letter spacing. Each block carries a `// node <id> "<layer>"` comment.
 
-## Text style that is not in the IR yet
+## Text layout fields
 
-The 0.1 IR `Text` has content, one run (font, size, fill) and sizing only. Alignment, line height, letter spacing, vertical alignment, shrink-to-fit, truncation and decoration are read from `node.extra.text`:
-`{ align: left|center|right|justify, lineHeight: px, letterSpacing: %, verticalAlign: top|center|bottom, shrink: shrink|fit, truncate: bool, decoration: string }`. This is a stand-in until the spec defines these fields.
+Read from the spec IR `Text` node (specVersion 2): `align`, `verticalAlign`, `lineHeight` (`auto` | px | percent of font size), `letterSpacing` (px | percent of font size), `textFit` (`none`|`shrink`|`fit`, GFx `textAutoSize`) and `truncate`. `loadProject` runs the spec's `migrate()` on v1 projects, which moves the old `extra.text` keys into these fields. Text decoration is not in the IR and is no longer linted.
 
 ## Not supported (reported, compile continues)
 
 - `image`, `instance`, `component` nodes: warning `unsupported-node`, node and children skipped.
 - Hidden nodes (`node-hidden`, info), frame `clipContent` (`clip-ignored`, info), masks (`mask-ignored`), blend modes (`blend-ignored`), bindings/themes, auto-layout (resolved positions are used as is), anchors.
-- Text: truncation, decoration, mixed styles (first run wins), embedded fonts (`font-unmapped`), gradient text fills (black), text shadow (unproven in game; never emitted).
+- Text: truncation, mixed styles (first run wins), embedded fonts (`font-unmapped`), gradient text fills (black), text shadow (unproven in game; never emitted).
 - Missing child, repeated node, invalid root: `node-missing`, `node-cycle`, `root-invalid`.
 
 ## Not verified in game

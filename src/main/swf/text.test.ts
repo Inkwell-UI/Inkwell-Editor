@@ -39,15 +39,21 @@ describe('text mapping table', () => {
   })
 
   it('alignment, line height -> leading, letter spacing % -> px', () => {
-    const r = map({ extra: { text: { align: 'right', lineHeight: 30, letterSpacing: 10 } } }).text!
+    const r = map({ align: 'right', lineHeight: { unit: 'px', value: 30 }, letterSpacing: { unit: 'percent', value: 10 } }).text!
     expect(r.field.align).toBe(1)
     expect(r.field.leadingPx).toBeCloseTo(30 - 18 * NATURAL_LINE_HEIGHT)
     expect(r.script.letterSpacing).toBeCloseTo(1.8)
   })
 
+  it('percent line height and px letter spacing', () => {
+    const r = map({ lineHeight: { unit: 'percent', value: 150 }, letterSpacing: { unit: 'px', value: 3 } }).text!
+    expect(r.field.leadingPx).toBeCloseTo(27 - 18 * NATURAL_LINE_HEIGHT)
+    expect(r.script.letterSpacing).toBe(3)
+  })
+
   it('vertical align (not top) and shrink go to the frame script', () => {
-    expect(map({ extra: { text: { verticalAlign: 'center', shrink: 'shrink' } } }).text?.script).toEqual({ verticalAlign: 'center', textAutoSize: 'shrink' })
-    expect(map({ extra: { text: { verticalAlign: 'top' } } }).text?.script).toEqual({})
+    expect(map({ verticalAlign: 'center', textFit: 'shrink' }).text?.script).toEqual({ verticalAlign: 'center', textAutoSize: 'shrink' })
+    expect(map({ verticalAlign: 'top' }).text?.script).toEqual({})
   })
 
   it('opacity of the fill goes into the colour alpha', () => {
@@ -61,12 +67,10 @@ describe('text mapping table', () => {
     expect(r.lint).toEqual([expect.objectContaining({ severity: 'error', code: 'font-unmapped', nodeId: 't' })])
   })
 
-  it('embedded font is an error; truncate and decoration are warnings', () => {
+  it('embedded font is an error; truncate is a warning', () => {
     const runs = [{ start: 0, end: 5, font: { kind: 'embedded', asset: 'abc' }, size: 12 }]
     expect(map({ runs }).lint[0]).toMatchObject({ severity: 'error', code: 'font-unmapped' })
-    expect(map({ extra: { text: { truncate: true, decoration: 'underline' } } }).lint.map((l) => [l.severity, l.code])).toEqual([
-      ['warning', 'text-truncate-unsupported'], ['warning', 'text-decoration-unsupported']
-    ])
+    expect(map({ truncate: true }).lint.map((l) => [l.severity, l.code])).toEqual([['warning', 'text-truncate-unsupported']])
   })
 
 })

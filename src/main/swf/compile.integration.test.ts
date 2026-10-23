@@ -27,7 +27,7 @@ describe.skipIf(!can)('compileSwf (real FFDec)', () => {
     const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
     try {
       const ir = swf(
-        [frame('f', ['s', 't']), rectShape('s'), textNode('t', { extra: { text: { verticalAlign: 'center', align: 'center' } } })],
+        [frame('f', ['s', 't']), rectShape('s'), textNode('t', { verticalAlign: 'center', align: 'center' })],
         { id: 'itest' }
       )
       const r = await compileSwf(ir, { modId: 'ItestMod', buildDir: dir, ffdec })

@@ -28,13 +28,14 @@ export const textNode = (id: string, over: Record<string, unknown> = {}, font = 
     type: 'text',
     content: 'Hello',
     sizing: 'fixed',
+    align: 'left', verticalAlign: 'top', lineHeight: { unit: 'auto' }, letterSpacing: { unit: 'px', value: 0 }, textFit: 'none', truncate: false,
     runs: [{ start: 0, end: 5, font: { kind: 'alias', name: font }, size: 18, fill: { type: 'solid', color: { r: 1, g: 0.5, b: 0 } } }],
     ...over
   }) as Node
 
 export function swf(nodes: Node[], over: Record<string, unknown> = {}): Swf {
   return {
-    specVersion: 1, id: 'test', name: 'Test', target: { kind: 'hudWidget' }, stage: { width: 1920, height: 1080 },
+    specVersion: 2, id: 'test', name: 'Test', target: { kind: 'hudWidget' }, stage: { width: 1920, height: 1080 },
     root: nodes[0]!.id,
     nodes: Object.fromEntries(nodes.map((n) => [n.id, n])),
     ...over

@@ -13,7 +13,7 @@ Use yarn (not npm).
 - `yarn build:wrapper`: compiles `tools/ffdec-wrapper` to `build/ffdec-wrapper.jar` (git-ignored). Needs a JDK 9+ (portable Temurin 17 in `C:\dev\jdk`, outside the repo, or set `INKWELL_JDK`); `--release 8` so the jar runs on the user's JRE. The FFDec integration test needs `java` on PATH (or `INKWELL_JAVA`) and skips unless FFDec and the jar exist. See `docs/ffdec-wrapper.md`.
 
 - `yarn compile:sample`: compiles `samples/hud-minimal` to `build/sample.swf` (git-ignored) through `src/main/swf` and the wrapper, for in-game testing. Needs the same Java/FFDec/jar as above. See `docs/swf-compiler.md`.
-- Spec package: `@inkwell-ui/spec` is `file:../Inkwell-Spec` (sibling checkout, branch feat/foundations). Run `yarn build` there if its `dist` is missing or stale, then `yarn install --force` here to re-copy it.
+- Spec package: `@inkwell-ui/spec` is `file:../Inkwell-Spec` (sibling checkout, branch feat/ir-text, specVersion 2). Run `yarn build` there if its `dist` is missing or stale, then `yarn install --force` here to re-copy it.
 
 Run test + typecheck before finishing any change. `electron` downloads its binary in a postinstall; if `yarn dev` says "Electron uninstall", run `node node_modules/electron/install.js`.
 

@@ -1,5 +1,4 @@
 import type { Node } from '@inkwell-ui/spec'
-import { z } from 'zod'
 import { issue, type LintIssue } from './lint'
 import type { EditTextSpec } from './tags'
 
@@ -28,19 +27,6 @@ export function fontAlias(name: string): string | undefined {
   const alias = '$' + words.join('') + 'Font'
   return words.length && KNOWN_ALIASES.has(alias) ? alias : undefined
 }
-
-// Not in the 0.1 IR yet: read from node.extra.text (see docs/swf-compiler.md).
-const TextExtra = z.looseObject({
-  align: z.enum(['left', 'center', 'right', 'justify']).optional(),
-  /** Line height in px. */
-  lineHeight: z.number().optional(),
-  /** Letter spacing in % of the font size. */
-  letterSpacing: z.number().optional(),
-  verticalAlign: z.enum(['top', 'center', 'bottom']).optional(),
-  shrink: z.enum(['shrink', 'fit']).optional(),
-  truncate: z.boolean().optional(),
-  decoration: z.string().optional()
-})
 
 const ALIGN = { left: 0, right: 1, center: 2, justify: 3 } as const
 
@@ -76,11 +62,7 @@ export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[] 
     lint.push(issue('error', 'font-unmapped', node.id, `Font "${run.font.name}" does not map to a Skyrim font alias (expected e.g. "Everywhere / Medium / 18").`))
     return { lint }
   }
-  const parsed = TextExtra.safeParse(node.extra?.['text'] ?? {})
-  if (!parsed.success) lint.push(issue('warning', 'text-extra-invalid', node.id, 'extra.text is malformed and was ignored.'))
-  const x = parsed.success ? parsed.data : {}
-  if (x.truncate) lint.push(issue('warning', 'text-truncate-unsupported', node.id, 'Truncation needs the runtime helper, which is not generated yet.'))
-  if (x.decoration && x.decoration !== 'none') lint.push(issue('warning', 'text-decoration-unsupported', node.id, `Text decoration "${x.decoration}" is not supported.`))
+  if (node.truncate) lint.push(issue('warning', 'text-truncate-unsupported', node.id, 'Truncation needs the runtime helper, which is not generated yet.'))
 
   const f = run.fill
   let color = { r: 0, g: 0, b: 0, a: 255 }
@@ -95,9 +77,12 @@ export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[] 
   const { sizing } = node
   const { width, height } = node.transform
   const script: TextScript = {}
-  if (x.verticalAlign && x.verticalAlign !== 'top') script.verticalAlign = x.verticalAlign
-  if (x.shrink) script.textAutoSize = x.shrink
-  if (x.letterSpacing) script.letterSpacing = (run.size * x.letterSpacing) / 100
+  if (node.verticalAlign !== 'top') script.verticalAlign = node.verticalAlign
+  if (node.textFit !== 'none') script.textAutoSize = node.textFit
+  const { lineHeight: lh, letterSpacing: ls } = node
+  const spacingPx = ls.unit === 'px' ? ls.value : (run.size * ls.value) / 100
+  if (spacingPx) script.letterSpacing = spacingPx
+  const lineHeightPx = lh.unit === 'auto' ? undefined : lh.unit === 'px' ? lh.value : (run.size * lh.value) / 100
   return {
     lint,
     text: {
@@ -114,8 +99,8 @@ export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[] 
         wordWrap: sizing !== 'autoWidth',
         multiline: sizing !== 'autoWidth' || node.content.includes('\n'),
         autoSize: sizing !== 'fixed',
-        align: ALIGN[x.align ?? 'left'],
-        leadingPx: x.lineHeight === undefined ? 0 : x.lineHeight - run.size * NATURAL_LINE_HEIGHT
+        align: ALIGN[node.align],
+        leadingPx: lineHeightPx === undefined ? 0 : lineHeightPx - run.size * NATURAL_LINE_HEIGHT
       }
     }
   }

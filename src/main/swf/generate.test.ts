@@ -41,7 +41,7 @@ describe('generate', () => {
   })
 
   it('AS2 is namespaced, readable, source-mapped and uses try/catch with a string log (no Error class)', () => {
-    const t = textNode('9:1', { extra: { text: { verticalAlign: 'center', letterSpacing: 5 } } })
+    const t = textNode('9:1', { verticalAlign: 'center', letterSpacing: { unit: 'percent', value: 5 } })
     const g = generate(swf([frame('f', ['9:1']), t], { id: 'hud' }), { modId: 'My Mod' })
     const cls = g.as2.find((f) => f.path === '__Packages/mods/My_Mod/HudLayout.as')!
     expect(cls.source).toContain('class mods.My_Mod.HudLayout {')
