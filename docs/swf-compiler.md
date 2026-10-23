@@ -35,9 +35,11 @@ Read from the spec IR `Text` node (specVersion 2): `align`, `verticalAlign`, `li
 - Text: truncation, mixed styles (first run wins), embedded fonts (`font-unmapped`), gradient text fills (black), text shadow (unproven in game; never emitted).
 - Missing child, repeated node, invalid root: `node-missing`, `node-cycle`, `root-invalid`.
 
-## Not verified in game
+## Verified in game
 
-Nothing here has been loaded in Skyrim. Open questions: rotation direction (Figma counterclockwise is mapped to Flash clockwise), leading ratio 1.2, `TextFormat.letterSpacing` in GFx, `AutoSize` combined with centre/right alignment, and whether an IR with stage 1920x1080 (not the vanilla 1280x720 reference) scales as the HUD expects. FFDec prints "LineCap/LineJoin style not supported" warnings on stderr for strokes; they are harmless.
+The test sheet (`yarn compile:ingame`, opened as runtime menus `,` for 1280x720 and `.` for 1920x1080) was checked on Skyrim SE 1.7.104: shapes with alpha and strokes, cubic curves, rotation direction (Figma counterclockwise rises to the right), all seven font aliases, alignment, wrapping, line height, letter spacing, `verticalAlign` and `textAutoSize`. A 1920x1080 stage works. Every font needs its own `ImportAssets2` tag (one asset per tag); a shared tag renders only its first font. See SPIKES.md section 11.
+
+Still unmeasured: pixel accuracy of letter spacing and of `autoSize` with centre or right alignment. FFDec prints "LineCap/LineJoin style not supported" warnings on stderr for strokes; they are harmless.
 
 ## Sample
 
