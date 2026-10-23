@@ -12,6 +12,7 @@ A `ws` server in the Electron main process, started on app ready and closed on q
 - Builds are debounced and run one swf at a time (one resident FFDec wrapper). `status` carries `swfId`; the plugin rolls them up (error beats compiling beats synced).
 - After a patch, a 100 ms debounce, then `onChange(swfId, ir, name)` for each touched swf; the plugin gets `status` `compiling`, then `synced` (or `error` when a lint issue has severity `error` or the hook throws).
 - `buildPipeline.ts` is the default `onChange`: stages `sync` (save IR), `codegen`, `swf`, `ffdec` via `compileSwf` and the resident wrapper; lint issues go out as `status.issues` (with `severity`). Output: `<project>/build/<name>.swf` (git-ignored), or `<userData>/build` without a project.
+- The window lists, for the latest build of each swf (kept per swf id, so frames never overwrite each other): a **Fonts** table (swf, layer, Figma `family/style`, text style name, resolved Skyrim alias or `unmapped`, and how: `text style` | `family/style` | `fallback` | `unmapped`) and a **Lint** list (errors first; severity, code, message, swf, layer name). `compileSwf` returns the fonts as `fonts`; they are not lint issues and not in the lint count.
 
 ## Config
 

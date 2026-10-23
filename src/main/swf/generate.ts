@@ -2,7 +2,7 @@ import type { Swf } from '@inkwell-ui/spec'
 import { issue, type LintIssue } from './lint'
 import { shapeToSvg } from './svg'
 import * as T from './tags'
-import { mapText, type TextScript } from './text'
+import { mapText, type FontInfo, type TextScript } from './text'
 
 export interface GenerateOptions {
   /** Mod id: AS2 classes live under `mods.<modId>.*`. */
@@ -19,6 +19,8 @@ export interface Generated {
   /** AS2 files relative to the scripts folder. */
   as2: { path: string; source: string }[]
   lint: LintIssue[]
+  /** One entry per text node: how its font resolved. Not lint. */
+  fonts: (FontInfo & { nodeId: string; nodeName: string })[]
   stage: { width: number; height: number }
 }
 
@@ -76,6 +78,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   const shapes: Generated['shapes'] = []
   const fonts = new Map<string, number>() // alias -> local character id (ImportAssets2)
   const scripts: ScriptItem[] = []
+  const fontRows: Generated['fonts'] = []
   let nextId = 1
   const alloc = (): number => nextId++
   const seen = new Set<string>()
@@ -131,6 +134,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
       } else {
         const m = mapText(n)
         lint.push(...m.lint)
+        if (m.font) fontRows.push({ ...m.font, nodeId: cid, nodeName: n.name })
         if (!m.text) continue
         let fontId = fonts.get(m.text.alias)
         if (fontId === undefined) fonts.set(m.text.alias, (fontId = alloc()))
@@ -183,5 +187,5 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     T.showFrame(),
     T.endTag()
   ]
-  return { tags, shapes, as2, lint, stage: ir.stage }
+  return { tags, shapes, as2, lint, fonts: fontRows, stage: ir.stage }
 }

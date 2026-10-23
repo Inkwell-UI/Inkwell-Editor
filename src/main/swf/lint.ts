@@ -6,6 +6,8 @@ export interface LintIssue {
   code: string
   message: string
   nodeId: string
+  /** Layer name from the IR; filled in by compileSwf. */
+  nodeName?: string
 }
 
 export const issue = (severity: LintSeverity, code: string, nodeId: string, message: string): LintIssue => ({ severity, code, message, nodeId })

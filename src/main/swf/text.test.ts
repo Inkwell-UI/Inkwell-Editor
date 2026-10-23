@@ -122,3 +122,14 @@ describe('font resolution order', () => {
     expect(r.lint[0]!.message).toContain('Futura/Regular')
   })
 })
+
+describe('compileSwf-facing font info (mapText.font)', () => {
+  const f = (name: string, styleName?: string) =>
+    mapText(textNode('t', { runs: [{ start: 0, end: 5, font: { kind: 'alias', name, ...(styleName && { styleName }) }, size: 18 }] }) as TextNode).font
+  it.each([
+    ['text style', f('Inter/Regular', 'Everywhere / Bold / 24'), { figmaFont: 'Inter/Regular', styleName: 'Everywhere / Bold / 24', alias: '$EverywhereBoldFont' }],
+    ['family/style', f('Everywhere/Medium'), { figmaFont: 'Everywhere/Medium', alias: '$EverywhereMediumFont' }],
+    ['fallback', f('Inter/Bold', 'Body'), { figmaFont: 'Inter/Bold', styleName: 'Body', alias: '$EverywhereBoldFont' }],
+    ['unmapped', f('Futura/Regular'), { figmaFont: 'Futura/Regular' }]
+  ])('via %s', (via, font, rest) => expect(font).toEqual({ ...rest, via }))
+})

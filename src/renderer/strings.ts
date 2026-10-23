@@ -21,5 +21,12 @@ export const strings = {
   syncLint: 'Lint issues',
   syncSwfs: 'SWFs',
   syncOrphaned: 'orphaned',
+  fontsTitle: 'Fonts',
+  fontsNone: 'No text layers built yet',
+  fontsCols: { swf: 'SWF', layer: 'Layer', figma: 'Figma font', style: 'Text style', alias: 'Skyrim alias', via: 'Resolved by' },
+  unmapped: 'unmapped',
+  lintTitle: 'Lint',
+  lintNone: 'No issues',
+  lintCols: { severity: 'Severity', code: 'Code', message: 'Message', swf: 'SWF', layer: 'Layer' },
   buildStates: { idle: 'Idle', compiling: 'Compiling', synced: 'Synced', error: 'Error' }
 } as const

@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import type { SwfReport } from '../../shared/syncState'
 import { createStageTimer, type BuildTiming } from '../../shared/timing'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
 import { loadProject, saveProject, type Project } from '../project'
@@ -14,7 +15,7 @@ export interface PipelineConfig {
   javaPath: string
   ffdecDir: string
   jarPath: string
-  onBuild?: (swfPath: string, timing: BuildTiming, lintCount: number) => void
+  onBuild?: (swfPath: string, timing: BuildTiming, lintCount: number, report: SwfReport) => void
 }
 
 /** Defaults documented in docs/sync-server.md. */
@@ -22,6 +23,19 @@ export const envConfig = (env: NodeJS.ProcessEnv = process.env): Pick<PipelineCo
   javaPath: env['INKWELL_JAVA'] ?? 'java',
   ffdecDir: env['INKWELL_FFDEC'] ?? 'C:\\Program Files (x86)\\FFDec'
 })
+
+/** Rows for the editor window from one compile result. */
+export function toReport(swfId: string, name: string, r: Pick<Awaited<ReturnType<typeof compileSwf>>, 'lint' | 'fonts'>): SwfReport {
+  return {
+    swfId,
+    name,
+    fonts: r.fonts.map((f) => ({
+      swfName: name, nodeId: f.nodeId, layerName: f.nodeName, figmaFont: f.figmaFont,
+      ...(f.styleName ? { styleName: f.styleName } : {}), ...(f.alias ? { alias: f.alias } : {}), via: f.via
+    })),
+    lint: r.lint.map((l) => ({ swfName: name, nodeId: l.nodeId, layerName: l.nodeName ?? l.nodeId, severity: l.severity, code: l.code, message: l.message }))
+  }
+}
 
 /** The server's default onChange: persist the IR (if a project is open), compile it with the resident FFDec wrapper, return lint as sync issues. */
 export function createBuildPipeline(cfg: PipelineConfig) {
@@ -57,7 +71,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
 
     const r = await compileSwf(ir, { modId, instanceNames, buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec })
     const timing: BuildTiming = { stages: { ...sync.stages, ...r.timings.stages }, total: sync.total + r.timings.total }
-    cfg.onBuild?.(r.swfPath, timing, r.lint.length)
+    cfg.onBuild?.(r.swfPath, timing, r.lint.length, toReport(swfId, name, r))
     return { issues: r.lint.map((l) => ({ code: l.code, message: l.message, nodeId: l.nodeId, severity: l.severity })) }
   }
 

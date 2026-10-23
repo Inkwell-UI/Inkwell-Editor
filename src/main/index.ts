@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'node:path'
 import { Swf } from '@inkwell-ui/spec'
 import { PRODUCT_NAME } from '../shared/product'
-import type { SyncUiState } from '../shared/syncState'
+import { flattenReports, type SwfReport, type SyncUiState } from '../shared/syncState'
 import { loadProject } from './project'
 import { createBuildPipeline, envConfig } from './sync/buildPipeline'
 import { startSyncServer, type Layer, type SwfInfo } from './sync/syncServer'
@@ -30,6 +30,7 @@ const lintBySwf = new Map<string, number>()
 let looseCount = 0
 const lintTotal = (): number => [...lintBySwf.values()].reduce((a, b) => a + b, 0) + looseCount
 
+const reports = new Map<string, SwfReport>() // swf id -> latest build
 let server: Awaited<ReturnType<typeof startSyncServer>> | undefined
 let pipeline: ReturnType<typeof createBuildPipeline> | undefined
 
@@ -43,7 +44,10 @@ async function startSync(): Promise<void> {
     ...(projectDir ? { projectDir } : {}),
     buildDir: projectDir ? join(projectDir, 'build') : join(app.getPath('userData'), 'build'),
     jarPath: join(app.getAppPath(), 'tools/ffdec-wrapper/build/ffdec-wrapper.jar'),
-    onBuild: (_p, timing) => update({ timing })
+    onBuild: (_p, timing, _n, report) => {
+      reports.set(report.swfId, report)
+      update({ timing, ...flattenReports(reports.values()) })
+    }
   })
   server = await startSyncServer({ editorVersion: app.getVersion(), initial, onChange: pipeline.onChange })
   server.events.on('connections', (connections: number) => update({ connections }))

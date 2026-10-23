@@ -15,4 +15,42 @@ export interface SyncUiState {
   lintCount: number
   swfCount: number
   orphanedCount: number
+  /** Latest build of every swf, flattened (added later; absent in older states). */
+  fonts?: FontRow[]
+  lint?: LintRow[]
+}
+
+export interface FontRow {
+  swfName: string
+  nodeId: string
+  layerName: string
+  figmaFont: string
+  styleName?: string
+  alias?: string
+  via: 'text style' | 'family/style' | 'fallback' | 'unmapped'
+}
+export interface LintRow {
+  swfName: string
+  nodeId: string
+  layerName: string
+  severity: 'error' | 'warning' | 'info'
+  code: string
+  message: string
+}
+/** What one build of one swf reports; the main process keeps the latest per swf id so frames never overwrite each other. */
+export interface SwfReport {
+  swfId: string
+  name: string
+  fonts: FontRow[]
+  lint: LintRow[]
+}
+
+const RANK = { error: 0, warning: 1, info: 2 }
+/** Flattens the per-swf reports for the window: fonts by swf then insertion order, lint errors first. */
+export function flattenReports(reports: Iterable<SwfReport>): { fonts: FontRow[]; lint: LintRow[] } {
+  const all = [...reports]
+  return {
+    fonts: all.flatMap((r) => r.fonts),
+    lint: all.flatMap((r) => r.lint).sort((a, b) => RANK[a.severity] - RANK[b.severity])
+  }
 }

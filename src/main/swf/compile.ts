@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import type { Swf } from '@inkwell-ui/spec'
 import { createStageTimer, type BuildTiming } from '../../shared/timing'
 import type { FfdecJob, FfdecResult } from '../build/ffdecWrapper'
-import { generate, ident, type GenerateOptions } from './generate'
+import { generate, type Generated, ident, type GenerateOptions } from './generate'
 import type { LintIssue } from './lint'
 import { writeSwf } from './tags'
 
@@ -20,6 +20,8 @@ export interface CompileResult {
   swfPath: string
   /** Errors block export; the SWF is still written so the rest can be previewed. */
   lint: LintIssue[]
+  /** Font resolution per text node (not part of `lint`). */
+  fonts: (Generated['fonts'][number] & { swfId: string })[]
   timings: BuildTiming
 }
 
@@ -62,5 +64,6 @@ export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<Compile
   } else {
     await copyFile(base, swfPath) // nothing for FFDec to fill in
   }
-  return { swfPath, lint: g.lint, timings: timer.finishBuild() }
+  const lint = g.lint.map((l) => ({ ...l, nodeName: ir.nodes[l.nodeId]?.name }))
+  return { swfPath, lint, fonts: g.fonts.map((f) => ({ ...f, swfId: ir.id })), timings: timer.finishBuild() }
 }

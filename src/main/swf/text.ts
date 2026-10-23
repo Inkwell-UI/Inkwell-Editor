@@ -69,7 +69,16 @@ export interface MappedText {
   script: TextScript
 }
 
-export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[] } {
+/** How a text node's font was resolved (shown in the editor window; not a lint issue). */
+export interface FontInfo {
+  /** Figma `family/style`. */
+  figmaFont: string
+  styleName?: string
+  alias?: string
+  via: 'text style' | 'family/style' | 'fallback' | 'unmapped'
+}
+
+export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[]; font?: FontInfo } {
   const lint: LintIssue[] = []
   const run = node.runs[0]
   if (!run) {
@@ -84,13 +93,18 @@ export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[] 
   // Order: (a) text style name, (b) family/style, (c) fallback table + warning, (d) error. The Figma data stays in the message.
   const { name, styleName } = run.font
   const figma = `Font "${name}"${styleName ? ` (text style "${styleName}")` : ''}`
-  let alias = (styleName ? fontAlias(styleName) : undefined) ?? fontAlias(name)
+  const info = { figmaFont: name, ...(styleName ? { styleName } : {}) }
+  const byStyle = styleName ? fontAlias(styleName) : undefined
+  let alias = byStyle ?? fontAlias(name)
+  let font: FontInfo = { ...info, ...(alias ? { alias } : {}), via: byStyle ? 'text style' : 'family/style' }
   if (!alias) {
     alias = fallbackAlias(name)
     if (!alias) {
+      font = { ...info, via: 'unmapped' }
       lint.push(issue('error', 'font-unmapped', node.id, `${figma} does not map to a Skyrim font alias (expected e.g. "Everywhere / Medium / 18").`))
-      return { lint }
+      return { lint, font }
     }
+    font = { ...info, alias, via: 'fallback' }
     lint.push(issue('warning', 'font-fallback', node.id, `${figma} is not a Skyrim font alias; using the nearest, ${alias}. Name a Figma text style like "Everywhere / Medium / 18" to choose.`))
   }
   if (node.truncate) lint.push(issue('warning', 'text-truncate-unsupported', node.id, 'Truncation needs the runtime helper, which is not generated yet.'))
@@ -116,6 +130,7 @@ export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[] 
   const lineHeightPx = lh.unit === 'auto' ? undefined : lh.unit === 'px' ? lh.value : (run.size * lh.value) / 100
   return {
     lint,
+    font,
     text: {
       alias,
       gutter: { x: -GUTTER, y: -GUTTER },
