@@ -2,13 +2,16 @@ import { useEffect, useMemo } from 'react'
 import { useActiveSwf, useProject } from '../hooks/useProject'
 import { redoSwf, undoSwf } from '../state/overlayStore'
 import { useProjectStore } from '../state/projectStore'
-import { usePopoutStore } from '../state/popoutStore'
+import { isPreviewWindow, usePopoutStore } from '../state/popoutStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { useWorkspaceStore } from '../state/workspaceStore'
 import { strings } from '../strings'
 import { Workspace } from '../workspace/Workspace'
 import { applyOverrides, removePanel } from '../workspace/layout'
 import { WORKSPACE_IDS, WORKSPACES } from '../workspace/workspaces'
+import { inkwell } from '../hooks/api'
+import { useDialogStore } from '../state/dialogStore'
+import { Toasts } from '../ui/Toasts'
 import { Dialogs } from './Dialogs'
 import { StartScreen } from './StartScreen'
 import { StatusBar } from './StatusBar'
@@ -57,6 +60,12 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  // first launch: the Setup Doctor opens by itself when a check fails (main marks it as seen either way)
+  useEffect(() => {
+    if (isPreviewWindow()) return
+    void inkwell?.doctorFirstLaunch().then((show) => show && useDialogStore.getState().show('setupDoctor'))
+  }, [])
+
   // a selection whose node vanished (IR changed, other SWF) is dropped
   useEffect(() => {
     useSelectionStore.getState().prune((id) => !!swf?.ir.nodes[id])
@@ -70,6 +79,7 @@ export function AppShell() {
       <main className="shell-main"><WorkspaceView /></main>
       <StatusBar />
       <Dialogs />
+      <Toasts />
     </div>
   )
 }

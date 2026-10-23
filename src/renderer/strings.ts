@@ -313,7 +313,9 @@ export const strings = {
     buildNoSwfs: 'No SWF to build yet',
     deploy: 'Deploy',
     package: 'Package',
-    deployReason: 'Arrives with the deploy tool'
+    setup: 'Setup',
+    planned: 'Planned',
+    setupTip: 'Open the Setup Doctor and settings'
   },
 
   status: {
@@ -326,11 +328,13 @@ export const strings = {
     historyTip: 'Show the last 50 builds',
     historyCols: ['#', 'SWF', 'Edit to preview', 'Stages'],
     historyNote: 'Edit to preview = pipeline total + Ruffle first frame. It does not include the Figma debounce. Amber above 1000 ms.',
-    stage: (n: string) => ({ sync: 'Sync', codegen: 'Codegen', swf: 'SWF', ffdec: 'FFDec', 'preview-build': 'Preview', preview: 'Ruffle' } as Record<string, string>)[n] ?? n,
+    stage: (n: string) => ({ sync: 'Sync', codegen: 'Codegen', swf: 'SWF', ffdec: 'FFDec', 'preview-build': 'Preview', preview: 'Ruffle', compile: 'Compile', vanilla: 'Vanilla check', write: 'Write' } as Record<string, string>)[n] ?? n,
     ffdec: (s?: string) => (s === 'warm' ? 'FFDec: warm' : s === 'cold' ? 'FFDec: cold' : 'FFDec: checking'),
     ffdecNotFound: 'FFDec: not found',
     openDoctor: 'Open the Setup Doctor',
     packs: 'Packs: none',
+    deploy: 'Deploy',
+    deployTip: 'Last deploy. Stages: compile, vanilla check, write.',
     undo: 'Undo: SWF',
     undoTip: (name?: string) => (name ? `Undo history of the SWF "${name}" (one history per SWF)` : 'One undo history per SWF')
   },
@@ -359,19 +363,81 @@ export const strings = {
       user: 'End-user (INI)',
       userNote: 'Hotkeys, widget position and scale, theme, UI scale.'
     },
-    doctor: {
-      title: 'Setup Doctor',
-      body: 'Inkwell does not bundle Java, FFDec, the Creation Kit or game files. The Setup Doctor will check these (only the first two have live status today):',
-      checks: [
-        { id: 'java', title: 'Java', note: 'Runs FFDec and the resident wrapper.' },
-        { id: 'ffdec', title: 'FFDec and the wrapper', note: 'Your FFDec install (INKWELL_FFDEC) and tools/ffdec-wrapper (yarn build:wrapper).' },
-        { id: 'papyrus', title: 'Papyrus compiler', note: 'Points at your papyrus-compiler; arrives with the setup screen.' },
-        { id: 'skyrim', title: 'Skyrim install and vanilla cache', note: 'Finds Skyrim - Interface.bsa; arrives with the BSA reader integration.' },
-        { id: 'plugin', title: 'Figma plugin', note: 'Plugin manifest path and a live handshake test; arrives with the setup screen.' }
-      ],
-      missing: (what: 'java' | 'ffdec' | 'wrapper') =>
-        what === 'java' ? 'Java was not found. Install a JRE or set INKWELL_JAVA.' : what === 'wrapper' ? 'The wrapper jar is missing. Run "yarn build:wrapper".' : 'FFDec was not found. Install it or set INKWELL_FFDEC.'
-    },
+    doctor: { title: 'Setup Doctor and settings' },
     figma: { title: 'Figma setup guide', body: 'The setup guide with screenshots arrives later.' }
+  },
+
+  doctor: {
+    intro: 'Inkwell does not bundle Java, FFDec, the Papyrus compiler, the Creation Kit or any game file. These checks show what it found on this computer.',
+    rerun: 'Re-run',
+    rerunTip: 'Run all checks again',
+    running: 'Checking...',
+    summary: (pass: number, warn: number, fail: number) => `${pass} passed, ${warn} to look at, ${fail} failed`,
+    titles: {
+      java: 'Java',
+      ffdec: 'FFDec',
+      wrapper: 'FFDec wrapper',
+      papyrus: 'Papyrus compiler',
+      skyrim: 'Skyrim install',
+      vanilla: 'Vanilla SWF cache',
+      projectIgnore: 'Project .gitignore',
+      figma: 'Figma plugin'
+    } as Record<string, string>,
+    status: { pass: 'Passed', warn: 'Needs attention', fail: 'Failed', skipped: 'Skipped' } as Record<string, string>,
+    rowLabel: (title: string, status: string) => `${title}: ${status}`,
+    copied: 'Copied',
+    working: 'Working...',
+    benchmarkTitle: 'Warm wrapper benchmark',
+    benchmarkRows: (b: { coldCliMs?: number; coldRuns?: number; firstJobMs?: number; warmMedianMs?: number; warmRuns?: number }) => [
+      ['FFDec CLI, cold (median of ' + (b.coldRuns ?? 0) + ')', b.coldCliMs],
+      ['Wrapper, first job (starts the JVM)', b.firstJobMs],
+      ['Wrapper, warm (median of ' + (b.warmRuns ?? 0) + ')', b.warmMedianMs]
+    ] as [string, number | undefined][],
+    benchmarkFailed: (e?: string) => `The benchmark failed: ${e ?? 'unknown error'}`,
+    cacheDone: (n: number, mb: string) => `Extracted ${n} SWFs (${mb} MB).`,
+    cacheFailed: (e?: string) => `The cache could not be built: ${e ?? 'unknown error'}`,
+    browseTitle: (key: string) => `Choose: ${key}`,
+    deployFolders: 'Deploy folders (MO2)',
+    deployFoldersNote: 'Deploy writes only into these folders, never into the game Data folder.',
+    fields: {
+      mo2ModsDir: 'MO2 mods directory',
+      mo2ModName: 'Mod name (folder inside the mods directory; default: the project name)',
+      mo2OverwriteDir: 'MO2 overwrite folder'
+    } as Record<string, string>,
+    notSet: 'not set',
+    fromEnv: 'set by an INKWELL_* environment variable',
+    browse: 'Browse',
+    clear: 'Clear',
+    clearTip: (what: string) => `Clear ${what}`
+  },
+
+  deploy: {
+    menuLabel: 'Deploy targets',
+    targetsTitle: 'Deploy target',
+    scopeLabel: 'What to deploy',
+    scopeAll: 'All SWFs of the project',
+    scopeActive: (name?: string) => (name ? `Only the active SWF (${name})` : 'Only the active SWF'),
+    pathLabel: (p: string) => `Writes to ${p}`,
+    notConfirmed: 'First deploy here asks for confirmation',
+    confirmed: 'Confirmed for this project',
+    noProject: 'Open a project to deploy',
+    noFfdec: 'FFDec or Java was not found',
+    noSwfs: 'No SWF to deploy yet',
+    setFolders: 'Set deploy folders...',
+    custom: 'Custom menus: only the SWF is written. The runtime menu JSON format is not in inkwell-spec yet.',
+    confirmTitle: 'Deploy to a new folder?',
+    confirmBody: 'This is the first deploy of this project to:',
+    confirmFiles: (n: number) => `${n} file(s) will be written`,
+    confirmRemoved: (n: number) => `${n} file(s) written by an earlier deploy will be removed`,
+    confirmNote: 'Inkwell writes only into this folder and lists what it wrote in .inkwell-deploy.json. It never touches the game Data folder or other files.',
+    confirm: 'Deploy',
+    cancel: 'Cancel',
+    warnings: 'Warnings',
+    running: 'Deploying...',
+    preparing: 'Compiling for deploy...',
+    done: (msg: string) => msg,
+    failed: (e: string) => `Deploy failed: ${e}`,
+    toastDone: 'Deployed',
+    toastFailed: 'Deploy failed'
   }
 }

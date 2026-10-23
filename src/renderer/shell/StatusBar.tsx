@@ -4,8 +4,22 @@ import { useSyncState } from '../hooks/useSyncState'
 import { specLabel, timingLine } from '../model/statusBar'
 import { useDialogStore } from '../state/dialogStore'
 import { useTimingStore } from '../state/timingStore'
+import { formatMs } from '../model/statusBar'
 import { strings } from '../strings'
 import { Popover } from '../ui/Popover'
+
+/** Deploy progress and the last result with its stage timings (compile, vanilla check, write). */
+function DeployItem() {
+  const d = useSyncState()?.deploy
+  if (!d) return null
+  const parts = d.timing ? Object.entries(d.timing.stages).map(([n, v]) => `${strings.status.stage(n)} ${formatMs(v)}`) : []
+  return (
+    <span className={`item${d.state === 'error' ? ' is-error' : ''}`} title={`${strings.status.deployTip} ${d.message}`} data-testid="deploy-status" role="status">
+      {strings.status.deploy}: {d.state === 'done' && d.timing ? <strong>{formatMs(d.timing.total)}</strong> : d.state === 'error' ? 'failed' : d.state === 'writing' ? strings.deploy.running : strings.deploy.preparing}
+      {parts.length > 0 && <span className="mono"> [{parts.join(' · ')}]</span>}
+    </span>
+  )
+}
 
 /**
  * Zone 6B (UX 4.6): spec version, last build with every stage and the Ruffle time (amber above one second edit-to-preview; click for the
@@ -66,6 +80,7 @@ export function StatusBar() {
       ) : (
         <span className="item" data-testid="ffdec">{strings.status.ffdec(ffdec?.status)}</span>
       )}
+      {sync?.deploy && <DeployItem />}
       <span className="item">{strings.status.packs}</span>
       <span className="spacer" />
       <span className="item" title={strings.status.undoTip(undo.swfName)} data-testid="undo-scope">{strings.status.undo}</span>

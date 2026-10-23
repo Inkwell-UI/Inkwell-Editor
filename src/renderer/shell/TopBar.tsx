@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, Copy, Hammer, Package, Rocket, Settings2, FileStack, PenLine } from 'lucide-react'
+import { ChevronDown, Copy, Hammer, Package, Settings2, FileStack, PenLine, Stethoscope } from 'lucide-react'
 import { PRODUCT_NAME } from '../../shared/product'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useProject } from '../hooks/useProject'
@@ -13,6 +13,7 @@ import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
 import { WORKSPACE_IDS } from '../workspace/workspaces'
+import { DeployMenu } from './DeployMenu'
 
 function Dot({ tone }: { tone: DotTone }) {
   return <span className={`dot dot-${tone}`} aria-hidden="true" />
@@ -136,7 +137,7 @@ function GameDot() {
   )
 }
 
-/** Zone 1 (UX 4.1): project, SWF switcher, target pill, workspace switcher, connection dots, Build All, Deploy and Package (disabled). */
+/** Zone 1 (UX 4.1): project, SWF switcher, target pill, workspace switcher, Setup, connection dots, Build All, Deploy (MO2) and Package (planned). */
 export function TopBar() {
   const project = useProject()
   const swf = useActiveSwf()
@@ -158,11 +159,12 @@ export function TopBar() {
       </Btn>
       <WorkspaceSwitcher />
       <span className="spacer" />
+      <Btn icon={Stethoscope} variant="quiet" onClick={() => show('setupDoctor')} label={strings.top.setupTip} testId="open-setup">{strings.top.setup}</Btn>
       <FigmaDot />
       <GameDot />
       <Btn icon={Hammer} variant="primary" onClick={() => void inkwell?.buildAll()} reason={buildReason} testId="build-all">{compiling ? strings.top.building : strings.top.buildAll}</Btn>
-      <Btn icon={Rocket} reason={strings.top.deployReason} label={strings.top.deploy}>{strings.top.deploy}<ChevronDown size={12} aria-hidden="true" /></Btn>
-      <Btn icon={Package} reason={strings.top.deployReason} label={strings.top.package}>{strings.top.package}<ChevronDown size={12} aria-hidden="true" /></Btn>
+      <DeployMenu />
+      <Btn icon={Package} reason={strings.top.planned} label={strings.top.package}>{strings.top.package}<ChevronDown size={12} aria-hidden="true" /></Btn>
     </header>
   )
 }
