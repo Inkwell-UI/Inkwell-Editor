@@ -26,7 +26,11 @@ Electron, React, React Flow, Knotwork (`@nicklaj/knotwork`, pinned to a GitHub t
 - **Local servers need a session token and origin checks** (Figma bridge, runtime debug connection). Bind to localhost only.
 - **Never ship or export Bethesda's vanilla SWFs.** Extract from the user's install into a per-game-version cache; git-ignore it; refuse to export unmodified vanilla files.
 - **Never touch `fontconfig.txt`;** embed custom fonts in the mod's own SWF.
-- **FFDec is user-installed** and driven as a separate process. Never bundle it.
+- **FFDec is user-installed** and driven as a separate process. Never bundle it. A cold FFDec run takes about 2.4 s, so builds go through a resident wrapper (a separate component on `ffdec_lib.jar`, LGPL, pinned to an FFDec version) that takes jobs over stdin/stdout.
+- **Text compiles to `DefineEditText` with a font id and outlines**, importing the alias font from `gfxfontlib.swf` (`ImportAssets2`), as vanilla menus do. Never `fontClass` or device fonts: they draw nothing in Skyrim.
+- **Generated AS2 stays at Flash 8 level.** `try/catch` works, but there is no `Error` class (throw strings or plain objects), and AS2 runtime `flash.filters` is unavailable.
+- **The Papyrus compiler is user-pointed, not bundled.** Header stubs are written from scratch and must match real declarations (full properties vs `auto`); wrong stubs compile silently to broken code.
+- **SkyUI widgets need two scripts** (the widget and an empty `...Instance` that extends it), the SWF in `Interface/exported/widgets/<mod>/`, and a root clip named `widget`. Never bundle SkyUI files (no license).
 - **Measure every build stage** (sync, codegen, FFDec, preview) and keep the preview behind the pluggable preview interface; Ruffle is the only 1.0 implementation.
 - **Skyrim translation files** use full language names and the game's expected encoding; cover the exporter with tests.
 - **Editor UI is English only in 1.0**, but all UI strings live in one module.
