@@ -6,6 +6,11 @@ import { loadProject, saveProject, stableStringify } from './index'
 
 const sample = resolve(__dirname, '../../../samples/hud-minimal')
 const tmp = () => mkdtemp(join(tmpdir(), 'inkwell-'))
+// a running editor pointed at the sample writes extra swf folders and build/ into it; only the committed `hud` swf is test data
+const sampleFilter = (src: string) => {
+  const rel = src.slice(sample.length).split('\\').join('/').replace(/^\//, '')
+  return !(rel === 'build' || rel.startsWith('build/') || (/^swfs\/[^/]+/.test(rel) && !/^swfs\/hud(\/|$)/.test(rel)))
+}
 
 async function files(dir: string, rel = ''): Promise<Record<string, string>> {
   const out: Record<string, string> = {}
@@ -36,7 +41,7 @@ describe('project format', () => {
 
   it('preserves unknown keys and is stable on re-save', async () => {
     const dir = await tmp()
-    await cp(sample, dir, { recursive: true })
+    await cp(sample, dir, { recursive: true, filter: sampleFilter })
     const p = await loadProject(dir)
     expect(p.meta['x-unknown']).toBe(true)
     expect(p.swfs['hud']?.ir['extra']).toEqual({ fromFuturePack: { a: 1 } })
@@ -48,7 +53,7 @@ describe('project format', () => {
 
   it('opens a v1 project through the spec migration', async () => {
     const dir = await tmp()
-    await cp(sample, dir, { recursive: true })
+    await cp(sample, dir, { recursive: true, filter: sampleFilter })
     const f = join(dir, 'swfs/hud/ir.json')
     const ir = JSON.parse(await readFile(f, 'utf8'))
     ir.specVersion = 1
@@ -64,7 +69,7 @@ describe('project format', () => {
 
   it('save deletes swf folders no longer in the project', async () => {
     const dir = await tmp()
-    await cp(sample, dir, { recursive: true })
+    await cp(sample, dir, { recursive: true, filter: sampleFilter })
     const p = await loadProject(dir)
     p.swfs['gone'] = p.swfs['hud']!
     await saveProject(dir, p)

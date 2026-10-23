@@ -106,7 +106,8 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
         lint.push(issue('warning', 'unsupported-node', cid, `${n.type} nodes are not supported yet; "${n.name}" and its children are skipped.`))
         continue
       }
-      if (n.blend && n.blend !== 'normal' && n.blend !== 'pass_through') lint.push(issue('warning', 'blend-ignored', cid, `Blend mode "${n.blend}" is not supported; ignored.`))
+      if (n.blend && !['normal', 'pass_through'].includes(n.blend.toLowerCase())) // Figma sends upper case (PASS_THROUGH is every layer's default)
+        lint.push(issue('warning', 'blend-ignored', cid, `Blend mode "${n.blend}" is not supported; ignored.`))
       if (n.mask) lint.push(issue('warning', 'mask-ignored', cid, 'Masks are not supported yet; ignored.'))
 
       let name = ident(opts.instanceNames?.[cid] ?? n.name)

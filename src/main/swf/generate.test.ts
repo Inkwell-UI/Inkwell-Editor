@@ -88,6 +88,11 @@ describe('generate', () => {
       expect(g.shapes.map((s) => s.nodeId)).toEqual(['s'])
     })
 
+    it('blend: PASS_THROUGH and NORMAL (any case, Figma sends upper case) are silent; others warn', () => {
+      const g = gen([frame('f', ['a', 'b', 'c']), rectShape('a', { blend: 'PASS_THROUGH' }), rectShape('b', { blend: 'NORMAL' }), rectShape('c', { blend: 'MULTIPLY' })])
+      expect(g.lint.map((l) => [l.code, l.nodeId])).toEqual([['blend-ignored', 'c']])
+    })
+
     it('cubic curves -> warning and stay cubic in the SVG', () => {
       const paths = [[{ op: 'M', x: 0, y: 0 }, { op: 'C', x1: 0, y1: 10, x2: 10, y2: 10, x: 20, y: 0 }, { op: 'Z' }]]
       const g = gen([frame('f', ['s']), rectShape('s', { paths })])
