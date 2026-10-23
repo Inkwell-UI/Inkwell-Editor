@@ -31,6 +31,7 @@ npm test
 
 ## Caveats
 - This archive stores **no compressed entries and no embedded names**, so the LZ4 path is NOT exercised on real data; only a lz4js frame round-trip is tested. Needs a compressed v105 BSA (e.g. a mod's) to prove it.
+- **Update (review, 2026-10-23, SPIKES.md spike 5):** the LZ4 path is now verified on real data. 8 of 14 mod BSAs in MO2 have the compression flag; `bsa.ts` extracted all 51 compressed entries of `Quick Start - SE.bsa` (4) and `DBM_RelicNotifications - Textures.bsa` (47, 126 MB). Decompressed size equals the stored original size and each file starts with a valid `DDS ` magic. **Not byte-compared with a reference extractor (BSArch)**; a golden byte-compare test is still to do. Steam/GOG path discovery is also still missing (path hard-coded). `SkyUI_SE.bsa` (71 entries) has 0 compressed, so it does not exercise LZ4.
 - `fonts_pl.swf` has 8 trailing bytes after its declared length; the check accepts declared <= actual and reports `trailing`.
 - Index read assumes the folder/file-name block is under 64 MB (true here, tiny).
 - `size` in entries is the stored size (compressed if compressed).
