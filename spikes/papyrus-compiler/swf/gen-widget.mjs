@@ -19,7 +19,7 @@ const tag = (code, body) => body.length < 63
 const cat = (...a) => Buffer.concat(a);
 
 const W = 200 * 20, H = 40 * 20, E = 0x00;
-const SHAPE = 1, TEXT = 2, FONT = 3;
+const SHAPE = 1, TEXT = 2, FONT = 3, SPRITE = 4;
 
 // placeholder 100x100px rect shape, replaced by `-importShapes` from src/shapes/1.svg
 function shape() {
@@ -48,10 +48,12 @@ const place = (depth, id, x, y, name) => {
   return tag(26, cat(u8(0b0000_0110 | (name ? 0b0010_0000 : 0)), u16(depth), u16(id), m.bytes(), name ? str(name) : Buffer.alloc(0)));
 };
 
+// SkyUI's WidgetLoader requires holder.widget (a clip) to exist: shape + text live inside it
+const sprite = tag(39, cat(u16(SPRITE), u16(1), place(1, SHAPE, 0, 0, ''), place(2, TEXT, 8 * 20, 8 * 20, 'label'), tag(1, Buffer.alloc(0)), tag(0, Buffer.alloc(0))));
 const body = cat(
   tag(9, Buffer.from([0x10, 0x10, 0x10])),
-  shape(), fontMode === 'class' ? Buffer.alloc(0) : font(), editText(),
-  place(1, SHAPE, 0, 0, ''), place(2, TEXT, 8 * 20, 8 * 20, 'label'),
+  shape(), fontMode === 'class' ? Buffer.alloc(0) : font(), editText(), sprite,
+  place(1, SPRITE, 0, 0, 'widget'),
   tag(12, u8(E)), tag(1, Buffer.alloc(0)), u16(0));
 const hdr = rect(0, W, 0, H);
 const len = 8 + hdr.length + 4 + body.length;

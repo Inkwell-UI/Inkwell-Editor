@@ -53,7 +53,7 @@ The official build used the real SkyUI sources (community clone, read-only) and 
 ## In-game test (human)
 Deployed to `C:\Modding\MO2\mods\Inkwell Spikes`:
 - `Scripts\Inkwell_SpikeWidget.pex` (russo build); `Scripts\_official\Inkwell_SpikeWidget.pex` (official build, not loaded by the game; copy it over the top to A/B).
-- `Scripts\Inkwell_SpikeWidgetInstance.pex` (+ `_official` copy); `Interface\exported\Inkwell\InkwellSpikeWidget.swf`; `InkwellSpikes.esp` (quest attaches `Inkwell_SpikeWidgetInstance`).
+- `Scripts\Inkwell_SpikeWidgetInstance.pex` (+ `_official` copy); `Interface\exported\widgets\Inkwell\InkwellSpikeWidget.swf`; `InkwellSpikes.esp` (quest attaches `Inkwell_SpikeWidgetInstance`).
 
 Steps:
 1. In MO2 enable `Inkwell Spikes` (SkyUI must be enabled; it is the esp's master). The esp should show as ESL-flagged. If MO2 or the game rejects it, use the CK fallback below.
@@ -65,7 +65,7 @@ Steps:
 CK fallback: new ESL plugin with master SkyUI_SE.esp; new Quest `InkwellSpikeQuest`, tick "Start Game Enabled", Scripts tab: add `Inkwell_SpikeWidget`; save. (Console `startquest` only helps once such a quest exists.)
 
 ## Findings from the in-game round 1 (for Inkwell codegen)
-- **SWF root path:** SkyUI loads widget SWFs from `Interface\exported\`, so `GetWidgetSource` returns a path relative to that (`Inkwell/InkwellSpikeWidget.swf`) and the file lives at `Interface\exported\Inkwell\InkwellSpikeWidget.swf`. `swf/build.ps1 -Deploy` now deploys there.
+- **SWF root path:** SkyUI loads widget SWFs from `Interface\exported\widgets\`, so `GetWidgetSource` returns a path relative to that (`Inkwell/InkwellSpikeWidget.swf`) and the file lives at `Interface\exported\widgets\Inkwell\InkwellSpikeWidget.swf`. `swf/build.ps1 -Deploy` now deploys there.
 - **Base + Instance:** the pex ran, but SkyUI showed "[...] must extend a base script type" and never registered the widget. `SKI_WidgetBase.IsExtending()` returns false when the attached script's name equals `GetWidgetType()`. SkyUI's own widgets are a base script plus an empty derived `...Instance` script attached to the quest. Generated widgets therefore need two scripts (`Foo` with the logic, `FooInstance extends Foo` attached to the quest), or the ESP must set the `RequireExtend` property to false on the single script (stub has `RequireExtend auto` and `IsExtending`).
 - **Notification timing:** `Debug.Notification("... ready")` in `OnWidgetReset` only fires after the widget manager registers the widget; `OnWidgetInit` and the `INITIALIZED` trace fire earlier regardless.
 
@@ -77,3 +77,8 @@ Compile: PASS. Structural equivalence: PASS by inspection. In-game: round 1 ran 
 - The SWF's AS2 relies on unqualified `place()` using the timeline as `this`; it omits SkyUI's HUD-metrics scaling and `HudElements` registration, so it may mis-position or ignore HUD modes.
 - SkyUI's interface was read from the community clone, which may differ from the installed 5.2 SE.
 - The russo release ships no LICENSE file.
+
+## Findings from the in-game round 2 (widget SWF contract)
+- SkyUI's `WidgetLoader.onLoadInit` fails with `WidgetInitFailure` unless the loaded SWF's root (the holder) has a child clip instance named `widget`. It then calls `widget.setHudMetrics(m)`, `widget.setRootPath(p)` and (via the holder) `widget.onModeChange(mode)`. `SKI_WidgetBase` builds `WidgetRoot` = `_root.WidgetContainer.<id>.widget`, so every `UI.Invoke*(WidgetRoot + ".setX")` (setLabel, setHAnchor, setPositionX, ...) targets methods on that `widget` clip, not the SWF root.
+- `gen-widget.mjs` now emits a DefineSprite (shape + dynamic TextField `label`) placed at root as `widget`; `src/as2/frame_1/DoAction.as` attaches the methods to it. `skse.Log` is used only behind `typeof` + try/catch.
+- Widget folder is `Interface\exported\widgets\` (not `exported\`); `GetWidgetSource` stays `Inkwell/InkwellSpikeWidget.swf`. Verified with `ffdec -swf2xml`: root PlaceObject2 has `name="widget"`. Not re-tested in game.
