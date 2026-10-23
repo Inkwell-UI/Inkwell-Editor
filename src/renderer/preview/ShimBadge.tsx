@@ -16,7 +16,7 @@ export function ShimBadge({ notes }: ShimBadgeProps) {
       </summary>
       <p>{strings.badgeBody}</p>
       <ul>
-        {notes && notes.textNodes > 0 && <li>{strings.badgeFonts(notes.textNodes)}</li>}
+        {notes && notes.textNodes > 0 && <li>{strings.badgeFonts(notes.textNodes, notes.approximated)}</li>}
         {notes && notes.textExtensions > 0 && <li>{strings.badgeTextExt(notes.textExtensions)}</li>}
         <li>{strings.badgeFilters}</li>
       </ul>

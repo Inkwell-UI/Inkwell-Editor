@@ -16,7 +16,7 @@ function fakeBackend(loadImpl: (b: PreviewBuild) => Promise<void> = async () => 
   const emit = <E extends keyof PreviewBackendEvents>(e: E, v: PreviewBackendEvents[E]): void => subs[e].forEach((cb) => (cb as (v: unknown) => void)(v))
   return { backend, loads, emit, isDisposed: () => disposed }
 }
-const build = (seq: number, over: Partial<PreviewBuild> = {}): PreviewBuild => ({ seq, swfId: 's', name: 'hud', stage: { width: 1920, height: 1080 }, notes: { textExtensions: 0, textNodes: 0 }, bytes: new ArrayBuffer(4), ...over })
+const build = (seq: number, over: Partial<PreviewBuild> = {}): PreviewBuild => ({ seq, swfId: 's', name: 'hud', stage: { width: 1920, height: 1080 }, notes: { textExtensions: 0, textNodes: 0, approximated: [] }, bytes: new ArrayBuffer(4), ...over })
 
 function setup(loadImpl?: (b: PreviewBuild) => Promise<void>) {
   const f = fakeBackend(loadImpl)

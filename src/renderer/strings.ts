@@ -26,7 +26,10 @@ export const strings = {
   previewSafeAction: 'action-safe',
   badgeTitle: 'Ruffle preview, not the game',
   badgeBody: 'Ruffle approximates Flash; Skyrim runs Scaleform GFx. What this preview does not represent:',
-  badgeFonts: (n: number) => `Fonts: ${n} text layer${n === 1 ? '' : 's'} drawn with a device font, not the Skyrim font`,
+  badgeFonts: (n: number, approximated: string[]) =>
+    approximated.length
+      ? `Fonts: ${n} text layer${n === 1 ? '' : 's'}; approximated with a lookalike font (not the Skyrim font): ${approximated.join(', ')}`
+      : `Fonts: ${n} text layer${n === 1 ? '' : 's'} drawn with the installed Skyrim fonts`,
   badgeTextExt: (n: number) => `GFx text extensions (vertical align, auto size): ${n} text layer${n === 1 ? '' : 's'} not applied`,
   badgeFilters: 'Filters and other GFx-only effects',
   overlayTitle: 'Build timing',

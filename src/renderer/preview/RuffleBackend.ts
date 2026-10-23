@@ -1,5 +1,6 @@
 import type { PreviewBuild } from '../../shared/preview'
 import type { PreviewBackend, PreviewBackendEvents } from './backend'
+import { inkwell } from '../hooks/api'
 
 // The slice of Ruffle's self-hosted API used here (https://github.com/ruffle-rs/ruffle/wiki/Using-Ruffle#javascript-api).
 interface RufflePlayerElement extends HTMLElement {
@@ -12,16 +13,22 @@ interface RuffleGlobal {
 /** Ruffle's files are copied next to index.html (see electron.vite.config.ts), so they are found relative to the page. No network is used. */
 let loading: Promise<void> | undefined
 function loadRuffle(): Promise<void> {
-  loading ??= new Promise((resolve, reject) => {
-    const RUFFLE_DIR = new URL('./', document.baseURI).href
-    const g = window as unknown as RuffleGlobal
-    g.RufflePlayer = { config: { publicPath: RUFFLE_DIR, polyfills: false, autoplay: 'on', unmuteOverlay: 'hidden', splashScreen: false, contextMenu: 'off', letterbox: 'on', logLevel: 'warn' } }
-    const s = document.createElement('script')
-    s.src = `${RUFFLE_DIR}ruffle.js`
-    s.onload = () => resolve()
-    s.onerror = () => reject(new Error('Could not load ruffle.js'))
-    document.head.appendChild(s)
-  })
+  loading ??= (async () => {
+    // Device fonts for the preview text come from main as bytes; Ruffle fetches them by (blob) URL, so nothing touches the network.
+    // shortcut: fonts are read once per window; a changed font source needs a restart.
+    const fonts = await (inkwell?.getPreviewFonts() ?? Promise.resolve([])).catch(() => [])
+    const fontSources = fonts.map((f) => URL.createObjectURL(new Blob([f.bytes], { type: 'font/ttf' })))
+    await new Promise<void>((resolve, reject) => {
+      const RUFFLE_DIR = new URL('./', document.baseURI).href
+      const g = window as unknown as RuffleGlobal
+      g.RufflePlayer = { config: { publicPath: RUFFLE_DIR, polyfills: false, autoplay: 'on', unmuteOverlay: 'hidden', splashScreen: false, contextMenu: 'off', letterbox: 'on', logLevel: 'warn', fontSources } }
+      const s = document.createElement('script')
+      s.src = `${RUFFLE_DIR}ruffle.js`
+      s.onload = () => resolve()
+      s.onerror = () => reject(new Error('Could not load ruffle.js'))
+      document.head.appendChild(s)
+    })
+  })()
   return loading
 }
 
