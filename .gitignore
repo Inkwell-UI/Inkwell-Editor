@@ -1,3 +1,5 @@
 node_modules
 out
 dist
+tools/ffdec-wrapper/build
+scratch
