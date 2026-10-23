@@ -7,7 +7,11 @@ import { join, resolve } from 'node:path'
 import { Swf } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
+import { createAssetStore } from '../images/assets'
+import { readDdsBgra8, readDdsHeader } from '../images/dds'
+import { syntheticPng } from '../images/synthetic'
 import { loadProject } from '../project'
+import { frame } from '../swf/ir.testutil'
 import { sha256 } from '../vanilla/bsa'
 import { commitDeploy, prepareDeploy, type DeployInput } from './run'
 import { readManifest } from './write'
@@ -59,6 +63,35 @@ describe('prepareDeploy guards', () => {
 
   it('a missing build is a clear error', async () => {
     expect(await prepareDeploy(input({}))).toMatchObject({ ok: false, error: expect.stringContaining('Run Build All') })
+  })
+
+  it('dds image mode adds one DDS per image under textures/Inkwell/<modId>/, recorded in the manifest; embedded mode adds nothing', async () => {
+    const img = syntheticPng(64, 32)
+    const ir = { nodes: { f: { ...frame('f', ['i']), fills: [{ type: 'image', asset: img.hash }] }, i: { ...frame('i', []), type: 'image', asset: img.hash, scaleMode: 'fit' } } } as unknown as Swf
+    const assets = createAssetStore()
+    await assets.put(img.hash, img.png)
+    const i = input({ swfs: [{ ...swf('wheel'), ir }], imageMode: 'dds', assets })
+    writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    const r = await prepareDeploy(i)
+    if (!r.ok) throw new Error(r.error)
+    const rel = `textures/Inkwell/M/${img.hash}.dds`
+    expect(r.prepared.info.map((f) => f.rel).sort()).toEqual(['Interface/wheel.swf', rel])
+    expect(readDdsHeader(r.prepared.files.get(rel)!.data)).toMatchObject({ width: 64, height: 32, format: 'BGRA8' })
+    expect((await commitDeploy(i, r.prepared)).ok).toBe(true)
+    expect(readDdsBgra8(readFileSync(join(i.root, 'textures', 'Inkwell', 'M', `${img.hash}.dds`)))).toEqual(img.image)
+    expect(Object.keys((await readManifest(i.root))!.files)).toContain(rel)
+    // back to embedded: the DDS is retired like any other file this deploy no longer produces
+    const r2 = await prepareDeploy({ ...i, imageMode: 'embedded' })
+    expect(r2.ok && r2.prepared.removed).toEqual([rel])
+  })
+
+  it('dds mode with a missing asset fails before anything is written; the Data-folder guard still runs first', async () => {
+    const ir = { nodes: { i: { ...frame('i', []), type: 'image', asset: 'a'.repeat(40), scaleMode: 'fill' } } } as unknown as Swf
+    const i = input({ swfs: [{ ...swf('wheel'), ir }], imageMode: 'dds', assets: createAssetStore() })
+    writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    expect(await prepareDeploy(i)).toMatchObject({ ok: false, error: expect.stringContaining('not in the project') })
+    expect(existsSync(i.root)).toBe(false)
+    expect(await prepareDeploy({ ...i, root: 'C:\\Games\\Skyrim Special Edition\\Data' })).toMatchObject({ ok: false, error: expect.stringContaining('Data folder') })
   })
 
   it('a path-traversal SWF name is refused', async () => {

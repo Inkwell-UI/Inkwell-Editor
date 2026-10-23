@@ -10,7 +10,7 @@ import { widgetPlacement } from './frame'
 import { generateScripts, instanceScriptName, widgetScriptName } from './papyrus'
 import { compilePapyrus } from './papyrusCompiler'
 
-export interface WidgetOptions extends Pick<CompileOptions, 'modId' | 'buildDir' | 'ffdec' | 'instanceNames'> {
+export interface WidgetOptions extends Pick<CompileOptions, 'modId' | 'buildDir' | 'ffdec' | 'instanceNames' | 'imageMode' | 'images'> {
   /** Name of the widget (SWF file, script and quest names); default is the SWF id capitalised (`hud` -> `Hud`). */
   widgetName?: string
   /** The user's russo `papyrus.exe`. Without it the .psc and the plugin are still produced, but no .pex (lint warning `papyrus-skipped`). */

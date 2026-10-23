@@ -38,7 +38,7 @@ describe('overlay.json writes', () => {
     const dir = await tmp()
     expect(await writeOverlay(dir, 'Menu', { nodes: { a: { instanceName: 'Ok', future: [1] } }, extra: true })).toEqual({ ok: true })
     const saved = JSON.parse(await readFile(join(dir, 'swfs/Menu/overlay.json'), 'utf8'))
-    expect(saved).toEqual({ extra: true, nodes: { a: { future: [1], instanceName: 'Ok' } }, specVersion: 3 })
+    expect(saved).toEqual({ extra: true, nodes: { a: { future: [1], instanceName: 'Ok' } }, specVersion: 4 })
     expect((await writeOverlay(dir, 'Menu', { nodes: { a: { instanceName: 'not ok' } } })).ok).toBe(false)
     expect((await writeOverlay(dir, '../evil', { nodes: {} })).ok).toBe(false)
     expect((await writeOverlay(dir, 'Menu', 'x')).ok).toBe(false)

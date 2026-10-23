@@ -5,7 +5,9 @@ import { promoteStrict } from '../../shared/lint'
 import {
   ackHello,
   applyPatch,
+  AssetHash,
   hashNode,
+  imageHashes,
   PatchError,
   PluginMessage,
   SPEC_VERSION,
@@ -35,6 +37,8 @@ export interface SyncServerOptions {
   onChange?: (swfId: string, ir: Swf, name: string) => Promise<ChangeResult | void> | ChangeResult | void
   /** Strict Mode (design spec): while true, warnings count as errors in the build status (the build gate). Read on every build. */
   strict?: () => boolean
+  /** Image assets (protocol 3): the server asks the plugin for missing hashes (`needAssets`) and stores what arrives. Without it, `asset` is refused. */
+  assets?: { has(hash: string): boolean; put(hash: string, png: Buffer): Promise<void> }
 }
 
 export type SyncStatus = { swfId?: string; state: 'compiling' | 'synced' | 'error'; issues?: SyncIssue[] }
@@ -92,6 +96,16 @@ export async function startSyncServer(opts: SyncServerOptions) {
   let building = false
   const pending = new Set<string>()
 
+  const asked = new WeakMap<WebSocket, Set<string>>() // hashes requested per connection: never twice on one socket
+  /** Sends `needAssets` for the image hashes of `ir` the project lacks and this socket was not asked for yet. */
+  const requestAssets = (ws: WebSocket, ir: Swf | undefined): void => {
+    if (!opts.assets || !ir) return
+    let mine = asked.get(ws)
+    if (!mine) asked.set(ws, (mine = new Set()))
+    const want = [...new Set(Object.values(ir.nodes).flatMap(imageHashes))].filter((h) => AssetHash.safeParse(h).success && !mine.has(h) && !opts.assets!.has(h))
+    for (const h of want) mine.add(h)
+    if (want.length) send(ws, { type: 'needAssets', hashes: want })
+  }
   const send = (ws: WebSocket, m: EditorMessage): void => {
     if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(m))
   }
@@ -193,12 +207,23 @@ export async function startSyncServer(opts: SyncServerOptions) {
         .filter(([id, h]) => !nodes[id] || hashNode(nodes[id]) !== h)
         .map(([id]) => id)
       send(ws, { type: 'resend', swfId: m.swfId, ids })
+      requestAssets(ws, store.get(m.swfId)?.ir) // images of unchanged nodes may still be missing (e.g. a fresh checkout)
     } else if (m.type === 'swfs') {
       const frames = new Set(m.frames.map((f) => f.id))
       for (const [id, e] of store) e.orphaned = !frames.has(id) // kept either way; never deleted
       loose = m.loose.map((l) => ({ id: l.id, name: l.name }))
       swfsChanged()
       projectStatus()
+    } else if (m.type === 'asset') {
+      if (!opts.assets) return send(ws, { type: 'error', code: 'assets_unsupported', message: 'This editor session does not store images.' })
+      const hash = m.hash
+      void opts.assets.put(hash, Buffer.from(m.data, 'base64')).then(
+        () => {
+          // rebuild every swf that shows this image
+          for (const [id, e] of store) if (!e.orphaned && Object.values(e.ir.nodes).some((n) => imageHashes(n).includes(hash))) schedule(id)
+        },
+        (err: unknown) => send(ws, { type: 'error', code: 'bad_asset', message: `Image ${hash}: ${err instanceof Error ? err.message : String(err)}` })
+      )
     } else {
       try {
         const old = store.get(m.swfId)
@@ -218,6 +243,7 @@ export async function startSyncServer(opts: SyncServerOptions) {
         store.set(m.swfId, { ir: next, name, orphaned: false })
         if (!old || old.name !== name || old.orphaned) swfsChanged()
         schedule(m.swfId)
+        requestAssets(ws, next)
       } catch (e) {
         if (!(e instanceof PatchError)) throw e
         send(ws, { type: 'error', code: e.code, message: e.message, nodeId: e.id })

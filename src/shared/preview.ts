@@ -6,6 +6,8 @@ export interface PreviewNotes {
   textNodes: number
   /** Skyrim faces drawn with a bundled lookalike (not the installed game font); the badge lists them. */
   approximated: string[]
+  /** dds image mode: images the game SWF loads from DDS through img://, which Ruffle cannot; the preview shows them embedded instead. */
+  ddsImages?: number
 }
 
 /** A font file for the Ruffle preview; `name` is what the preview SWF refers to. */

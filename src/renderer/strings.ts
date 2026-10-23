@@ -38,6 +38,7 @@ export const strings = {
       ? `Fonts: ${n} text layer${n === 1 ? '' : 's'}; approximated with a lookalike font (not the Skyrim font): ${approximated.join(', ')}`
       : `Fonts: ${n} text layer${n === 1 ? '' : 's'} drawn with the installed Skyrim fonts`,
   badgeTextExt: (n: number) => `GFx text extensions (vertical align, auto size): ${n} text layer${n === 1 ? '' : 's'} not applied`,
+  badgeDds: (n: number) => `Images: ${n} image${n === 1 ? '' : 's'} load from DDS through img:// in the game (image mode "dds"); Ruffle cannot load img://, so the preview shows the embedded bitmap instead`,
   badgeFilters: 'Filters and other GFx-only effects',
   badgeShimsTitle: 'Active shims in the preview SWF:',
   badgeShims: ['skse.* (stub)', 'gfxExtensions (stub)', 'Inkwell AS2 bridge (stub)', 'Preview font shim (gfxfontlib.swf cannot load in Ruffle)'],

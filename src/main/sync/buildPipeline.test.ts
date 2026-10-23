@@ -3,7 +3,11 @@ import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { FfdecJob } from '../build/ffdecWrapper'
+import { createAssetStore } from '../images/assets'
+import { syntheticPng } from '../images/synthetic'
 import { frame, rectShape, swf, textNode } from '../swf/ir.testutil'
+import { parseSwf } from '../swf/swfReader.testutil'
+import { TAG } from '../swf/tags'
 import type { PreviewFontSet } from '../previewFonts'
 import { createBuildPipeline } from './buildPipeline'
 
@@ -79,5 +83,27 @@ describe('build pipeline: overlay written by the editor UI', () => {
     await p.onChange('hud', { ...hud, id: 'hud', name: 'HUD Minimal' }, 'hud')
     const after = JSON.parse(await readFile(file, 'utf8'))
     expect(after.nodes.t).toEqual({ future: 1, instanceName: 'DamageVal_Txt' }) // not overwritten by the cached, older overlay
+  })
+})
+
+describe('build pipeline: images', () => {
+  it('reads imageMode from project.json: dds -> the game SWF loads the image, the preview embeds it and its notes say so', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'inkwell-pipe-img-'))
+    await cp(resolve(__dirname, '../../../samples/hud-minimal'), dir, { recursive: true, filter: (p) => !/[\/]build([\/]|$)/.test(p) && !/swfs[\/](root|root2)/.test(p) })
+    const meta = JSON.parse(await readFile(join(dir, 'project.json'), 'utf8'))
+    await writeFile(join(dir, 'project.json'), JSON.stringify({ ...meta, imageMode: 'dds' }))
+    const img = syntheticPng(16, 16)
+    const assets = createAssetStore(dir)
+    await assets.put(img.hash, img.png)
+    const ffdec = { build: async (job: FfdecJob) => (await copyFile(job.base, job.out), { ok: true, ms: 0, wallMs: 0 }) }
+    let preview: Record<string, any> | undefined
+    const p = createBuildPipeline({ ...base, projectDir: dir, buildDir: join(dir, 'build'), ffdec, assets, onPreview: (pv) => (preview = pv) })
+    const node = { ...rectShape('i'), parent: 'f', type: 'image', asset: img.hash, scaleMode: 'fit' } as unknown as Parameters<typeof swf>[0][number]
+    const r = await p.onChange('hud', { ...swf([frame('f', ['i']), node]), id: 'hud', name: 'HUD Minimal' }, 'hud')
+    expect(r.issues).toEqual([])
+    const bitmaps = (b: Buffer) => parseSwf(b).tags.filter((t) => t.code === TAG.DefineBitsLossless2).length
+    expect(bitmaps(await readFile(join(dir, 'build', 'hud.swf')))).toBe(0)
+    expect(bitmaps(Buffer.from(preview!['bytes']))).toBe(1)
+    expect(preview!['notes']).toMatchObject({ ddsImages: 1 })
   })
 })

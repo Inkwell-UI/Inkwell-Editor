@@ -5,6 +5,7 @@ import type { PreviewBuild } from '../../shared/preview'
 import type { SwfReport } from '../../shared/syncState'
 import { createStageTimer, type BuildTiming } from '../../shared/timing'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
+import type { AssetStore, ImageMode } from '../images/assets'
 import { loadProject, saveProject, type Project } from '../project'
 import { exclusive } from '../project/lock'
 import type { PreviewFontSet } from '../previewFonts'
@@ -26,6 +27,8 @@ export interface PipelineConfig {
   /** Tests inject a fake FFDec; the install and jar checks are skipped. */
   ffdec?: { build: Parameters<typeof compileSwf>[1]['ffdec']['build']; stop?: () => void }
   onBuild?: (swfPath: string, timing: BuildTiming, lintCount: number, report: SwfReport) => void
+  /** The project's image assets (assets/<hash>.png); without it every image is linted `image-missing-asset`. */
+  assets?: Pick<AssetStore, 'get'>
 }
 
 /** Defaults documented in docs/sync-server.md. */
@@ -66,6 +69,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     timer.start('sync')
     let instanceNames: Record<string, string> = {}
     let modId = 'inkwell'
+    let imageMode: ImageMode = 'embedded'
     if (cfg.projectDir) {
       const dir = cfg.projectDir
       // Exclusive with overlay saves from the editor UI, and the overlay is re-read from disk (the UI may have saved since the project was cached).
@@ -78,6 +82,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
         if (onDisk && typeof onDisk === 'object' && !Array.isArray(onDisk)) overlay = onDisk as Record<string, unknown>
         if (prev) delete p.swfs[prev]
         modId = p.meta.modId
+        imageMode = p.meta.imageMode ?? 'embedded'
         const nodes = (overlay['nodes'] ?? {}) as Record<string, { instanceName?: string }>
         instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : [])))
         // The editor never edits the visual IR: this stores exactly what Figma sent.
@@ -88,16 +93,20 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     timer.end('sync')
     const sync = timer.finishBuild()
 
-    const r = await compileSwf(ir, { modId, instanceNames, buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec })
+    const images = cfg.assets ? (h: string) => cfg.assets!.get(h) : undefined
+    const r = await compileSwf(ir, { modId, instanceNames, buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}) })
     // Preview SWF: same content with device-font text, built after the game SWF. Its failure is reported to the preview panel only.
     const pt = createStageTimer()
     pt.start('preview-build')
     const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: ir.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
     try {
-      const pr = await compileSwf(ir, { modId, instanceNames, buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
+      const pr = await compileSwf(ir, { modId, instanceNames, buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
       const buf = await readFile(pr.swfPath)
       preview.bytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
-      preview.notes = { textExtensions: pr.gfxTextExtensions, textNodes: pr.fonts.length, approximated: cfg.previewFonts?.approximated(pr.fonts.flatMap((f) => (f.alias ? [f.alias] : []))) ?? [] }
+      preview.notes = {
+        textExtensions: pr.gfxTextExtensions, textNodes: pr.fonts.length, approximated: cfg.previewFonts?.approximated(pr.fonts.flatMap((f) => (f.alias ? [f.alias] : []))) ?? [],
+        ...(r.ddsImages ? { ddsImages: r.ddsImages } : {}) // the preview embeds what the game SWF loads from DDS
+      }
     } catch (e) {
       preview.error = e instanceof Error ? e.message : String(e)
     }

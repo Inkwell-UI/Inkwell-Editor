@@ -12,6 +12,7 @@ import type { DeployResult, DeployScope, DeployState, DeployTargetId, DeployTarg
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, ResolvedSettings, SetSettingResult, SettingKey, StoredSettings } from '../shared/doctor'
 import { buildCacheAction, runBenchmark, runDoctor, type DoctorContext } from './doctor'
 import { createDeployService } from './deploy/service'
+import { createAssetStore, type AssetStore } from './images/assets'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { loadProject, type ProjectMeta } from './project'
@@ -58,6 +59,7 @@ export function createSession(deps: SessionDeps) {
   let javaOk = true
   let server: Awaited<ReturnType<typeof startSyncServer>> | undefined
   let pipeline: ReturnType<typeof createBuildPipeline> | undefined
+  let assets: AssetStore = createAssetStore() // per project: <project>/assets/<hash>.png (memory only without a project)
   let failBuilds = false // screenshot driver only: makes the next builds throw
   // settings: stored in <userData>/settings.json, INKWELL_* environment variables override; read live so a change needs no restart
   const settingsFile = join(deps.userData, 'settings.json')
@@ -137,8 +139,10 @@ export function createSession(deps: SessionDeps) {
       }
     } else meta = undefined
     projectDir = dir
+    assets = createAssetStore(dir)
     pipeline = createBuildPipeline({
       ...cfg,
+      assets,
       previewFonts: fonts(),
       ...(dir ? { projectDir: dir } : {}),
       buildDir: dir ? join(dir, 'build') : join(deps.userData, 'build'),
@@ -161,6 +165,7 @@ export function createSession(deps: SessionDeps) {
       editorVersion: deps.editorVersion,
       initial,
       strict: () => strict,
+      assets,
       onChange: (id: string, ir: Swf, name: string) => {
         if (failBuilds) throw new Error('Injected build failure (screenshot driver)')
         return pl.onChange(id, ir, name)
@@ -237,7 +242,7 @@ export function createSession(deps: SessionDeps) {
       const p = projectState()
       if (!p || !meta) return undefined
       return {
-        dir: p.dir, name: p.name, modId: p.modId, deploy: meta.deploy,
+        dir: p.dir, name: p.name, modId: p.modId, deploy: meta.deploy, imageMode: meta.imageMode ?? 'embedded', assets,
         swfs: p.swfs.map((s) => ({
           name: s.name, orphaned: s.orphaned, kind: s.ir.target.kind, ir: s.ir,
           instanceNames: Object.fromEntries((Object.entries(s.overlay.nodes ?? {}) as [string, { instanceName?: string }][]).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName] as [string, string]] : [])))

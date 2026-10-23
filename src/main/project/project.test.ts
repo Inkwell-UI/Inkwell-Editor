@@ -31,8 +31,10 @@ describe('project format', () => {
 
   it('golden round-trip: sample saves back byte-identical', async () => {
     const out = await tmp()
-    await saveProject(out, await loadProject(sample))
-    const a = await files(sample)
+    const src = await tmp() // the committed sample only (see sampleFilter)
+    await cp(sample, src, { recursive: true, filter: sampleFilter })
+    await saveProject(out, await loadProject(src))
+    const a = await files(src)
     const b = await files(out)
     delete a['figma/.gitkeep']
     delete a['shared/.gitkeep']
@@ -61,7 +63,7 @@ describe('project format', () => {
     ir.nodes['1:3'] = { ...label, extra: { text: { align, verticalAlign } } }
     await writeFile(f, JSON.stringify(ir))
     const loaded = (await loadProject(dir)).swfs['hud']!.ir as any
-    expect(loaded.specVersion).toBe(3)
+    expect(loaded.specVersion).toBe(4)
     expect(loaded.nodes['1:3']).toMatchObject({ align: 'center', verticalAlign: 'center' })
     expect(loaded.nodes['1:3'].extra).toBeUndefined()
     expect(loaded.extra).toEqual({ fromFuturePack: { a: 1 } })

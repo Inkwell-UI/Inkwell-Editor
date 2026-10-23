@@ -1,8 +1,11 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Swf } from '@inkwell-ui/spec'
+import { imageHashes, type Swf } from '@inkwell-ui/spec'
 import type { DeployFileInfo, DeployLintItem, DeployResult } from '../../shared/deploy'
 import { createStageTimer } from '../../shared/timing'
+import { ddsRel, type AssetStore, type ImageMode } from '../images/assets'
+import { writeDds } from '../images/dds'
+import { decodePng } from '../images/png'
 import { isUnmodifiedVanilla } from '../vanilla/cache'
 import { compileWidget, type WidgetOptions } from '../widget/compileWidget'
 import { planDeploy, type DeployPlan, type SwfLike } from './plan'
@@ -28,6 +31,10 @@ export interface DeployInput {
   stubsDir?: string
   /** Hashes of the vanilla SWF cache; empty when it is not built. */
   vanillaHashes: ReadonlySet<string>
+  /** Project image mode; 'dds' also writes textures/Inkwell/<modId>/<hash>.dds for every image the deployed SWFs use (docs/images.md). */
+  imageMode?: ImageMode
+  /** The project's image assets (widget compiles read pixels; dds mode reads the PNGs). */
+  assets?: Pick<AssetStore, 'get' | 'png'>
 }
 
 /** Everything is compiled and checked before the first byte is written. */
@@ -56,6 +63,7 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
       if (s.kind === 'hudWidget') {
         const r = await compileWidget(s.ir, {
           modId: i.modId, widgetName: plan.widgets[s.name]!, ...(s.instanceNames ? { instanceNames: s.instanceNames } : {}), buildDir: join(i.buildDir, 'deploy', s.name), ffdec: i.ffdec,
+          ...(i.imageMode ? { imageMode: i.imageMode } : {}), ...(i.assets ? { images: (h: string) => i.assets!.get(h) } : {}),
           ...(i.papyrusExe ? { papyrusExe: i.papyrusExe } : {}), ...(i.stubsDir ? { stubsDir: i.stubsDir } : {})
         })
         const errs = r.lint.filter((l) => l.severity === 'error')
@@ -71,6 +79,15 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
         if (!data) return { ok: false, error: `"${s.name}" has no build yet (${built}). Run Build All first.`, lint }
         files.set(`Interface/${s.name}.swf`, { data, swf: s.name })
       }
+      // dds mode: the game SWF loads img://textures/Inkwell/<modId>/<hash>.dds, so ship one DDS per image (embedded mode adds nothing)
+      if (i.imageMode === 'dds')
+        for (const h of new Set(Object.values(s.ir.nodes).flatMap(imageHashes))) {
+          const rel = ddsRel(i.modId, h) // throws on a hash that is not plain hex: it becomes a path
+          if (files.has(rel)) continue
+          const png = i.assets?.png(h)
+          if (!png) return { ok: false, error: `"${s.name}" uses image ${h.slice(0, 8)}, which is not in the project's assets. Sync it from Figma first.`, lint }
+          files.set(rel, { data: writeDds(decodePng(png)), swf: s.name })
+        }
     }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e), lint }

@@ -2,6 +2,8 @@ import net from 'node:net'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import WebSocket from 'ws'
 import { hashNode, PROTOCOL_VERSION, SPEC_VERSION, type Swf } from '@inkwell-ui/spec'
+import { createAssetStore } from '../images/assets'
+import { syntheticPng } from '../images/synthetic'
 import { frame, rectShape, swf } from '../swf/ir.testutil'
 import { sanitizeName, startSyncServer, unreachableNodes, type SyncServerOptions } from './syncServer'
 
@@ -257,5 +259,59 @@ describe('syncServer', () => {
     const rejected = new Promise<string>((r) => s.events.once('rejected', r))
     await expect(connect(s, { token: 'x'.repeat(48) })).rejects.toThrow('401')
     expect(await rejected).toBe('token')
+  })
+})
+
+describe('syncServer images (protocol 3)', () => {
+  const A = syntheticPng(8, 8)
+  const B = syntheticPng(4, 4)
+  const withImage = (hash: string) => ({ ...rectShape('img'), parent: 'f', type: 'image', asset: hash, scaleMode: 'fill' })
+  const until = async (c: { next: () => Promise<any> }, type: string) => {
+    for (;;) {
+      const m = await c.next()
+      if (m.type === type) return m
+    }
+  }
+
+  it('asks once per hash for images it lacks, stores what arrives and rebuilds the swf that uses it', async () => {
+    const assets = createAssetStore()
+    const onChange = vi.fn()
+    const s = await start({ initial: { hud: sample() }, onChange, assets })
+    const c = await ready(s)
+    const all: any[] = []
+    c.ws.on('message', (d) => all.push(JSON.parse(d.toString())))
+    c.ws.send(JSON.stringify(patchUpsert(withImage(A.hash))))
+    expect(await until(c, 'needAssets')).toEqual({ type: 'needAssets', hashes: [A.hash] })
+    c.ws.send(JSON.stringify(patchUpsert({ ...withImage(A.hash), name: 'renamed' }))) // same hash: not asked again
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(1))
+    c.ws.send(JSON.stringify({ type: 'asset', hash: A.hash, data: A.png.toString('base64') }))
+    await vi.waitFor(() => expect(assets.has(A.hash)).toBe(true))
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(2)) // the asset's arrival rebuilds
+    expect(assets.get(A.hash)).toEqual(A.image)
+    expect(all.filter((m) => m.type === 'needAssets')).toHaveLength(1)
+    // a new connection's hash tree asks for a hash that is still missing, never for the stored one
+    s.ir('hud')!.nodes['img2'] = { ...withImage(B.hash), id: 'img2' } as never
+    const c2 = await ready(s)
+    c2.ws.send(JSON.stringify({ type: 'hashTree', swfId: 'hud', nodeHashes: {} }))
+    expect(await until(c2, 'needAssets')).toEqual({ type: 'needAssets', hashes: [B.hash] })
+  })
+
+  it('refuses an asset that is not a readable PNG or has a bad hash, and stores nothing', async () => {
+    const assets = createAssetStore()
+    const s = await start({ initial: { hud: sample() }, assets })
+    const c = await ready(s)
+    c.ws.send(JSON.stringify({ type: 'asset', hash: A.hash, data: Buffer.from('not a png').toString('base64') }))
+    expect(await until(c, 'error')).toMatchObject({ code: 'bad_asset', message: expect.stringContaining('not a PNG') })
+    c.ws.send(JSON.stringify({ type: 'asset', hash: '../../x', data: A.png.toString('base64') }))
+    expect(await until(c, 'error')).toMatchObject({ code: 'invalid_message' })
+    expect(assets.has(A.hash)).toBe(false)
+  })
+
+  it('without an asset store, nothing is requested and an asset is refused', async () => {
+    const s = await start({ initial: { hud: sample() } })
+    const c = await ready(s)
+    c.ws.send(JSON.stringify(patchUpsert(withImage(A.hash))))
+    c.ws.send(JSON.stringify({ type: 'asset', hash: A.hash, data: A.png.toString('base64') }))
+    expect(await until(c, 'error')).toMatchObject({ code: 'assets_unsupported' })
   })
 })

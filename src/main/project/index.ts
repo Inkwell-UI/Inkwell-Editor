@@ -10,6 +10,8 @@ export const ProjectMetaSchema = z.looseObject({
   version: z.string(),
   author: z.string().optional(),
   strictMode: z.boolean().optional(),
+  /** How images reach the game: compiled into the SWF (default) or DDS textures loaded at runtime through img:// (docs/images.md). */
+  imageMode: z.enum(['embedded', 'dds']).optional(),
   deploy: z.looseObject({
     preset: z.enum(['mo2', 'vortex', 'folder']),
     path: z.string()

@@ -18,7 +18,7 @@ describe('instance names', () => {
 describe('overlay patching', () => {
   it('adds specVersion to an old overlay and keeps every unknown key', () => {
     const n = normalizeOverlay({ bindings: [], version: 1, nodes: { a: { unknownField: null } } })
-    expect(n).toMatchObject({ bindings: [], version: 1, specVersion: 3, nodes: { a: { unknownField: null } } })
+    expect(n).toMatchObject({ bindings: [], version: 1, specVersion: 4, nodes: { a: { unknownField: null } } })
   })
   it('sets and removes keys; an emptied entry is dropped; other entries are untouched', () => {
     let d = patchNodeOverlay({ specVersion: 3, nodes: { b: { role: 'list' } } }, 'a', { role: 'button', instanceName: 'Ok' })
