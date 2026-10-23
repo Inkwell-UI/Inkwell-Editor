@@ -15,6 +15,8 @@ export interface WidgetOptions extends Pick<CompileOptions, 'modId' | 'buildDir'
   widgetName?: string
   /** The user's russo `papyrus.exe`. Without it the .psc and the plugin are still produced, but no .pex (lint warning `papyrus-skipped`). */
   papyrusExe?: string
+  /** Folder with the header stubs; the default is resolved from this module's location, which is wrong inside the bundled app (pass it there). */
+  stubsDir?: string
 }
 
 export interface WidgetResult {
@@ -40,7 +42,7 @@ export async function compileWidget(ir: Swf, opts: WidgetOptions): Promise<Widge
   const files: Record<string, Buffer> = { [`Interface/exported/widgets/${opts.modId}/${widgetName}.swf`]: await readFile(swf.swfPath) }
   for (const s of scripts) files[`Source/Scripts/${s.name}.psc`] = Buffer.from(s.source)
   if (opts.papyrusExe) {
-    const r = await compilePapyrus({ papyrusExe: opts.papyrusExe, scripts, workDir: join(opts.buildDir, 'papyrus') })
+    const r = await compilePapyrus({ papyrusExe: opts.papyrusExe, scripts, workDir: join(opts.buildDir, 'papyrus'), ...(opts.stubsDir ? { stubsDir: opts.stubsDir } : {}) })
     lint.push(...r.lint)
     for (const [name, pex] of Object.entries(r.pex)) files[`Scripts/${name}.pex`] = pex
   } else {
