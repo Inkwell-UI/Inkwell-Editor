@@ -15,10 +15,22 @@ export function buildSheet(id: string, name: string, width: number, height: numb
   const nodes: Record<string, unknown> = {}
   const rootKids: string[] = []
   let n = 0
+  let parent = { id: '1:1', kids: rootKids } // `group` switches this while it adds children
   const add = (type: string, nm: string, x: number, y: number, w: number, h: number, extra: Record<string, unknown>, rotation = 0): void => {
     const nid = `1:${++n + 1}`
-    nodes[nid] = { id: nid, name: nm, parent: '1:1', children: [], transform: { x: s(x), y: s(y), width: s(w), height: s(h), rotation }, anchor: { h: 'left', v: 'top' }, visible: true, opacity: 1, type, ...extra }
-    rootKids.push(nid)
+    nodes[nid] = { id: nid, name: nm, parent: parent.id, children: [], transform: { x: s(x), y: s(y), width: s(w), height: s(h), rotation }, anchor: { h: 'left', v: 'top' }, visible: true, opacity: 1, type, ...extra }
+    parent.kids.push(nid)
+  }
+  /** A frame node (a Figma group) whose children are added by `fill`; `extra` can set `opacity`. */
+  const group = (nm: string, x: number, y: number, w: number, h: number, rotation: number, extra: Record<string, unknown>, fill: () => void): void => {
+    const kids: string[] = []
+    const gid = `1:${n + 2}`
+    add('frame', nm, x, y, w, h, { clipContent: false, ...extra }, rotation)
+    const outer = parent
+    parent = { id: gid, kids }
+    fill()
+    parent = outer
+    ;(nodes[gid] as { children: string[] }).children = kids
   }
   const solid = (c: string, opacity?: number) => ({ type: 'solid', color: hex(c), ...(opacity === undefined ? {} : { opacity }) })
   const shape = (nm: string, x: number, y: number, w: number, h: number, fill: string, paths: unknown[][], extra: Record<string, unknown> = {}, rotation = 0) =>
@@ -27,13 +39,13 @@ export function buildSheet(id: string, name: string, width: number, height: numb
   const rectPath = (w: number, h: number): unknown[] => [{ op: 'M', x: 0, y: 0 }, { op: 'L', x: w, y: 0 }, { op: 'L', x: w, y: h }, { op: 'L', x: 0, y: h }, { op: 'Z' }]
   const rect = (nm: string, x: number, y: number, w: number, h: number, fill: string, extra: Record<string, unknown> = {}, rotation = 0) => shape(nm, x, y, w, h, fill, [rectPath(w, h)], extra, rotation)
 
-  type TextOpts = { font?: string; size?: number; color?: string; sizing?: 'fixed' | 'autoWidth' | 'autoHeight'; w?: number; h?: number; align?: string; v?: string; lh?: unknown; ls?: unknown; fit?: string }
+  type TextOpts = { font?: string; size?: number; color?: string; sizing?: 'fixed' | 'autoWidth' | 'autoHeight'; w?: number; h?: number; align?: string; v?: string; lh?: unknown; ls?: unknown; fit?: string; alpha?: number }
   const text = (nm: string, x: number, y: number, content: string, o: TextOpts = {}): void => {
     const size = o.size ?? 18
     const w = o.w ?? Math.ceil(content.length * size * 0.6)
     add('text', nm, x, y, w, o.h ?? Math.ceil(size * 1.25), {
       content, sizing: o.sizing ?? 'autoWidth', align: o.align ?? 'left', verticalAlign: o.v ?? 'top', lineHeight: o.lh ?? { unit: 'auto' }, letterSpacing: o.ls ?? { unit: 'px', value: 0 }, textFit: o.fit ?? 'none', truncate: false,
-      runs: [{ start: 0, end: content.length, font: { kind: 'alias', name: o.font ?? '$EverywhereFont' }, size: s(size), fill: solid(o.color ?? C.white) }]
+      runs: [{ start: 0, end: content.length, font: { kind: 'alias', name: o.font ?? '$EverywhereFont' }, size: s(size), fill: solid(o.color ?? C.white, o.alpha) }]
     })
   }
   const head = (x: number, y: number, t: string): void => text('H ' + t.slice(0, 1), x, y, t, { font: '$EverywhereBoldFont', size: 18, color: C.head })
@@ -96,7 +108,31 @@ export function buildSheet(id: string, name: string, width: number, height: numb
     text('fit ' + f, 970 + i * 220, 500, LONG, { size: 24, sizing: 'fixed', w: 200, h: 60, fit: f })
   })
 
-  const ids = Object.keys(nodes)
+  // Column 3 lower (x=970): text inside rotated / translucent groups (the preview used to drop rotated text; the game must draw all of these)
+  head(970, 590, 'K  text in a rotated or translucent group: every row must show READABLE text, rotated with its box')
+  const tile = (x: number, y: number, w: number, h: number, c: string, line: string, rotation: number, extra: Record<string, unknown> = {}, o: TextOpts = {}): void =>
+    group(line, x, y, w, h, rotation, extra, () => {
+      rect('tile rect', 0, 0, w, h, c)
+      text('tile text', 14, 18, line, { size: 24, color: C.yellow, ...o })
+    })
+  tile(1000, 640, 200, 60, C.red, 'Opacity 50%', 0, { opacity: 0.5 })
+  label(1250, 650, 'K1 group at 50% opacity: box AND text half transparent,')
+  label(1250, 666, 'text readable (red box is dim, not solid red)')
+  group('K2', 1000, 740, 200, 90, 0, {}, () => {
+    rect('k2 rect', 0, 0, 200, 90, C.b3)
+    text('k2 half', 14, 10, 'Alpha 50%', { size: 24, color: C.yellow, alpha: 0.5 })
+    text('k2 full', 14, 50, 'Alpha 100%', { size: 24, color: C.yellow })
+  })
+  label(1250, 750, 'K2 text fill alpha 50%: "Alpha 50%" is visibly dimmer than')
+  label(1250, 766, '"Alpha 100%" below it (box is opaque)')
+  tile(1000, 960, 200, 60, C.b1, 'Rotated 30', 30)
+  label(1250, 930, 'K3 group rotated 30 deg: blue box rises to the right,')
+  label(1250, 946, '"Rotated 30" is readable along its length')
+  tile(1800, 1000, 200, 60, C.b2, 'Rotated 90', 90)
+  label(1250, 980, 'K4 group rotated 90 deg (box at far right): stands upright,')
+  label(1250, 996, 'text reads bottom to top')
+
+  const ids = rootKids
   const ir = {
     specVersion: 3, id, name, target: { kind: 'hudWidget' }, stage: { width, height }, root: '1:1',
     nodes: {

@@ -26,7 +26,7 @@ compileSwf(ir, { modId, buildDir, ffdec, outPath?, instanceNames? }) -> { swfPat
 
 ## Preview text fonts
 
-`preview: true` text uses `fontClass` = `previewFont(alias)` (default `previewDeviceFont`: `_sans`, `_typewriter`, `_serif`); the sync pipeline passes the name of the font it registered with Ruffle. Layout, bounds and alignment are identical to the game SWF. See `docs/preview-fonts.md`.
+`preview: true` text uses the font named `previewFont(alias)`; when `previewFontBytes(name)` returns a TTF it is EMBEDDED (placeholder `DefineFont3` + `fontId` + outlines, glyph subset imported by the FFDec `fonts` job; needed because Ruffle draws no device-font text when rotated), else `fontClass` (default `previewDeviceFont`: `_sans`, `_typewriter`, `_serif`). Layout, bounds and alignment are identical to the game SWF. See `docs/preview-fonts.md`.
 
 ## Text layout fields
 

@@ -89,7 +89,20 @@
         "1:72",
         "1:73",
         "1:74",
-        "1:75"
+        "1:75",
+        "1:76",
+        "1:77",
+        "1:80",
+        "1:81",
+        "1:82",
+        "1:86",
+        "1:87",
+        "1:88",
+        "1:91",
+        "1:92",
+        "1:93",
+        "1:96",
+        "1:97"
       ],
       "transform": {
         "x": 0,
@@ -4101,6 +4114,1064 @@
         "value": 0
       },
       "textFit": "fit",
+      "truncate": false
+    },
+    "1:76": {
+      "id": "1:76",
+      "name": "H K",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 970,
+        "y": 590,
+        "width": 1059,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "K  text in a rotated or translucent group: every row must show READABLE text, rotated with its box",
+      "runs": [
+        {
+          "start": 0,
+          "end": 98,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:77": {
+      "id": "1:77",
+      "name": "Opacity 50%",
+      "parent": "1:1",
+      "children": [
+        "1:78",
+        "1:79"
+      ],
+      "transform": {
+        "x": 1000,
+        "y": 640,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 0.5,
+      "type": "frame",
+      "clipContent": false
+    },
+    "1:78": {
+      "id": "1:78",
+      "name": "tile rect",
+      "parent": "1:77",
+      "children": [],
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 60
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.8784313725490196,
+            "g": 0.22745098039215686,
+            "b": 0.22745098039215686
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:79": {
+      "id": "1:79",
+      "name": "tile text",
+      "parent": "1:77",
+      "children": [],
+      "transform": {
+        "x": 14,
+        "y": 18,
+        "width": 159,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Opacity 50%",
+      "runs": [
+        {
+          "start": 0,
+          "end": 11,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8823529411764706,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:80": {
+      "id": "1:80",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1250,
+        "y": 650,
+        "width": 396,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "K1 group at 50% opacity: box AND text half transparent,",
+      "runs": [
+        {
+          "start": 0,
+          "end": 55,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:81": {
+      "id": "1:81",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1250,
+        "y": 666,
+        "width": 324,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "text readable (red box is dim, not solid red)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 45,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:82": {
+      "id": "1:82",
+      "name": "K2",
+      "parent": "1:1",
+      "children": [
+        "1:83",
+        "1:84",
+        "1:85"
+      ],
+      "transform": {
+        "x": 1000,
+        "y": 740,
+        "width": 200,
+        "height": 90,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "frame",
+      "clipContent": false
+    },
+    "1:83": {
+      "id": "1:83",
+      "name": "k2 rect",
+      "parent": "1:82",
+      "children": [],
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 90,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 90
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 90
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.4196078431372549,
+            "g": 0.1803921568627451,
+            "b": 0.3686274509803922
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:84": {
+      "id": "1:84",
+      "name": "k2 half",
+      "parent": "1:82",
+      "children": [],
+      "transform": {
+        "x": 14,
+        "y": 10,
+        "width": 130,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Alpha 50%",
+      "runs": [
+        {
+          "start": 0,
+          "end": 9,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8823529411764706,
+              "b": 0.2901960784313726
+            },
+            "opacity": 0.5
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:85": {
+      "id": "1:85",
+      "name": "k2 full",
+      "parent": "1:82",
+      "children": [],
+      "transform": {
+        "x": 14,
+        "y": 50,
+        "width": 144,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Alpha 100%",
+      "runs": [
+        {
+          "start": 0,
+          "end": 10,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8823529411764706,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:86": {
+      "id": "1:86",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1250,
+        "y": 750,
+        "width": 418,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "K2 text fill alpha 50%: \"Alpha 50%\" is visibly dimmer than",
+      "runs": [
+        {
+          "start": 0,
+          "end": 58,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:87": {
+      "id": "1:87",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1250,
+        "y": 766,
+        "width": 267,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "\"Alpha 100%\" below it (box is opaque)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 37,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:88": {
+      "id": "1:88",
+      "name": "Rotated 30",
+      "parent": "1:1",
+      "children": [
+        "1:89",
+        "1:90"
+      ],
+      "transform": {
+        "x": 1000,
+        "y": 960,
+        "width": 200,
+        "height": 60,
+        "rotation": 30
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "frame",
+      "clipContent": false
+    },
+    "1:89": {
+      "id": "1:89",
+      "name": "tile rect",
+      "parent": "1:88",
+      "children": [],
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 60
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.16862745098039217,
+            "g": 0.2901960784313726,
+            "b": 0.47843137254901963
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:90": {
+      "id": "1:90",
+      "name": "tile text",
+      "parent": "1:88",
+      "children": [],
+      "transform": {
+        "x": 14,
+        "y": 18,
+        "width": 144,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Rotated 30",
+      "runs": [
+        {
+          "start": 0,
+          "end": 10,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8823529411764706,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:91": {
+      "id": "1:91",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1250,
+        "y": 930,
+        "width": 382,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "K3 group rotated 30 deg: blue box rises to the right,",
+      "runs": [
+        {
+          "start": 0,
+          "end": 53,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:92": {
+      "id": "1:92",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1250,
+        "y": 946,
+        "width": 296,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "\"Rotated 30\" is readable along its length",
+      "runs": [
+        {
+          "start": 0,
+          "end": 41,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:93": {
+      "id": "1:93",
+      "name": "Rotated 90",
+      "parent": "1:1",
+      "children": [
+        "1:94",
+        "1:95"
+      ],
+      "transform": {
+        "x": 1800,
+        "y": 1000,
+        "width": 200,
+        "height": 60,
+        "rotation": 90
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "frame",
+      "clipContent": false
+    },
+    "1:94": {
+      "id": "1:94",
+      "name": "tile rect",
+      "parent": "1:93",
+      "children": [],
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 60
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.1803921568627451,
+            "g": 0.4196078431372549,
+            "b": 0.30980392156862746
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:95": {
+      "id": "1:95",
+      "name": "tile text",
+      "parent": "1:93",
+      "children": [],
+      "transform": {
+        "x": 14,
+        "y": 18,
+        "width": 144,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Rotated 90",
+      "runs": [
+        {
+          "start": 0,
+          "end": 10,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8823529411764706,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:96": {
+      "id": "1:96",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1250,
+        "y": 980,
+        "width": 425,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "K4 group rotated 90 deg (box at far right): stands upright,",
+      "runs": [
+        {
+          "start": 0,
+          "end": 59,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:97": {
+      "id": "1:97",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1250,
+        "y": 996,
+        "width": 173,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "text reads bottom to top",
+      "runs": [
+        {
+          "start": 0,
+          "end": 24,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
       "truncate": false
     }
   }

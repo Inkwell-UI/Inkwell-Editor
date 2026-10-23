@@ -1,6 +1,12 @@
 # Preview fonts
 
-The preview SWF (`compileSwf(..., { preview: true })`) draws text as device-font `DefineEditText` (`fontClass` = a font name). Ruffle 0.7.1 resolves that name against fonts registered through its `fontSources` config, so each Skyrim alias face gets its own font by name (verified: Light, Medium and Bold render as three distinct faces). `defaultFonts` slots are not needed. Without any registered font the name falls back to Ruffle's built-in sans (the old look).
+The preview SWF (`compileSwf(..., { preview: true })`) draws text with the preview font (see "Why glyphs are embedded"); a device-font `DefineEditText` (`fontClass` = a font name) is only the fallback. Ruffle 0.7.1 resolves that name against fonts registered through its `fontSources` config, so each Skyrim alias face gets its own font by name (verified: Light, Medium and Bold render as three distinct faces). `defaultFonts` slots are not needed. Without any registered font the name falls back to Ruffle's built-in sans (the old look).
+
+## Why glyphs are embedded (measured, 2026-10-23)
+
+Device-font text is not drawn by Ruffle when the field, its group or any ancestor frame is rotated (Flash limitation, reproduced with `INKWELL_SCREENSHOT` on a scratch project: rot 0 draws; rot 30, 45, 90, -30 and a text node rotated 20 deg draw the rectangle but no text). Ancestor 50% opacity keeps drawing (dimmer). So the preview SWF uses **embedded outlines** for every face that has font bytes: a placeholder `DefineFont3` (zero glyphs, named like the face) per face, `DefineEditText` with `fontId` + `HasFont` + `UseOutlines` and no font class, and the compile's FFDec step imports the glyphs (`fonts` folder in the wrapper job: `<fontCharId>.ttf` + `<id>.txt` with the characters; the wrapper calls `FontTag.addCharacter` per character, caching the parsed font by content). Subset = printable ASCII plus every character of the text nodes using that face, so a build only carries what it draws (about 13 KB for a few fields). The TTF is copied into the build folder only (`build/preview/<swf>/fonts/`, never exported or deployed); the game SWF is unchanged. Faces without bytes (no font resolved) still fall back to a device font. `INKWELL_PREVIEW_EMBED=0` switches embedding off (device fonts) for comparison.
+
+Cost, warm wrapper, 8 text fields: preview compile 33 ms with device fonts vs about 48 ms embedded (+15 ms); the first embedded build after the wrapper starts is slower (JIT, AWT font load; about +150 ms). Text fill alpha was not separately verifiable at preview scale; the game SWF keeps it (`textColor` alpha), see the in-game sheet section K.
 
 ## Source per face (priority)
 
@@ -11,7 +17,7 @@ The preview SWF (`compileSwf(..., { preview: true })`) draws text as device-font
 
 ## Flow
 
-`resolvePreviewFonts` (main, once) reads the files and the full name (name ID 4) of each. The pipeline passes `nameFor(alias)` to the compiler (`previewFont` option), so the preview SWF names that font. The renderer fetches the bytes once through IPC `getPreviewFonts` (ArrayBuffer), makes Blob URLs and gives them to Ruffle as `fontSources`; the page CSP allows `connect-src blob:`. Font bytes appear nowhere else (not in `PreviewBuild`, not in the SWF); only the name and the badge labels travel with a build. A changed font source needs a restart.
+`resolvePreviewFonts` (main, once) reads the files and the full name (name ID 4) of each. The pipeline passes `nameFor(alias)` and `bytesFor(name)` to the compiler (`previewFont`, `previewFontBytes` options), so the preview SWF embeds that font's glyphs and names it. The renderer fetches the bytes once through IPC `getPreviewFonts` (ArrayBuffer), makes Blob URLs and gives them to Ruffle as `fontSources`; the page CSP allows `connect-src blob:`. Font bytes appear nowhere else (not in `PreviewBuild`, not in the SWF); only the name and the badge labels travel with a build. A changed font source needs a restart.
 
 ## Badge
 

@@ -28,4 +28,15 @@ describe('ingame test sheet', () => {
     expect(fields).toBeGreaterThan(50)
     expect(new Set(imported.values()).size).toBe(7) // every alias row of section D
   })
+
+  it.each(VARIANTS)('$id has the section K rows: text in groups rotated 30 / 90 deg, at 50% opacity, and with 50% fill alpha', (v) => {
+    const ir = buildSheet(v.id, v.name, v.width, v.height)
+    const groups = Object.values(ir.nodes).filter((n) => n.type === 'frame' && n.id !== ir.root)
+    const withText = (g: (typeof groups)[number]) => g.type === 'frame' && g.children.some((c) => ir.nodes[c]?.type === 'text')
+    expect(groups.filter(withText).map((g) => [g.transform.rotation, g.opacity]).sort()).toEqual([[0, 0.5], [0, 1], [30, 1], [90, 1]].sort())
+    const g = generate(ir, { modId: 'IngameTest' })
+    expect(g.lint.filter((l) => l.severity === 'error')).toEqual([])
+    const fields = parseSwf(writeSwf({ widthPx: v.width, heightPx: v.height, tags: g.tags })).tags.filter((t) => t.code === TAG.DefineEditText).map(readEditText)
+    expect(fields.filter((f) => f.color.a === 128 && f.text === 'Alpha 50%')).toHaveLength(1) // the game SWF keeps the text fill alpha
+  })
 })
