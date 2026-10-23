@@ -1,17 +1,17 @@
 # The editor shell (`src/renderer`, `src/main/session.ts`)
 
-Implements phase 1 of the UI/UX architecture spec (`inkwell_ui_ux_architecture_specification.md`, workspace root). Where it and `Inkwell Design Spec.md` disagree, the design spec wins. Panel and layout rules: `docs/ui-panels.md`.
+Implements phases 1 and 2 of the UI/UX architecture spec (phase 2: the Setup Doctor, `docs/setup-doctor.md`, and Deploy, `docs/deploy.md`) (`inkwell_ui_ux_architecture_specification.md`, workspace root). Where it and `Inkwell Design Spec.md` disagree, the design spec wins. Panel and layout rules: `docs/ui-panels.md`.
 
 ## Zones
 
 ```
-Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, workspace switcher, connection dots, Build All, Deploy/Package (disabled)
+Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, workspace switcher, Setup (opens the Doctor), connection dots, Build All, Deploy (shell/DeployMenu.tsx, MO2), Package (disabled: Planned)
 Zone 2  left tabs         navigator | contracts | assets
 Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, Inspect overlay, banners, GFx note, last good build
 Zone 4  graph             GraphPanel             empty state, AS2 split placeholder
 Zone 5  inspector         InspectorPanel
 Zone 6A bottom dock tabs  lintBudget | localization | trace | mockData
-Zone 6B StatusBar         shell/StatusBar.tsx    spec, last build + history, FFDec, packs, undo scope
+Zone 6B StatusBar         shell/StatusBar.tsx    spec, last build + history, FFDec, Deploy (progress, result, stage timings), packs, undo scope
 ```
 
 Zones 2 to 6A are layout panels; Zones 1 and 6B are shell chrome around the layout (they are never moved or resized).
@@ -33,7 +33,9 @@ Wire (default), Verify, Debug: three layouts as data with the same panels and di
 | `overlayStore` | one zundo-backed overlay store per SWF; saves every change to `swfs/<name>/overlay.json` through main | disk, via IPC |
 | `syncStore` | latest `SyncUiState` | no |
 | `timingStore` | last 50 builds in memory | no |
-| `lintStore`, `popoutStore`, `dialogStore` | display filters, detached flag, open stub dialog | no |
+| `lintStore`, `popoutStore`, `dialogStore` | display filters, detached flag, open dialog | no |
+| `toastStore` | up to four toasts (Deploy result), auto-dismiss | no |
+| `deployStore` | Deploy scope, busy flag, the pending first-deploy confirmation | no |
 
 `state/bridge.ts` connects IPC to the stores once per window.
 
@@ -71,7 +73,9 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 
 - **Panel / tab:** see `docs/ui-panels.md` ("Adding or moving a panel"). A tab's label and disabled state come from the registry's optional `useTabInfo`.
 - **Workspace:** add an id to `WorkspaceId`/`WORKSPACE_IDS` and an entry to `WORKSPACES` in `workspace/workspaces.ts` (call `make(id, shares)` or write the layout by hand), add its name to `strings.top.workspaceNames`, and extend the `Ctrl+N` handler in `shell/AppShell.tsx`. `panelRegistry.test.ts` checks it shows every panel once.
-- **Stub dialog:** add an id to `DialogId`, copy to `strings.dialogs`, a branch in `shell/Dialogs.tsx`.
+- **Dialog:** add an id to `DialogId`, copy to `strings.dialogs`, a branch in `shell/Dialogs.tsx`. `setupDoctor` shows the real `SetupDoctorPanel` (wide dialog); it is reachable from the top bar, the start screen and the status bar link `FFDec: not found`, and opens by itself on the first launch where a check fails. Dialogs and the toast stack also render on the start screen.
+- **Popover:** `ui/Popover.tsx` flips to the other side when the panel would leave the window.
+- **Deploy:** the dropdown shows each target folder exactly; the first deploy to a folder opens a confirmation dialog (path and file list). See `docs/deploy.md`.
 
 ## Deferred, and why
 
@@ -85,8 +89,8 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 | Relink / Discard orphans | needs the overlay store's relink operation |
 | Select in Figma, Focus in Figma | a protocol message in `inkwell-spec` |
 | Runtime trace, game dot, hot reload | Inkwell Runtime (0.3) |
-| Deploy and Package, target pill's Config Ownership dialog | deploy tool; runtime config formats (0.3) |
-| Setup Doctor checks beyond Java/FFDec, setup guide link | setup screen |
+| Vortex staging and zip packaging (Package), custom menu JSON in Deploy, target pill's Config Ownership dialog | packaging; runtime config formats (0.3) |
+| Figma plugin screenshot guide in the Setup Doctor, setup guide link | later |
 | Play-mode virtual gamepad | later |
 | Mock data editor | 0.2 |
 

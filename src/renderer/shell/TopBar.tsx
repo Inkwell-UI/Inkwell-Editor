@@ -159,7 +159,7 @@ export function TopBar() {
       </Btn>
       <WorkspaceSwitcher />
       <span className="spacer" />
-      <Btn icon={Stethoscope} variant="quiet" onClick={() => show('setupDoctor')} label={strings.top.setupTip} testId="open-setup">{strings.top.setup}</Btn>
+      <Btn icon={Stethoscope} variant="quiet" onClick={() => show('setupDoctor')} label={strings.top.setupTip} testId="open-setup" />
       <FigmaDot />
       <GameDot />
       <Btn icon={Hammer} variant="primary" onClick={() => void inkwell?.buildAll()} reason={buildReason} testId="build-all">{compiling ? strings.top.building : strings.top.buildAll}</Btn>

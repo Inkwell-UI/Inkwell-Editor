@@ -10,6 +10,7 @@ import type { OpenResult, UiEvent } from '../shared/projectState'
 import { PRODUCT_NAME } from '../shared/product'
 import { copyExample, createProject } from './project/lifecycle'
 import { runShots } from './screenshotDriver'
+import { runSetupShots } from './screenshotSetup'
 import { createSession } from './session'
 
 let win: BrowserWindow | undefined
@@ -149,7 +150,9 @@ void app.whenReady().then(async () => {
   await session.open(dir)
   if (dir && process.env['INKWELL_SCREENSHOT']) session.debug.seedBuilds() // debug: a preview exists without the Figma plugin
   const shotsDir = process.env['INKWELL_SHOTS_DIR']
-  if (shotsDir) void runShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, previewWin: () => previewWin, session }).catch((e: unknown) => { console.error('[inkwell] screenshots failed:', e); app.exit(1) })
+  if (shotsDir && process.env['INKWELL_SHOTS_SETUP'])
+    void runSetupShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] screenshots failed:', e); app.exit(1) })
+  else if (shotsDir) void runShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, previewWin: () => previewWin, session }).catch((e: unknown) => { console.error('[inkwell] screenshots failed:', e); app.exit(1) })
 })
 app.on('window-all-closed', () => app.quit())
 app.on('will-quit', () => void session.stop())

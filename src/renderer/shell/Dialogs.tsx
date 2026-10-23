@@ -1,4 +1,4 @@
-import { SetupDoctorPanel } from '../panels/SetupDoctorPanel'
+import { SetupDoctorPanel } from '../doctor/SetupDoctorPanel'
 import { useDialogStore } from '../state/dialogStore'
 import { strings } from '../strings'
 import { Dialog } from '../ui/Dialog'

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
 export interface PopoverProps {
   /** Renders the trigger; spread `props` on the button (aria + onClick). */
@@ -17,6 +17,15 @@ export function Popover({ trigger, children, align = 'start', up, label, classNa
   const [open, setOpen] = useState(false)
   const id = useId()
   const root = useRef<HTMLDivElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+  const [side, setSide] = useState(align)
+  // keep the panel inside the window: if it overflows on the requested side, open it towards the other
+  useLayoutEffect(() => {
+    if (!open || !panel.current) return
+    const r = panel.current.getBoundingClientRect()
+    if (r.left < 0 && side === 'end') setSide('start')
+    else if (r.right > window.innerWidth && side === 'start') setSide('end')
+  }, [open, side])
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent): void => {
@@ -39,7 +48,7 @@ export function Popover({ trigger, children, align = 'start', up, label, classNa
     <div ref={root} className={`popover-root${className ? ` ${className}` : ''}`}>
       {trigger({ onClick: () => setOpen(!open), 'aria-expanded': open, 'aria-controls': id, 'aria-haspopup': 'dialog' }, open)}
       {open && (
-        <div id={id} role="dialog" aria-label={label} className={`popover popover-${align}${up ? ' popover-up' : ''}`}>
+        <div ref={panel} id={id} role="dialog" aria-label={label} className={`popover popover-${side}${up ? ' popover-up' : ''}`}>
           {typeof children === 'function' ? children(() => setOpen(false)) : children}
         </div>
       )}

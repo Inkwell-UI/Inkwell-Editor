@@ -72,7 +72,14 @@ export function AppShell() {
   }, [swf])
 
   if (project === undefined) return <div className="loading" role="status">{strings.loading}</div>
-  if (project === null) return <StartScreen />
+  if (project === null)
+    return (
+      <>
+        <StartScreen />
+        <Dialogs />
+        <Toasts />
+      </>
+    )
   return (
     <div className="shell">
       <TopBar />

@@ -9,7 +9,7 @@ import { Btn } from '../ui/Btn'
 const ICON = { pass: CircleCheck, warn: TriangleAlert, fail: CircleX, skipped: CircleDashed } as const
 const TONE = { pass: 'tone-ok', warn: 'tone-warn', fail: 'tone-error', skipped: '' } as const
 
-function FixButton({ row, fix, d, primary }: { row: CheckResult; fix: Fix; d: DoctorHook; primary?: boolean }) {
+function FixButton({ row, fix, d, primary, extra }: { row: CheckResult; fix: Fix; d: DoctorHook; primary?: boolean; extra?: boolean }) {
   const a = fix.action
   const busy = a.kind === 'run' && d.busy === a.task
   const label = a.kind === 'copy' && d.copied === row.id ? strings.doctor.copied : busy ? strings.doctor.working : fix.label
@@ -19,7 +19,7 @@ function FixButton({ row, fix, d, primary }: { row: CheckResult; fix: Fix; d: Do
       variant={primary ? 'primary' : 'default'}
       onClick={() => d.runFix(row.id, fix)}
       reason={d.busy && a.kind === 'run' && !busy ? strings.doctor.working : undefined}
-      testId={`doctor-fix-${row.id}${primary ? '' : '-extra'}`}
+      testId={`doctor-fix-${row.id}${extra ? '-extra' : ''}`}
     >
       {label}
     </Btn>
@@ -39,7 +39,7 @@ function Row({ row, d }: { row: CheckResult; d: DoctorHook }) {
         {(row.fix || row.extra?.length) && (
           <div className="row-actions">
             {row.fix && <FixButton row={row} fix={row.fix} d={d} primary={row.status === 'fail'} />}
-            {row.extra?.map((f) => <FixButton key={f.label} row={row} fix={f} d={d} />)}
+            {row.extra?.map((f) => <FixButton key={f.label} row={row} fix={f} d={d} extra />)}
           </div>
         )}
         {row.id === 'wrapper' && d.benchmark && <Benchmark d={d} />}

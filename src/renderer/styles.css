@@ -314,3 +314,5 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .toast-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .toast-body p { margin: 2px 0 0; color: var(--fg-dim); }
 .statusbar .item.is-error { color: var(--err); }
+.dialog-title { position: sticky; top: 0; z-index: 1; background: var(--surface-1); }
+.dialog-title { position: sticky; top: 0; z-index: 1; background: var(--surface-1); }
