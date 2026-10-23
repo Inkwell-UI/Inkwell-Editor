@@ -1,5 +1,6 @@
 // Inkwell spike 1+2 probes. Self-contained: no engine/SKSE functions required.
-// The on-screen report TextField is the primary evidence; trace() is secondary.
+// Evidence: the on-screen report TextField AND Inkwell.log (lines are sent to _root.inkwellTrace, see LOG below).
+// build.ps1 prepends `var VARIANT = "A";` (A/B/C = font encoding of the report field, see README).
 stop();
 this._lockroot = true;
 _global.gfxExtensions = true;
@@ -14,8 +15,28 @@ function say(s:String)
     tl.report.text = lines.join("\n");
 }
 
+// ---- LOG: the runtime DLL installs _root.inkwellTrace only after LoadMovieEx returns, i.e. after
+// this frame ran, so poll for it every frame and send every report line (also lines added later).
+var P:String = "[InkwellSpike " + VARIANT + "] ";
+var sent:Number = 0;
+var waited:Number = 0;
+this.onEnterFrame = function()
+{
+    waited++;
+    if (_root.inkwellTrace == undefined) {
+        if (waited > 900) delete this.onEnterFrame;
+        return;
+    }
+    if (sent == 0) _root.inkwellTrace(P + "LOG: inkwellTrace seen after " + waited + " frame(s); lines=" + lines.length);
+    while (sent < lines.length) _root.inkwellTrace(P + lines[sent++]);
+    if (lines[lines.length - 1].indexOf("END") == 0 || waited > 300) {
+        _root.inkwellTrace(P + "LOG: done, sent " + sent + " lines");
+        delete this.onEnterFrame;
+    }
+};
+
 var tf:TextField = this.report;
-say("INKWELL SPIKE 1+2 REPORT (v1)");
+say("INKWELL SPIKE 1+2 REPORT (v2) variant=" + VARIANT);
 say("ALIVE: AS2 frame script ran; tf=" + (tf != undefined));
 
 // ---- d) environment ----
@@ -113,5 +134,20 @@ try {
     say("FONT: LOOK AT THE GLYPHS: does this text use Skyrim's menu font? (Y/N)");
 } catch (eFt) {
     say("FONT: FAIL " + eFt);
+}
+// ---- e) runtime-created field: no SWF font tag at all, font only via embedFonts + fontconfig name ----
+try {
+    var rt = this.createTextField("rt", 20, 40, 670, 1200, 40);
+    if (rt == undefined) rt = this.rt;
+    var rf:TextFormat = new TextFormat();
+    rf.font = "$EverywhereFont";
+    rf.size = 20;
+    rf.color = 0xFFFF80;
+    rt.embedFonts = true;
+    rt.setNewTextFormat(rf);
+    rt.text = "RUNTIME FIELD " + VARIANT + ": createTextField embedFonts=true font=$EverywhereFont";
+    say("RUNTIMEFIELD: created=" + (rt != undefined) + " embedFonts=" + rt.embedFonts + " font=" + rt.getTextFormat().font + " textWidth=" + rt.textWidth + " (0 = no glyphs)");
+} catch (eRt) {
+    say("RUNTIMEFIELD: FAIL " + eRt);
 }
 say("END: all probes finished");

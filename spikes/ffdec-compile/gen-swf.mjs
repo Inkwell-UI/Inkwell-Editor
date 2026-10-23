@@ -1,5 +1,8 @@
 // Emits the *skeleton* SWF (no AS code, placeholder shape). FFDec fills in shape + AS2.
-// usage: node gen-swf.mjs out.swf [fontMode=class|define] [version=10]
+// usage: node gen-swf.mjs out.swf [fontMode=class|import|define] [version=10]
+//   class : fontClass $EverywhereFont, device text (variant B, the original build; invisible in-game)
+//   import: ImportAssets2 gfxfontlib.swf/$EverywhereMediumFont + fontId + UseOutlines, exactly like vanilla menus (variant A)
+//   define: local zero-glyph DefineFont2 '$EverywhereFont' + fontId + UseOutlines, no import (variant C)
 import { writeFileSync } from 'node:fs';
 const [out, fontMode = 'class', ver = '10'] = process.argv.slice(2);
 
@@ -35,13 +38,16 @@ function editText() {
   const useClass = fontMode === 'class';
   // flags1 (ReadOnly=1 => dynamic, not input): HasText WordWrap Multiline Password ReadOnly HasTextColor HasMaxLength HasFont
   const f1 = 0b1110_1101;
-  // flags2: HasFontClass AutoSize HasLayout NoSelect Border WasStatic HTML UseOutlines (dynamic: WasStatic=0, outlines=0 => device font)
-  const f2 = useClass ? 0b1001_0000 : 0b0001_0000;
+  // flags2: HasFontClass AutoSize HasLayout NoSelect Border WasStatic HTML UseOutlines
+  // class = device font (outlines=0); import/define set UseOutlines like every vanilla menu text field
+  const f2 = useClass ? 0b1001_0000 : 0b0001_0001;
   return tag(37, cat(u16(TEXT), rect(0, 1200 * 20, 0, 640 * 20), u8(f1), u8(f2),
     useClass ? cat(u16(0), str('$EverywhereFont')) : u16(FONT), u16(16 * 20), Buffer.from([0xee, 0xee, 0xee, 0xff]),
-    str(''), str('INKWELL SPIKE: AS2 NOT RUN')));
+    str(''), str(`INKWELL SPIKE (font=${fontMode}): AS2 NOT RUN`)));
 }
-// zero-glyph DefineFont2 named like a Flash-IDE device font (variant build only)
+// A: vanilla menus import the font from 'gfxfontlib.swf' (GFx resolves it via fontconfig.txt, gfxfontlib itself does not export it)
+// C: zero-glyph DefineFont2 named like a Flash-IDE device font
+const importFont = () => tag(71, cat(str('gfxfontlib.swf'), u8(1), u8(0), u16(1), u16(FONT), str('$EverywhereMediumFont')));
 const font = () => tag(48, cat(u16(FONT), u8(0b0000_1000 /* WideOffsets */ | 0b00100000 /* SmallText */), u8(0), u8(15), Buffer.from('$EverywhereFont'), u16(0), u32(0)));
 const sprite = id => tag(39, cat(u16(id), u16(1), tag(1, Buffer.alloc(0)), u16(0)));
 const place = (depth, id, x, y, name) => {
@@ -54,7 +60,7 @@ const init = id => tag(59, cat(u16(id), u8(E)));
 
 const body = cat(
   tag(9, Buffer.from([0x10, 0x10, 0x10])),
-  shape(), fontMode === 'class' ? Buffer.alloc(0) : font(), editText(),
+  shape(), { class: Buffer.alloc(0), import: importFont(), define: font() }[fontMode], editText(),
   sprite(SPR_P1), sprite(SPR_P2), sprite(SPR_CLIP), exports,
   init(SPR_P1), init(SPR_P2),
   place(1, SHAPE, 0, 0, ''), place(2, TEXT, 40 * 20, 40 * 20, 'report'),

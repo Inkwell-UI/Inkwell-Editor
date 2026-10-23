@@ -1,6 +1,45 @@
 # Spike 1 + 2: FFDec compile and AS2/GFx probes (milestone 0.0)
 
-Status: **static and Ruffle checks done. In-game results are UNVERIFIED, awaiting in-game** (needs the runtime-DLL spike to load `Interface/InkwellSpike.swf` as a custom menu).
+Status: **in-game run 1 failed visibly (no text drawn); diagnosed; three font variants A/B/C built and deployed, awaiting in-game run 2.**
+
+## In-game run 1 (Skyrim SE 1.7.104, runtime-menu DLL spike)
+
+Log: `LoadMovieEx returned true`, `_root exists: true`, `installed _root.inkwellTrace: true`. On screen: the dark-blue 1280x720 background shape, but **no text at all**, not even the placeholder `INKWELL SPIKE: AS2 NOT RUN`. So the SWF loads and renders shapes, but the TextField draws nothing. Run 1 cannot tell whether AS2 ran (the placeholder is invisible too, and the frame script ran before `_root.inkwellTrace` existed).
+
+### Diagnosis (evidence: vanilla SWFs from `Skyrim - Interface.bsa`, read with FFDec `-swf2xml`, nothing committed)
+
+Every vanilla menu text field checked (messagebox.swf 2/2, inventorymenu.swf 7/7, hudmenu.swf 19/20) uses this encoding, and none uses `fontClass`:
+
+- `ImportAssets2 url="gfxfontlib.swf"` importing a font by name into a local character id, e.g. messagebox `7 = $EverywhereMediumFont`, inventorymenu `14 = $EverywhereMediumFont`, hudmenu `164 = $EverywhereMediumFont`, `439 = $DragonFont`;
+- `DefineEditText hasFont=true fontId=<that id> hasFontClass=false useOutlines=true wasStatic=false readOnly=true html=true` (initial HTML `<font face="$EverywhereMediumFont" ...>`), usually followed by `CSMSettings`.
+
+`gfxfontlib.swf` in the BSA does **not** export `$EverywhereMediumFont` or `$EverywhereFont` (its exports: `$MageScriptFont $SkyrimSymbolsFont $DaedricFont $DwemerFont $FalmerFont $DragonFont $StartMenuFont $DialogueTextFont $ConsoleFont $EverywhereBoldFont $SkyrimBooks $SkyrimBooks_Unreadable`). The import is resolved by GFx's font manager through `interface/fontconfig.txt` (`fontlib "Interfaceonts_en.swf"`, `map "$EverywhereFont" = "Futura CondensedLight" Normal`, `map "$EverywhereMediumFont" = "Futura Condensed" Normal`), i.e. the name lands in `fonts_en.swf`'s `DefineFont3` glyphs.
+
+Our field had `useOutlines=false` (device font) and `HasFontClass` with `fontId=0`. Device text needs a system font provider, which Skyrim does not appear to install (all vanilla text is outline text), and `fontClass` is an AS3-era (SWF 9) field that GFx's AS2 path most likely ignores (worst case misparses). Either way no glyph source: nothing drawn, consistent with run 1. Confidence: high that the encoding is the cause (vanilla never uses ours, always uses A); medium on which of the two flags is the decisive one. Hypothesis "AS2 did not run" is not excluded by run 1; run 2 settles it via the log.
+
+### Variants for run 2 (`build.ps1` builds all three; same shape, same AS2 probes, only the report field's font encoding differs)
+
+| Variant | File / hotkey | Report field font encoding |
+| --- | --- | --- |
+| A | `InkwellSpikeA.swf`, O (24) | exactly vanilla: `ImportAssets2 gfxfontlib.swf $EverywhereMediumFont` -> id 3, `fontId=3`, `useOutlines=true` |
+| B | `InkwellSpikeB.swf`, P (25) | run-1 build: `fontClass=$EverywhereFont`, `fontId=0`, `useOutlines=false` (expected: invisible again) |
+| C | `InkwellSpikeC.swf`, L (38) | no import: local zero-glyph `DefineFont2 "$EverywhereFont"` (id 3), `fontId=3`, `useOutlines=true` (GFx should substitute the glyph-less font by name via fontconfig) |
+
+All variants additionally (AS2, unchanged probes plus):
+- header line `INKWELL SPIKE 1+2 REPORT (v2) variant=X`; placeholder text `INKWELL SPIKE (font=import|class|define): AS2 NOT RUN`;
+- probe e) `RUNTIMEFIELD`: a field made at runtime with `createTextField`, `embedFonts=true`, `TextFormat.font="$EverywhereFont"`, yellow, bottom-left at y=670: the no-SWF-font-tag route (what SkyUI-style code does);
+- LOG: an `onEnterFrame` loop (installed before the probes, so it survives an AS2 crash mid-probe) polls `_root.inkwellTrace` each frame and, once it exists, sends every report line (also later ones) to `Inkwell.log`, then stops after `END` (or 300 frames; it gives up after 900 frames without the function).
+
+### What to read back from `Documents\My Games\Skyrim Special Edition\SKSE\Inkwell.log`
+
+Each line looks like `[AS2] inkwellTrace([InkwellSpike A] ...)`. Per variant:
+- `LOG: inkwellTrace seen after N frame(s); lines=K` - present = AS2 runs (hypothesis 3 dead); absent = the frame script never ran.
+- all report lines down to `END: all probes finished` and `LOG: done, sent K lines` (the full probe results for spike 2, even if nothing renders).
+- `FONT: textWidth(20xW)=... textWidth(20xi)=...` - nonzero widths mean the report field's font resolved to glyphs; 0/0 means no glyph source (expected for B).
+- `RUNTIMEFIELD: ... textWidth=...` - same question for the runtime-created field.
+- On screen per variant: is the report visible (Y/N), is the yellow `RUNTIME FIELD X` line visible (Y/N), Skyrim's Futura glyphs (Y/N)?
+
+Expected if the diagnosis holds: A visible in Skyrim's font; B invisible with textWidth 0; C and RUNTIMEFIELD visible if GFx maps glyph-less/embedFonts names through fontconfig (unknown; if they work, Inkwell can skip the import tag).
 
 ## Questions
 
@@ -12,10 +51,10 @@ Status: **static and Ruffle checks done. In-game results are UNVERIFIED, awaitin
 - `gen-swf.mjs`: Node (no deps) emits a skeleton SWF v10, 1280x720: `SetBackgroundColor`, placeholder `DefineShape`, one `DefineEditText` (dynamic, ReadOnly, HasFont + fontClass `$EverywhereFont`, no embedded glyphs, instance name `report`), three empty exported sprites (`__Packages.mods.inkwellspike.Probe`, `__Packages.mods.other.Probe`, `InkwellProbeClip`) with placeholder `DoInitAction`s, empty frame `DoAction`. FFDec has no "new SWF" command, so this is the template.
 - `src/shapes/1.svg`: the one shape (1280x720 background rect); `-importShapes` replaces character 1 (it keeps the old bounds, so the skeleton bounds already match).
 - `src/as2/frame_1/DoAction.as`: all probes. `src/as2/__Packages/mods/{inkwellspike,other}/Probe.as`: the two classes. `-importScript` compiles them with FFDec's own AS2 compiler.
-- `build.ps1`: reproduces `build/InkwellSpike.swf` (`-Deploy` copies it to `C:\Modding\MO2\mods\Inkwell Spikes\Interface\InkwellSpike.swf`, an MO2 mod folder, never the game's Data). `-FontMode define -Out ...` builds a variant using a zero-glyph `DefineFont2` named `$EverywhereFont` (what the Flash IDE emits for a device font) in case GFx ignores `fontClass`; only the primary is deployed.
+- `build.ps1`: reproduces `build/InkwellSpike{A,B,C}.swf` (font modes `import`/`class`/`define` of `gen-swf.mjs`, see run-2 variants above); each variant gets a copy of `src/as2` with `var VARIANT = "X";` prepended. `-Deploy` copies them to `C:\Modding\MO2\mods\Inkwell Spikes\Interface\` (an MO2 mod folder, never the game's Data) and removes the old `InkwellSpike.swf`. Menu JSONs (`inkwell_spike_{a,b,c}.json`, hotkeys O/P/L) live in that mod's `SKSE\Plugins\Inkwell\menus\`.
 - `warm.js` + `bench.ps1`: warm-JVM wrapper and benchmark. `ruffle-sanity.png`: Ruffle render.
 
-Run: `./build.ps1 -Deploy` (needs Node 22, FFDec at `C:\Program Files (x86)\FFDec`). Bench: `./bench.ps1 -Runs 10`. Warm wrapper alone:
+Run: `./build.ps1 [-Deploy]` (needs Node 22, FFDec at `C:\Program Files (x86)\FFDec`). Bench: `./bench.ps1 -Runs 10`. Warm wrapper alone:
 `jjs -J-cp "<FFDec>\ffdec.jar;<FFDec>\lib\*" warm.js -- <base.swf> <shapesDir> <as2Dir> <out.swf> <runs>`, or `-- --stdin` with one job per line `base|shapesDir|as2Dir|out` (reply `OK <ms>`).
 
 FFDec is only driven as a separate process / loaded from its install dir; nothing of it is in the repo.
@@ -46,7 +85,7 @@ Reading: cold FFDec is about 2.4 s per build, far over the 1 s target; a residen
 
 ## Ruffle sanity (done; Ruffle is not GFx)
 
-`@ruffle-rs/ruffle` 0.7.1 (npm) in headless Edge renders the SWF (`ruffle-sanity.png`). Per probe: ALIVE ok; STAGE 1280x720; TRYCATCH OK (`str=boom err=err1 isError=true fin=11 fin2=11 nested=c1:inner c2:re-inner`); every GFx extension line shows `base=undefined ... bogus->bogus native=false` (expected: Ruffle has none, and TextField is dynamic so assignment echoes); FILTERS DropShadow set ok; CLASS no-collision=true; REGISTERCLASS true / attachMovie true / isProbe=true; FONT reports `$EverywhereFont` (just the format name, not proof of resolution), type=dynamic.
+`@ruffle-rs/ruffle` 0.7.1 (npm) in headless Edge renders the SWF (`ruffle-sanity.png`, now variant C; B renders identically, A stays blank in Ruffle because it cannot resolve the `gfxfontlib.swf` import, which proves nothing about GFx). Ruffle falls back to a system font for every encoding, so it cannot validate fonts. Run-1 notes: Per probe: ALIVE ok; STAGE 1280x720; TRYCATCH OK (`str=boom err=err1 isError=true fin=11 fin2=11 nested=c1:inner c2:re-inner`); every GFx extension line shows `base=undefined ... bogus->bogus native=false` (expected: Ruffle has none, and TextField is dynamic so assignment echoes); FILTERS DropShadow set ok; CLASS no-collision=true; REGISTERCLASS true / attachMovie true / isProbe=true; FONT reports `$EverywhereFont` (just the format name, not proof of resolution), type=dynamic.
 
 ## Result per probe
 
@@ -63,17 +102,17 @@ How to judge the extension lines in-game: `read=set` alone proves nothing (the E
 ## On-screen report the human should read back
 
 Top-left, 16 px, light text on a dark blue 1280x720 background. Lines in order (read them back verbatim, everything after the colon matters):
-`INKWELL SPIKE 1+2 REPORT (v1)`, `ALIVE`, `STAGE`, `VERSION`, `VERSION2`, `GLOBALS`, `TRYCATCH`, `EXT-CONTROL`, `VALIGN`, `VAUTOSIZE`, `AUTOSHRINK`, `TEXTAUTOSIZE`, `SHADOWSTYLE`, `NOTRANSLATE`, `FILTERS` (2 lines), `CLASS` (4 lines), `REGISTERCLASS`, `FONT` (3 lines), `END: all probes finished`.
+`INKWELL SPIKE 1+2 REPORT (v2) variant=X`, `ALIVE`, `STAGE`, `VERSION`, `VERSION2`, `GLOBALS`, `TRYCATCH`, `EXT-CONTROL`, `VALIGN`, `VAUTOSIZE`, `AUTOSHRINK`, `TEXTAUTOSIZE`, `SHADOWSTYLE`, `NOTRANSLATE`, `FILTERS` (2 lines), `CLASS` (4 lines), `REGISTERCLASS`, `FONT` (3 lines), `RUNTIMEFIELD`, `END: all probes finished`. The same lines are in `Inkwell.log` (see above).
 
-Text is refreshed after every probe, so if the AS2 dies partway, the last line shown says where. Initial text `INKWELL SPIKE: AS2 NOT RUN` means the SWF loaded but the frame script never ran. Nothing on screen means the SWF did not load or the text field did not draw (then try the `-FontMode define` variant). Also answer visually: does the glyph style match Skyrim's menu font (Y/N), and is the dark-blue 1280x720 background visible and aligned?
+Text is refreshed after every probe, so if the AS2 dies partway, the last line shown says where. Initial text `INKWELL SPIKE (font=...): AS2 NOT RUN` means the SWF loaded but the frame script never ran. Nothing on screen means the text field did not draw (run 1); then the log is the evidence. Also answer visually: does the glyph style match Skyrim's menu font (Y/N), and is the dark-blue 1280x720 background visible and aligned?
 
 ## In-game path
 
-Only via the Inkwell Runtime DLL spike, which should open `Interface/InkwellSpike.swf` as a custom menu (the SWF needs no engine/SKSE functions; frame 1 runs everything; it uses `this._lockroot`). Overwriting vanilla SWFs is not allowed, so there is no DLL-free test. The test file is deployed to `C:\Modding\MO2\mods\Inkwell Spikes\Interface\InkwellSpike.swf`. `trace()` output only appears in the Scaleform log if enabled.
+Only via the Inkwell Runtime DLL spike, which should open `Interface/InkwellSpike{A,B,C}.swf` as custom menus (the SWF needs no engine/SKSE functions; frame 1 runs everything; it uses `this._lockroot`). Overwriting vanilla SWFs is not allowed, so there is no DLL-free test. The test files are deployed to `C:\Modding\MO2\mods\Inkwell Spikes\Interface\InkwellSpike{A,B,C}.swf`. `trace()` output only appears in the Scaleform log if enabled.
 
 ## Risks
 
-- `fontClass` with `HasFont` + `fontId=0` is the requested encoding; GFx 3.x may ignore it and use a default font (use the `define` variant then).
+- Confirmed in run 1: `fontClass` + device text draws nothing in Skyrim's GFx. Inkwell output must use outline text with a font GFx can resolve (variant A's encoding is the vanilla one).
 - SWF v10 is a guess for Skyrim's GFx; `-Version 8` is available if it will not load.
 - The warm path uses FFDec internal classes (`SvgImporter`, `AS2ScriptImporter`), unstable across FFDec versions; pin and verify the version.
 - Warm timing excludes preview and the SVG complexity of real designs.
