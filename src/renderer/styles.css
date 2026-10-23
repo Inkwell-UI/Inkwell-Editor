@@ -1,0 +1,39 @@
+:root { color-scheme: light; --line: #c8c8c8; --bar: #ececec; --bg: #fff; --fg: #1a1a1a; --info: #0b5cad; }
+html, body, #root { height: 100%; margin: 0; }
+body { font: 13px system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+#root { display: flex; }
+.split { display: flex; min-width: 0; min-height: 0; }
+.slot { display: flex; min-width: 0; min-height: 0; border: 1px solid var(--line); box-sizing: border-box; }
+#root > .split { flex: 1; }
+
+/* Panel chrome: fills its slot, scrolls its body */
+.panel { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+.panel-title { display: flex; align-items: center; gap: 6px; padding: 2px 6px; background: var(--bar); border-bottom: 1px solid var(--line); }
+.panel-title h2 { margin: 0; font-size: 12px; font-weight: 600; flex: 1; }
+.panel-collapse { border: 0; background: none; cursor: pointer; padding: 0 2px; }
+.panel-body { flex: 1; min-height: 0; overflow: auto; padding: 6px; }
+.panel-body[hidden] { display: none; }
+.panel table { border-collapse: collapse; width: 100%; }
+.panel th, .panel td { text-align: left; padding: 2px 6px; border-bottom: 1px solid #eee; }
+.mono { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+.note { color: #555; margin: 6px 0 0; }
+.layout-error { padding: 12px; color: #b00020; }
+
+/* Preview pieces */
+.preview-panel { display: flex; flex-direction: column; height: 100%; gap: 6px; }
+.preview-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.preview-stage { position: relative; flex: 1; min-height: 0; background: #000; }
+.preview-message, .preview-status { position: absolute; left: 8px; top: 4px; margin: 0; color: #ddd; z-index: 2; }
+.aspect-frame { position: absolute; inset: 0; }
+.aspect-screen { position: absolute; background: #000; outline: 1px solid #444; overflow: hidden; }
+.swf-viewport { position: absolute; inset: 0; background: #000; }
+.ruffle-host { overflow: hidden; }
+.safe-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.safe-rect { position: absolute; box-sizing: border-box; border: 1px dashed; }
+.safe-rect span { position: absolute; left: 3px; top: 1px; font-size: 10px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 0 2px; }
+.safe-action { border-color: #f0b400; }
+.safe-title { border-color: #19c37d; }
+.shim-badge { border: 1px solid var(--info); border-radius: 4px; padding: 2px 6px; background: #eef5fc; }
+.shim-badge summary { cursor: pointer; }
+.shim-badge ul { margin: 2px 0 4px; padding-left: 18px; }
+.badge-info { color: #fff; background: var(--info); border-radius: 3px; padding: 0 4px; font-size: 11px; }
