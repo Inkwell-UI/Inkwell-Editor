@@ -77,3 +77,7 @@ Function TweenTo(float a_x, float a_y, float a_duration)
 EndFunction
 Function FadeTo(float a_alpha, float a_duration)
 EndFunction
+bool property RequireExtend auto
+bool Function IsExtending()
+	return true
+EndFunction
