@@ -11,7 +11,8 @@ let state: SyncUiState = { server: 'starting', connections: 0, build: 'idle', li
 let win: BrowserWindow | undefined
 const update = (patch: Partial<SyncUiState>): void => {
   state = { ...state, ...patch }
-  win?.webContents.send('sync:update', state)
+  // closing the app closes the plugin's socket, which calls update() after the window is gone
+  if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) win.webContents.send('sync:update', state)
 }
 
 function createWindow(): void {
