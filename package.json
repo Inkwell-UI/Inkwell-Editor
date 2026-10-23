@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "build:wrapper": "node tools/ffdec-wrapper/build-wrapper.mjs",
     "compile:sample": "tsx scripts/compile-sample.ts",
-    "compile:ingame": "tsx scripts/compile-ingame.ts"
+    "compile:ingame": "tsx scripts/compile-ingame.ts",
+    "compile:widget": "tsx scripts/compile-widget.ts",
+    "deploy:widget": "tsx scripts/deploy-widget.ts"
   },
   "dependencies": {
     "@inkwell-ui/spec": "file:../Inkwell-Spec",

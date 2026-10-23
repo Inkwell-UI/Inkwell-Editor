@@ -1,0 +1,10 @@
+{
+  "author": "Inkwell",
+  "deploy": {
+    "path": "C:/Modding/MO2/mods/Inkwell Widget Test",
+    "preset": "mo2"
+  },
+  "modId": "InkwellWidgetTest",
+  "name": "Inkwell Widget Test",
+  "version": "0.1.0"
+}
