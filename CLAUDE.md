@@ -4,7 +4,16 @@ Electron desktop app that turns Figma designs into Scaleform SWFs for Skyrim SE/
 
 ## Commands
 
-Not scaffolded yet. When they exist, list them here (dev, test, typecheck, build) and run test + typecheck before finishing any change.
+Use yarn (not npm).
+
+- `yarn dev`: Electron + Vite dev window.
+- `yarn build`: production build to `out/`.
+- `yarn test`: Vitest (`src/**/*.test.ts`).
+- `yarn typecheck`: `tsc --noEmit`, strict.
+
+Run test + typecheck before finishing any change. `electron` downloads its binary in a postinstall; if `yarn dev` says "Electron uninstall", run `node node_modules/electron/install.js`.
+
+Layout: `src/main` (Electron main, `project/` = project.json + folder load/save), `src/renderer` (React; all UI strings in `strings.ts`), `src/shared` (`product.ts` holds the product name; `timing.ts` stage timer). `samples/hud-minimal` is the golden sample project.
 
 ## Stack
 
