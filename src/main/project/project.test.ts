@@ -11,7 +11,7 @@ async function files(dir: string, rel = ''): Promise<Record<string, string>> {
   const out: Record<string, string> = {}
   for (const e of await readdir(join(dir, rel), { withFileTypes: true })) {
     const p = rel ? `${rel}/${e.name}` : e.name
-    if (e.isDirectory()) Object.assign(out, await files(dir, p))
+    if (e.isDirectory()) { if (p !== 'build') Object.assign(out, await files(dir, p)) } // build/ is git-ignored compiler output, not project data
     else out[p] = await readFile(join(dir, p), 'utf8')
   }
   return out
