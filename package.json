@@ -13,6 +13,7 @@
     "compile:sample": "tsx scripts/compile-sample.ts",
     "compile:ingame": "tsx scripts/compile-ingame.ts",
     "compile:widget": "tsx scripts/compile-widget.ts",
+    "compile:images": "tsx scripts/compile-images.ts",
     "deploy:widget": "tsx scripts/deploy-widget.ts"
   },
   "dependencies": {
