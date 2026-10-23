@@ -28,6 +28,24 @@ export function fontAlias(name: string): string | undefined {
   return words.length && KNOWN_ALIASES.has(alias) ? alias : undefined
 }
 
+const BOLD = /bold|black|heavy/i
+const MEDIUM = /medium|semibold|demibold/i
+/**
+ * Nearest alias for common Figma fonts (lint warns `font-fallback`): monospace -> $ConsoleFont, script/handwriting -> $HandwrittenFont,
+ * common sans families -> $EverywhereFont (bold -> Bold, medium/semibold -> Medium). Undefined when the family is unknown.
+ * shortcut: name-based guess, no font metrics; extend the lists when authors hit new families.
+ */
+export function fallbackAlias(figmaName: string): string | undefined {
+  const i = figmaName.lastIndexOf('/')
+  const family = (i < 0 ? figmaName : figmaName.slice(0, i)).toLowerCase().replace(/[\s_-]+/g, '')
+  const style = i < 0 ? '' : figmaName.slice(i + 1)
+  if (/mono|courier|consol|menlo|monaco|firacode|codepro/.test(family)) return '$ConsoleFont'
+  if (/script|hand|brush|cursive|caveat|pacifico|kalam|calligra/.test(family)) return '$HandwrittenFont'
+  if (/^(inter|roboto|arial|helvetica|opensans|lato|montserrat|segoe|sfpro|sanfrancisco|calibri|verdana|tahoma|notosans|poppins|sourcesans)/.test(family))
+    return MEDIUM.test(style) ? '$EverywhereMediumFont' : BOLD.test(style) ? '$EverywhereBoldFont' : '$EverywhereFont'
+  return undefined
+}
+
 const ALIGN = { left: 0, right: 1, center: 2, justify: 3 } as const
 
 export interface TextScript {
@@ -57,10 +75,17 @@ export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[] 
     lint.push(issue('error', 'font-unmapped', node.id, 'Embedded fonts are not supported yet.'))
     return { lint }
   }
-  const alias = fontAlias(run.font.name)
+  // Order: (a) text style name, (b) family/style, (c) fallback table + warning, (d) error. The Figma data stays in the message.
+  const { name, styleName } = run.font
+  const figma = `Font "${name}"${styleName ? ` (text style "${styleName}")` : ''}`
+  let alias = (styleName ? fontAlias(styleName) : undefined) ?? fontAlias(name)
   if (!alias) {
-    lint.push(issue('error', 'font-unmapped', node.id, `Font "${run.font.name}" does not map to a Skyrim font alias (expected e.g. "Everywhere / Medium / 18").`))
-    return { lint }
+    alias = fallbackAlias(name)
+    if (!alias) {
+      lint.push(issue('error', 'font-unmapped', node.id, `${figma} does not map to a Skyrim font alias (expected e.g. "Everywhere / Medium / 18").`))
+      return { lint }
+    }
+    lint.push(issue('warning', 'font-fallback', node.id, `${figma} is not a Skyrim font alias; using the nearest, ${alias}. Name a Figma text style like "Everywhere / Medium / 18" to choose.`))
   }
   if (node.truncate) lint.push(issue('warning', 'text-truncate-unsupported', node.id, 'Truncation needs the runtime helper, which is not generated yet.'))
 

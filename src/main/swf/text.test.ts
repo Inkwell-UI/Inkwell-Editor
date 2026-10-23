@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { textNode } from './ir.testutil'
-import { fontAlias, mapText, NATURAL_LINE_HEIGHT } from './text'
+import { fallbackAlias, fontAlias, mapText, NATURAL_LINE_HEIGHT } from './text'
 
 type TextNode = Parameters<typeof mapText>[0]
 const map = (over: Record<string, unknown> = {}, font?: string) => mapText(textNode('t', over, font) as TextNode)
@@ -73,4 +73,47 @@ describe('text mapping table', () => {
     expect(map({ truncate: true }).lint.map((l) => [l.severity, l.code])).toEqual([['warning', 'text-truncate-unsupported']])
   })
 
+})
+
+describe('font resolution order', () => {
+  const style = (name: string, styleName?: string) => ({ runs: [{ start: 0, end: 5, font: { kind: 'alias', name, ...(styleName && { styleName }) }, size: 18 }] })
+  const run = (name: string, styleName?: string) => mapText(textNode('t', style(name, styleName)) as TextNode)
+
+  it('(a) an alias-shaped text style name wins over the font', () => {
+    const r = run('Inter/Regular', 'Everywhere / Bold / 24')
+    expect(r.text?.alias).toBe('$EverywhereBoldFont')
+    expect(r.lint).toEqual([])
+  })
+  it('(a) a style name that is not alias-shaped is ignored', () => expect(run('Everywhere/Medium', 'Body text').text?.alias).toBe('$EverywhereMediumFont'))
+  it('(b) family Everywhere + style Medium maps without lint', () => {
+    const r = run('Everywhere/Medium')
+    expect(r.text?.alias).toBe('$EverywhereMediumFont')
+    expect(r.lint).toEqual([])
+  })
+  it.each([
+    ['Inter/Regular', '$EverywhereFont'],
+    ['Inter/Bold', '$EverywhereBoldFont'],
+    ['Roboto/SemiBold', '$EverywhereMediumFont'],
+    ['Arial/Medium', '$EverywhereMediumFont'],
+    ['Helvetica Neue/Regular', '$EverywhereFont'],
+    ['Consolas/Regular', '$ConsoleFont'],
+    ['Courier New/Bold', '$ConsoleFont'],
+    ['JetBrains Mono/Regular', '$ConsoleFont'],
+    ['Roboto Mono/Regular', '$ConsoleFont'],
+    ['Dancing Script/Regular', '$HandwrittenFont'],
+    ['Futura/Regular', undefined]
+  ])('(c) fallback %s -> %s', (name, alias) => expect(fallbackAlias(name)).toBe(alias))
+  it('(c) Inter/Regular used to be font-unmapped; now a font-fallback warning that names the Figma font', () => {
+    const r = run('Inter/Regular', 'Body')
+    expect(r.text?.alias).toBe('$EverywhereFont')
+    expect(r.lint).toMatchObject([{ severity: 'warning', code: 'font-fallback' }])
+    expect(r.lint[0]!.message).toContain('Inter/Regular')
+    expect(r.lint[0]!.message).toContain('Body')
+  })
+  it('(d) unknown font stays a font-unmapped error with the Figma data', () => {
+    const r = run('Futura/Regular', 'Body')
+    expect(r.text).toBeUndefined()
+    expect(r.lint).toMatchObject([{ severity: 'error', code: 'font-unmapped' }])
+    expect(r.lint[0]!.message).toContain('Futura/Regular')
+  })
 })
