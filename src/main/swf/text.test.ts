@@ -1,0 +1,72 @@
+import { describe, expect, it } from 'vitest'
+import { textNode } from './ir.testutil'
+import { fontAlias, mapText, NATURAL_LINE_HEIGHT } from './text'
+
+type TextNode = Parameters<typeof mapText>[0]
+const map = (over: Record<string, unknown> = {}, font?: string) => mapText(textNode('t', over, font) as TextNode)
+
+describe('font alias mapping', () => {
+  it.each([
+    ['Everywhere / Medium / 18', '$EverywhereMediumFont'],
+    ['Everywhere / Bold', '$EverywhereBoldFont'],
+    ['Everywhere/24', '$EverywhereFont'],
+    ['Start Menu / 30', '$StartMenuFont'],
+    ['$DragonFont', '$DragonFont'],
+    ['Futura', undefined],
+    ['Everywhere / Black / 18', undefined],
+    ['$NopeFont', undefined],
+    ['', undefined]
+  ])('%s -> %s', (name, alias) => expect(fontAlias(name)).toBe(alias))
+})
+
+describe('text mapping table', () => {
+  it('fixed: fixed field, wraps, no autoSize; gutter grows the box by 2px per side and moves it back', () => {
+    const { text, lint } = map()
+    expect(lint).toEqual([])
+    expect(text).toMatchObject({
+      alias: '$EverywhereMediumFont', gutter: { x: -2, y: -2 },
+      field: { wPx: 124, hPx: 34, sizePx: 18, wordWrap: true, multiline: true, autoSize: false, align: 0, leadingPx: 0, color: { r: 255, g: 128, b: 0, a: 255 } }
+    })
+  })
+
+  it('auto width: autoSize, no wrap, single line unless content has breaks', () => {
+    expect(map({ sizing: 'autoWidth' }).text?.field).toMatchObject({ autoSize: true, wordWrap: false, multiline: false })
+    expect(map({ sizing: 'autoWidth', content: 'a\nb' }).text?.field).toMatchObject({ autoSize: true, wordWrap: false, multiline: true, text: 'a\rb' })
+  })
+
+  it('auto height: wordWrap + multiline + autoSize', () => {
+    expect(map({ sizing: 'autoHeight' }).text?.field).toMatchObject({ autoSize: true, wordWrap: true, multiline: true })
+  })
+
+  it('alignment, line height -> leading, letter spacing % -> px', () => {
+    const r = map({ extra: { text: { align: 'right', lineHeight: 30, letterSpacing: 10 } } }).text!
+    expect(r.field.align).toBe(1)
+    expect(r.field.leadingPx).toBeCloseTo(30 - 18 * NATURAL_LINE_HEIGHT)
+    expect(r.script.letterSpacing).toBeCloseTo(1.8)
+  })
+
+  it('vertical align (not top) and shrink go to the frame script', () => {
+    expect(map({ extra: { text: { verticalAlign: 'center', shrink: 'shrink' } } }).text?.script).toEqual({ verticalAlign: 'center', textAutoSize: 'shrink' })
+    expect(map({ extra: { text: { verticalAlign: 'top' } } }).text?.script).toEqual({})
+  })
+
+  it('opacity of the fill goes into the colour alpha', () => {
+    const runs = [{ start: 0, end: 5, font: { kind: 'alias', name: 'Everywhere' }, size: 12, fill: { type: 'solid', color: { r: 0, g: 0, b: 0, a: 0.5 }, opacity: 0.5 } }]
+    expect(map({ runs }).text?.field.color.a).toBe(64)
+  })
+
+  it('unmapped font is an ERROR and produces no field', () => {
+    const r = map({}, 'Comic Sans')
+    expect(r.text).toBeUndefined()
+    expect(r.lint).toEqual([expect.objectContaining({ severity: 'error', code: 'font-unmapped', nodeId: 't' })])
+  })
+
+  it('embedded font is an error; truncate and decoration are warnings', () => {
+    const runs = [{ start: 0, end: 5, font: { kind: 'embedded', asset: 'abc' }, size: 12 }]
+    expect(map({ runs }).lint[0]).toMatchObject({ severity: 'error', code: 'font-unmapped' })
+    expect(map({ extra: { text: { truncate: true, decoration: 'underline' } } }).lint.map((l) => [l.severity, l.code])).toEqual([
+      ['warning', 'text-truncate-unsupported'], ['warning', 'text-decoration-unsupported']
+    ])
+  })
+
+})
