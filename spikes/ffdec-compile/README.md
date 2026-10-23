@@ -1,8 +1,38 @@
 # Spike 1 + 2: FFDec compile and AS2/GFx probes (milestone 0.0)
 
-Status: **in-game run 1 failed visibly (no text drawn); diagnosed; three font variants A/B/C built and deployed, awaiting in-game run 2.**
+Status: **FINAL (2026-10-23, see `D:\Mods\Inkwell\SPIKES.md` sections 1, 2, 9). Spike 1: PASS (SWF loads in Skyrim SE 1.7.104) but the cold-compile target is missed (median 2.4 s). Spike 2: PASS with findings (try/catch works, no `Error` class, no AS2 filter classes, text needs outline fonts). GFx extensions `verticalAlign` and `textAutoSize` verified visually in-game (variant D); `shadowStyle` NOT confirmed.**
 
-## In-game run 1 (Skyrim SE 1.7.104, runtime-menu DLL spike)
+## Final in-game results (Skyrim SE 1.7.104, runtime-menu DLL spike)
+
+Evidence: `SKSE\Inkwell.log` lines (identical across A/B/C over 9 opens, 26 lines each) and owner screenshots (relayed, not seen by the agent).
+
+| Probe | Result | Evidence |
+| --- | --- | --- |
+| Spike 1: SWF v10 1280x720 loads | PASS: `LoadMovieEx returned true`, `_root exists: true`, AS2 report lines logged for A, B, C | log |
+| a) try/catch/finally | OK for explicit throws in a frame script: `TRYCATCH: OK str=boom err=undefined isError=false fin=11 fin2=11 nested=c1:inner c2:re-inner`. `typeof Error == "undefined"` (so `new Error()` is unusable, throw strings/objects). Engine-called handlers untested | log |
+| b) GFx extensions (presence) | `verticalAlign` (base `none`), `verticalAutoSize`, `textAutoSize` exist and reject bogus values; `noTranslate` base `false`; `shadowStyle` base `""` but drops writes; `autoShrink` does NOT exist | log |
+| c) classes | `mods.inkwellspike.Probe` and `mods.other.Probe` coexist; `registerClass` + `attachMovie` work (custom-menu movie only, not the shared HUD movie) | log |
+| d) environment | `$version` = `WIN 8,0,0,0`; no `gfx`/`skse` objects in a custom menu movie; `flash.filters.DropShadowFilter` undefined; `TextField.filters` inconclusive | log |
+| Text A (vanilla import, `useOutlines=true`) | renders in Skyrim's font | user screenshot |
+| Text B (`fontClass`, device text) | draws nothing (log `font=Times New Roman ... embedFonts=false`, `textWidth(W)=textWidth(i)=885`); log-confirmed only, the owner's 'P' screenshot showed A's content | log |
+| Text C (local glyph-less `DefineFont2`, `useOutlines=true`) | renders, widths 194/50 | user screenshot + log |
+| Runtime `createTextField` + `embedFonts=true` + `font=$EverywhereFont` | works in all variants (`textWidth=433`) | log |
+
+What makes B fail was not isolated (B differs from C in `fontClass` vs `fontId`, `useOutlines`, and the local `DefineFont2`). Owner decision: the compiler emits variant A; C stays a documented alternative.
+
+### Variant D final result (commit 970966f)
+
+A first K run was invalid (a build bug made D ship the A-C probe script); fixed in 970966f, ignore that run. Verified with owner screenshot + `Inkwell.log`:
+- `verticalAlign` WORKS: 'top', 'center', 'bottom' place text at the top, middle and bottom of a 200x150 box.
+- `textAutoSize` WORKS: 'none' overflows and clips (maxscroll=3); 'shrink' and 'fit' render visibly smaller text that fits (textHeight 66 vs 106; maxscroll=1). `fontsize` stays 16, so shrink is a rendering scale. 'shrink' vs 'fit' looked identical on one sample, not isolated.
+- `shadowStyle` NOT confirmed: property exists, 'shadow' reads back as "" and no shadow drawn. Eight numeric `shadow*` properties exist natively (`shadowColor`, `shadowAlpha`, `shadowBlurX`, `shadowBlurY`, `shadowAngle`, `shadowDistance`, `shadowStrength`, `shadowQuality`); `shadowParams`, `shadowOffsetX/Y`, `shadowBlur` do not. Text shadow stays unproven (needs other `shadowStyle` values or static filters).
+
+### Measurement caveats (spike 1)
+
+Cold (external wall clock, includes process spawn + JVM start) and warm (in-JVM timer around the build call only) are not like-for-like. All runs used identical inputs (hot file cache), cold samples are bimodal (4 runs 1.6-1.8 s, 6 runs 2.4-2.8 s), AV/power not controlled, bench used the variant-B skeleton and the pre-`cef78ff` probe source. "Cold > 1 s" holds either way; ~14 ms warm is a lower bound for a real round-trip. Warm output is SHA-256-identical to the CLI (re-checked by the reviewer). Nashorn (Java 8-14 only) wrapper is not shippable; ship a prebuilt jar.
+
+
+## History: in-game run 1 (Skyrim SE 1.7.104, runtime-menu DLL spike)
 
 Log: `LoadMovieEx returned true`, `_root exists: true`, `installed _root.inkwellTrace: true`. On screen: the dark-blue 1280x720 background shape, but **no text at all**, not even the placeholder `INKWELL SPIKE: AS2 NOT RUN`. So the SWF loads and renders shapes, but the TextField draws nothing. Run 1 cannot tell whether AS2 ran (the placeholder is invisible too, and the frame script ran before `_root.inkwellTrace` existed).
 
@@ -17,7 +47,7 @@ Every vanilla menu text field checked (messagebox.swf 2/2, inventorymenu.swf 7/7
 
 Our field had `useOutlines=false` (device font) and `HasFontClass` with `fontId=0`. Device text needs a system font provider, which Skyrim does not appear to install (all vanilla text is outline text), and `fontClass` is an AS3-era (SWF 9) field that GFx's AS2 path most likely ignores (worst case misparses). Either way no glyph source: nothing drawn, consistent with run 1. Confidence: high that the encoding is the cause (vanilla never uses ours, always uses A); medium on which of the two flags is the decisive one. Hypothesis "AS2 did not run" is not excluded by run 1; run 2 settles it via the log.
 
-### Variants for run 2 (`build.ps1` builds all three; same shape, same AS2 probes, only the report field's font encoding differs)
+### History: variants for run 2 (`build.ps1` builds all three; same shape, same AS2 probes, only the report field's font encoding differs)
 
 | Variant | File / hotkey | Report field font encoding |
 | --- | --- | --- |
@@ -41,7 +71,7 @@ Each line looks like `[AS2] inkwellTrace([InkwellSpike A] ...)`. Per variant:
 
 Expected if the diagnosis holds: A visible in Skyrim's font; B invisible with textWidth 0; C and RUNTIMEFIELD visible if GFx maps glyph-less/embedFonts names through fontconfig (unknown; if they work, Inkwell can skip the import tag).
 
-## Variant D: do the GFx TextField extensions CHANGE what is drawn? (`InkwellSpikeD.swf`, K = 37, `inkwell_spike_d.json`)
+## Variant D (design; final result above): do the GFx TextField extensions CHANGE what is drawn? (`InkwellSpikeD.swf`, K = 37, `inkwell_spike_d.json`)
 
 Run 2 only proved `verticalAlign`, `verticalAutoSize`, `textAutoSize`, `shadowStyle` exist as properties (read back, reject bogus values). D checks the visual effect. Font encoding = variant A (ImportAssets2 `gfxfontlib.swf` `$EverywhereMediumFont`, fontId, useOutlines, no fontClass) for every field, labels included. Sources: `gen-swf.mjs` layout `d` (the `BOXES` table), `src/as2-d/frame_1/DoAction.as`; `./build.ps1 -Only D -Deploy` (build.ps1 without `-Only` builds A-D).
 
@@ -107,11 +137,11 @@ Reading: cold FFDec is about 2.4 s per build, far over the 1 s target; a residen
 
 | Probe | Ruffle | In-game (GFx) |
 | --- | --- | --- |
-| a) try/catch/finally | OK | UNVERIFIED (awaiting in-game) |
-| b) GFx TextField extensions | not native (expected) | UNVERIFIED |
-| c) classes / namespaces / registerClass | OK | UNVERIFIED |
-| d) Stage, version, `$EverywhereFont` | 1280x720, `LNX 32,0,0,0` | UNVERIFIED |
-| Spike 1: SWF loads in Skyrim SE | n/a | UNVERIFIED |
+| a) try/catch/finally | OK (and `Error` exists) | PASS for explicit throws; no `Error` class |
+| b) GFx TextField extensions | not native (expected) | present as properties; `verticalAlign`, `textAutoSize` visually verified (variant D); `shadowStyle` not confirmed; `autoShrink` absent |
+| c) classes / namespaces / registerClass | OK | PASS (custom-menu movie) |
+| d) Stage, version, `$EverywhereFont` | 1280x720, `LNX 32,0,0,0` | `WIN 8,0,0,0`; fonts per variants A/C ok, B blank |
+| Spike 1: SWF loads in Skyrim SE | n/a | PASS |
 
 How to judge the extension lines in-game: `read=set` alone proves nothing (the EXT-CONTROL line shows unknown properties echo). A **native** GFx property has `base` defined before being set (e.g. `base=top`), rejects a bogus value (`bogus->top`), and prints `native=true`.
 
@@ -128,7 +158,7 @@ Only via the Inkwell Runtime DLL spike, which should open `Interface/InkwellSpik
 
 ## Risks
 
-- Confirmed in run 1: `fontClass` + device text draws nothing in Skyrim's GFx. Inkwell output must use outline text with a font GFx can resolve (variant A's encoding is the vanilla one).
-- SWF v10 is a guess for Skyrim's GFx; `-Version 8` is available if it will not load.
+- Confirmed in run 1 and log-confirmed in run 2 (variant B): `fontClass` + device text draws nothing in Skyrim's GFx. Inkwell output must use outline text with a font GFx can resolve (variant A's encoding is the vanilla one).
+- SWF v10 loads in Skyrim SE 1.7.104 (verified in-game); other game builds untested.
 - The warm path uses FFDec internal classes (`SvgImporter`, `AS2ScriptImporter`), unstable across FFDec versions; pin and verify the version.
 - Warm timing excludes preview and the SVG complexity of real designs.
