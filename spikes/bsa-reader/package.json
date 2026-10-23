@@ -1,0 +1,4 @@
+{ "name": "bsa-reader-spike", "private": true, "type": "module",
+  "scripts": { "cli": "tsx cli.ts", "test": "vitest run" },
+  "dependencies": { "lz4js": "^0.2.0" },
+  "devDependencies": { "@types/node": "^22", "tsx": "^4", "typescript": "^5", "vitest": "^2" } }
