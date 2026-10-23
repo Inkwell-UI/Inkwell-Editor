@@ -1,4 +1,5 @@
 import type { Swf } from '@inkwell-ui/spec'
+import { ident } from '../../shared/overlay'
 import { issue, type LintIssue } from './lint'
 import { shapeToSvg } from './svg'
 import * as T from './tags'
@@ -46,11 +47,7 @@ export interface Generated {
 
 const ASCII = Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)).join('')
 
-/** AS2 identifier from free text: invalid characters become `_`, a leading digit gets a `_` prefix. */
-export const ident = (s: string): string => {
-  const r = s.replace(/[^A-Za-z0-9_]/g, '_')
-  return /^[0-9]/.test(r) || r === '' ? '_' + r : r
-}
+export { ident } // shared with the editor UI (default instance names); one definition in shared/overlay.ts
 
 const comment = (s: string): string => s.replace(/[\r\n]+/g, ' ').replace(/\*\//g, '* /')
 const lit = (s: string): string => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ')

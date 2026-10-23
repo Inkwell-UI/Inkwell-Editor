@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { textNode } from './ir.testutil'
-import { fallbackAlias, fontAlias, mapText, NATURAL_LINE_HEIGHT } from './text'
+import type { Node } from '@inkwell-ui/spec'
+import { describeTextMapping, fallbackAlias, fontAlias, mapText, NATURAL_LINE_HEIGHT } from './text'
 
 type TextNode = Parameters<typeof mapText>[0]
 const map = (over: Record<string, unknown> = {}, font?: string) => mapText(textNode('t', over, font) as TextNode)
@@ -132,4 +133,23 @@ describe('compileSwf-facing font info (mapText.font)', () => {
     ['fallback', f('Inter/Bold', 'Body'), { figmaFont: 'Inter/Bold', styleName: 'Body', alias: '$EverywhereBoldFont' }],
     ['unmapped', f('Futura/Regular'), { figmaFont: 'Futura/Regular' }]
   ])('via %s', (via, font, rest) => expect(font).toEqual({ ...rest, via }))
+})
+
+describe('describeTextMapping (shared with the Inspector)', () => {
+  const t = (over: Record<string, unknown>) => textNode('1:1', over) as Extract<Node, { type: 'text' }>
+  it('auto width: autoSize, no wrap; auto height wraps; fixed is a fixed field', () => {
+    expect(describeTextMapping(t({ sizing: 'autoWidth' })).sizing.flags).toEqual({ wordWrap: false, multiline: false, autoSize: true })
+    expect(describeTextMapping(t({ sizing: 'autoHeight' })).sizing.flags).toEqual({ wordWrap: true, multiline: true, autoSize: true })
+    expect(describeTextMapping(t({ sizing: 'fixed' })).sizing.flags).toEqual({ wordWrap: true, multiline: true, autoSize: false })
+  })
+  it('lists only the GFx extensions in use and agrees with mapText', () => {
+    const n = t({ sizing: 'autoWidth', verticalAlign: 'center', textFit: 'shrink' })
+    const f = describeTextMapping(n)
+    expect(f.verticalAlign).toBe('center')
+    expect(f.textAutoSize).toBe('shrink')
+    expect(f.letterSpacingPx).toBeUndefined()
+    const m = mapText(n).text!
+    expect(m.field).toMatchObject(f.sizing.flags)
+    expect(m.script).toMatchObject({ verticalAlign: 'center', textAutoSize: 'shrink' })
+  })
 })

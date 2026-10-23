@@ -56,6 +56,36 @@ export function fallbackAlias(figmaName: string): string | undefined {
 export const previewDeviceFont = (alias: string): string =>
   alias === '$ConsoleFont' ? '_typewriter' : /Handwritten|Dragon|Falmer|Dwemer|Daedric|MageScript/.test(alias) ? '_serif' : '_sans'
 
+/** TextField flags a Figma sizing mode compiles to (`hasBreaks`: autoWidth content with explicit line breaks stays multiline). Used by the compiler and the Inspector. */
+export function sizingFlags(sizing: TextNode['sizing'], hasBreaks = false): { wordWrap: boolean; multiline: boolean; autoSize: boolean } {
+  return { wordWrap: sizing !== 'autoWidth', multiline: sizing !== 'autoWidth' || hasBreaks, autoSize: sizing !== 'fixed' }
+}
+
+/** Letter spacing in px (percent is of the font size). */
+export const letterSpacingPx = (ls: TextNode['letterSpacing'], size: number): number => (ls.unit === 'px' ? ls.value : (size * ls.value) / 100)
+
+/** What the Inspector's GFx MAPPING card shows for a text node: Figma value -> the TextField setting it compiles to. Pure; UI copy is the caller's. */
+export interface TextMappingFacts {
+  sizing: { value: TextNode['sizing']; flags: ReturnType<typeof sizingFlags> }
+  /** GFx extension (needs `_global.gfxExtensions = true`); undefined for top. */
+  verticalAlign?: 'center' | 'bottom'
+  /** GFx `textAutoSize`; undefined for none. */
+  textAutoSize?: 'shrink' | 'fit'
+  letterSpacingPx?: number
+  truncate: boolean
+}
+export function describeTextMapping(node: TextNode): TextMappingFacts {
+  const size = node.runs[0]?.size ?? 0
+  const sp = letterSpacingPx(node.letterSpacing, size)
+  return {
+    sizing: { value: node.sizing, flags: sizingFlags(node.sizing, node.content.includes('\n')) },
+    ...(node.verticalAlign !== 'top' ? { verticalAlign: node.verticalAlign } : {}),
+    ...(node.textFit !== 'none' ? { textAutoSize: node.textFit } : {}),
+    ...(sp ? { letterSpacingPx: sp } : {}),
+    truncate: node.truncate
+  }
+}
+
 const ALIGN = { left: 0, right: 1, center: 2, justify: 3 } as const
 
 export interface TextScript {
@@ -129,7 +159,7 @@ export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[];
   if (node.verticalAlign !== 'top') script.verticalAlign = node.verticalAlign
   if (node.textFit !== 'none') script.textAutoSize = node.textFit
   const { lineHeight: lh, letterSpacing: ls } = node
-  const spacingPx = ls.unit === 'px' ? ls.value : (run.size * ls.value) / 100
+  const spacingPx = letterSpacingPx(ls, run.size)
   if (spacingPx) script.letterSpacing = spacingPx
   const lineHeightPx = lh.unit === 'auto' ? undefined : lh.unit === 'px' ? lh.value : (run.size * lh.value) / 100
   return {
@@ -146,9 +176,7 @@ export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[];
         color,
         text: node.content.replace(/\r?\n/g, '\r'),
         // autoWidth: one line unless the content has breaks; autoHeight/fixed wrap at the box width
-        wordWrap: sizing !== 'autoWidth',
-        multiline: sizing !== 'autoWidth' || node.content.includes('\n'),
-        autoSize: sizing !== 'fixed',
+        ...sizingFlags(sizing, node.content.includes('\n')),
         align: ALIGN[node.align],
         leadingPx: lineHeightPx === undefined ? 0 : lineHeightPx - run.size * NATURAL_LINE_HEIGHT
       }
