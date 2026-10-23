@@ -8,5 +8,16 @@ export const strings = {
   overlayTitle: 'Build timing',
   overlayTotal: 'Total',
   overlayMs: 'ms',
-  overlayNoBuilds: 'No builds yet'
+  overlayNoBuilds: 'No builds yet',
+  syncStarting: 'Starting',
+  syncWaiting: 'Waiting for the Figma plugin',
+  syncConnected: 'Figma plugin connected',
+  syncError: 'Sync server error',
+  syncConnection: 'Figma connection',
+  syncPort: 'Port',
+  syncToken: 'Session token',
+  syncCopy: 'Copy',
+  syncBuild: 'Build',
+  syncLint: 'Lint issues',
+  buildStates: { idle: 'Idle', compiling: 'Compiling', synced: 'Synced', error: 'Error' }
 } as const
