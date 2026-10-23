@@ -1,5 +1,5 @@
 import { app, type BrowserWindow } from 'electron'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { createSession } from './session'
 
@@ -7,7 +7,8 @@ const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms)
 
 /**
  * Debug only (`INKWELL_SHOTS_DIR=<folder>` and `INKWELL_SHOTS_PROJECT=<scratch project copy>`): drives the real UI through its DOM and the
- * keyboard and saves named PNGs, then exits. States: a-start, b-wire, c-verify, d-debug, e-selected, f-compile-fail, g-popout, h-detached-main.
+ * keyboard and saves named PNGs, then exits. States: a-start, b-wire, c-verify, d-debug, e-selected, i-stage-hover, j-stage-select, k-overlay-edit
+ * (also checks overlay.json on disk after an edit and an undo), f-compile-fail, g-popout, h-detached-main.
  * The failing build is injected into the sync server's onChange (the real status path); nothing in the project folder is damaged.
  * Never run it against a project you care about: it builds into the project's build/ folder.
  */
@@ -41,6 +42,11 @@ export async function runShots(o: {
   }
 
   await until('window', () => !!o.win() && !o.win()!.webContents.isLoading())
+  console.log('[shots] window before', JSON.stringify(main().getBounds()), JSON.stringify(main().getContentSize()))
+  main().setContentSize(1440, 860)
+  main().center()
+  await wait(500)
+  console.log('[shots] window after', JSON.stringify(main().getBounds()), JSON.stringify(main().getContentSize()))
   await wait(1200)
   await snap('a-start') // no project open yet
 
@@ -48,8 +54,8 @@ export async function runShots(o: {
   const r = await session.open(o.projectDir)
   if (!r.ok) throw new Error(`open failed: ${JSON.stringify(r)}`)
   session.debug.seedBuilds()
-  await until('first preview', () => session.getSync().previewMs !== undefined && session.getPreviews().length >= 2, 60000)
-  await wait(2500)
+  await until('builds of both swfs', () => session.getPreviews().length >= 2, 90000)
+  await wait(5000) // Ruffle loads and draws the shown swf
 
   key('1', ['control'])
   await snap('b-wire')
@@ -65,6 +71,34 @@ export async function runShots(o: {
   await wait(500)
   await snap('e-selected')
 
+  // Inspect mode on the stage: hover one layer, click another (synthetic pointer events on the real overlay, hit-tested against the IR)
+  key('2', ['control'])
+  await wait(600)
+  if (!(await click('[data-layer-id="1:4"]'))) throw new Error('Navigator row 1:4 not found')
+  const at = (type: string, sx: number, sy: number): Promise<boolean> =>
+    js<boolean>(`(() => { const o = document.querySelector('[data-testid="inspect-overlay"]'); if (!o) return false; const r = o.getBoundingClientRect(); const s = Math.min(r.width / 1920, r.height / 1080); const x = r.left + (r.width - 1920 * s) / 2 + ${sx} * s; const y = r.top + (r.height - 1080 * s) / 2 + ${sy} * s; o.dispatchEvent(new PointerEvent(${JSON.stringify(type)}, { bubbles: true, clientX: x, clientY: y })); return true })()`)
+  await at('pointermove', 100, 80)
+  await snap('i-stage-hover')
+  await at('pointerdown', 100, 80)
+  await wait(400)
+  console.log('[shots] selected after stage click:', await js<string>(`document.querySelector('.layer-row.is-selected .layer-name')?.textContent ?? '(none)'`))
+  await snap('j-stage-select')
+
+  // overlay edit: type an instance name, blur to commit, check the file, undo, check again
+  key('1', ['control'])
+  await wait(500)
+  await js(`(() => { const i = document.querySelector('[data-testid="instance-name"]'); i.focus(); i.select() })()`)
+  main().webContents.insertText('Hello_Txt')
+  await js(`document.activeElement.blur()`)
+  await wait(800)
+  const file = join(o.projectDir, 'swfs', 'hud', 'overlay.json')
+  const entry = async (): Promise<unknown> => (JSON.parse(await readFile(file, 'utf8')) as { nodes?: Record<string, unknown> }).nodes?.['1:3']
+  console.log('[shots] overlay after edit:', JSON.stringify(await entry()))
+  await snap('k-overlay-edit')
+  await click('[data-testid="overlay-undo"]')
+  await wait(800)
+  console.log('[shots] overlay after undo:', JSON.stringify(await entry()))
+
   session.debug.failBuilds(true)
   session.debug.rebuildAll()
   await until('error state', () => session.getSync().build === 'error')
@@ -77,6 +111,9 @@ export async function runShots(o: {
   await until('popout window', () => !!o.previewWin() && !o.previewWin()!.webContents.isLoading())
   await wait(3000)
   const pw = o.previewWin()
+  pw?.setContentSize(1100, 640)
+  main().setContentSize(1440, 860)
+  await wait(600)
   if (pw) await snap('g-popout', pw)
   await snap('h-detached-main')
 

@@ -256,3 +256,21 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .checks li { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .checks p { margin: 2px 0; }
+
+/* tuning after the first screenshots */
+.facts dd { min-width: 0; overflow-wrap: anywhere; }
+.section-title { flex-wrap: wrap; }
+.graph-canvas, .as2-view { overflow: auto; }
+.tab { padding: 5px 9px; font-size: 12px; }
+.tablist { scrollbar-width: none; }
+.statusbar .item { white-space: nowrap; }
+.statusbar .item-button { min-width: 0; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
+.statusbar .item-button .mono { font-size: 11px; }
+.preview-panel.is-compact .stage-toolbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; }
+.preview-panel.is-compact .stage-toolbar > * { flex: none; }
+.preview-panel.is-compact { gap: 3px; }
+.stage-banners { position: absolute; left: 4px; right: 4px; top: 4px; z-index: 5; display: flex; flex-direction: column; gap: 3px; pointer-events: none; }
+.stage-banners .banner { padding: 1px 6px; font-size: 12px; pointer-events: auto; min-width: 0; }
+.stage-banners .banner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.stage-banners .btn { min-height: 20px; padding: 0 6px; flex: none; }
+.preview-panel.is-compact .shim-badge { padding: 0 6px; }

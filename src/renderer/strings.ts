@@ -92,7 +92,7 @@ export const strings = {
 
   nav: {
     title: 'Navigator',
-    search: 'Filter by name, role or type',
+    search: 'Filter layers',
     graphs: 'GRAPHS',
     addGraph: 'Add graph',
     addGraphShort: '+ Graph',
@@ -167,6 +167,7 @@ export const strings = {
     sizingNames: { autoWidth: 'Auto Width', autoHeight: 'Auto Height', fixed: 'Fixed' } as Record<string, string>,
     noWrap: 'no wrap',
     fixedField: 'fixed TextField',
+    wraps: 'wraps at the box width',
     mapsTo: 'maps to',
     vAlign: 'V-Align',
     alignNames: { center: 'Center', bottom: 'Bottom' } as Record<string, string>,

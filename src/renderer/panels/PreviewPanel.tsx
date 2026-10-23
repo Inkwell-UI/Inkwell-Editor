@@ -96,9 +96,28 @@ export function PreviewPanel() {
   if (project && project.swfs.length === 0) emptyMessage = strings.stage.noSwfs
   else if (!build) emptyMessage = entry?.latest.error ? `${strings.previewError}: ${entry.latest.error}` : swf?.orphaned ? strings.stage.orphaned : strings.previewNone
 
+  const compact = rootSize.height > 0 && rootSize.height < COMPACT_BELOW
+  const banners = (
+    <>
+        {failed && (
+        <div className="banner banner-error" role="alert" data-testid="build-failed">
+          <CircleX size={14} aria-hidden="true" />
+          <span title={build ? strings.stage.buildFailedLastGood : strings.stage.buildFailedNone}>{build ? strings.stage.buildFailedLastGood : strings.stage.buildFailedNone}</span>
+          {!inWindow && <Btn onClick={jumpToError} reason={err ? undefined : strings.stage.noErrorRow} testId="show-error">{strings.stage.showError}</Btn>}
+        </div>
+      )}
+      {sync && sync.server === 'listening' && sync.connections === 0 && (
+        <div className="banner banner-info" data-testid="snapshot-banner">
+          <WifiOff size={14} aria-hidden="true" />
+          <span title={strings.stage.snapshot}>{strings.stage.snapshot}</span>
+          <Btn icon={Link2Off} reason={strings.stage.setupGuideReason}>{strings.stage.setupGuide}</Btn>
+        </div>
+      )}
+    </>
+  )
   return (
     <Panel title={strings.panelPreview}>
-      <div className="preview-panel" ref={rootRef}>
+      <div className={`preview-panel${compact ? ' is-compact' : ''}`} ref={rootRef}>
         <StageToolbar
           mode={mode}
           onMode={setMode}
@@ -112,24 +131,12 @@ export function PreviewPanel() {
           zoom={zoom}
           onZoom={(d) => setZoom((z) => stepZoom(z, d))}
           onZoomReset={() => setZoom(1)}
-          compact={rootSize.height > 0 && rootSize.height < COMPACT_BELOW}
+          compact={compact}
           swfPicker={picker}
         />
-        {failed && (
-          <div className="banner banner-error" role="alert" data-testid="build-failed">
-            <CircleX size={14} aria-hidden="true" />
-            <span>{build ? strings.stage.buildFailedLastGood : strings.stage.buildFailedNone}</span>
-            {!inWindow && <Btn onClick={jumpToError} reason={err ? undefined : strings.stage.noErrorRow} testId="show-error">{strings.stage.showError}</Btn>}
-          </div>
-        )}
-        {sync && sync.server === 'listening' && sync.connections === 0 && (
-          <div className="banner banner-info" data-testid="snapshot-banner">
-            <WifiOff size={14} aria-hidden="true" />
-            <span>{strings.stage.snapshot}</span>
-            <Btn icon={Link2Off} reason={strings.stage.setupGuideReason}>{strings.stage.setupGuide}</Btn>
-          </div>
-        )}
+        {!compact && banners}
         <div className="preview-stage" tabIndex={0} role="group" aria-label={strings.stage.stageLabel} onKeyDownCapture={onStageKey} data-mode={mode} data-testid="stage">
+          {compact && <div className="stage-banners">{banners}</div>}
           <div className="stage-scroll">
             <div className="stage-zoom" style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}>
               {ctl && build?.bytes ? (
@@ -150,7 +157,7 @@ export function PreviewPanel() {
         <div className="stage-foot">
           <ShimBadge {...(build ? { notes: build.notes } : {})} />
           {entry?.shownAt !== undefined && (
-            <span className={`chip ${entry.stale ? 'chip-error' : 'chip-ok'}`} data-testid="last-good">
+            <span className={`chip ${failed ? 'chip-error' : 'chip-ok'}`} data-testid="last-good">
               <span className="dot" aria-hidden="true" /> {strings.stage.lastGood(new Date(entry.shownAt).toLocaleTimeString())}
             </span>
           )}

@@ -38,7 +38,7 @@ export const panelRegistry = {
   navigator: { title: strings.nav.title, component: NavigatorPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
   contracts: { title: strings.contracts.title, component: ContractsPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 }, useTabInfo: useContractsTab },
   assets: { title: strings.assets.title, component: AssetsPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
-  preview: { title: strings.panelPreview, component: PreviewPanel, defaultSize: { width: 640, height: 420 }, minSize: { width: 320, height: 110 } },
+  preview: { title: strings.panelPreview, component: PreviewPanel, defaultSize: { width: 640, height: 420 }, minSize: { width: 320, height: 150 } },
   graph: { title: strings.graph.title, component: GraphPanel, defaultSize: { width: 640, height: 320 }, minSize: { width: 320, height: 90 } },
   inspector: { title: strings.insp.title, component: InspectorPanel, defaultSize: { width: 320, height: 500 }, minSize: { width: 240, height: 120 } },
   lintBudget: { title: strings.dock.lintTitle, component: LintBudgetPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 }, useTabInfo: useLintTab },

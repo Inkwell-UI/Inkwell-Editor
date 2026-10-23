@@ -145,10 +145,12 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
 function TextMapping({ node }: { node: Extract<Node, { type: 'text' }> }) {
   const f = describeTextMapping(node)
   const flags = f.sizing.flags
-  const to = [flags.autoSize && 'autoSize', flags.wordWrap ? 'wordWrap' : strings.insp.noWrap, flags.multiline && flags.wordWrap && 'multiline'].filter(Boolean).join(', ')
+  const to = flags.autoSize
+    ? ['autoSize', flags.wordWrap ? 'wordWrap' : strings.insp.noWrap, flags.multiline && flags.wordWrap && 'multiline'].filter(Boolean).join(', ')
+    : `${strings.insp.fixedField}${flags.wordWrap ? ` (${strings.insp.wraps})` : ''}`
   return (
     <dl className="facts">
-      <dt>{strings.insp.sizing}</dt><dd>{strings.insp.sizingNames[f.sizing.value]} <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {flags.autoSize || flags.wordWrap ? to : strings.insp.fixedField}</dd>
+      <dt>{strings.insp.sizing}</dt><dd>{strings.insp.sizingNames[f.sizing.value]} <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {to}</dd>
       {f.verticalAlign && <><dt>{strings.insp.vAlign}</dt><dd>{strings.insp.alignNames[f.verticalAlign]} <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {strings.insp.gfxVerticalAlign}</dd></>}
       {f.textAutoSize && <><dt>{strings.insp.fit}</dt><dd>{f.textAutoSize} <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {strings.insp.gfxTextAutoSize}</dd></>}
       {f.letterSpacingPx !== undefined && <><dt>{strings.insp.spacing}</dt><dd>{f.letterSpacingPx} px <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> letterSpacing</dd></>}

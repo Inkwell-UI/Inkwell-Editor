@@ -55,11 +55,11 @@ export const WORKSPACE_IDS: readonly WorkspaceId[] = ['wire', 'verify', 'debug']
 
 export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
   // Wire: the graph is large; the preview is a strip; Inspector and Navigator small.
-  wire: make('wire', { left: 1.3, center: 5, inspector: 1.7, preview: 1.1, graph: 3, main: 5, dock: 1.1, dockTab: 'lintBudget' }),
+  wire: make('wire', { left: 1.3, center: 5, inspector: 1.7, preview: 2, graph: 3, main: 5, dock: 1.1, dockTab: 'lintBudget' }),
   // Verify: the stage is large; Navigator and the Lint dock small.
   verify: make('verify', { left: 1.1, center: 5.5, inspector: 1.5, preview: 5, graph: 0.7, main: 5, dock: 1.3, dockTab: 'lintBudget' }),
   // Debug: graph + AS2 split large; Trace & Watch dock and the preview small.
-  debug: make('debug', { left: 1, center: 6, inspector: 1.5, preview: 1.2, graph: 4, main: 5, dock: 1.6, dockTab: 'trace' })
+  debug: make('debug', { left: 1, center: 6, inspector: 1.5, preview: 2, graph: 3.5, main: 5, dock: 1.6, dockTab: 'trace' })
 }
 
 export const isWorkspaceId = (v: unknown): v is WorkspaceId => typeof v === 'string' && (WORKSPACE_IDS as readonly string[]).includes(v)
