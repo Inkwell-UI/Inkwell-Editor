@@ -98,7 +98,7 @@ export function buildSheet(id: string, name: string, width: number, height: numb
 
   const ids = Object.keys(nodes)
   const ir = {
-    specVersion: 2, id, name, target: { kind: 'hudWidget' }, stage: { width, height }, root: '1:1',
+    specVersion: 3, id, name, target: { kind: 'hudWidget' }, stage: { width, height }, root: '1:1',
     nodes: {
       '1:1': { id: '1:1', name: 'root', parent: null, children: ids, transform: { x: 0, y: 0, width, height, rotation: 0 }, anchor: { h: 'left', v: 'top' }, visible: true, opacity: 1, type: 'frame', clipContent: false },
       ...nodes

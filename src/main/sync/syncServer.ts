@@ -27,32 +27,67 @@ export interface SyncServerOptions {
   /** Ports tried in order; default 8787-8790. Use [0] for an ephemeral port (tests). */
   ports?: readonly number[]
   token?: string
-  /** Visual IR per swf id, e.g. from the open project. */
+  /** Visual IR per swf, keyed by its folder name under swfs/. The swf's key in the server is `ir.id` (the top-level frame's Figma node id). */
   initial?: Record<string, Swf>
-  /** Swf the plugin's patches apply to. The protocol carries no swf id (spec gap): default is the first initial swf, else "main". */
-  swfId?: string
   debounceMs?: number
-  /** Called once per debounced burst of patches. A throw becomes an error status. */
-  onChange?: (swfId: string, ir: Swf) => Promise<ChangeResult | void> | ChangeResult | void
+  /** Called once per debounced burst of patches to a swf. `name` is its folder / output name. A throw becomes an error status. */
+  onChange?: (swfId: string, ir: Swf, name: string) => Promise<ChangeResult | void> | ChangeResult | void
 }
 
-export type SyncStatus = { state: 'compiling' | 'synced' | 'error'; issues?: SyncIssue[] }
+export type SyncStatus = { swfId?: string; state: 'compiling' | 'synced' | 'error'; issues?: SyncIssue[] }
+export interface SwfInfo {
+  id: string
+  name: string
+  /** Its Figma frame is gone (or the plugin is on another page): data is kept, nothing is built. */
+  orphaned: boolean
+}
+export interface Layer {
+  id: string
+  name: string
+}
 
-const emptySwf = (id: string): Swf =>
-  ({ specVersion: SPEC_VERSION, id, name: id, target: { kind: 'hudWidget' }, stage: { width: 1280, height: 720 }, root: '', nodes: {} }) as Swf
+/** Folder-safe swf name from a frame name. shortcut: no Windows reserved-name check (CON, NUL...); add if a user hits it. */
+export function sanitizeName(name: string, fallback: string): string {
+  const n = name.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^[._]+|_+$/g, '')
+  return n || fallback.replace(/[^A-Za-z0-9._-]+/g, '_')
+}
 
-/** Events: 'selection' (ids), 'connections' (count), 'status' (SyncStatus). */
+/** Nodes that no root reaches (derived, never stored). */
+export function unreachableNodes(ir: Swf): string[] {
+  const seen = new Set<string>()
+  const stack = ir.nodes[ir.root] ? [ir.root] : []
+  while (stack.length) {
+    const id = stack.pop()!
+    if (seen.has(id)) continue
+    seen.add(id)
+    stack.push(...(ir.nodes[id]?.children ?? []))
+  }
+  return Object.keys(ir.nodes).filter((id) => !seen.has(id))
+}
+
+export const UNREACHABLE_MESSAGE = 'this layer is not inside an exported frame'
+
+interface Entry {
+  ir: Swf
+  name: string
+  orphaned: boolean
+}
+
+const emptySwf = (id: string, name: string): Swf =>
+  ({ specVersion: SPEC_VERSION, id, name, target: { kind: 'hudWidget' }, stage: { width: 1280, height: 720 }, root: id, nodes: {} }) as Swf
+
+/** Events: 'selection' (ids), 'connections' (count), 'status' (SyncStatus with swfId), 'swfs' (SwfInfo[], loose Layer[]). */
 export async function startSyncServer(opts: SyncServerOptions) {
   const token = opts.token ?? randomBytes(24).toString('hex')
   const events = new EventEmitter()
-  const store = new Map<string, Swf>(Object.entries(opts.initial ?? {}))
-  const swfId = opts.swfId ?? [...store.keys()][0] ?? 'main'
-  if (!store.has(swfId)) store.set(swfId, emptySwf(swfId))
+  const store = new Map<string, Entry>() // swf id -> state
+  for (const [name, ir] of Object.entries(opts.initial ?? {})) store.set(ir.id, { ir, name, orphaned: false })
+  let loose: Layer[] = []
   const ready = new Set<WebSocket>() // sockets that finished the hello handshake
   let selection: string[] = []
   let timer: ReturnType<typeof setTimeout> | undefined
   let building = false
-  let dirty = false
+  const pending = new Set<string>()
 
   const send = (ws: WebSocket, m: EditorMessage): void => {
     if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(m))
@@ -61,32 +96,62 @@ export async function startSyncServer(opts: SyncServerOptions) {
     events.emit('status', s)
     for (const ws of ready) send(ws, { type: 'status', ...s })
   }
+  const infos = (): SwfInfo[] => [...store].map(([id, e]) => ({ id, name: e.name, orphaned: e.orphaned }))
+  const swfsChanged = (): void => {
+    events.emit('swfs', infos(), loose)
+  }
+  /** Project-level status (no swfId): loose layers and orphaned swfs. */
+  const projectStatus = (): void => {
+    const issues: SyncIssue[] = [
+      ...loose.map((l) => ({ code: 'unreachable-node', severity: 'warning', nodeId: l.id, message: `"${l.name}": ${UNREACHABLE_MESSAGE}.` })),
+      ...infos().filter((i) => i.orphaned).map((i) => ({ code: 'orphaned-swf', severity: 'warning', nodeId: i.id, message: `"${i.name}": its Figma frame is gone; the swf and its data are kept.` }))
+    ]
+    for (const ws of ready) send(ws, { type: 'status', state: 'synced', ...(issues.length ? { issues } : {}) })
+  }
 
-  async function build(): Promise<void> {
-    if (building) {
-      dirty = true // run again after the current build with the latest IR
-      return
+  async function buildOne(swfId: string): Promise<void> {
+    const e = store.get(swfId)
+    if (!e || e.orphaned || !e.ir.nodes[e.ir.root]) return
+    broadcast({ swfId, state: 'compiling' })
+    try {
+      const r = await opts.onChange?.(swfId, e.ir, e.name)
+      const issues: SyncIssue[] = [
+        ...(r?.issues ?? []),
+        ...unreachableNodes(e.ir).map((id) => ({ code: 'unreachable-node', severity: 'warning', nodeId: id, message: `"${e.ir.nodes[id]!.name}": ${UNREACHABLE_MESSAGE}.` }))
+      ]
+      const errors = issues.some((i) => (i as { severity?: string }).severity === 'error')
+      broadcast({ swfId, state: errors ? 'error' : 'synced', ...(issues.length ? { issues } : {}) })
+    } catch (err) {
+      broadcast({ swfId, state: 'error', issues: [{ code: 'build_failed', message: err instanceof Error ? err.message : String(err) }] })
     }
+  }
+  async function build(): Promise<void> {
+    if (building) return // the running loop picks up what is pending
     building = true
     try {
-      do {
-        dirty = false
-        broadcast({ state: 'compiling' })
-        try {
-          const r = await opts.onChange?.(swfId, store.get(swfId)!)
-          const errors = r?.issues?.some((i) => (i as { severity?: string }).severity === 'error')
-          broadcast({ state: errors ? 'error' : 'synced', ...(r?.issues?.length ? { issues: r.issues } : {}) })
-        } catch (e) {
-          broadcast({ state: 'error', issues: [{ code: 'build_failed', message: e instanceof Error ? e.message : String(e) }] })
-        }
-      } while (dirty)
+      while (pending.size) {
+        const id = pending.values().next().value as string
+        pending.delete(id)
+        await buildOne(id) // one at a time: the resident FFDec wrapper takes one job at a time
+      }
     } finally {
       building = false
     }
   }
-  const schedule = (): void => {
+  const schedule = (swfId: string): void => {
+    pending.add(swfId)
     clearTimeout(timer)
     timer = setTimeout(() => void build(), opts.debounceMs ?? 100)
+  }
+
+  /** Unique (case-insensitive: Windows folders) sanitized name among the other swfs. */
+  function nameFor(swfId: string, wanted: string, current?: string): string {
+    const base = sanitizeName(wanted, swfId)
+    if (current && current.toLowerCase() === base.toLowerCase()) return current // never rename by case only
+    const taken = new Set([...store].filter(([id]) => id !== swfId).map(([, e]) => e.name.toLowerCase()))
+    let n = base
+    for (let i = 2; taken.has(n.toLowerCase()); i++) n = `${base}_${i}`
+    return n
   }
 
   function handle(ws: WebSocket, raw: string): void {
@@ -116,25 +181,40 @@ export async function startSyncServer(opts: SyncServerOptions) {
       selection = m.ids
       events.emit('selection', selection)
     } else if (m.type === 'hashTree') {
-      const nodes = store.get(swfId)!.nodes
+      const nodes = store.get(m.swfId)?.ir.nodes ?? {}
       const ids = Object.entries(m.nodeHashes)
         .filter(([id, h]) => !nodes[id] || hashNode(nodes[id]) !== h)
         .map(([id]) => id)
-      send(ws, { type: 'resend', ids })
+      send(ws, { type: 'resend', swfId: m.swfId, ids })
+    } else if (m.type === 'swfs') {
+      const frames = new Set(m.frames.map((f) => f.id))
+      for (const [id, e] of store) e.orphaned = !frames.has(id) // kept either way; never deleted
+      loose = m.loose.map((l) => ({ id: l.id, name: l.name }))
+      swfsChanged()
+      projectStatus()
     } else {
       try {
-        let next = applyPatch(store.get(swfId)!, m.patch)
-        // The protocol carries no swf metadata, so a fresh store takes the first parentless node as root.
-        if (!next.root) {
-          const root = Object.values(next.nodes).find((n) => n.parent === null)
-          if (root) next = { ...next, root: root.id }
+        const old = store.get(m.swfId)
+        let ir = old?.ir ?? emptySwf(m.swfId, m.swf?.name ?? m.swfId)
+        let name = old?.name ?? nameFor(m.swfId, m.swf?.name ?? m.swfId)
+        if (m.swf) {
+          name = nameFor(m.swfId, m.swf.name, old?.name)
+          ir = { ...ir, name, stage: m.swf.stage, ...(m.swf.target ? { target: m.swf.target } : {}) }
         }
-        store.set(swfId, next)
-        schedule()
+        const next = applyPatch(ir, m.patch)
+        if (!next.nodes[next.root] && old?.ir.nodes[old.ir.root]) {
+          // the frame itself was removed: keep the last good IR and mark the swf orphaned, never delete it
+          old.orphaned = true
+          swfsChanged()
+          return
+        }
+        store.set(m.swfId, { ir: next, name, orphaned: false })
+        if (!old || old.name !== name || old.orphaned) swfsChanged()
+        schedule(m.swfId)
       } catch (e) {
         if (!(e instanceof PatchError)) throw e
         send(ws, { type: 'error', code: e.code, message: e.message, nodeId: e.id })
-        broadcast({ state: 'error', issues: [{ code: e.code, message: e.message, nodeId: e.id }] })
+        broadcast({ swfId: m.swfId, state: 'error', issues: [{ code: e.code, message: e.message, nodeId: e.id }] })
       }
     }
   }
@@ -157,8 +237,9 @@ export async function startSyncServer(opts: SyncServerOptions) {
     port: address.port,
     token,
     events,
-    swfId,
-    ir: (): Swf => store.get(swfId)!,
+    swfs: infos,
+    loose: (): readonly Layer[] => loose,
+    ir: (swfId: string): Swf | undefined => store.get(swfId)?.ir,
     selection: (): readonly string[] => selection,
     connections: (): number => ready.size,
     close: async (): Promise<void> => {

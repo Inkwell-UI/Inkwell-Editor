@@ -30,7 +30,7 @@ afterEach(async () => {
 describe('build pipeline', () => {
   it('missing FFDec is a clear error', async () => {
     const p = createBuildPipeline({ ...cfg, ffdecDir: join(tmpdir(), 'no-ffdec-here'), buildDir: tmpdir(), jarPath })
-    await expect(p.onChange('x', {} as Swf)).rejects.toThrow(/FFDec not found/)
+    await expect(p.onChange('x', {} as Swf, 'x')).rejects.toThrow(/FFDec not found/)
   })
 
   it.skipIf(!can)('a patch for the sample IR writes a SWF', async () => {
@@ -47,7 +47,7 @@ describe('build pipeline', () => {
     await new Promise((r) => ws.on('open', r))
     ws.send(JSON.stringify({ type: 'hello', pluginVersion: 't', protocolVersion: PROTOCOL_VERSION, specVersion: SPEC_VERSION }))
     const node = Object.values(ir.nodes).find((n) => n.type === 'shape')!
-    ws.send(JSON.stringify({ type: 'patch', seq: 1, patch: { ops: [{ op: 'upsert', node: { ...node, opacity: 0.9 } }] } }))
+    ws.send(JSON.stringify({ type: 'patch', seq: 1, swfId: ir.id, patch: { ops: [{ op: 'upsert', node: { ...node, opacity: 0.9 } }] } }))
     const deadline = Date.now() + 30_000
     while (!msgs.some((m) => m.type === 'status' && m.state !== 'compiling') && Date.now() < deadline) await new Promise((r) => setTimeout(r, 100))
     ws.close()

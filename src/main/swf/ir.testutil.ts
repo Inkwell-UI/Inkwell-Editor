@@ -35,7 +35,7 @@ export const textNode = (id: string, over: Record<string, unknown> = {}, font = 
 
 export function swf(nodes: Node[], over: Record<string, unknown> = {}): Swf {
   return {
-    specVersion: 2, id: 'test', name: 'Test', target: { kind: 'hudWidget' }, stage: { width: 1920, height: 1080 },
+    specVersion: 3, id: 'test', name: 'Test', target: { kind: 'hudWidget' }, stage: { width: 1920, height: 1080 },
     root: nodes[0]!.id,
     nodes: Object.fromEntries(nodes.map((n) => [n.id, n])),
     ...over

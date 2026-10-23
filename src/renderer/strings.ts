@@ -19,5 +19,7 @@ export const strings = {
   syncCopy: 'Copy',
   syncBuild: 'Build',
   syncLint: 'Lint issues',
+  syncSwfs: 'SWFs',
+  syncOrphaned: 'orphaned',
   buildStates: { idle: 'Idle', compiling: 'Compiling', synced: 'Synced', error: 'Error' }
 } as const

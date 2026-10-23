@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import WebSocket from 'ws'
 import { hashNode, PROTOCOL_VERSION, SPEC_VERSION, type Swf } from '@inkwell-ui/spec'
 import { frame, rectShape, swf } from '../swf/ir.testutil'
-import { startSyncServer, type SyncServerOptions } from './syncServer'
+import { sanitizeName, startSyncServer, unreachableNodes, type SyncServerOptions } from './syncServer'
 
 type Server = Awaited<ReturnType<typeof startSyncServer>>
 const open: Server[] = []
@@ -42,8 +42,8 @@ const ready = async (s: Server) => {
   expect((await c.next()).ok).toBe(true)
   return c
 }
-const sample = (): Swf => swf([frame('f', ['s']), rectShape('s')])
-const patchUpsert = (node: unknown) => ({ type: 'patch', seq: 1, patch: { ops: [{ op: 'upsert', node }] } })
+const sample = (): Swf => swf([frame('f', ['s']), rectShape('s')], { id: 'hud' })
+const patchUpsert = (node: unknown, swfId = 'hud', swf?: unknown) => ({ type: 'patch', seq: 1, swfId, ...(swf ? { swf } : {}), patch: { ops: [{ op: 'upsert', node }] } })
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 describe('syncServer', () => {
@@ -95,32 +95,90 @@ describe('syncServer', () => {
     const onChange = vi.fn()
     const s = await start({ initial: { hud: sample() }, onChange })
     const c = await ready(s)
-    const node = { ...s.ir().nodes['s'], opacity: 0.5, extra: { keep: 1 } }
+    const node = { ...s.ir('hud')!.nodes['s'], opacity: 0.5, extra: { keep: 1 } }
     c.ws.send(JSON.stringify(patchUpsert(node)))
     c.ws.send(JSON.stringify(patchUpsert({ ...node, opacity: 0.25 })))
     await sleep(150)
     expect(onChange).toHaveBeenCalledTimes(1)
     expect(onChange.mock.calls[0]![0]).toBe('hud')
-    expect(s.ir().nodes['s']).toMatchObject({ opacity: 0.25, extra: { keep: 1 } })
+    expect(s.ir('hud')!.nodes['s']).toMatchObject({ opacity: 0.25, extra: { keep: 1 } })
   })
 
-  it('empty store: the first patch builds the IR and picks the root', async () => {
+  it('empty store: the first patch with swf metadata creates the swf with the frame as root and its stage size', async () => {
     const s = await start()
     const c = await ready(s)
-    c.ws.send(JSON.stringify(patchUpsert(frame('f', []))))
+    c.ws.send(JSON.stringify(patchUpsert(frame('1:1', []), '1:1', { id: '1:1', name: 'Hud Main', stage: { width: 640, height: 360 } })))
     await sleep(60)
-    expect(s.ir().root).toBe('f')
-    expect(s.swfId).toBe('main')
+    expect(s.ir('1:1')).toMatchObject({ root: '1:1', name: 'Hud_Main', stage: { width: 640, height: 360 } })
+    expect(s.swfs()).toEqual([{ id: '1:1', name: 'Hud_Main', orphaned: false }])
+  })
+
+  it('two frames are two independent swfs, each built once with its own name', async () => {
+    const onChange = vi.fn()
+    const s = await start({ onChange })
+    const c = await ready(s)
+    c.ws.send(JSON.stringify(patchUpsert(frame('1:1', []), '1:1', { id: '1:1', name: 'Menu', stage: { width: 10, height: 20 } })))
+    c.ws.send(JSON.stringify(patchUpsert(frame('2:1', []), '2:1', { id: '2:1', name: 'menu', stage: { width: 30, height: 40 } })))
+    await sleep(150)
+    expect(onChange.mock.calls.map((x) => [x[0], x[2]]).sort()).toEqual([['1:1', 'Menu'], ['2:1', 'menu_2']]) // clash is made unique
+    expect(s.ir('2:1')!.stage).toEqual({ width: 30, height: 40 })
+    expect(Object.keys(s.ir('1:1')!.nodes)).toEqual(['1:1'])
+  })
+
+  it('swfs message marks missing frames orphaned (data kept), reports loose layers, and the plugin gets warnings', async () => {
+    const onChange = vi.fn()
+    const s = await start({ initial: { hud: sample() }, onChange })
+    const c = await ready(s)
+    const seen = new Promise<any[]>((r) => s.events.once('swfs', (i, l) => r([i, l])))
+    c.ws.send(JSON.stringify({ type: 'swfs', frames: [{ id: '9:9', name: 'Other' }], loose: [{ id: '3:3', name: 'Stray text' }] }))
+    const [infos, loose] = await seen
+    expect(infos).toEqual([{ id: 'hud', name: 'hud', orphaned: true }])
+    expect(loose).toEqual([{ id: '3:3', name: 'Stray text' }])
+    const st = await c.next()
+    expect(st).toMatchObject({ type: 'status', state: 'synced' })
+    expect(st.issues).toMatchObject([
+      { code: 'unreachable-node', severity: 'warning', nodeId: '3:3', message: expect.stringContaining('not inside an exported frame') },
+      { code: 'orphaned-swf', nodeId: 'hud' }
+    ])
+    expect(s.ir('hud')).toBeDefined() // not deleted
+  })
+
+  it('removing the frame root keeps the last IR, marks it orphaned and builds nothing', async () => {
+    const onChange = vi.fn()
+    const s = await start({ initial: { hud: sample() }, onChange })
+    const c = await ready(s)
+    c.ws.send(JSON.stringify({ type: 'patch', seq: 3, swfId: 'hud', patch: { ops: [{ op: 'remove', id: 'f' }] } }))
+    await sleep(80)
+    expect(s.swfs()).toEqual([{ id: 'hud', name: 'hud', orphaned: true }])
+    expect(Object.keys(s.ir('hud')!.nodes).sort()).toEqual(['f', 's'])
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('a node no root reaches gets an unreachable-node warning on that swf', async () => {
+    const s = await start({ initial: { hud: sample() }, onChange: () => ({ issues: [] }) })
+    const c = await ready(s)
+    c.ws.send(JSON.stringify(patchUpsert({ ...frame('x', []), name: 'Floating' })))
+    expect(await c.next()).toMatchObject({ state: 'compiling', swfId: 'hud' })
+    const done = await c.next()
+    expect(done).toMatchObject({ swfId: 'hud', state: 'synced', issues: [{ code: 'unreachable-node', severity: 'warning', nodeId: 'x' }] })
+    expect(done.issues[0].message).toContain('not inside an exported frame')
+  })
+
+  it('unreachableNodes and sanitizeName', () => {
+    expect(unreachableNodes(sample())).toEqual([])
+    expect(unreachableNodes(swf([frame('f', []), rectShape('s')]))).toEqual(['s'])
+    expect(sanitizeName('Menu / Main*', '1:2')).toBe('Menu_Main')
+    expect(sanitizeName('???', '1:2')).toBe('1_2')
   })
 
   it('PatchError becomes an error message with the node id and the store is unchanged', async () => {
     const onChange = vi.fn()
     const s = await start({ initial: { hud: sample() }, onChange })
     const c = await ready(s)
-    const before = s.ir()
-    c.ws.send(JSON.stringify({ type: 'patch', seq: 2, patch: { ops: [{ op: 'move', id: 'nope', parent: 'f' }] } }))
+    const before = s.ir('hud')
+    c.ws.send(JSON.stringify({ type: 'patch', seq: 2, swfId: 'hud', patch: { ops: [{ op: 'move', id: 'nope', parent: 'f' }] } }))
     expect(await c.next()).toMatchObject({ type: 'error', code: 'unknown_node', nodeId: 'nope' })
-    expect(s.ir()).toBe(before)
+    expect(s.ir('hud')).toBe(before)
     await sleep(60)
     expect(onChange).not.toHaveBeenCalled()
   })
@@ -128,10 +186,10 @@ describe('syncServer', () => {
   it('hashTree: mismatched and missing nodes are resent, matching ones are not', async () => {
     const s = await start({ initial: { hud: sample() } })
     const c = await ready(s)
-    const n = s.ir().nodes
-    c.ws.send(JSON.stringify({ type: 'hashTree', nodeHashes: { f: hashNode(n['f']), s: 'deadbeef', gone: '00000000' } }))
+    const n = s.ir('hud')!.nodes
+    c.ws.send(JSON.stringify({ type: 'hashTree', swfId: 'hud', nodeHashes: { f: hashNode(n['f']), s: 'deadbeef', gone: '00000000' } }))
     const r = await c.next()
-    expect(r.type).toBe('resend')
+    expect(r).toMatchObject({ type: 'resend', swfId: 'hud' })
     expect([...r.ids].sort()).toEqual(['gone', 's'])
   })
 
@@ -142,7 +200,7 @@ describe('syncServer', () => {
     expect((await c.next()).code).toBe('bad_json')
     c.ws.send(JSON.stringify({ type: 'wat' }))
     expect((await c.next()).code).toBe('invalid_message')
-    c.ws.send(JSON.stringify({ type: 'patch', seq: 1, patch: { ops: [{ op: 'upsert', node: { id: 1 } }] } }))
+    c.ws.send(JSON.stringify({ type: 'patch', seq: 1, swfId: 'hud', patch: { ops: [{ op: 'upsert', node: { id: 1 } }] } }))
     expect((await c.next()).code).toBe('invalid_message')
     expect(c.ws.readyState).toBe(WebSocket.OPEN)
   })
@@ -166,11 +224,11 @@ describe('syncServer', () => {
       }
     })
     const c = await ready(s)
-    c.ws.send(JSON.stringify(patchUpsert({ ...s.ir().nodes['s'], opacity: 0.1 })))
-    expect(await c.next()).toEqual({ type: 'status', state: 'compiling' })
+    c.ws.send(JSON.stringify(patchUpsert({ ...s.ir('hud')!.nodes['s'], opacity: 0.1 })))
+    expect(await c.next()).toEqual({ type: 'status', swfId: 'hud', state: 'compiling' })
     expect(await c.next()).toMatchObject({ type: 'status', state: 'synced', issues: [{ code: 'w' }] })
     fail = true
-    c.ws.send(JSON.stringify(patchUpsert({ ...s.ir().nodes['s'], opacity: 0.2 })))
+    c.ws.send(JSON.stringify(patchUpsert({ ...s.ir('hud')!.nodes['s'], opacity: 0.2 })))
     expect((await c.next()).state).toBe('compiling')
     expect(await c.next()).toMatchObject({ state: 'error', issues: [{ message: 'FFDec not found' }] })
   })

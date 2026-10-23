@@ -56,7 +56,7 @@ describe('project format', () => {
     ir.nodes['1:3'] = { ...label, extra: { text: { align, verticalAlign } } }
     await writeFile(f, JSON.stringify(ir))
     const loaded = (await loadProject(dir)).swfs['hud']!.ir as any
-    expect(loaded.specVersion).toBe(2)
+    expect(loaded.specVersion).toBe(3)
     expect(loaded.nodes['1:3']).toMatchObject({ align: 'center', verticalAlign: 'center' })
     expect(loaded.nodes['1:3'].extra).toBeUndefined()
     expect(loaded.extra).toEqual({ fromFuturePack: { a: 1 } })

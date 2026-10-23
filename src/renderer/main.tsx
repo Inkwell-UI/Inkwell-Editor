@@ -32,6 +32,7 @@ function App() {
           </div>
         )}
         <div>{strings.syncBuild}: {strings.buildStates[s?.build ?? 'idle']}{s?.buildError ? ` (${s.buildError})` : ''}</div>
+        <div>{strings.syncSwfs}: {s?.swfCount ?? 0}{s?.orphanedCount ? ` (${s.orphanedCount} ${strings.syncOrphaned})` : ''}</div>
         <div>{strings.syncLint}: {s?.lintCount ?? 0}</div>
       </section>
       <TimingOverlay build={s?.timing} />
