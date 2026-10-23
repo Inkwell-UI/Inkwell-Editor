@@ -1,0 +1,22 @@
+{
+  "extra": {
+    "fromFuturePack": {
+      "a": 1
+    }
+  },
+  "nodes": [
+    {
+      "children": [
+        {
+          "id": "1:3",
+          "text": "Hello",
+          "type": "text"
+        }
+      ],
+      "id": "1:2",
+      "name": "root",
+      "type": "frame"
+    }
+  ],
+  "version": 1
+}

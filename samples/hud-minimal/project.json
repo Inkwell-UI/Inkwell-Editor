@@ -1,0 +1,18 @@
+{
+  "author": "Sample Author",
+  "deploy": {
+    "futureDeployOption": {
+      "keep": [
+        1,
+        2,
+        3
+      ]
+    },
+    "path": "C:/Modding/MO2/overwrite",
+    "preset": "mo2"
+  },
+  "modId": "HudMinimal",
+  "name": "HUD Minimal",
+  "version": "0.1.0",
+  "x-unknown": true
+}
