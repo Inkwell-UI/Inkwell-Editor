@@ -12,7 +12,8 @@ A `ws` server in the Electron main process, started on app ready and closed on q
 - Builds are debounced and run one swf at a time (one resident FFDec wrapper). `status` carries `swfId`; the plugin rolls them up (error beats compiling beats synced).
 - After a patch, a 100 ms debounce, then `onChange(swfId, ir, name)` for each touched swf; the plugin gets `status` `compiling`, then `synced` (or `error` when a lint issue has severity `error` or the hook throws).
 - `buildPipeline.ts` is the default `onChange`: stages `sync` (save IR), `codegen`, `swf`, `ffdec` via `compileSwf` and the resident wrapper; lint issues go out as `status.issues` (with `severity`). Output: `<project>/build/<name>.swf` (git-ignored), or `<userData>/build` without a project.
-- The window lists, for the latest build of each swf (kept per swf id, so frames never overwrite each other): a **Fonts** table (swf, layer, Figma `family/style`, text style name, resolved Skyrim alias or `unmapped`, and how: `text style` | `family/style` | `fallback` | `unmapped`) and a **Lint** list (errors first; severity, code, message, swf, layer name). `compileSwf` returns the fonts as `fonts`; they are not lint issues and not in the lint count.
+- Server options added for the UI: `strict()` (Strict Mode: warnings become errors in the status), `rebuild(swfId)` / `rebuildAll()` (Build All, overlay saves). Events `handshakeFailed` (version/spec mismatch message) and `rejected` (`'token'` | `'origin'`) tell the UI why the plugin could not connect (amber / red Figma dot). `main/session.ts` restarts the server on the same port and token when another project is opened.
+- The window (the Figma popover, Inspector, dock and status bar now) shows, for the latest build of each swf (kept per swf id, so frames never overwrite each other): a **Fonts** table (swf, layer, Figma `family/style`, text style name, resolved Skyrim alias or `unmapped`, and how: `text style` | `family/style` | `fallback` | `unmapped`) and a **Lint** list (errors first; severity, code, message, swf, layer name). `compileSwf` returns the fonts as `fonts`; they are not lint issues and not in the lint count.
 
 ## Config
 
@@ -20,7 +21,7 @@ A `ws` server in the Electron main process, started on app ready and closed on q
 | --- | --- |
 | `INKWELL_FFDEC` | `C:\Program Files (x86)\FFDec` |
 | `INKWELL_JAVA` | `java` |
-| `INKWELL_PROJECT` | unset: nothing is saved |
+| `INKWELL_PROJECT` | unset: the start screen shows (New/Open/Example); with a project open the IR is saved there |
 
 The wrapper jar comes from `yarn build:wrapper`. If FFDec or the jar is missing the server still starts and every build reports an `error` status with a clear message.
 
@@ -28,7 +29,7 @@ The wrapper jar comes from `yarn build:wrapper`. If FFDec or the jar is missing 
 
 1. In `Inkwell-Spec` run `yarn build`; in `Inkwell-Figma` run `yarn install --force` (re-copies the spec), then `yarn build`.
 2. Here: `yarn build:wrapper` once, then `yarn dev` (optionally with `INKWELL_PROJECT=samples/hud-minimal`).
-3. The window shows the connection state, port, session token, the number of SWFs (and orphaned ones) and the total lint issues (all swfs plus loose layers); click Copy.
+3. The Figma dot in the top bar shows the connection state, port and session token (click Copy); the SWF switcher lists the SWFs (orphaned ones under `Retained / Orphaned SWFs`) and the Navigator lists unreachable layers.
 4. In Figma desktop: Plugins > Development > Import plugin from manifest > `Inkwell-Figma/plugin/manifest.json`. Run it, paste the token, connect.
 5. Put two top-level frames and one loose layer on the page. Edit a layer. Check the window's build timing (sync, codegen, swf, ffdec, total), `build/<frame name>.swf` for each frame, SWFs = 2, and the `unreachable-node` warning for the loose layer.
 
@@ -40,4 +41,4 @@ Check:
 - Reconnect after restarting the app: the plugin reconnects by itself (the token changes, so paste the new one).
 - Resend after restart: with `INKWELL_PROJECT` set, restart, reconnect, and the plugin's hash tree only resends nodes that differ from the saved IR; without a project, everything is resent.
 - Delete a top-level frame: the window shows it as orphaned; its `swfs/<name>/` folder stays on disk.
-- Selecting a layer in Figma updates the selection held by the server (no UI yet).
+- Selecting a layer in Figma updates the selection held by the server; main forwards it to the windows and the Navigator/Inspector mirror it (setting in the Figma dot popover, see `docs/ui-shell.md`).

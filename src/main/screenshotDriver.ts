@@ -54,6 +54,13 @@ export async function runShots(o: {
   const r = await session.open(o.projectDir)
   if (!r.ok) throw new Error(`open failed: ${JSON.stringify(r)}`)
   session.debug.seedBuilds()
+  if (process.env['INKWELL_SHOTS_NOFFDEC']) {
+    // run with INKWELL_FFDEC pointing nowhere: Build All disabled, status bar `FFDec: not found`, builds report the error
+    await wait(4000)
+    await snap('m-no-ffdec')
+    app.exit(0)
+    return
+  }
   await until('builds of both swfs', () => session.getPreviews().length >= 2, 90000)
   await wait(5000) // Ruffle loads and draws the shown swf
 

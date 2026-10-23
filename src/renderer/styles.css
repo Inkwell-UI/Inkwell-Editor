@@ -274,3 +274,5 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .stage-banners .banner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .stage-banners .btn { min-height: 20px; padding: 0 6px; flex: none; }
 .preview-panel.is-compact .shim-badge { padding: 0 6px; }
+
+.stage-empty { inset: 0; left: 0; top: 0; max-width: none; display: flex; align-items: center; justify-content: center; text-align: center; padding: 44px 16px 8px; }

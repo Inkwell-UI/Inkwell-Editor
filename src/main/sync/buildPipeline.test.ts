@@ -1,6 +1,6 @@
-import { copyFile, mkdtemp, readFile } from 'node:fs/promises'
+import { copyFile, cp, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { basename, join } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { FfdecJob } from '../build/ffdecWrapper'
 import { frame, rectShape, swf, textNode } from '../swf/ir.testutil'
@@ -61,5 +61,23 @@ describe('build pipeline: preview', () => {
     expect(r.preview!['error']).toMatch(/boom/)
     expect(r.preview!['bytes']).toBeUndefined()
     expect(r.timing!.stages).toHaveProperty('preview-build')
+  })
+})
+
+describe('build pipeline: overlay written by the editor UI', () => {
+  it('re-reads overlay.json from disk on every build, uses its instance names, and never writes back a stale overlay', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'inkwell-pipe-proj-'))
+    await cp(resolve(__dirname, '../../../samples/hud-minimal'), dir, { recursive: true, filter: (p) => !/[\/]build([\/]|$)/.test(p) && !/swfs[\/](root|root2)/.test(p) })
+    const ffdec = { build: async (job: FfdecJob) => (await copyFile(job.base, job.out), { ok: true, ms: 0, wallMs: 0 }) }
+    const p = createBuildPipeline({ ...base, projectDir: dir, buildDir: join(dir, 'build'), ffdec })
+    const hud = ir()
+    await p.onChange('hud', { ...hud, id: 'hud', name: 'HUD Minimal' }, 'hud') // caches the project (with the sample's overlay)
+    const file = join(dir, 'swfs/hud/overlay.json')
+    const saved = JSON.parse(await readFile(file, 'utf8'))
+    saved.nodes.t = { instanceName: 'DamageVal_Txt', future: 1 } // what the Inspector would save
+    await writeFile(file, JSON.stringify(saved))
+    await p.onChange('hud', { ...hud, id: 'hud', name: 'HUD Minimal' }, 'hud')
+    const after = JSON.parse(await readFile(file, 'utf8'))
+    expect(after.nodes.t).toEqual({ future: 1, instanceName: 'DamageVal_Txt' }) // not overwritten by the cached, older overlay
   })
 })

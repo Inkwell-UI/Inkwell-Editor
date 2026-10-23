@@ -146,7 +146,7 @@ export function PreviewPanel() {
                   <SafeZoneOverlay visible={safe} />
                 </AspectFrame>
               ) : (
-                <p className="preview-message">{emptyMessage}</p>
+                <p className="preview-message stage-empty">{emptyMessage}</p>
               )}
             </div>
           </div>

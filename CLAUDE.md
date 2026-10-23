@@ -19,7 +19,7 @@ Use yarn (not npm).
 
 Run test + typecheck before finishing any change. `electron` downloads its binary in a postinstall; if `yarn dev` says "Electron uninstall", run `node node_modules/electron/install.js`.
 
-Layout: `src/main` (Electron main, `project/` = project.json + folder load/save), `src/renderer` (React; all UI strings in `strings.ts`; panels, hooks, workspace layout and preview pieces: see `docs/ui-panels.md`), `src/shared` (`product.ts` holds the product name; `timing.ts` stage timer). `samples/hud-minimal` is the golden sample project.
+Layout: `src/main` (Electron main, `project/` = project.json + folder load/save), `src/renderer` (React; all UI strings in `strings.ts`, all colors in `theme.css`; panels, hooks, workspace layout and preview pieces: see `docs/ui-panels.md`; zones, workspaces, stores and the selection model: `docs/ui-shell.md`), `src/shared` (`product.ts` holds the product name; `timing.ts` stage timer). `samples/hud-minimal` is the golden sample project.
 
 ## Stack
 

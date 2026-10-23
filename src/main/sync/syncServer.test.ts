@@ -232,4 +232,30 @@ describe('syncServer', () => {
     expect((await c.next()).state).toBe('compiling')
     expect(await c.next()).toMatchObject({ state: 'error', issues: [{ message: 'FFDec not found' }] })
   })
+
+  it('strict mode promotes warnings to errors in the status (the build gate); rebuildAll queues every live swf', async () => {
+    let strict = false
+    const onChange = vi.fn(async () => ({ issues: [{ code: 'w', message: 'warn', nodeId: 's', severity: 'warning' }] }))
+    const s = await start({ initial: { hud: sample() }, onChange, strict: () => strict })
+    const c = await ready(s)
+    expect(s.rebuildAll()).toBe(1)
+    expect((await c.next()).state).toBe('compiling')
+    expect(await c.next()).toMatchObject({ state: 'synced', issues: [{ severity: 'warning' }] })
+    strict = true
+    s.rebuild('hud')
+    expect((await c.next()).state).toBe('compiling')
+    expect(await c.next()).toMatchObject({ state: 'error', issues: [{ severity: 'error', code: 'w' }] })
+    expect(onChange).toHaveBeenCalledTimes(2)
+  })
+
+  it('tells the UI why a connection failed: version mismatch (handshakeFailed) and bad token (rejected)', async () => {
+    const s = await start()
+    const version = new Promise<string>((r) => s.events.once('handshakeFailed', r))
+    const bad = await connect(s)
+    bad.ws.send(JSON.stringify(hello({ protocolVersion: PROTOCOL_VERSION + 1 })))
+    expect(await version).toMatch(/Protocol mismatch/)
+    const rejected = new Promise<string>((r) => s.events.once('rejected', r))
+    await expect(connect(s, { token: 'x'.repeat(48) })).rejects.toThrow('401')
+    expect(await rejected).toBe('token')
+  })
 })
