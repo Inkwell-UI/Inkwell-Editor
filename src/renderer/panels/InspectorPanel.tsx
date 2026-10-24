@@ -3,7 +3,7 @@ import { CircleX, Lock, Redo2, TriangleAlert, Undo2, Info } from 'lucide-react'
 import type { Node } from '@inkwell-ui/spec'
 import { describeTextMapping } from '../../main/swf/text'
 import { widgetFrame } from '../../main/widget/frame'
-import { ident, instanceNameError, ROLES, widgetAnchorOf, type WidgetAnchor } from '../../shared/overlay'
+import { debugHotkeyOf, ident, instanceNameError, ROLES, widgetAnchorOf, type WidgetAnchor } from '../../shared/overlay'
 import type { FontRow } from '../../shared/syncState'
 import { useUndo } from '../hooks/useUndo'
 import { useActiveOverlay, useActiveSwf, useDockRows } from '../hooks/useProject'
@@ -119,6 +119,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
         <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
         {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
+        {isWidgetFrame && <DebugHotkeyField swfId={swfId} nodeId={node.id} value={debugHotkeyOf(entry)} />}
         <p className="dim contract">{strings.insp.contractLine}</p>
         {strings.insp.disabledControls.filter((c, i) => !(isWidgetFrame && i === 0)).map((c) => (
           <div key={c.label} className="field">
@@ -250,6 +251,33 @@ function WidgetAnchorField({ swfId, nodeId, value }: { swfId: string; nodeId: st
         </div>
       )}
       <p id="widget-anchor-help" className="dim">{value ? strings.insp.widgetAnchorHelp : strings.insp.widgetAnchorFigmaHelp}</p>
+    </div>
+  )
+}
+
+/** Overlay `debugHotkey` of a HUD widget's frame (0 / empty = off). Invalid input is not saved. */
+function DebugHotkeyField({ swfId, nodeId, value }: { swfId: string; nodeId: string; value: number }) {
+  const commit = (text: string): void => {
+    const n = Number(text)
+    if (text.trim() === '') { if (value) editNode(swfId, nodeId, { debugHotkey: null }) }
+    else if (Number.isInteger(n) && n >= 1 && n <= 255 && n !== value) editNode(swfId, nodeId, { debugHotkey: n })
+  }
+  return (
+    <div className="field">
+      <label className="field-label" htmlFor="debug-hotkey">{strings.insp.debugHotkey}</label>
+      <input
+        id="debug-hotkey"
+        key={value}
+        type="number"
+        min={1}
+        max={255}
+        defaultValue={value || ''}
+        aria-describedby="debug-hotkey-help"
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') commit(e.currentTarget.value) }}
+        data-testid="debug-hotkey"
+      />
+      <p id="debug-hotkey-help" className="dim">{strings.insp.debugHotkeyHelp}</p>
     </div>
   )
 }

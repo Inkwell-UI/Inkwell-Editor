@@ -4,3 +4,8 @@ Event OnInit()
 EndEvent
 Event OnUpdate()
 EndEvent
+Function RegisterForKey(int keyCode) native
+Function UnregisterForKey(int keyCode) native
+Function UnregisterForAllKeys() native
+Event OnKeyDown(int keyCode)
+EndEvent

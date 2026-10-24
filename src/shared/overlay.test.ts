@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { promoteStrict } from './lint'
-import { ident, instanceNameError, isSettableText, normalizeOverlay, overlayProblems, patchNodeOverlay, widgetAnchorOf } from './overlay'
+import { debugHotkeyOf, ident, instanceNameError, isSettableText, normalizeOverlay, overlayProblems, patchNodeOverlay, widgetAnchorOf } from './overlay'
 
 describe('instance names', () => {
   it('default is the sanitized layer name (same function as the compiler)', () => {
@@ -60,6 +60,12 @@ describe('widget anchor override and settable texts', () => {
     const d = patchNodeOverlay({ nodes: {} }, 'f', { anchor: { h: 'right', v: 'top', x: 24, y: 24 } })
     expect(d.nodes).toEqual({ f: { anchor: { h: 'right', v: 'top', x: 24, y: 24 } } })
     expect(patchNodeOverlay(d, 'f', { anchor: null }).nodes).toEqual({})
+  })
+  it('debugHotkey: scan code 1..255, otherwise 0 (off) and reported', () => {
+    expect(debugHotkeyOf({ debugHotkey: 65 })).toBe(65)
+    for (const k of [0, 256, 6.5, '65', undefined]) expect(debugHotkeyOf({ debugHotkey: k })).toBe(0)
+    expect(overlayProblems({ nodes: { f: { debugHotkey: 65 } } })).toEqual([])
+    expect(overlayProblems({ nodes: { f: { debugHotkey: 0 } } })).toEqual([expect.stringContaining('debugHotkey')])
   })
   it('role text makes a layer settable', () => {
     expect(isSettableText({ role: 'text' })).toBe(true)

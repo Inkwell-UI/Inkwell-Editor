@@ -215,6 +215,8 @@ export const strings = {
     widgetMarginY: 'Margin Y (px)',
     widgetAnchorHelp: 'Where SkyUI places this widget on the HUD. Margins are design px (1920x1080) inward from the anchored screen edges.',
     widgetAnchorFigmaHelp: 'Uses the frame\'s Figma position and constraints.',
+    debugHotkey: 'Test hotkey (scan code)',
+    debugHotkeyHelp: 'Empty = off. A DirectInput scan code 1-255 (65 = F7) that shows the popup with sample texts in game. Turn it off before a release.',
     disabledControls: [
       { label: 'Anchor override', value: 'Override Figma constraints', reason: `${BY} anchoring codegen` },
       { label: 'Loc key ($)', value: '$Inkwell_...', reason: `${BY} localization pipeline (0.4)` },

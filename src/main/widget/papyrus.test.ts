@@ -13,18 +13,27 @@ const popupScripts = () => generateScripts({ modId: 'WidgetMod', widgetName: 'Hu
 describe('generated Papyrus', () => {
   it('widget script (snapshot)', () => expect(scripts()[0]!.source).toMatchSnapshot())
   it('empty Instance script (snapshot)', () => expect(scripts()[1]).toMatchSnapshot())
-  it('popup: typed SetTexts/Show/Hide, a console Test helper, calls remembered until ready (snapshot)', () => {
+  it('popup: typed SetTexts/Show/Hide, an off-by-default test hotkey, calls remembered until ready (snapshot)', () => {
     const src = popupScripts()[0]!.source
     expect(src).toContain('Function SetTexts(String asTitle, String asDescription)')
     expect(src).toContain('Function Show(String asTitle, String asDescription, Float afHoldSeconds = 4.0)')
     expect(src).toContain('Function Hide()')
     expect(src).toContain('UI.InvokeStringA("HUD Menu", WidgetRoot + ".setTexts", _texts)')
     expect(src).toContain('Game.GetFormFromFile(2048, "WidgetMod.esp") as WidgetMod_Hud')
-    expect(src).toContain('cgf "WidgetMod_Hud.Test"')
+    expect(src).toContain('Int Property DebugHotkey = 0 Auto') // off unless the project sets it
+    expect(src).not.toContain('cgf')
+    expect(src).toContain('If DebugHotkey > 0 && aiKeyCode == DebugHotkey && !Utility.IsInMenuMode()')
     // OnWidgetReset re-applies texts and a pending Show
     const reset = src.slice(src.indexOf('Event OnWidgetReset'), src.indexOf('EndEvent', src.indexOf('Event OnWidgetReset')))
     expect(reset).toContain('If _pendingShow')
     expect(src).toMatchSnapshot()
+  })
+  it('popup: the project hotkey becomes the property default and is registered in OnWidgetReset; bad codes throw', () => {
+    const src = generateScripts({ modId: 'WidgetMod', widgetName: 'Hud', displayName: 'Popup', placement, texts, debugHotkey: 65 })[0]!.source
+    expect(src).toContain('Int Property DebugHotkey = 65 Auto')
+    const reset = src.slice(src.indexOf('Event OnWidgetReset'), src.indexOf('EndEvent', src.indexOf('Event OnWidgetReset')))
+    expect(reset).toContain('RegisterForKey(DebugHotkey)')
+    expect(() => generateScripts({ modId: 'WidgetMod', widgetName: 'Hud', displayName: 'Popup', placement, texts, debugHotkey: 300 })).toThrow(/scan code/)
   })
   it('rejects names that are not Papyrus identifiers', () => {
     expect(isPapyrusName('Ok1')).toBe(true)
@@ -75,7 +84,8 @@ describe.skipIf(!exe || !existsSync(exe))('Papyrus compiler (real, INKWELL_PAPYR
     for (const pex of Object.values(r.pex)) expect([...pex.subarray(0, 4)]).toEqual([0xfa, 0x57, 0xc0, 0xde])
   })
   it('compiles the popup scripts', async () => {
-    const r = await compilePapyrus({ papyrusExe: exe!, scripts: popupScripts(), workDir: mkdtempSync(join(tmpdir(), 'inkwell-papyrus-')) })
+    const scripts = generateScripts({ modId: 'WidgetMod', widgetName: 'Hud', displayName: 'Popup', placement, texts, debugHotkey: 65 })
+    const r = await compilePapyrus({ papyrusExe: exe!, scripts, workDir: mkdtempSync(join(tmpdir(), 'inkwell-papyrus-')) })
     expect(r.lint).toEqual([])
     expect(Object.keys(r.pex).sort()).toEqual(['WidgetMod_Hud', 'WidgetMod_HudInstance'])
   })

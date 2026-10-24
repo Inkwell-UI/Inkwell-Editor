@@ -5,7 +5,7 @@ import { createStageTimer, type BuildTiming } from '../../shared/timing'
 import { compileSwf, type CompileOptions } from '../swf/compile'
 import { ident } from '../swf/generate'
 import type { LintIssue } from '../swf/lint'
-import { isSettableText, widgetAnchorOf, type OverlayDoc } from '../../shared/overlay'
+import { debugHotkeyOf, isSettableText, widgetAnchorOf, type OverlayDoc } from '../../shared/overlay'
 import { buildEsp } from './esp'
 import { widgetFrame, widgetPlacement } from './frame'
 import { generateScripts, instanceScriptName, widgetScriptName } from './papyrus'
@@ -18,7 +18,7 @@ export interface WidgetOptions extends Pick<CompileOptions, 'modId' | 'buildDir'
   papyrusExe?: string
   /** Folder with the header stubs; the default is resolved from this module's location, which is wrong inside the bundled app (pass it there). */
   stubsDir?: string
-  /** The SWF's overlay entries by node id: `anchor` on the widget frame overrides its placement, role `text` makes a text layer settable. */
+  /** The SWF's overlay entries by node id: `anchor` / `debugHotkey` on the widget frame (placement override, test key), role `text` makes a text layer settable. */
   overlay?: OverlayDoc['nodes']
 }
 
@@ -32,7 +32,8 @@ export interface WidgetResult {
 /** HUD widget output: SWF + generated Papyrus (+ compiled .pex) + plugin, as a mod folder in memory (`writeModFolder` writes it out). */
 export async function compileWidget(ir: Swf, opts: WidgetOptions): Promise<WidgetResult> {
   if (ir.target.kind !== 'hudWidget') throw new Error(`compileWidget needs a hudWidget target, got "${ir.target.kind}".`)
-  const placement = widgetPlacement(ir, widgetAnchorOf(opts.overlay?.[widgetFrame(ir)?.frame.id ?? '']))
+  const frameEntry = opts.overlay?.[widgetFrame(ir)?.frame.id ?? '']
+  const placement = widgetPlacement(ir, widgetAnchorOf(frameEntry))
   if (!placement) throw new Error('The root node is missing or not a frame; there is no widget to compile.')
   const widgetName = opts.widgetName ?? ident(ir.id).replace(/^_?([a-z])/, (_, c: string) => c.toUpperCase())
   const timer = createStageTimer()
@@ -41,7 +42,7 @@ export async function compileWidget(ir: Swf, opts: WidgetOptions): Promise<Widge
   const swf = await compileSwf(ir, { ...opts, widget: true, settableTexts, outPath: join(opts.buildDir, `${widgetName}.swf`) })
 
   timer.start('papyrus')
-  const scripts = generateScripts({ modId: opts.modId, widgetName, displayName: ir.name, placement, texts: swf.settableTexts })
+  const scripts = generateScripts({ modId: opts.modId, widgetName, displayName: ir.name, placement, texts: swf.settableTexts, debugHotkey: debugHotkeyOf(frameEntry) })
   const lint: LintIssue[] = [...swf.lint]
   const files: Record<string, Buffer> = { [`Interface/exported/widgets/${opts.modId}/${widgetName}.swf`]: await readFile(swf.swfPath) }
   for (const s of scripts) files[`Source/Scripts/${s.name}.psc`] = Buffer.from(s.source)

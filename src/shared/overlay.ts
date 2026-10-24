@@ -48,6 +48,13 @@ export function widgetAnchorOf(entry: unknown): WidgetAnchor | undefined {
   return { h: a['h'] as WidgetAnchor['h'], v: a['v'] as WidgetAnchor['v'], x, y }
 }
 
+/** Debug hotkey of a HUD widget (`debugHotkey` on the widget frame's entry): a DirectInput scan code 1..255; 0 when absent or invalid (= off). */
+export function debugHotkeyOf(entry: unknown): number {
+  const k = (entry as { debugHotkey?: unknown } | undefined)?.debugHotkey
+  return isScanCode(k) ? k : 0
+}
+const isScanCode = (k: unknown): k is number => typeof k === 'number' && Number.isInteger(k) && k >= 1 && k <= 255
+
 /** A text layer whose overlay role is `text` is settable at runtime (a HUD widget gets AS2 `setTexts` and Papyrus `SetTexts`/`Show`/`Hide`). */
 export const isSettableText = (entry: unknown): boolean => (entry as { role?: unknown } | undefined)?.role === 'text'
 
@@ -56,6 +63,7 @@ export interface NodeOverlayPatch {
   role?: string | null
   instanceName?: string | null
   anchor?: WidgetAnchor | null
+  debugHotkey?: number | null
 }
 
 /** Immutable edit of one node's overlay entry. Unknown keys of the entry and of the document survive; an entry left empty is removed. */
@@ -86,6 +94,8 @@ export function overlayProblems(doc: unknown): string[] {
       if (name !== undefined && (typeof name !== 'string' || instanceNameError(name))) out.push(`overlay.nodes.${id}.instanceName: not a valid identifier`)
       const role = (n as Record<string, unknown>)['role']
       if (role !== undefined && typeof role !== 'string') out.push(`overlay.nodes.${id}.role: not a string`)
+      const key = (n as Record<string, unknown>)['debugHotkey']
+      if (key !== undefined && !isScanCode(key)) out.push(`overlay.nodes.${id}.debugHotkey: needs an integer scan code 1..255`)
       if ((n as Record<string, unknown>)['anchor'] !== undefined && !widgetAnchorOf(n)) out.push(`overlay.nodes.${id}.anchor: needs h (left/center/right), v (top/center/bottom) and numeric x/y`)
     }
   }
