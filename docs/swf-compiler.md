@@ -8,7 +8,7 @@ compileSwf(ir, { modId, buildDir, ffdec, outPath?, instanceNames? }) -> { swfPat
 
 `LintIssue = { severity: 'error' | 'warning' | 'info', code, message, nodeId }`. Errors block export (the SWF is still written, minus the offending node; Deploy's export gate refuses it, `docs/deploy.md`). Layout lint added for the gate: `node-off-stage` (warning: a visible layer whose box is entirely outside the frame, one per subtree; rotated layers are not checked), `text-zero-size` (warning: a text box with no width or height), `instance-name-duplicate` (warning: an overlay instance name a sibling already uses, so this clip compiles as `<name>_2`; clashes of plain layer names stay silent). Stages `codegen`, `swf`, `ffdec` are measured with `createStageTimer`; `ffdec` is absent when there is nothing for FFDec to fill in.
 
-**Dependency note.** `@inkwell-ui/spec` is `file:../Inkwell-Spec`, a sibling checkout (branch `feat/swf-per-frame`, specVersion 3). If its `dist` is missing or stale, run `yarn build` there, then `yarn install --force` here. The compiler imports types only; the CLI script validates with the spec's Zod `Swf`.
+**Dependency note.** `@inkwell-ui/spec` is `link:../Inkwell-Spec`, a link to the sibling checkout (specVersion 4). If its `dist` is missing or stale, run `yarn build` there; nothing needs reinstalling here. The compiler imports types only; the CLI script validates with the spec's Zod `Swf`.
 
 ## Pipeline
 

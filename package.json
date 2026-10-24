@@ -17,7 +17,7 @@
     "deploy:widget": "tsx scripts/deploy-widget.ts"
   },
   "dependencies": {
-    "@inkwell-ui/spec": "file:../Inkwell-Spec",
+    "@inkwell-ui/spec": "link:../Inkwell-Spec",
     "@ruffle-rs/ruffle": "0.7.1",
     "lucide-react": "1.54.0",
     "lz4js": "0.2.0",

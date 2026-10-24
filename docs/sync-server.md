@@ -48,7 +48,7 @@ The wrapper jar comes from `yarn build:wrapper`. If FFDec or the jar is missing 
 
 ## Manual end-to-end test (Figma desktop)
 
-1. In `Inkwell-Spec` run `yarn build`; in `Inkwell-Figma` run `yarn install --force` (re-copies the spec), then `yarn build`.
+1. In `Inkwell-Spec` run `yarn build`; in `Inkwell-Figma` run `yarn build` (the spec is linked, not copied).
 2. Here: `yarn build:wrapper` once, then `yarn dev` (optionally with `INKWELL_PROJECT=samples/hud-minimal`).
 3. The Figma dot in the top bar shows the connection state, port and session token (click Copy); the SWF switcher lists the SWFs (orphaned ones under `Retained / Orphaned SWFs`) and the Navigator lists unreachable layers.
 4. In Figma desktop: Plugins > Development > Import plugin from manifest > `Inkwell-Figma/plugin/manifest.json`. Run it, paste the token, connect.
