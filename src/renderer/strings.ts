@@ -474,7 +474,7 @@ export const strings = {
     gateWarnings: (n: number) => `${n} warning(s): they deploy and are listed here`,
     strictOn: 'Strict Mode is on: warnings count as errors.',
     strictOff: 'Strict Mode is off: warnings do not block.',
-    lintSummary: (e: number, w: number) => `Lint now: ${e} error(s), ${w} warning(s)${e ? '. Errors block the deploy' : ''}`,
+    lintSummary: (e: number, w: number) => `Lint of the last builds: ${e} error(s), ${w} warning(s)${e ? '. Errors block the deploy' : ''}`,
     selectLayer: (name: string) => `Select ${name}`,
     project: 'Project',
     running: 'Deploying...',

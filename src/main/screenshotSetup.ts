@@ -10,7 +10,8 @@ const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms)
  * Debug only (`INKWELL_SHOTS_SETUP=1` with `INKWELL_SHOTS_DIR` and `INKWELL_SHOTS_PROJECT=<scratch project copy>`): the Settings view with this machine's real
  * results (plus the on-request benchmark), the Deploy dropdown, the first-deploy confirmation, and the real deploy with its toast and status bar item.
  * It really deploys to the target the settings name (INKWELL_MO2_MODS + the project name), so point those at a folder you may overwrite.
- * States: n-doctor, o-doctor-bottom, p-doctor-benchmark, p2-doctor-cache, q-deploy-menu, r-deploy-confirm, s-deploy-done.
+ * States: n-doctor, o-doctor-bottom, p-doctor-benchmark, p2-doctor-cache, q-deploy-menu, r-deploy-confirm, s-deploy-done (or r-deploy-blocked
+ * and exit when the export gate blocks: give it a project with a lint error).
  */
 export async function runSetupShots(o: { outDir: string; projectDir: string; win: () => BrowserWindow | undefined; session: ReturnType<typeof createSession> }): Promise<void> {
   await mkdir(o.outDir, { recursive: true })
@@ -71,6 +72,13 @@ export async function runSetupShots(o: { outDir: string; projectDir: string; win
   await snap('q-deploy-menu')
   await must('[data-testid="deploy-mo2Mod"]')
   await until('confirmation', () => has('[data-testid="deploy-confirm"]'), 120000)
+  if (await has('[data-testid="deploy-blocked"]')) { // a project with lint errors: the export gate dialog, Deploy disabled; nothing is written
+    await snap('r-deploy-blocked')
+    console.log('[shots] blocked:', await js<string>(`document.querySelector('[data-testid="deploy-confirm"]').innerText.replace(/\\n/g, ' | ')`))
+    console.log('[shots] status:', await js<string>(`document.querySelector('[data-testid="deploy-status"]')?.innerText ?? '(none)'`))
+    app.exit(0)
+    return
+  }
   await snap('r-deploy-confirm')
   await must('[data-testid="deploy-confirm-ok"]')
   await until('toast', () => has('[data-testid="toast"]'), 60000)
