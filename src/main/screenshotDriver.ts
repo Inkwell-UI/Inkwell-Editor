@@ -1,5 +1,5 @@
 import { app, type BrowserWindow } from 'electron'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { createSession } from './session'
 
@@ -51,6 +51,7 @@ export async function runShots(o: {
   await snap('a-start') // no project open yet
 
   if (!o.projectDir) throw new Error('INKWELL_SHOTS_PROJECT is not set')
+  if (process.env['INKWELL_SHOTS_SNAPSHOT']) return snapshotShots(o.projectDir)
   const r = await session.open(o.projectDir)
   if (!r.ok) throw new Error(`open failed: ${JSON.stringify(r)}`)
   session.debug.seedBuilds()
@@ -125,4 +126,47 @@ export async function runShots(o: {
   await snap('h-detached-main')
 
   app.exit(0)
+
+  /**
+   * INKWELL_SHOTS_SNAPSHOT=1: the Figma snapshot states with no plugin connected. Deletes the scratch project's figma/snapshot.json first (no-snapshot
+   * state), builds (which writes it), then edits one ir.json and reopens (stale). l1-no-snapshot, l2-figma-no-snapshot, l3-snapshot, l4-figma-snapshot, l5-figma-stale.
+   */
+  async function snapshotShots(dir: string): Promise<void> {
+    const snapFile = join(dir, 'figma', 'snapshot.json')
+    await rm(snapFile, { force: true })
+    const popover = async (name: string): Promise<void> => {
+      await click('[data-testid="dot-figma"]')
+      await until('figma popover', () => js<boolean>(`!!document.querySelector('[data-testid="snapshot-facts"]')`))
+      await snap(name)
+      console.log(`[shots] ${name}:`, await js<string>(`document.querySelector('[data-testid="dot-figma"]').getAttribute('aria-label') + ' | ' + document.querySelector('[data-testid="snapshot-facts"]').innerText.replace(/\\n/g, ' | ')`))
+      await js(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`)
+      await wait(300)
+      if (await js<boolean>(`!!document.querySelector('[data-testid="snapshot-facts"]')`)) await click('[data-testid="dot-figma"]') // Escape did not close it
+      await wait(300)
+    }
+    const banner = (): Promise<string> => js<string>(`(() => { const b = document.querySelector('[data-testid="snapshot-banner"]'); return b ? b.dataset.snapshot + ': ' + b.innerText : '(no banner)' })()`)
+    const r = await session.open(dir)
+    if (!r.ok) throw new Error(`open failed: ${JSON.stringify(r)}`)
+    await wait(2500)
+    await snap('l1-no-snapshot')
+    console.log('[shots] banner:', await banner())
+    await popover('l2-figma-no-snapshot')
+    session.debug.seedBuilds() // offline builds from ir.json; the pipeline writes figma/snapshot.json
+    await until('snapshot written', () => readFile(snapFile).then(() => true, () => false), 90000)
+    await until('builds', () => session.getPreviews().length >= 1, 90000)
+    await wait(4000)
+    await snap('l3-snapshot')
+    console.log('[shots] banner:', await banner())
+    await popover('l4-figma-snapshot')
+    const irFile = join(dir, 'swfs', 'hud', 'ir.json')
+    const ir = JSON.parse(await readFile(irFile, 'utf8')) as { nodes: Record<string, { name: string }> }
+    const first = Object.values(ir.nodes)[1]!
+    first.name = `${first.name} (edited by hand)`
+    await writeFile(irFile, JSON.stringify(ir, null, 2))
+    const r2 = await session.open(dir)
+    if (!r2.ok) throw new Error(`reopen failed: ${JSON.stringify(r2)}`)
+    await wait(2500)
+    await popover('l5-figma-stale')
+    app.exit(0)
+  }
 }

@@ -321,7 +321,7 @@ export const strings = {
     snapshotTitle: 'Figma snapshot',
     snapshotNone: 'None yet: it is written on the first sync (figma/snapshot.json).',
     snapshotSaved: (time: string, swfs: number) => `figma/snapshot.json, ${swfs} SWF(s), last change ${time}`,
-    snapshotFrom: (plugin?: string, fileKey?: string) => `From plugin ${plugin ?? 'unknown'}${fileKey ? `, file ${fileKey}` : ''}`,
+    snapshotFrom: (plugin?: string, fileKey?: string) => (plugin || fileKey ? `From plugin ${plugin ?? '?'}${fileKey ? `, Figma file ${fileKey}` : ''}` : 'No plugin recorded yet (it is recorded on the next sync)'),
     snapshotStale: (names: string[]) => `Changed outside a sync since the snapshot: ${names.join(', ')}. Builds use ir.json; the next sync from Figma brings it back in line.`,
     snapshotBroken: (e: string) => `${e} Builds use ir.json; the next sync rewrites it.`,
     gameStatus: 'Not connected (dev mode arrives with the runtime)',
