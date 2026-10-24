@@ -157,7 +157,10 @@ describe.skipIf(!can)('real deploy of samples/hud-widget into a temp folder', ()
       // same input again: byte-identical output, nothing rewritten
       const r2 = await prepareDeploy(input)
       if (!r2.ok) throw new Error(r2.error)
-      expect(await commitDeploy(input, r2.prepared)).toMatchObject({ ok: true, written: 0, removed: [] })
+      // .pex files embed the compile time, so a second compile in another second rewrites them; everything else must be untouched
+      const again = await commitDeploy(input, r2.prepared)
+      expect(again).toMatchObject({ ok: true, removed: [] })
+      expect(again.ok && again.written).toBeLessThanOrEqual(rels.filter((f) => f.endsWith('.pex')).length)
     } finally {
       ffdec.stop()
     }
