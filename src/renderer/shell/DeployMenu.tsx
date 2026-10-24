@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown, FolderCog, Rocket } from 'lucide-react'
-import type { DeployTargetInfo } from '../../shared/deploy'
+import type { DeployLintItem, DeployTargetInfo } from '../../shared/deploy'
 import { inkwell } from '../hooks/api'
-import { useActiveSwf, useProject } from '../hooks/useProject'
+import { useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
+import { countSeverities } from '../model/lintRows'
+import { useProjectStore } from '../state/projectStore'
+import { useSelectionStore } from '../state/selectionStore'
 import { useSyncState } from '../hooks/useSyncState'
 import { useDeployStore } from '../state/deployStore'
 import { useDialogStore } from '../state/dialogStore'
@@ -22,6 +25,7 @@ function Targets({ close }: { close(): void }) {
   // the settings may have changed while the Setup dialog was open: ask every time the menu opens
   useEffect(() => void inkwell?.getDeployTargets().then(setTargets), [project?.dir])
   const hasCustom = project?.swfs.some((s) => !s.orphaned && s.ir.target.kind === 'customMenu')
+  const lint = countSeverities(useDockRows()) // what the dock shows now; the deploy itself is gated in main on the deployed SWFs
   return (
     <div className="details deploy-menu">
       <h3>{strings.deploy.targetsTitle}</h3>
@@ -57,6 +61,9 @@ function Targets({ close }: { close(): void }) {
         <label className="check"><input type="radio" name="deploy-scope" checked={scope === 'active'} disabled={!swf} onChange={() => setScope('active')} /> {strings.deploy.scopeActive(swf?.name)}</label>
       </fieldset>
       {hasCustom && <p className="dim">{strings.deploy.custom}</p>}
+      <p className={lint.errors ? 'tone-error' : 'dim'} data-testid="deploy-lint-summary">
+        {strings.deploy.lintSummary(lint.errors, lint.warnings)}. {project?.strictMode ? strings.deploy.strictOn : strings.deploy.strictOff}
+      </p>
       <div className="row-actions">
         <Btn icon={FolderCog} onClick={() => { close(); show('settings') }} testId="deploy-folders">{strings.deploy.setFolders}</Btn>
       </div>
@@ -90,34 +97,84 @@ export function DeployMenu() {
   )
 }
 
-/** First deploy to a folder: shows the exact path and every file before anything is written. */
+/** Gate rows; a row with a node closes the dialog (cancelling the deploy) and selects that layer, like a Lint dock row. */
+function GateList({ items, tone, testId }: { items: DeployLintItem[]; tone: string; testId: string }) {
+  const cancel = useDeployStore((s) => s.cancel)
+  const fromLint = useSelectionStore((s) => s.selectFromLint)
+  const project = useProject()
+  const pick = (l: DeployLintItem, i: number): void => {
+    const target = project?.swfs.find((s) => s.name === l.swf)
+    cancel()
+    if (target) useProjectStore.getState().setActiveSwf(target.id)
+    fromLint({ key: `deploy|${i}`, nodeId: l.nodeId! })
+  }
+  return (
+    <ul className="plain" data-testid={testId}>
+      {items.map((l, i) => (
+        <li key={i} className={tone}>
+          <span className="mono">{l.code}</span>{' '}
+          {l.nodeId ? (
+            <button type="button" className="row-link" onClick={() => pick(l, i)} title={strings.deploy.selectLayer(l.layerName ?? l.nodeId)}>
+              {l.swf ? `${l.swf} / ` : ''}{l.layerName ?? l.nodeId} <span className="dim mono">({l.nodeId})</span>
+            </button>
+          ) : <span className="dim">{l.swf ?? strings.deploy.project}</span>}
+          : {l.message}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/**
+ * First deploy to a folder: the exact path and every file before anything is written. Also shown on every deploy the export gate blocks:
+ * then it lists the blocking issues and Deploy is disabled (main refuses the commit too).
+ */
 export function ConfirmDialog() {
   const c = useDeployStore((s) => s.confirm)
   const accept = useDeployStore((s) => s.accept)
   const cancel = useDeployStore((s) => s.cancel)
   if (!c) return null
   const p = c.prepared
-  const warnings = p.lint.filter((l) => l.severity !== 'info')
+  const g = p.gate
+  const blocked = !g.ok
+  const notices = p.lint.filter((l) => l.severity !== 'info')
   return (
-    <Dialog title={strings.deploy.confirmTitle} onClose={cancel}>
+    <Dialog title={blocked ? strings.deploy.blockedTitle : strings.deploy.confirmTitle} onClose={cancel}>
       <div data-testid="deploy-confirm">
-        <p>{strings.deploy.confirmBody}</p>
-        <p className="mono deploy-path" data-testid="deploy-confirm-path">{p.root}</p>
-        <p><strong>{strings.deploy.confirmFiles(p.files.length)}</strong></p>
-        <ul className="plain file-list mono" aria-label={strings.deploy.confirmFiles(p.files.length)}>
-          {p.files.map((f) => <li key={f.rel}>{f.rel} <span className="dim">{f.size} B</span></li>)}
-        </ul>
-        {p.removed.length > 0 && <p>{strings.deploy.confirmRemoved(p.removed.length)}</p>}
-        {warnings.length > 0 && (
+        {blocked && (
           <>
-            <h3>{strings.deploy.warnings}</h3>
-            <ul className="plain">{warnings.map((l, i) => <li key={i} className="tone-warn"><span className="mono">{l.code}</span>: {l.message}</li>)}</ul>
+            <p className="tone-error" data-testid="deploy-blocked"><strong>{strings.deploy.blockedBody(g.blocking.length)}</strong></p>
+            <GateList items={g.blocking} tone="tone-error" testId="deploy-blocking" />
+          </>
+        )}
+        <p className="dim" data-testid="deploy-strict">{g.strict ? strings.deploy.strictOn : strings.deploy.strictOff}</p>
+        <p>{blocked ? strings.deploy.targetLabel : strings.deploy.confirmBody}</p>
+        <p className="mono deploy-path" data-testid="deploy-confirm-path">{p.root}</p>
+        {!blocked && ( // a blocked deploy's file list is partial (blocked SWFs produce none) and nothing is written
+          <>
+            <p><strong>{strings.deploy.confirmFiles(p.files.length)}</strong></p>
+            <ul className="plain file-list mono" aria-label={strings.deploy.confirmFiles(p.files.length)}>
+              {p.files.map((f) => <li key={f.rel}>{f.rel} <span className="dim">{f.size} B</span></li>)}
+            </ul>
+            {p.removed.length > 0 && <p>{strings.deploy.confirmRemoved(p.removed.length)}</p>}
+          </>
+        )}
+        {g.warnings.length > 0 && (
+          <>
+            <h3>{strings.deploy.gateWarnings(g.warnings.length)}</h3>
+            <GateList items={g.warnings} tone="tone-warn" testId="deploy-warnings" />
+          </>
+        )}
+        {notices.length > 0 && (
+          <>
+            <h3>{strings.deploy.notices}</h3>
+            <ul className="plain">{notices.map((l, i) => <li key={i} className="tone-warn"><span className="mono">{l.code}</span>: {l.message}</li>)}</ul>
           </>
         )}
         {p.notes.map((n, i) => <p key={i} className="dim">{n}</p>)}
         <p className="dim">{strings.deploy.confirmNote}</p>
         <div className="row-actions">
-          <Btn variant="primary" onClick={() => void accept()} testId="deploy-confirm-ok">{strings.deploy.confirm}</Btn>
+          <Btn variant="primary" onClick={() => void accept()} reason={blocked ? strings.deploy.blockedReason(g.blocking.length) : undefined} testId="deploy-confirm-ok">{strings.deploy.confirm}</Btn>
           <Btn onClick={cancel} testId="deploy-confirm-cancel">{strings.deploy.cancel}</Btn>
         </div>
       </div>

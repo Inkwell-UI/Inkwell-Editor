@@ -28,7 +28,7 @@ export const useDeployStore = create<DeployStore>()((set, get) => {
   const commit = async (p: Prepared): Promise<void> => {
     const r = await inkwell!.commitDeploy(p.token)
     if (r.ok) {
-      const lint = p.lint.filter((l) => l.severity !== 'info')
+      const lint = [...p.gate.warnings, ...p.lint.filter((l) => l.severity !== 'info')]
       toast().push({
         tone: lint.length ? 'info' : 'ok',
         title: strings.deploy.toastDone,
@@ -55,7 +55,7 @@ export const useDeployStore = create<DeployStore>()((set, get) => {
     },
     async accept() {
       const c = get().confirm
-      if (!c || !inkwell) return
+      if (!c || !inkwell || !c.prepared.gate.ok) return // blocked: the button is disabled and main refuses the commit anyway
       set({ confirm: null, busy: true })
       try {
         await commit(c.prepared)

@@ -1,9 +1,12 @@
 import { Check } from 'lucide-react'
+import { useDockRows } from '../hooks/useProject'
 import { useUndo } from '../hooks/useUndo'
+import { countSeverities } from '../model/lintRows'
 import { useSyncState } from '../hooks/useSyncState'
 import { specLabel, timingLine } from '../model/statusBar'
 import { useDialogStore } from '../state/dialogStore'
 import { useTimingStore } from '../state/timingStore'
+import { useWorkspaceStore } from '../state/workspaceStore'
 import { formatMs } from '../model/statusBar'
 import { strings } from '../strings'
 import { Popover } from '../ui/Popover'
@@ -34,6 +37,7 @@ export function StatusBar() {
   const ffdec = sync?.ffdec
   const undo = useUndo()
   const show = useDialogStore((s) => s.show)
+  const lint = countSeverities(useDockRows())
   return (
     <footer className="statusbar" aria-label={strings.status.label}>
       <span className="item" title={strings.status.specTip}><Check size={13} aria-hidden="true" /> {specLabel()}</span>
@@ -81,6 +85,9 @@ export function StatusBar() {
       ) : (
         <span className="item" data-testid="ffdec">{strings.status.ffdec(ffdec?.status)}</span>
       )}
+      <button type="button" className={`item item-button${lint.errors ? ' is-error' : ''}`} onClick={() => useWorkspaceStore.getState().showDockTab('lintBudget')} title={strings.status.lintTip} data-testid="lint-counts">
+        {strings.status.lint(lint.errors, lint.warnings)}
+      </button>
       {sync?.deploy && <DeployItem />}
       <span className="item">{strings.status.packs}</span>
       <span className="spacer" />
