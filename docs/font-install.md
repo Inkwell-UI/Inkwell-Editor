@@ -19,8 +19,9 @@ Settings view > **Fonts for Figma** > Install Skyrim fonts... > confirmation dia
 | Everywhere / Medium | `$EverywhereMediumFont`, `$StartMenuFont` | Futura Condensed |
 | Everywhere / Bold | `$EverywhereBoldFont` | Futura Condensed, bold flag |
 | Dragon, Handwritten, Falmer, Dwemer, Daedric, MageScript, SkyrimSymbols / Regular | `$<Family>Font` (Handwritten also `$HandwrittenBold`) | same names |
+| SkyrimBooks / Regular | `$SkyrimBooks` (no `Font` suffix) | SkyrimBooks_Gaelic |
 
-Not installed: Consolas (`$ConsoleFont`, Microsoft's, Windows has it), controller-button, CClub and SkyrimBooks_Unreadable fonts, and SkyrimBooks_Gaelic (the spike installed it, but its alias `$SkyrimBooks` is not in the compiler's alias list, so a Figma layer using it would be `font-unmapped`). The table is `FIGMA_FACES` in `src/shared/fonts.ts`; the preview reads the same file names (`docs/preview-fonts.md`).
+Not installed: Consolas (`$ConsoleFont`, Microsoft's, Windows has it), controller-button, CClub and SkyrimBooks_Unreadable fonts. The table is `FIGMA_FACES` in `src/shared/fonts.ts`; the preview reads the same file names (`docs/preview-fonts.md`).
 
 ## Manifest and Remove
 

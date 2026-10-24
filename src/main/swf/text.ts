@@ -12,26 +12,21 @@ export const NATURAL_LINE_HEIGHT = 1.2
 /** Aliases that exist in vanilla's fontconfig.txt (names only; nothing from the file is shipped). */
 export const KNOWN_ALIASES: ReadonlySet<string> = new Set([
   '$ConsoleFont', '$StartMenuFont', '$DialogueFont', '$EverywhereFont', '$EverywhereBoldFont', '$EverywhereMediumFont', '$DragonFont',
-  '$HandwrittenFont', '$FalmerFont', '$DwemerFont', '$DaedricFont', '$MageScriptFont', '$SkyrimSymbolsFont'
+  '$HandwrittenFont', '$FalmerFont', '$DwemerFont', '$DaedricFont', '$MageScriptFont', '$SkyrimSymbolsFont', '$SkyrimBooks'
 ])
 
 /**
  * `Everywhere / Medium / 18` -> `$EverywhereMediumFont` (a trailing numeric segment is the size preset and is dropped).
- * A raw `$EverywhereMediumFont` is accepted. Anything not in KNOWN_ALIASES is unmapped.
+ * A raw `$EverywhereMediumFont` is accepted. Anything not in KNOWN_ALIASES is unmapped. `SkyrimBooks` is the one alias without the `Font` suffix.
  */
 export function fontAlias(name: string): string | undefined {
   const t = name.trim()
   if (t.startsWith('$')) return KNOWN_ALIASES.has(t) ? t : undefined
   const words = t.split('/').map((s) => s.trim().replace(/\s+/g, '')).filter(Boolean)
   if (words.length && /^\d+(\.\d+)?$/.test(words.at(-1)!)) words.pop()
-  const alias = '$' + words.join('') + 'Font'
-  if (words.length && KNOWN_ALIASES.has(alias)) return alias
+  const known = (w: string[]): string | undefined => [`$${w.join('')}Font`, `$${w.join('')}`].find((a) => w.length && KNOWN_ALIASES.has(a))
   // the fonts extracted from the game are named Everywhere/Light and <Face>/Regular: Light is $EverywhereFont, Regular is the face's only style
-  if (words.length > 1 && /^(light|regular)$/i.test(words.at(-1)!)) {
-    const base = '$' + words.slice(0, -1).join('') + 'Font'
-    if (KNOWN_ALIASES.has(base)) return base
-  }
-  return undefined
+  return known(words) ?? (words.length > 1 && /^(light|regular)$/i.test(words.at(-1)!) ? known(words.slice(0, -1)) : undefined)
 }
 
 const BOLD = /bold|black|heavy/i

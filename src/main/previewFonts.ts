@@ -20,8 +20,8 @@ export interface FontFace {
 const SANS = 'BarlowCondensed-Regular.ttf'
 /** Alias -> face table. Measured lookalikes: docs/preview-fonts.md. */
 export const FACES: readonly FontFace[] = [
-  { aliases: ['$EverywhereFont'], label: 'Everywhere Light', installed: 'Inkwell-Everywhere-Light.ttf', bundled: 'BarlowCondensed-Light.ttf' },
-  { aliases: ['$EverywhereMediumFont', '$StartMenuFont', '$DialogueFont'], label: 'Everywhere Medium', installed: 'Inkwell-Everywhere-Medium.ttf', bundled: 'BarlowCondensed-Regular.ttf' },
+  { aliases: ['$EverywhereFont', '$DialogueFont'], label: 'Everywhere Light', installed: 'Inkwell-Everywhere-Light.ttf', bundled: 'BarlowCondensed-Light.ttf' },
+  { aliases: ['$EverywhereMediumFont', '$StartMenuFont'], label: 'Everywhere Medium', installed: 'Inkwell-Everywhere-Medium.ttf', bundled: 'BarlowCondensed-Regular.ttf' },
   { aliases: ['$EverywhereBoldFont'], label: 'Everywhere Bold', installed: 'Inkwell-Everywhere-Bold.ttf', bundled: 'BarlowCondensed-Bold.ttf' },
   { aliases: ['$HandwrittenFont'], label: 'Handwritten', installed: 'Inkwell-Handwritten-Regular.ttf', bundled: SANS, generic: true },
   { aliases: ['$DragonFont'], label: 'Dragon', installed: 'Inkwell-Dragon-Regular.ttf', bundled: SANS, generic: true },
@@ -30,6 +30,7 @@ export const FACES: readonly FontFace[] = [
   { aliases: ['$DaedricFont'], label: 'Daedric', installed: 'Inkwell-Daedric-Regular.ttf', bundled: SANS, generic: true },
   { aliases: ['$MageScriptFont'], label: 'MageScript', installed: 'Inkwell-MageScript-Regular.ttf', bundled: SANS, generic: true },
   { aliases: ['$SkyrimSymbolsFont'], label: 'Skyrim Symbols', installed: 'Inkwell-SkyrimSymbols-Regular.ttf', bundled: SANS, generic: true },
+  { aliases: ['$SkyrimBooks'], label: 'Skyrim Books', installed: 'Inkwell-SkyrimBooks-Regular.ttf', bundled: SANS, generic: true },
   { aliases: ['$ConsoleFont'], label: 'Console', bundled: 'ShareTechMono-Regular.ttf', generic: true }
 ]
 

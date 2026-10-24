@@ -35,6 +35,8 @@ describe('preview font selection', () => {
     const s = resolvePreviewFonts(opts)
     expect(s.nameFor('$EverywhereMediumFont')).toBe('Everywhere Medium')
     expect(s.nameFor('$StartMenuFont')).toBe('Everywhere Medium') // shares the face
+    expect(s.nameFor('$DialogueFont')).toBe(s.nameFor('$EverywhereFont')) // fontconfig: Futura Condensed Light
+    expect(s.approximated(['$SkyrimBooks'])).toEqual(['Skyrim Books']) // no lookalike bundled
     expect(s.nameFor('$DragonFont')).toBe('Dragon Regular')
     expect(s.nameFor('$EverywhereBoldFont')).toBe('Bundled BarlowCondensed-Bold.ttf')
     expect(s.nameFor('$ConsoleFont')).toBe('Bundled ShareTechMono-Regular.ttf')

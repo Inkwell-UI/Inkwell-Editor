@@ -12,7 +12,7 @@ export interface FigmaFace {
 
 /**
  * Faces of Interface/fonts_en.swf (Skyrim 1.7.104) the tool installs, aliases per vanilla fontconfig.txt. Skipped: Consolas (Microsoft's), the
- * controller/CClub/Unreadable fonts, and SkyrimBooks_Gaelic (its alias `$SkyrimBooks` is not one the compiler knows, so a Figma layer using it would be unmapped).
+ * controller/CClub/Unreadable fonts. SkyrimBooks_Gaelic is `$SkyrimBooks` (the one alias without the `Font` suffix).
  */
 export const FIGMA_FACES: readonly FigmaFace[] = [
   { raw: { name: 'Futura CondensedLight', bold: false }, family: 'Everywhere', style: 'Light', weight: 300, aliases: ['$EverywhereFont', '$DialogueFont'] },
@@ -24,7 +24,8 @@ export const FIGMA_FACES: readonly FigmaFace[] = [
   { raw: { name: 'Dwemer', bold: false }, family: 'Dwemer', style: 'Regular', weight: 400, aliases: ['$DwemerFont'] },
   { raw: { name: 'Daedric', bold: false }, family: 'Daedric', style: 'Regular', weight: 400, aliases: ['$DaedricFont'] },
   { raw: { name: 'Mage Script', bold: false }, family: 'MageScript', style: 'Regular', weight: 400, aliases: ['$MageScriptFont'] },
-  { raw: { name: 'SkyrimSymbols', bold: false }, family: 'SkyrimSymbols', style: 'Regular', weight: 400, aliases: ['$SkyrimSymbolsFont'] }
+  { raw: { name: 'SkyrimSymbols', bold: false }, family: 'SkyrimSymbols', style: 'Regular', weight: 400, aliases: ['$SkyrimSymbolsFont'] },
+  { raw: { name: 'SkyrimBooks_Gaelic', bold: false }, family: 'SkyrimBooks', style: 'Regular', weight: 400, aliases: ['$SkyrimBooks'] }
 ]
 
 /** PostScript-style name, also the file stem: `Everywhere-Light`. The installed file is `Inkwell-<psName>.ttf` (what previewFonts.ts looks for). */
