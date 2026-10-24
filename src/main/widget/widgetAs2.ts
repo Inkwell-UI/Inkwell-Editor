@@ -8,8 +8,10 @@ export const CONTRACT_METHODS = [
 
 /**
  * AS2 class `mods.<modId>.<cls>` whose `install(w)` gives the clip `w` the SkyUI widget contract.
- * Proven shape (0.0 spike, SkyUI 5.2 and 6.11): positions arrive in HUD space (hMin..hMax, 0..1280 x 0..720 on 16:9),
- * the anchor shifts the holder clip (the widget's parent) by the widget's own size.
+ * Proven shape (0.0 spike, SkyUI 5.2 and 6.11): positions arrive in HUD space (0..1280 x 0..720 on 16:9) and are mapped onto
+ * -hMin..hMax / -vMin..vMax (hMin/vMin = the safe-rect origin), the anchor shifts the holder clip (the widget's parent) by the
+ * widget's own size: X/Y is the anchored edge, as in SkyUI's own WidgetBase. Until 2026-10-24 the lerp ran backwards (target and
+ * source swapped), which moved every widget by twice the safe-rect inset (about +33/+34 HUD px, measured in game).
  */
 export function widgetContractClass(modId: string, cls: string, texts: readonly SettableText[] = []): string {
   const popup = texts.length > 0
@@ -28,10 +30,11 @@ class mods.${modId}.${cls} {
             } catch (e) {
             }
         };
+        // lerp(targetMin, targetMax, sourceMin, sourceMax, v): v in source -> target, SkyUI's argument order (Shared.GlobalFunc.Lerp)
         w.lerp = function (a, b, c, d, v) {
-            return c + (d - c) * (v - a) / (b - a);
+            return a + (v - c) / (d - c) * (b - a);
         };
-        // HUD-space position -> screen, then shift the holder for the anchor (left/top = 0, right/bottom = -size, center = -size/2)
+        // HUD position (0..1280 x 0..720) -> the container's space (-hMin..hMax, it sits at the safe-rect origin), then shift the holder for the anchor (left/top = 0, right/bottom = -size, center = -size/2)
         w.updatePosition = function () {
             var m = this._hudMetrics;
             var h = this._parent;

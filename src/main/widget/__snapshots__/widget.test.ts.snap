@@ -16,10 +16,11 @@ class mods.WidgetMod.HudWidget {
             } catch (e) {
             }
         };
+        // lerp(targetMin, targetMax, sourceMin, sourceMax, v): v in source -> target, SkyUI's argument order (Shared.GlobalFunc.Lerp)
         w.lerp = function (a, b, c, d, v) {
-            return c + (d - c) * (v - a) / (b - a);
+            return a + (v - c) / (d - c) * (b - a);
         };
-        // HUD-space position -> screen, then shift the holder for the anchor (left/top = 0, right/bottom = -size, center = -size/2)
+        // HUD position (0..1280 x 0..720) -> the container's space (-hMin..hMax, it sits at the safe-rect origin), then shift the holder for the anchor (left/top = 0, right/bottom = -size, center = -size/2)
         w.updatePosition = function () {
             var m = this._hudMetrics;
             var h = this._parent;

@@ -112,3 +112,54 @@ import { writeSwf } from '../swf/tags'
 function buildFile(tags: Buffer[]): Buffer {
   return writeSwf({ widthPx: 1280, heightPx: 720, tags })
 }
+
+// Runs the generated contract's own JS-compatible AS2 (install body) against a fake clip and SkyUI's HUD metrics.
+// SkyUI's WidgetLoader puts hMin/vMin = the safe-rect origin and hMax/vMax = the far safe edge (HUD-local), and the
+// widget container sits at that origin; s = 16.5 x 17 HUD px reproduces the owner's 1920x1080 screenshot of the old build.
+describe('contract placement on screen (simulated SkyUI)', () => {
+  const S = { x: 16.5, y: 17 }
+  const metrics = { hMin: S.x, hMax: 1280 - S.x, vMin: S.y, vMax: 720 - S.y }
+  const W = 274 // 411 design px x 2/3
+  const H = 133.333
+  const screenBox = (cls: string, p: { hAnchor: string; vAnchor: string; x: number; y: number }) => {
+    const body = cls.slice(cls.indexOf('static function install(w) {') + 'static function install(w) {'.length, cls.lastIndexOf('    }\n}'))
+    const w: Record<string, any> = { _width: W, _height: H, _parent: { _x: 0, _y: 0 } }
+    new Function('w', '_global', body)(w, {})
+    w.setHudMetrics(metrics)
+    w.setHAnchor(p.hAnchor)
+    w.setVAnchor(p.vAnchor)
+    w.setPositionX(p.x)
+    w.setPositionY(p.y)
+    const left = S.x + w._parent._x + w._x
+    const top = S.y + w._parent._y + w._y
+    return { left, top, right: left + W, bottom: top + H }
+  }
+  const cls = generate(ir(), { modId: 'WidgetMod', widget: true }).as2.find((f) => f.path.endsWith('HudWidget.as'))!.source
+
+  it('reproduces the measured bug with the old (swapped) lerp: left ~1023, top ~50', () => {
+    const old = cls.replace('return a + (v - c) / (d - c) * (b - a);', 'return c + (d - c) * (v - a) / (b - a);')
+    const b = screenBox(old, { hAnchor: 'right', vAnchor: 'top', x: 1264, y: 16 })
+    expect(b.left).toBeCloseTo(1023, 0)
+    expect(b.top).toBeCloseTo(50, 0)
+  })
+  it('top right with 24/24 design px margins: right edge 1264, top 16 (screen 1485..1896 x 24..224 at 1920x1080)', () => {
+    const b = screenBox(cls, widgetPlacement(ir(), { h: 'right', v: 'top', x: 24, y: 24 })!)
+    expect(b.right).toBeCloseTo(1264, 3)
+    expect(b.left).toBeCloseTo(990, 3)
+    expect(b.top).toBeCloseTo(16, 3)
+  })
+  it('every anchor puts the anchored edges on the margins', () => {
+    for (const h of ['left', 'center', 'right'] as const)
+      for (const v of ['top', 'center', 'bottom'] as const) {
+        const b = screenBox(cls, widgetPlacement(ir(), { h, v, x: 24, y: 24 })!)
+        const cx = (b.left + b.right) / 2
+        const cy = (b.top + b.bottom) / 2
+        if (h === 'left') expect(b.left).toBeCloseTo(16, 3)
+        if (h === 'right') expect(b.right).toBeCloseTo(1264, 3)
+        if (h === 'center') expect(cx).toBeCloseTo(656, 3)
+        if (v === 'top') expect(b.top).toBeCloseTo(16, 3)
+        if (v === 'bottom') expect(b.bottom).toBeCloseTo(704, 3)
+        if (v === 'center') expect(cy).toBeCloseTo(376, 3)
+      }
+  })
+})
