@@ -204,6 +204,17 @@ export const strings = {
     instanceNameHelp: (def: string) => `Empty uses the layer name: ${def}`,
     instanceNameErrors: { empty: 'Instance names cannot be empty', invalid: 'Use letters, digits and _ only; do not start with a digit' } as Record<string, string>,
     contractLine: 'Contract: No contract (custom menu)',
+    widgetAnchor: 'Screen position (SkyUI)',
+    widgetAnchorFigma: 'Figma position',
+    widgetAnchorNames: {
+      'top left': 'Top left', 'top center': 'Top center', 'top right': 'Top right',
+      'center left': 'Center left', 'center center': 'Center', 'center right': 'Center right',
+      'bottom left': 'Bottom left', 'bottom center': 'Bottom center', 'bottom right': 'Bottom right'
+    } as Record<string, string>,
+    widgetMarginX: 'Margin X (px)',
+    widgetMarginY: 'Margin Y (px)',
+    widgetAnchorHelp: 'Where SkyUI places this widget on the HUD. Margins are design px (1920x1080) inward from the anchored screen edges.',
+    widgetAnchorFigmaHelp: 'Uses the frame\'s Figma position and constraints.',
     disabledControls: [
       { label: 'Anchor override', value: 'Override Figma constraints', reason: `${BY} anchoring codegen` },
       { label: 'Loc key ($)', value: '$Inkwell_...', reason: `${BY} localization pipeline (0.4)` },

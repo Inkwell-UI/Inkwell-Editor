@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { CircleX, Lock, Redo2, TriangleAlert, Undo2, Info } from 'lucide-react'
 import type { Node } from '@inkwell-ui/spec'
 import { describeTextMapping } from '../../main/swf/text'
-import { ident, instanceNameError, ROLES } from '../../shared/overlay'
+import { widgetFrame } from '../../main/widget/frame'
+import { ident, instanceNameError, ROLES, widgetAnchorOf, type WidgetAnchor } from '../../shared/overlay'
 import type { FontRow } from '../../shared/syncState'
 import { useUndo } from '../hooks/useUndo'
 import { useActiveOverlay, useActiveSwf, useDockRows } from '../hooks/useProject'
@@ -58,6 +59,8 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
   const entry = (overlay?.nodes?.[node.id] ?? {}) as { role?: string; instanceName?: string }
   const font = sync?.fonts?.find((f) => f.swfName === swfName && f.nodeId === node.id)
   const undo = useUndo()
+  const swf = useActiveSwf()
+  const isWidgetFrame = swf?.ir.target.kind === 'hudWidget' && widgetFrame(swf.ir)?.frame.id === node.id
 
   return (
     <div className="insp">
@@ -115,8 +118,9 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         <p className="dim">{strings.insp.overlayNote}</p>
         <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
         <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
+        {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
         <p className="dim contract">{strings.insp.contractLine}</p>
-        {strings.insp.disabledControls.map((c) => (
+        {strings.insp.disabledControls.filter((c, i) => !(isWidgetFrame && i === 0)).map((c) => (
           <div key={c.label} className="field">
             <span className="field-label">{c.label}</span>
             <Btn label={c.label} reason={c.reason}>{c.value}</Btn>
@@ -204,6 +208,48 @@ function InstanceNameField({ swfId, nodeId, layerName, value }: { swfId: string;
         data-testid="instance-name"
       />
       <p id="instance-name-help" className={err ? 'tone-error' : 'dim'}>{err ? strings.insp.instanceNameErrors[err] : strings.insp.instanceNameHelp(def)}</p>
+    </div>
+  )
+}
+
+const POSITIONS = (['top', 'center', 'bottom'] as const).flatMap((v) => (['left', 'center', 'right'] as const).map((h) => ({ h, v })))
+const DEFAULT_MARGIN = 24
+
+/** Overlay `anchor` of a HUD widget's frame: one of 9 screen positions plus margins; "Figma position" removes the override. */
+function WidgetAnchorField({ swfId, nodeId, value }: { swfId: string; nodeId: string; value: WidgetAnchor | undefined }) {
+  const set = (a: WidgetAnchor | null): void => editNode(swfId, nodeId, { anchor: a })
+  const pick = (key: string): void => {
+    const p = POSITIONS.find((q) => `${q.v} ${q.h}` === key)
+    set(p ? { ...p, x: value?.x ?? DEFAULT_MARGIN, y: value?.y ?? DEFAULT_MARGIN } : null)
+  }
+  const margin = (k: 'x' | 'y', text: string): void => {
+    const n = Number(text)
+    if (value && text.trim() !== '' && Number.isFinite(n) && n !== value[k]) set({ ...value, [k]: n })
+  }
+  return (
+    <div className="field">
+      <label className="field-label" htmlFor="widget-anchor">{strings.insp.widgetAnchor}</label>
+      <select id="widget-anchor" value={value ? `${value.v} ${value.h}` : ''} onChange={(e) => pick(e.target.value)} aria-describedby="widget-anchor-help" data-testid="widget-anchor">
+        <option value="">{strings.insp.widgetAnchorFigma}</option>
+        {POSITIONS.map((p) => <option key={`${p.v} ${p.h}`} value={`${p.v} ${p.h}`}>{strings.insp.widgetAnchorNames[`${p.v} ${p.h}`]}</option>)}
+      </select>
+      {value && (
+        <div className="field-row">
+          {(['x', 'y'] as const).map((k) => (
+            <label key={`${k}${value[k]}`} className="field-label">
+              {k === 'x' ? strings.insp.widgetMarginX : strings.insp.widgetMarginY}
+              <input
+                type="number"
+                defaultValue={value[k]}
+                onBlur={(e) => margin(k, e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') margin(k, e.currentTarget.value) }}
+                data-testid={`widget-margin-${k}`}
+              />
+            </label>
+          ))}
+        </div>
+      )}
+      <p id="widget-anchor-help" className="dim">{value ? strings.insp.widgetAnchorHelp : strings.insp.widgetAnchorFigmaHelp}</p>
     </div>
   )
 }
