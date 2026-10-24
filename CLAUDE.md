@@ -20,6 +20,8 @@ Use yarn (not npm).
 - `yarn dev` also starts the Figma sync server (127.0.0.1:8787-8790, session token shown in the window). Env: `INKWELL_FFDEC`, `INKWELL_JAVA`, `INKWELL_PROJECT`. See `docs/sync-server.md` for the manual test with the Figma plugin. Each sync also keeps `figma/snapshot.json` (provenance and a hash tree root per SWF; builds use `ir.json` + `assets/`, so a project builds offline): `docs/sync-server.md`, Figma snapshot.
 - Spec package: `@inkwell-ui/spec` is `link:../Inkwell-Spec` (a link to the sibling checkout, not a copy; specVersion 4, protocol 3). After changing the Spec, run `yarn build` in `Inkwell-Spec`; nothing needs reinstalling here. The sibling checkout must exist next to this repo.
 
+**Next milestone:** the 0.2 (visual scripting) plan, with start-here instructions for a new session, is `PLAN-0.2.md` in the workspace root (`D:\Mods\Inkwell`, next to `Inkwell Design Spec.md`). Read it before starting 0.2 work.
+
 Run test + typecheck before finishing any change. `electron` downloads its binary in a postinstall; if `yarn dev` says "Electron uninstall", run `node node_modules/electron/install.js`.
 
 Layout: `src/main` (Electron main, `project/` = project.json + folder load/save), `src/renderer` (React; all UI strings in `strings.ts`, all colors in `theme.css`; panels, hooks, workspace layout and preview pieces: see `docs/ui-panels.md`; zones, workspaces, stores and the selection model: `docs/ui-shell.md`), `src/shared` (`product.ts` holds the product name; `timing.ts` stage timer). `samples/hud-minimal` is the golden sample project.
