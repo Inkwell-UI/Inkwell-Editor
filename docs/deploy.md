@@ -6,7 +6,7 @@ UX spec 4.1, MO2 only. The top bar `Deploy` dropdown lists targets with their ex
 
 - `MO2 mod folder`: `<mo2ModsDir>\<mod name>` (mod name setting, default the project name; no separators allowed). Without `mo2ModsDir`, an `mo2` preset in `project.json` (`deploy.path`) is the fallback.
 - `MO2 overwrite folder`: `mo2OverwriteDir`.
-- Both are set in the Setup Doctor's MO2 deploy folders row (or `INKWELL_MO2_MODS`, `INKWELL_MO2_OVERWRITE`). The dropdown also chooses the scope: all SWFs, or only the active one.
+- Both are set in the MO2 row of Settings (or `INKWELL_MO2_MODS`, `INKWELL_MO2_OVERWRITE`). The dropdown also chooses the scope: all SWFs, or only the active one.
 
 ## What is written (`planDeploy`, pure: project + settings -> file plan)
 

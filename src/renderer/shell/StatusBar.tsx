@@ -24,7 +24,7 @@ function DeployItem() {
 
 /**
  * Zone 6B (UX 4.6): spec version, last build with every stage and the Ruffle time (amber above one second edit-to-preview; click for the
- * last 50 builds), FFDec status (warm / cold / not found, linking to the Setup Doctor stub), packs, and which undo history is active.
+ * last 50 builds), FFDec status (warm / cold / not found, linking to the Settings view), packs, and which undo history is active.
  */
 export function StatusBar() {
   const sync = useSyncState()

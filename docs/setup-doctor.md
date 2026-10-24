@@ -1,6 +1,6 @@
-# Setup Doctor (`src/main/doctor`, `src/renderer/doctor/SetupDoctorPanel.tsx`)
+# Setup Doctor and Settings (`src/main/doctor`, `src/renderer/doctor/SetupDoctorPanel.tsx`, `src/renderer/shell/SettingsView.tsx`)
 
-UX spec 5.3. Inkwell bundles no Java, FFDec, Papyrus compiler, Creation Kit or game file; the Doctor shows what it found on this computer and offers a fix for every row. Open it from the top bar (stethoscope icon), the start screen, or the status bar link `FFDec: not found`. It opens by itself once, on the first launch where a check **fails** (`doctorSeen` in `settings.json`; warnings alone do not open it).
+UX spec 5.3. Inkwell bundles no Java, FFDec, Papyrus compiler, Creation Kit or game file; the Doctor shows what it found on this computer and offers a fix for every row. It lives in the Settings view: open it with Edit > Settings (Ctrl+,), the start screen's Setup button, the Deploy menu's folders button, or the status bar link `FFDec: not found`. It opens by itself once, on the first launch where a check **fails** (`doctorSeen` in `settings.json`; warnings alone do not open it).
 
 ## Checks (`doctor/checks.ts`, run in parallel by `runDoctor`, never throw)
 
@@ -29,7 +29,9 @@ Each returns `{ id, label, status: pass|warn|fail|skipped, detail, fix?, extra? 
 
 ## UI
 
-`SetupDoctorPanel` (a modal panel, not a layout panel, so it lives in `src/renderer/doctor/`) takes no props: `useSetupDoctor()` runs the checks on mount and on Re-run, exposes the two on-request tasks, and every row has a Lucide status icon (with an accessible name), the detail text, its settings and its fix buttons. Strings live in `strings.doctor`; colours come from the theme variables.
+**Settings view** (`shell/SettingsView.tsx`, `strings.settings`): replaces the workspace (or the start screen) while `dialogStore.open === 'settings'`; Esc or Back closes it. A search field at the top of a centred column filters the General section (Mirror Figma selection) and the check rows (title, detail, field labels, setting keys, environment variable names). The Edit menu entry is built in `main/index.ts` and reaches the renderer as `menu:settings` (`onOpenSettings`).
+
+`SetupDoctorPanel` (not a layout panel, so it lives in `src/renderer/doctor/`) takes an optional search `query` and otherwise no props: `useSetupDoctor()` runs the checks on mount and on Re-run, exposes the two on-request tasks, and every row has a Lucide status icon (with an accessible name), the detail text, its settings and its fix buttons. Strings live in `strings.doctor`; colours come from the theme variables.
 
 **Every path setting is a field in its row** (`ROW_SETTINGS` in `shared/doctor.ts`): Java -> `javaPath`; FFDec -> `ffdecDir`; Papyrus -> `papyrusExe` and `creationKitSources`; Skyrim -> `skyrimPath`; Figma -> `figmaManifest`; MO2 -> `mo2ModsDir`, `mo2ModName`, `mo2OverwriteDir` (the old "Deploy folders" section is gone). A field has an editable input, Browse (not for the mod name), Clear, a badge with where the value comes from (`saved setting`, `from INKWELL_...`, `default`, `detected` for the Steam/GOG install and the sibling Figma manifest; a default or detected value is the placeholder), and a busy state while it saves and its check re-runs. Enter, leaving the field and Browse all commit. A value set by an environment variable is read-only with the variable named, and its Browse/Clear are disabled with that reason (the variable wins over the saved value; the old Browse buttons stored a value that was then never used, without saying so).
 
@@ -46,7 +48,7 @@ IPC: `runDoctor(only?)`, `runBenchmark`, `buildVanillaCache`, `doctorFirstLaunch
 
 ## Debug driver
 
-`INKWELL_DOCTOR_DRIVER=1 INKWELL_SHOTS_PROJECT=<scratch copy of samples/hud-widget> INKWELL_SHOTS_DIR=<dir>` plus a separate `--user-data-dir` (`src/main/screenshotDoctor.ts`; no effect without the variable, and the dialog stub in `main/index.ts` is gated by it too). It opens the modal in the real window, types into every field (Enter and blur), answers the native file dialog itself (`dialog.answer`, because a script cannot click it), clears, sets an environment override, and checks the DOM (value, badge, problem, row status and detail), `settings.json` on disk, that the project stays open and the Deploy dropdown. It takes `dr-*.png` screenshots and exits 1 if an expectation fails. A second start with `INKWELL_DOCTOR_PHASE=2` and the same user-data dir checks the saved values come back. Run it through `electron-vite dev -- --user-data-dir=<dir>` (StrictMode on, the mode of the bug) or a build, with `ELECTRON_RUN_AS_NODE` unset. It really writes to `<userData>/settings.json`; never point it at a real user-data dir.
+`INKWELL_DOCTOR_DRIVER=1 INKWELL_SHOTS_PROJECT=<scratch copy of samples/hud-widget> INKWELL_SHOTS_DIR=<dir>` plus a separate `--user-data-dir` (`src/main/screenshotDoctor.ts`; no effect without the variable, and the dialog stub in `main/index.ts` is gated by it too). It opens the Settings view in the real window, types into every field (Enter and blur), answers the native file dialog itself (`dialog.answer`, because a script cannot click it), clears, sets an environment override, and checks the DOM (value, badge, problem, row status and detail), `settings.json` on disk, that the project stays open and the Deploy dropdown. It takes `dr-*.png` screenshots and exits 1 if an expectation fails. A second start with `INKWELL_DOCTOR_PHASE=2` and the same user-data dir checks the saved values come back. Run it through `electron-vite dev -- --user-data-dir=<dir>` (StrictMode on, the mode of the bug) or a build, with `ELECTRON_RUN_AS_NODE` unset. It really writes to `<userData>/settings.json`; never point it at a real user-data dir.
 
 ## Tests
 

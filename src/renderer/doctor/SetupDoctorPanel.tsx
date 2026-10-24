@@ -148,7 +148,7 @@ function Benchmark({ d }: { d: DoctorHook }) {
   )
 }
 
-/** Setup Doctor (UX 5.3): one row per check (icon, detail, its editable settings, fix actions), Re-run and the two on-request tasks. Takes no props; the modal in shell/Dialogs.tsx and the first-launch flow just render it. */
+/** The environment checks (UX 5.3, the former Setup Doctor): one row per check (icon, detail, its editable settings, fix actions), Re-run and the two on-request tasks. Rendered by the Settings view (shell/SettingsView.tsx), which passes the search `query`. */
 export function SetupDoctorPanel({ query = '' }: { query?: string }) {
   const d = useSetupDoctor()
   const q = query.trim().toLowerCase()

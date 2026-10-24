@@ -62,7 +62,7 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // first launch: the Setup Doctor opens by itself when a check fails (main marks it as seen either way)
+  // first launch: the Settings view opens by itself when a check fails (main marks it as seen either way)
   useEffect(() => {
     if (isPreviewWindow()) return
     void inkwell?.doctorFirstLaunch().then((show) => show && useDialogStore.getState().show('settings'))

@@ -36,14 +36,14 @@ export interface SwfLike {
 
 /** Folder a target writes to, or the reason it has none. A leaf name (mod name) may not contain separators. */
 export function resolveTarget(id: DeployTargetId, s: Pick<ResolvedSettings, 'mo2ModsDir' | 'mo2OverwriteDir' | 'mo2ModName'>, p: ProjectLike): { root: string } | { error: string } {
-  if (id === 'mo2Overwrite') return s.mo2OverwriteDir ? { root: resolve(s.mo2OverwriteDir) } : { error: 'Set the MO2 overwrite folder in Settings (Setup Doctor).' }
+  if (id === 'mo2Overwrite') return s.mo2OverwriteDir ? { root: resolve(s.mo2OverwriteDir) } : { error: 'Set the MO2 overwrite folder in Settings.' }
   if (s.mo2ModsDir) {
     const mod = s.mo2ModName || p.name
     if (!mod.trim() || /[\\/:*?"<>|]/.test(mod) || mod === '.' || mod === '..') return { error: `"${mod}" is not a valid mod folder name.` }
     return { root: resolve(s.mo2ModsDir, mod.trim()) }
   }
   if (p.deploy?.preset === 'mo2' && p.deploy.path) return { root: resolve(p.deploy.path) }
-  return { error: 'Set the MO2 mods directory in Settings (Setup Doctor).' }
+  return { error: 'Set the MO2 mods directory in Settings.' }
 }
 
 export function targetList(s: ResolvedSettings, p: ProjectLike, confirmed: (root: string) => boolean): DeployTargetInfo[] {
@@ -99,7 +99,7 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
       if (o.hasPapyrus) {
         add(`Scripts/${o.modId}_${w}.pex`)
         add(`Scripts/${o.modId}_${w}Instance.pex`)
-      } else plan.lint.push({ severity: 'warning', code: 'papyrus-compiler-missing', message: `No Papyrus compiler is set: "${s.name}" is deployed as a SWF only, without scripts or plugin. Set INKWELL_PAPYRUS or the compiler path in the Setup Doctor.` })
+      } else plan.lint.push({ severity: 'warning', code: 'papyrus-compiler-missing', message: `No Papyrus compiler is set: "${s.name}" is deployed as a SWF only, without scripts or plugin. Set INKWELL_PAPYRUS or the compiler path in Settings.` })
       if (!espDone && o.hasPapyrus) {
         add(`${o.modId}.esp`)
         espDone = true

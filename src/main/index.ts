@@ -8,6 +8,7 @@ import type { OverlayDoc } from '../shared/overlay'
 import type { PreviewFontBlob, PreviewRendered } from '../shared/preview'
 import type { OpenResult, UiEvent } from '../shared/projectState'
 import { PRODUCT_NAME } from '../shared/product'
+import { strings } from '../renderer/strings'
 import { copyExample, createProject } from './project/lifecycle'
 import { runDoctorDriver } from './screenshotDoctor'
 import { runShots } from './screenshotDriver'
@@ -159,11 +160,11 @@ function buildMenu(): void {
     Menu.buildFromTemplate([
       { role: 'fileMenu' },
       {
-        label: 'Edit',
+        label: strings.menu.edit,
         submenu: [
           { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
           { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }, { type: 'separator' },
-          { label: 'Settings...', accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) }
+          { label: strings.menu.settings, accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) }
         ]
       },
       { role: 'viewMenu' },

@@ -1,12 +1,13 @@
 import { app, type BrowserWindow } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { IPC } from '../shared/ipc'
 import type { createSession } from './session'
 
 const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
 /**
- * Debug only (`INKWELL_SHOTS_SETUP=1` with `INKWELL_SHOTS_DIR` and `INKWELL_SHOTS_PROJECT=<scratch project copy>`): the Setup Doctor with this machine's real
+ * Debug only (`INKWELL_SHOTS_SETUP=1` with `INKWELL_SHOTS_DIR` and `INKWELL_SHOTS_PROJECT=<scratch project copy>`): the Settings view with this machine's real
  * results (plus the on-request benchmark), the Deploy dropdown, the first-deploy confirmation, and the real deploy with its toast and status bar item.
  * It really deploys to the target the settings name (INKWELL_MO2_MODS + the project name), so point those at a folder you may overwrite.
  * States: n-doctor, o-doctor-bottom, p-doctor-benchmark, p2-doctor-cache, q-deploy-menu, r-deploy-confirm, s-deploy-done.
@@ -40,12 +41,13 @@ export async function runSetupShots(o: { outDir: string; projectDir: string; win
   await until('ffdec state', () => !!o.session.getSync().ffdec)
   await wait(1500)
 
-  await must('[data-testid="open-setup"]')
+  main().webContents.send(IPC.menuSettings) // what Edit > Settings does
+  await until('settings view', () => has('[data-testid="settings-view"]'))
   await until('doctor rows', () => js<boolean>(`document.querySelectorAll('.doctor-row').length === 9 && !document.querySelector('[data-testid="doctor-rerun"][aria-disabled="true"]')`))
   await snap('n-doctor')
-  await js(`document.querySelector('.dialog').scrollTop = 99999`)
+  await js(`document.querySelector('.settings-body').scrollTop = 99999`)
   await snap('o-doctor-bottom')
-  await js(`document.querySelector('.dialog').scrollTop = 0`)
+  await js(`document.querySelector('.settings-body').scrollTop = 0`)
   if (await has('[data-testid="doctor-fix-wrapper"]')) {
     await must('[data-testid="doctor-fix-wrapper"]')
     await until('benchmark', () => has('[data-testid="doctor-benchmark"]'), 120000)

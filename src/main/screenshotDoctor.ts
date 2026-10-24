@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { IPC } from '../shared/ipc'
 import type { createSession } from './session'
 
 const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
@@ -12,7 +13,7 @@ interface Field { value: string; badge: string; readOnly: boolean; problem: stri
 
 /**
  * Debug only (`INKWELL_DOCTOR_DRIVER=1`, `INKWELL_SHOTS_PROJECT=<scratch project copy>`, optional `INKWELL_SHOTS_DIR`, a separate `--user-data-dir`): drives the
- * Setup Doctor modal in the real window. It types into every path field (Enter, blur), browses with the native dialog answered by `dialog.answer`,
+ * Settings view in the real window. It types into every path field (Enter, blur), browses with the native dialog answered by `dialog.answer`,
  * clears, tests env overrides, a wrong path / a file / a valid path per field, a double commit, the Deploy dropdown, and logs each layer (preload result, settings.json on disk,
  * doctor rows). `INKWELL_DOCTOR_PHASE=2` (a second start with the same user-data dir) only checks the saved values come back. `INKWELL_DOCTOR_LEGACY=1` runs the few steps
  * that exist in the first version of the panel (for reproducing the bug on old code). Exits 1 when an expectation fails. Never point it at anything you care about.
@@ -87,8 +88,8 @@ export async function runDoctorDriver(o: {
   const opened = await o.session.open(o.projectDir)
   if (!opened.ok) throw new Error(`open failed: ${JSON.stringify(opened)}`)
   await wait(1500)
-  await until('open-setup button', () => has('[data-testid="open-setup"]'))
-  await click('[data-testid="open-setup"]')
+  main().webContents.send(IPC.menuSettings) // what Edit > Settings does
+  await until('settings view', () => has('[data-testid="settings-view"]'))
   await wait(1500)
   const rows = await js<number>(`document.querySelectorAll('.doctor-row').length`)
   log('modal open; rows:', rows)
@@ -225,7 +226,7 @@ export async function runDoctorDriver(o: {
   await snap('dr-d-after-typing')
 
   // Browse with the native dialog answered by the driver
-  await js(`document.querySelector('.dialog').scrollTop = 0`)
+  await js(`document.querySelector('.settings-body').scrollTop = 0`)
   for (const [key, v] of [['mo2ModsDir', p('overwrite')], ['mo2OverwriteDir', p('mods')], ['creationKitSources', p('mods')], ['papyrusExe', p('papyrus.exe')], ['figmaManifest', p('manifest.json')], ['skyrimPath', sky], ['ffdecDir', p('ck')], ['javaPath', p('fake-java.exe')]] as const) {
     await browse(key, v)
     const f = await field(key)

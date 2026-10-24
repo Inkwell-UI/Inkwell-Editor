@@ -316,7 +316,7 @@ export const strings = {
     package: 'Package',
     setup: 'Setup',
     planned: 'Planned',
-    setupTip: 'Open the Setup Doctor and settings'
+    setupTip: 'Open the settings'
   },
 
   status: {
@@ -332,7 +332,7 @@ export const strings = {
     stage: (n: string) => ({ sync: 'Sync', codegen: 'Codegen', swf: 'SWF', ffdec: 'FFDec', 'preview-build': 'Preview', preview: 'Ruffle', compile: 'Compile', vanilla: 'Vanilla check', write: 'Write' } as Record<string, string>)[n] ?? n,
     ffdec: (s?: string) => (s === 'warm' ? 'FFDec: warm' : s === 'cold' ? 'FFDec: cold' : 'FFDec: checking'),
     ffdecNotFound: 'FFDec: not found',
-    openDoctor: 'Open the Setup Doctor',
+    openDoctor: 'Open the settings',
     packs: 'Packs: none',
     deploy: 'Deploy',
     deployTip: 'Last deploy. Stages: compile, vanilla check, write.',
@@ -355,6 +355,9 @@ export const strings = {
     noElectron: 'Needs the desktop app'
   },
 
+  /** The application menu (built in the main process). */
+  menu: { edit: 'Edit', settings: 'Settings...' },
+
   settings: {
     title: 'Settings',
     back: 'Back',
@@ -374,7 +377,7 @@ export const strings = {
       user: 'End-user (INI)',
       userNote: 'Hotkeys, widget position and scale, theme, UI scale.'
     },
-    doctor: { title: 'Setup Doctor and settings' },
+    doctor: { title: 'Environment checks' },
     figma: { title: 'Figma setup guide', body: 'The setup guide with screenshots arrives later.' }
   },
 

@@ -1,6 +1,6 @@
 # The editor shell (`src/renderer`, `src/main/session.ts`)
 
-Implements phases 1 and 2 of the UI/UX architecture spec (phase 2: the Setup Doctor, `docs/setup-doctor.md`, and Deploy, `docs/deploy.md`) (`inkwell_ui_ux_architecture_specification.md`, workspace root). Where it and `Inkwell Design Spec.md` disagree, the design spec wins. Panel and layout rules: `docs/ui-panels.md`.
+Implements phases 1 and 2 of the UI/UX architecture spec (phase 2: the Settings view with the Setup Doctor checks, `docs/setup-doctor.md`, and Deploy, `docs/deploy.md`) (`inkwell_ui_ux_architecture_specification.md`, workspace root). Where it and `Inkwell Design Spec.md` disagree, the design spec wins. Panel and layout rules: `docs/ui-panels.md`.
 
 ## Zones
 
@@ -60,7 +60,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 - **Undo** (UX 5.5): one history per SWF (`Ctrl+Z`, `Ctrl+Shift+Z`/`Ctrl+Y`, or the Inspector buttons; not while typing in a field). The status bar shows `Undo: SWF`. Figma edits never enter it and the visual IR is never touched.
 - **Strict Mode** (`project.json` `strictMode`): the lint dock promotes warnings to errors for display (`shared/lint.ts` `promoteStrict`), and the sync server promotes them in the build status (the only build gate that exists: status `error`).
 - **One validation source:** the dock, the Navigator badges and the Inspector's issues all read `useDockRows()` (compiler lint rows + unreachable layers + a synthetic `build-failed` row when a build threw).
-- **Build failure:** the stage keeps the last good SWF (`usePreviewBuilds`), shows `Build failed - showing last good build` and its `Show error` button opens the Lint dock on the first error. If FFDec/Java is missing, Build All is disabled and the status bar says `FFDec: not found` (opens the Setup Doctor stub).
+- **Build failure:** the stage keeps the last good SWF (`usePreviewBuilds`), shows `Build failed - showing last good build` and its `Show error` button opens the Lint dock on the first error. If FFDec/Java is missing, Build All is disabled and the status bar says `FFDec: not found` (opens the Settings view).
 - **Status bar timings:** `timingLine` formats the stages and the Ruffle time; the bar is amber when edit-to-preview (pipeline total + Ruffle first frame) is above 1000 ms; a click opens the last 50 builds. The Ruffle time exists only for the SWF the stage shows.
 
 ## Navigator, Inspector details
@@ -90,7 +90,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 | Select in Figma, Focus in Figma | a protocol message in `inkwell-spec` |
 | Runtime trace, game dot, hot reload | Inkwell Runtime (0.3) |
 | Vortex staging and zip packaging (Package), custom menu JSON in Deploy, target pill's Config Ownership dialog | packaging; runtime config formats (0.3) |
-| Figma plugin screenshot guide in the Setup Doctor, setup guide link | later |
+| Figma plugin screenshot guide in the Settings view, setup guide link | later |
 | Play-mode virtual gamepad | later |
 | Mock data editor | 0.2 |
 
