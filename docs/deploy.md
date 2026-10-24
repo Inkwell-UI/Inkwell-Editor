@@ -1,6 +1,6 @@
-# Deploy (`src/main/deploy`, `src/renderer/shell/DeployMenu.tsx`)
+# Deploy and Package Mod (`src/main/deploy`, `src/renderer/shell/DeployMenu.tsx`)
 
-UX spec 4.1, MO2 only. The top bar `Deploy` dropdown lists targets with their exact folder; `Build All` stays separate. Vortex staging and `Package Mod` are shown disabled with the reason `Planned`.
+UX spec 4.1. The top bar `Deploy` dropdown lists targets with their exact folder (MO2 mod folder, MO2 overwrite, Vortex); `Build All` stays separate. `Package Mod` (its own top bar dropdown) saves the same files as one zip; the Vortex target does the same (see Package and Vortex below).
 
 ## Targets (`plan.ts` `resolveTarget`)
 
@@ -33,9 +33,20 @@ Without a Papyrus compiler (setting or `INKWELL_PAPYRUS`) a widget is deployed a
 
 `prepareDeploy(target, scope, activeSwf)` (IPC) compiles with the resident FFDec wrapper and the Papyrus compiler, checks, and returns the file list, the gate result (`gate: {ok, strict, blocking, warnings, info}`), the plan notices (`lint`) and `needsConfirm` (always true when blocked); `commitDeploy(token)` writes. Progress and the result are in `SyncUiState.deploy`: the status bar item (`Deploy: 856 ms [Compile 845 ms - Vanilla check <1 ms - Write 11 ms]`) and a toast with the counts. Compile errors (including Papyrus) are gate errors: nothing is written. A `customMenu` needs its SWF built in this session first (Build All); a missing build is a gate error that says so.
 
+## Package Mod and Vortex (`service.ts` `writePackage`, `zip.ts`)
+
+- **Same planner, same gate.** `prepare('package' | 'vortex', scope)` runs the exact `prepareDeploy` of an MO2 deploy (same file plan, compile, export gate, Strict Mode, vanilla refusal) with `<project>/dist` as its root; the scope is the Deploy menu's. A blocked package opens the same dialog (title `Package blocked`); `commit` refuses it in main and never opens the save dialog.
+- **Where:** after the gate passes, `commit` opens the native save dialog at `<project>/dist/<Name>-<version>.zip` (project name and version, characters Windows forbids replaced by `_`). `dist/` is git-ignored: `createProject` writes `.gitignore` (`build/`, `dist/`) and the samples carry the same file. A path inside a game `Data` folder is refused. Cancel writes nothing. The zip is written atomically (`<zip>.inkwell-tmp`, then rename).
+- **Layout:** the files sit at the archive root exactly as in the MO2 mod folder (`Interface/exported/widgets/<modId>/<Widget>.swf`, `Scripts/*.pex`, `Source/Scripts/*.psc`, `<modId>.esp`, `textures/Inkwell/<modId>/*.dds` in dds mode, `Interface/<name>.swf` for custom menus). No FOMOD, no `meta.ini`, no `.inkwell-deploy.json`. MO2 (Install a new mod from archive) and Vortex (Install From File) install such an archive as it is.
+- **No README in the zip:** Vortex deploys every root file into the game's `Data` folder, so a `README.txt` would land there. Requirements (SKSE, SkyUI 5.2+) belong on the mod page.
+- **Zip writer** (`zip.ts`, `node:zlib`, no dependency): deflate when smaller, else stored; CRC-32 (`zlib.crc32`); UTF-8 names (flag bit 11); entries sorted by name, fixed DOS timestamp 1980-01-01, no extra fields, no directory entries, no zip64 (refuses > 4 GB or > 65535 files). Two packages of the same input are byte-identical (the `.pex` compile timestamp aside, as for deploy).
+- **Vortex:** Vortex keeps its staging folder as its own state (it hardlinks or moves files and tracks them), and a write into the game's `Data` folder is never allowed, so Inkwell writes nowhere inside Vortex. The `Vortex` row in the Deploy menu saves the same zip and the toast says how to install it (Mods > Install From File, then enable and deploy in Vortex). The `vortex` preset in `project.json` has no other effect.
+- **Result:** a toast with the zip path, the file count, the gate warnings and an `Open folder` button (`revealPackage` IPC: main shows the last zip it wrote with `shell.showItemInFolder`; the renderer never passes a path). Progress and timing in the status bar like a deploy.
+- Debug: `INKWELL_SHOTS_PACKAGE_DIR=<dir>` answers the save dialog with `<dir>\<Name>-<version>.zip` (screenshot runs; the setup driver then shoots `t-package-menu`, `u-package-done` or `u-package-blocked`, `v-vortex-menu`, `v-vortex-done`).
+
 ## Tests
 
-`lint/gate.test.ts` (error blocks, warning passes, strict blocks a warning, info never blocks), `service.test.ts` (prepare shows the gate, a blocked commit is refused and writes nothing, strict), `plan.test.ts` (planner, Data refusal, traversal, targets, confirmation state), `write.test.ts` (manifest diff and cleanup, foreign files untouched, tampered manifest, atomic writes, scope), `run.test.ts` (vanilla refusal, missing/unfinished/failed build, custom menu build lint and unreachable layers scoped per SWF, and a real deploy of `samples/hud-widget` into a temp folder; that one needs Java, FFDec and the wrapper jar, and `INKWELL_PAPYRUS` for the `.pex` and `.esp`).
+`zip.test.ts` (CRC-32, read back with the doctor zip reader and with `inflateRaw`, UTF-8 flag, determinism, unsafe names), `service.test.ts` Package (same files as the deploy plan, default name and folder, byte-identical second package, blocked and Strict Mode refuse without asking for a path, Data folder refused, cancel, vanilla refused), the real `samples/hud-widget` deploy also checks its zip entry by entry. Manual check (2026-10-24): the real package listed by Windows `tar.exe -tvf` and extracted by PowerShell `Expand-Archive`, 6 files at the root, byte-identical. `lint/gate.test.ts` (error blocks, warning passes, strict blocks a warning, info never blocks), `service.test.ts` (prepare shows the gate, a blocked commit is refused and writes nothing, strict), `plan.test.ts` (planner, Data refusal, traversal, targets, confirmation state), `write.test.ts` (manifest diff and cleanup, foreign files untouched, tampered manifest, atomic writes, scope), `run.test.ts` (vanilla refusal, missing/unfinished/failed build, custom menu build lint and unreachable layers scoped per SWF, and a real deploy of `samples/hud-widget` into a temp folder; that one needs Java, FFDec and the wrapper jar, and `INKWELL_PAPYRUS` for the `.pex` and `.esp`).
 
 ## Known limits
 
@@ -44,4 +55,4 @@ Without a Papyrus compiler (setting or `INKWELL_PAPYRUS`) a widget is deployed a
 
 - `.pex` files embed a compile timestamp, so they are rewritten on every deploy even when nothing changed.
 - Deploy uses the pipeline's resident FFDec wrapper; a build in progress queues behind it.
-- No hot reload and no Vortex or zip packaging yet.
+- No hot reload. Installing the zip in real MO2 and Vortex is not tested yet.

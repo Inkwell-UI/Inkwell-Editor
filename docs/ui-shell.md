@@ -5,7 +5,7 @@ Implements phases 1 and 2 of the UI/UX architecture spec (phase 2: the Settings 
 ## Zones
 
 ```
-Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, workspace switcher, Setup (opens the Doctor), connection dots, Build All, Deploy (shell/DeployMenu.tsx, MO2), Package (disabled: Planned)
+Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, workspace switcher, Setup (opens the Doctor), connection dots, Build All, Deploy (shell/DeployMenu.tsx: MO2 folders, Vortex = zip), Package Mod (same file: saves the zip; docs/deploy.md)
 Zone 2  left tabs         navigator | contracts | assets
 Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, Inspect overlay, banners, GFx note, last good build
 Zone 4  graph             GraphPanel             empty state, AS2 split placeholder
@@ -89,7 +89,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 | Relink / Discard orphans | needs the overlay store's relink operation |
 | Select in Figma, Focus in Figma | a protocol message in `inkwell-spec` |
 | Runtime trace, game dot, hot reload | Inkwell Runtime (0.3) |
-| Vortex staging and zip packaging (Package), custom menu JSON in Deploy, target pill's Config Ownership dialog | packaging; runtime config formats (0.3) |
+| Custom menu JSON in Deploy, target pill's Config Ownership dialog | runtime config formats (0.3) |
 | Figma plugin screenshot guide in the Settings view, setup guide link | later |
 | Play-mode virtual gamepad | later |
 | Mock data editor | 0.2 |

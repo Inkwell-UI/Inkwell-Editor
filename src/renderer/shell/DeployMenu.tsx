@@ -210,9 +210,9 @@ export function ConfirmDialog() {
           </>
         )}
         {p.notes.map((n, i) => <p key={i} className="dim">{n}</p>)}
-        <p className="dim">{strings.deploy.confirmNote}</p>
+        {!pkg && <p className="dim">{strings.deploy.confirmNote}</p>}
         <div className="row-actions">
-          <Btn variant="primary" onClick={() => void accept()} reason={blocked ? strings.deploy.blockedReason(g.blocking.length) : undefined} testId="deploy-confirm-ok">{strings.deploy.confirm}</Btn>
+          <Btn variant="primary" onClick={() => void accept()} reason={blocked ? strings.deploy.blockedReason(g.blocking.length) : undefined} testId="deploy-confirm-ok">{pkg ? strings.deploy.packageSave : strings.deploy.confirm}</Btn>
           <Btn onClick={cancel} testId="deploy-confirm-cancel">{strings.deploy.cancel}</Btn>
         </div>
       </div>

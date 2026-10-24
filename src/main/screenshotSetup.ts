@@ -76,6 +76,8 @@ export async function runSetupShots(o: { outDir: string; projectDir: string; win
     await snap('r-deploy-blocked')
     console.log('[shots] blocked:', await js<string>(`document.querySelector('[data-testid="deploy-confirm"]').innerText.replace(/\\n/g, ' | ')`))
     console.log('[shots] status:', await js<string>(`document.querySelector('[data-testid="deploy-status"]')?.innerText ?? '(none)'`))
+    await must('[data-testid="deploy-confirm-cancel"]')
+    await packageShots(true)
     app.exit(0)
     return
   }
@@ -85,5 +87,36 @@ export async function runSetupShots(o: { outDir: string; projectDir: string; win
   await snap('s-deploy-done')
   console.log('[shots] toast:', await js<string>(`document.querySelector('[data-testid="toast"]').innerText.replace(/\\n/g, ' | ')`))
   console.log('[shots] status:', await js<string>(`document.querySelector('[data-testid="deploy-status"]')?.innerText ?? '(none)'`))
+  await packageShots(false)
   app.exit(0)
+
+  /** Package Mod and the Vortex row; needs INKWELL_SHOTS_PACKAGE_DIR (it answers the save dialog). t-package-menu, u-package-done (or u-package-blocked), v-vortex-done. */
+  async function packageShots(blocked: boolean): Promise<void> {
+    if (!process.env['INKWELL_SHOTS_PACKAGE_DIR']) return console.log('[shots] package skipped: set INKWELL_SHOTS_PACKAGE_DIR')
+    await js(`document.querySelectorAll('[data-testid="toast"] button[aria-label]').forEach((b) => b.click())`)
+    await wait(300)
+    await must('[data-testid="package"]')
+    await until('package menu', () => has('[data-testid="package-save"]'))
+    await wait(300)
+    await snap('t-package-menu')
+    await must('[data-testid="package-save"]')
+    if (blocked) {
+      await until('package blocked', () => has('[data-testid="deploy-blocked"]'), 120000)
+      await snap('u-package-blocked')
+      console.log('[shots] package blocked:', await js<string>(`document.querySelector('[data-testid="deploy-confirm"]').innerText.replace(/\\n/g, ' | ')`))
+      return
+    }
+    await until('package toast', () => has('[data-testid="toast-action"]'), 120000)
+    await snap('u-package-done')
+    console.log('[shots] package toast:', await js<string>(`document.querySelector('[data-testid="toast-action"]').closest('[data-testid="toast"]').innerText.replace(/\\n/g, ' | ')`))
+    await js(`document.querySelectorAll('[data-testid="toast"] button[aria-label]').forEach((b) => b.click())`)
+    await must('[data-testid="deploy"]')
+    await until('deploy menu', () => has('[data-testid="deploy-vortex"]'))
+    await wait(300)
+    await snap('v-vortex-menu')
+    await must('[data-testid="deploy-vortex"]')
+    await until('vortex toast', () => has('[data-testid="toast-action"]'), 120000)
+    await snap('v-vortex-done')
+    console.log('[shots] vortex toast:', await js<string>(`document.querySelector('[data-testid="toast-action"]').closest('[data-testid="toast"]').innerText.replace(/\\n/g, ' | ')`))
+  }
 }
