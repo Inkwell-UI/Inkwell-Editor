@@ -1,0 +1,15 @@
+{
+  "protocolVersion": 3,
+  "schema": 1,
+  "specVersion": 4,
+  "swfs": {
+    "hud": {
+      "assets": [],
+      "frameId": "hud",
+      "frameName": "root",
+      "nodes": 3,
+      "rootHash": "78c6794d"
+    }
+  },
+  "updatedAt": "2026-10-24T00:00:00.000Z"
+}

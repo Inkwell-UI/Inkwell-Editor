@@ -39,6 +39,7 @@ describe('project format', () => {
     delete a['figma/.gitkeep']
     delete a['shared/.gitkeep']
     delete a['.gitignore'] // not part of the project format (createProject writes it once)
+    delete a['figma/snapshot.json'] // written by the sync (snapshot.ts), not by saveProject
     expect(b).toEqual(a)
   })
 

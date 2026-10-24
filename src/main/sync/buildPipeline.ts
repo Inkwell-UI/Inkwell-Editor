@@ -8,6 +8,7 @@ import { createFfdecWrapper } from '../build/ffdecWrapper'
 import type { AssetStore, ImageMode } from '../images/assets'
 import { loadProject, saveProject, type Project } from '../project'
 import { exclusive } from '../project/lock'
+import { snapshotContent, writeSnapshot, type FigmaSnapshot, type SnapshotSource } from '../project/snapshot'
 import type { PreviewFontSet } from '../previewFonts'
 import { compileSwf } from '../swf/compile'
 import type { ChangeResult } from './syncServer'
@@ -28,7 +29,11 @@ export interface PipelineConfig {
   ffdec?: { build: Parameters<typeof compileSwf>[1]['ffdec']['build']; stop?: () => void }
   onBuild?: (swfPath: string, timing: BuildTiming, lintCount: number, report: SwfReport) => void
   /** The project's image assets (assets/<hash>.png); without it every image is linted `image-missing-asset`. */
-  assets?: Pick<AssetStore, 'get'>
+  assets?: Pick<AssetStore, 'get' | 'has'>
+  /** The plugin's last hello (pluginVersion, fileKey) for figma/snapshot.json; undefined keeps the stored one. */
+  snapshotSource?: () => SnapshotSource | undefined
+  /** After figma/snapshot.json was checked (written only when its content changed). */
+  onSnapshot?: (s: FigmaSnapshot) => void
 }
 
 /** Defaults documented in docs/sync-server.md. */
@@ -70,6 +75,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     let instanceNames: Record<string, string> = {}
     let modId = 'inkwell'
     let imageMode: ImageMode = 'embedded'
+    let snapshotError: string | undefined
     if (cfg.projectDir) {
       const dir = cfg.projectDir
       // Exclusive with overlay saves from the editor UI, and the overlay is re-read from disk (the UI may have saved since the project was cached).
@@ -88,6 +94,14 @@ export function createBuildPipeline(cfg: PipelineConfig) {
         // The editor never edits the visual IR: this stores exactly what Figma sent.
         p.swfs[name] = { ir: ir as unknown as Record<string, unknown>, overlay }
         await saveProject(dir, p)
+        // figma/snapshot.json follows ir.json in the same lock; a failure is reported, the build goes on (ir.json is already saved)
+        try {
+          const irs = Object.fromEntries(Object.entries(p.swfs).map(([n, s]) => [n, s.ir as unknown as Parameters<typeof compileSwf>[0]]))
+          const r = await writeSnapshot(dir, snapshotContent(irs, (h) => cfg.assets?.has(h) ?? false, cfg.snapshotSource?.()))
+          cfg.onSnapshot?.(r.snapshot)
+        } catch (e) {
+          snapshotError = e instanceof Error ? e.message : String(e)
+        }
       })
     }
     timer.end('sync')
@@ -115,7 +129,12 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     const timing: BuildTiming = { stages: { ...sync.stages, ...r.timings.stages, ...prev.stages }, total: sync.total + r.timings.total + prev.total }
     cfg.onBuild?.(r.swfPath, timing, r.lint.length, toReport(swfId, name, r))
     cfg.onPreview?.(preview) // after onBuild, so the window's timing is already the new build's when the renderer answers
-    return { issues: r.lint.map((l) => ({ code: l.code, message: l.message, nodeId: l.nodeId, severity: l.severity })) }
+    return {
+      issues: [
+        ...r.lint.map((l) => ({ code: l.code, message: l.message, nodeId: l.nodeId, severity: l.severity })),
+        ...(snapshotError ? [{ code: 'snapshot-write-failed', severity: 'warning', message: `figma/snapshot.json was not updated: ${snapshotError}` }] : [])
+      ]
+    }
   }
 
   return { onChange, getFfdec, stop: (): void => ffdec?.stop?.() }

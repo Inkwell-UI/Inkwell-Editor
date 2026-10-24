@@ -5,6 +5,7 @@ import { hashNode, PROTOCOL_VERSION, SPEC_VERSION, type Swf } from '@inkwell-ui/
 import { createAssetStore } from '../images/assets'
 import { syntheticPng } from '../images/synthetic'
 import { frame, rectShape, swf } from '../swf/ir.testutil'
+import { treeHash } from '../project/snapshot'
 import { sanitizeName, startSyncServer, unreachableNodes, type SyncServerOptions } from './syncServer'
 
 type Server = Awaited<ReturnType<typeof startSyncServer>>
@@ -193,6 +194,23 @@ describe('syncServer', () => {
     const r = await c.next()
     expect(r).toMatchObject({ type: 'resend', swfId: 'hud' })
     expect([...r.ids].sort()).toEqual(['gone', 's'])
+  })
+
+  it('reconnect after an offline session: a plugin with the same tree as the saved IR (the snapshot root) gets an empty resend', async () => {
+    const saved = sample()
+    const s = await start({ initial: { hud: saved } })
+    const hellos: unknown[] = []
+    s.events.on('hello', (h) => hellos.push(h))
+    const c = await connect(s)
+    c.ws.send(JSON.stringify(hello({ fileKey: 'FILE' })))
+    expect((await c.next()).ok).toBe(true)
+    expect(hellos).toEqual([{ pluginVersion: '0.0.1', fileKey: 'FILE' }]) // provenance for figma/snapshot.json
+    const live = Object.fromEntries(Object.entries(saved.nodes).map(([id, n]) => [id, hashNode(n)]))
+    expect(treeHash({ nodes: s.ir('hud')!.nodes })).toBe(treeHash(saved))
+    c.ws.send(JSON.stringify({ type: 'hashTree', swfId: 'hud', nodeHashes: live }))
+    expect(await c.next()).toMatchObject({ type: 'resend', swfId: 'hud', ids: [] })
+    c.ws.send(JSON.stringify({ type: 'hashTree', swfId: 'hud', nodeHashes: { ...live, s: 'changed0' } }))
+    expect((await c.next()).ids).toEqual(['s']) // only the difference is patched
   })
 
   it('malformed JSON and unknown messages yield error and keep the socket', async () => {

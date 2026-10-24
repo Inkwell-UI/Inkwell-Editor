@@ -1,14 +1,17 @@
-import { copyFile, cp, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, cp, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { FfdecJob } from '../build/ffdecWrapper'
 import { createAssetStore } from '../images/assets'
 import { syntheticPng } from '../images/synthetic'
+import { Swf } from '@inkwell-ui/spec'
 import { frame, rectShape, swf, textNode } from '../swf/ir.testutil'
 import { parseSwf } from '../swf/swfReader.testutil'
 import { TAG } from '../swf/tags'
 import type { PreviewFontSet } from '../previewFonts'
+import { loadProject } from '../project'
+import { readSnapshot } from '../project/snapshot'
 import { createBuildPipeline } from './buildPipeline'
 
 const ir = () => swf([frame('f', ['s', 't']), rectShape('s'), textNode('t', { verticalAlign: 'center' })])
@@ -105,5 +108,42 @@ describe('build pipeline: images', () => {
     expect(bitmaps(await readFile(join(dir, 'build', 'hud.swf')))).toBe(0)
     expect(bitmaps(Buffer.from(preview!['bytes']))).toBe(1)
     expect(preview!['notes']).toMatchObject({ ddsImages: 1 })
+  })
+})
+
+describe('build pipeline: offline (no sync server) and figma/snapshot.json', () => {
+  it('opens a project and builds every SWF from ir.json + assets alone; the first build writes the snapshot, the next ones leave it alone', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'inkwell-offline-'))
+    await cp(resolve(__dirname, '../../../samples/hud-widget'), dir, { recursive: true })
+    const ffdec = { build: async (job: FfdecJob) => (await copyFile(job.base, job.out), { ok: true, ms: 0, wallMs: 0 }) }
+    const snaps: unknown[] = []
+    const p = createBuildPipeline({ ...base, projectDir: dir, buildDir: join(dir, 'build'), ffdec, assets: createAssetStore(dir), onSnapshot: (s) => snaps.push(s) })
+    const project = await loadProject(dir) // what session.open does; no server, no plugin
+    const builds = []
+    for (const [name, s] of Object.entries(project.swfs)) {
+      const ir = Swf.parse(s.ir)
+      builds.push(await p.onChange(ir.id, ir, name))
+      expect((await stat(join(dir, 'build', `${name}.swf`))).size).toBeGreaterThan(0)
+    }
+    expect(builds.flatMap((b) => b.issues ?? []).filter((i) => (i as { severity?: string }).severity === 'error')).toEqual([])
+    const first = await readFile(join(dir, 'figma', 'snapshot.json'), 'utf8')
+    const snap = (await readSnapshot(dir)).snapshot!
+    expect(snap.swfs['hud']).toMatchObject({ frameId: Swf.parse(project.swfs['hud']!.ir).id })
+    expect(snap).not.toHaveProperty('source') // no plugin connected
+    // Build All again, offline: same bytes, same time
+    const ir = Swf.parse(project.swfs['hud']!.ir)
+    await p.onChange(ir.id, ir, 'hud')
+    expect(await readFile(join(dir, 'figma', 'snapshot.json'), 'utf8')).toBe(first)
+    expect(snaps.length).toBe(2)
+  })
+
+  it('records the plugin of the last hello', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'inkwell-offline-'))
+    await cp(resolve(__dirname, '../../../samples/hud-widget'), dir, { recursive: true })
+    const ffdec = { build: async (job: FfdecJob) => (await copyFile(job.base, job.out), { ok: true, ms: 0, wallMs: 0 }) }
+    const p = createBuildPipeline({ ...base, projectDir: dir, buildDir: join(dir, 'build'), ffdec, snapshotSource: () => ({ pluginVersion: '0.9.0', fileKey: 'K' }) })
+    const ir = Swf.parse((await loadProject(dir)).swfs['hud']!.ir)
+    await p.onChange(ir.id, ir, 'hud')
+    expect((await readSnapshot(dir)).snapshot?.source).toEqual({ pluginVersion: '0.9.0', fileKey: 'K' })
   })
 })

@@ -1,0 +1,22 @@
+{
+  "protocolVersion": 3,
+  "schema": 1,
+  "specVersion": 4,
+  "swfs": {
+    "ingametest": {
+      "assets": [],
+      "frameId": "ingametest",
+      "frameName": "root",
+      "nodes": 97,
+      "rootHash": "7331a4d9"
+    },
+    "ingametest720": {
+      "assets": [],
+      "frameId": "ingametest720",
+      "frameName": "root",
+      "nodes": 97,
+      "rootHash": "adfce13c"
+    }
+  },
+  "updatedAt": "2026-10-24T00:00:00.000Z"
+}

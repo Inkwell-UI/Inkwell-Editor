@@ -83,7 +83,7 @@ interface Entry {
 const emptySwf = (id: string, name: string): Swf =>
   ({ specVersion: SPEC_VERSION, id, name, target: { kind: 'hudWidget' }, stage: { width: 1280, height: 720 }, root: id, nodes: {} }) as Swf
 
-/** Events: 'selection' (ids), 'connections' (count), 'status' (SyncStatus with swfId), 'swfs' (SwfInfo[], loose Layer[]). */
+/** Events: 'hello' ({pluginVersion, fileKey?} of an accepted plugin), 'selection' (ids), 'connections' (count), 'status' (SyncStatus with swfId), 'swfs' (SwfInfo[], loose Layer[]). */
 export async function startSyncServer(opts: SyncServerOptions) {
   const token = opts.token ?? randomBytes(24).toString('hex')
   const events = new EventEmitter()
@@ -190,6 +190,7 @@ export async function startSyncServer(opts: SyncServerOptions) {
       send(ws, ack)
       if (ack.ok) {
         ready.add(ws)
+        events.emit('hello', { pluginVersion: m.pluginVersion, ...(m.fileKey ? { fileKey: m.fileKey } : {}) })
         events.emit('connections', ready.size)
       } else {
         events.emit('handshakeFailed', ack.error ?? 'version mismatch')
