@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, Copy, Hammer, Package, Settings2, FileStack, PenLine, Stethoscope } from 'lucide-react'
+import { ChevronDown, Copy, Hammer, Package, Settings2, FileStack, PenLine } from 'lucide-react'
 import { PRODUCT_NAME } from '../../shared/product'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useProject } from '../hooks/useProject'
@@ -162,7 +162,6 @@ export function TopBar() {
       </Btn>
       <WorkspaceSwitcher />
       <span className="spacer" />
-      <Btn icon={Stethoscope} variant="quiet" onClick={() => show('settings')} label={strings.top.setupTip} testId="open-setup" />
       <Btn icon={Hammer} variant="primary" onClick={() => void inkwell?.buildAll()} reason={buildReason} testId="build-all">{compiling ? strings.top.building : strings.top.buildAll}</Btn>
       <DeployMenu />
       <Btn icon={Package} reason={strings.top.planned} label={strings.top.package}>{strings.top.package}<ChevronDown size={12} aria-hidden="true" /></Btn>
