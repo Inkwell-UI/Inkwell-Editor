@@ -32,6 +32,8 @@ export interface SessionDeps {
   editorVersion: string
   /** Sends `payload` on `channel` to every window. */
   broadcast(channel: string, payload: unknown): void
+  /** Native save dialog for a package zip (index.ts); undefined = cancelled. */
+  chooseZip?(defaultPath: string): Promise<string | undefined>
 }
 
 /**
@@ -249,7 +251,7 @@ export function createSession(deps: SessionDeps) {
       const p = projectState()
       if (!p || !meta) return undefined
       return {
-        dir: p.dir, name: p.name, modId: p.modId, deploy: meta.deploy, imageMode: meta.imageMode ?? 'embedded', assets, strictMode: p.strictMode,
+        dir: p.dir, name: p.name, version: meta.version, modId: p.modId, deploy: meta.deploy, imageMode: meta.imageMode ?? 'embedded', assets, strictMode: p.strictMode,
         swfs: p.swfs.map((s) => ({
           name: s.name, orphaned: s.orphaned, kind: s.ir.target.kind, ir: s.ir,
           ...(buildBySwf.has(s.id) ? { build: { state: buildBySwf.get(s.id)!, lint: (reports.get(s.id)?.lint ?? []).map(({ severity, code, message, nodeId, layerName }) => ({ severity, code, message, nodeId, layerName })) } } : {}),
@@ -267,8 +269,10 @@ export function createSession(deps: SessionDeps) {
       if (!pipeline) throw new Error('No project is open.')
       return pipeline.getFfdec()
     },
-    report: reportDeploy
+    report: reportDeploy,
+    ...(deps.chooseZip ? { chooseZip: deps.chooseZip } : {})
   })
+  let lastZip: string | undefined // the only path "Open folder" may reveal: never a path from the renderer
   let writeQueue: Promise<void> = Promise.resolve()
   const viewSettings = async (): Promise<ResolvedSettings> => {
     await settingsReady
@@ -343,7 +347,12 @@ export function createSession(deps: SessionDeps) {
     },
     deployTargets: (): DeployTargetInfo[] => deploy.targets(),
     deployPrepare: (id: DeployTargetId, scope: DeployScope, active?: string): Promise<PrepareResult> => deploy.prepare(id, scope, active),
-    deployCommit: (token: string): Promise<DeployResult> => deploy.commit(token),
+    deployCommit: async (token: string): Promise<DeployResult> => {
+      const r = await deploy.commit(token)
+      if (r.zipPath) lastZip = r.zipPath
+      return r
+    },
+    lastPackage: (): string | undefined => lastZip,
     deployCancel: (): void => deploy.cancel(),
     fontStatus: () => fontTool.status(),
     installFonts: () => fontTool.install(),

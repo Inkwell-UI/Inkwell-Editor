@@ -5,6 +5,8 @@ export interface Toast {
   tone: 'ok' | 'error' | 'info'
   title: string
   text?: string
+  /** One button in the toast (e.g. Open folder). */
+  action?: { label: string; run(): void }
 }
 /** Short-lived messages (Deploy result). API: `toasts`, `push(t)` (auto-dismisses), `dismiss(id)`. */
 export interface ToastStore {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, FolderCog, Rocket } from 'lucide-react'
-import type { DeployLintItem, DeployTargetInfo } from '../../shared/deploy'
+import { ChevronDown, FileArchive, FolderCog, Package, Rocket } from 'lucide-react'
+import { isPackageTarget, type DeployLintItem, type DeployTargetInfo } from '../../shared/deploy'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { countSeverities } from '../model/lintRows'
@@ -42,14 +42,14 @@ function Targets({ close }: { close(): void }) {
                 title={off ? `${t.label}: ${off}` : strings.deploy.pathLabel(t.path ?? '')}
                 data-testid={`deploy-${t.id}`}
                 onClick={() => {
-                  if (off || !(t.id === 'mo2Mod' || t.id === 'mo2Overwrite')) return
+                  if (off) return
                   close()
                   void start(t.id, swf?.name)
                 }}
               >
                 <span className="deploy-target-name">{t.label}</span>
                 <span className="deploy-target-path mono">{t.path ?? off}</span>
-                {!off && <span className="dim">{t.confirmed ? strings.deploy.confirmed : strings.deploy.notConfirmed}</span>}
+                {!off && <span className="dim">{isPackageTarget(t.id) ? strings.deploy.targetNotes[t.id] : t.confirmed ? strings.deploy.confirmed : strings.deploy.notConfirmed}</span>}
               </button>
             </li>
           )
@@ -71,12 +71,49 @@ function Targets({ close }: { close(): void }) {
   )
 }
 
-/** Top bar Deploy dropdown (UX 4.1, MO2 only): exact target paths, scope, and the first-deploy confirmation dialog. Build All stays separate. */
-export function DeployMenu() {
+const useDeployReason = (): string | undefined => {
   const project = useProject()
   const sync = useSyncState()
+  return !project ? strings.deploy.noProject : !project.swfs.some((s) => !s.orphaned) ? strings.deploy.noSwfs : sync?.ffdec?.status === 'notFound' ? strings.deploy.noFfdec : undefined
+}
+
+/** Top bar `Package Mod` dropdown: what the zip holds and one action; the scope is the Deploy menu's. The blocked dialog is the Deploy one. */
+export function PackageMenu() {
+  const reason = useDeployReason()
   const busy = useDeployStore((s) => s.busy)
-  const reason = !project ? strings.deploy.noProject : !project.swfs.some((s) => !s.orphaned) ? strings.deploy.noSwfs : sync?.ffdec?.status === 'notFound' ? strings.deploy.noFfdec : undefined
+  const scope = useDeployStore((s) => s.scope)
+  const start = useDeployStore((s) => s.start)
+  const swf = useActiveSwf()
+  if (reason)
+    return <Btn icon={Package} reason={reason} label={strings.top.package} testId="package">{strings.top.package}<ChevronDown size={12} aria-hidden="true" /></Btn>
+  return (
+    <Popover
+      label={strings.deploy.packageMenuLabel}
+      align="end"
+      trigger={(p, open) => (
+        <button type="button" className="btn" {...p} data-testid="package" title={strings.top.package} aria-label={strings.top.package}>
+          <Package size={14} aria-hidden="true" /> {busy ? strings.deploy.running : strings.top.package} <ChevronDown size={12} aria-hidden="true" className={open ? 'flip' : undefined} />
+        </button>
+      )}
+    >
+      {(close) => (
+        <div className="details deploy-menu">
+          <h3>{strings.deploy.packageTitle}</h3>
+          <p>{strings.deploy.packageBody}</p>
+          <p className="dim">{strings.deploy.packageScope(scope === 'all', swf?.name)}</p>
+          <div className="row-actions">
+            <Btn icon={FileArchive} variant="primary" testId="package-save" onClick={() => { close(); void start('package', swf?.name) }}>{strings.deploy.packageSave}</Btn>
+          </div>
+        </div>
+      )}
+    </Popover>
+  )
+}
+
+/** Top bar Deploy dropdown (UX 4.1): exact target paths (MO2 folders; Vortex saves a zip), scope, and the first-deploy confirmation dialog. Build All stays separate. */
+export function DeployMenu() {
+  const busy = useDeployStore((s) => s.busy)
+  const reason = useDeployReason()
   if (reason)
     return <Btn icon={Rocket} reason={reason} label={strings.top.deploy} testId="deploy">{strings.top.deploy}<ChevronDown size={12} aria-hidden="true" /></Btn>
   return (
@@ -138,17 +175,18 @@ export function ConfirmDialog() {
   const g = p.gate
   const blocked = !g.ok
   const notices = p.lint.filter((l) => l.severity !== 'info')
+  const pkg = isPackageTarget(c.target) // a package opens this dialog only when blocked (the save dialog is its confirmation)
   return (
-    <Dialog title={blocked ? strings.deploy.blockedTitle : strings.deploy.confirmTitle} onClose={cancel}>
+    <Dialog title={blocked ? (pkg ? strings.deploy.packageBlockedTitle : strings.deploy.blockedTitle) : strings.deploy.confirmTitle} onClose={cancel}>
       <div data-testid="deploy-confirm">
         {blocked && (
           <>
-            <p className="tone-error" data-testid="deploy-blocked"><strong>{strings.deploy.blockedBody(g.blocking.length)}</strong></p>
+            <p className="tone-error" data-testid="deploy-blocked"><strong>{(pkg ? strings.deploy.packageBlockedBody : strings.deploy.blockedBody)(g.blocking.length)}</strong></p>
             <GateList items={g.blocking} tone="tone-error" testId="deploy-blocking" />
           </>
         )}
         <p className="dim" data-testid="deploy-strict">{g.strict ? strings.deploy.strictOn : strings.deploy.strictOff}</p>
-        <p>{blocked ? strings.deploy.targetLabel : strings.deploy.confirmBody}</p>
+        <p>{pkg ? strings.deploy.packageFolder : blocked ? strings.deploy.targetLabel : strings.deploy.confirmBody}</p>
         <p className="mono deploy-path" data-testid="deploy-confirm-path">{p.root}</p>
         {!blocked && ( // a blocked deploy's file list is partial (blocked SWFs produce none) and nothing is written
           <>

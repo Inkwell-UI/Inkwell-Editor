@@ -18,6 +18,7 @@ export function Toasts() {
             <div className="toast-body">
               <strong>{t.title}</strong>
               {t.text && <p>{t.text}</p>}
+              {t.action && <button type="button" className="btn" onClick={t.action.run} data-testid="toast-action">{t.action.label}</button>}
             </div>
             <button type="button" className="btn btn-quiet" onClick={() => dismiss(t.id)} aria-label={strings.close} title={strings.close}>
               <X size={14} aria-hidden="true" />

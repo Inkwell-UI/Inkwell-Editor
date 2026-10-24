@@ -42,6 +42,7 @@ const api: InkwellApi = {
   prepareDeploy: (t, s, a) => ipcRenderer.invoke(IPC.deployPrepare, t, s, a),
   commitDeploy: (token) => ipcRenderer.invoke(IPC.deployCommit, token),
   cancelDeploy: () => ipcRenderer.invoke(IPC.deployCancel),
+  revealPackage: () => ipcRenderer.invoke(IPC.packageReveal),
   getFontStatus: () => ipcRenderer.invoke(IPC.fontsStatus),
   installFonts: () => ipcRenderer.invoke(IPC.fontsInstall),
   removeFonts: () => ipcRenderer.invoke(IPC.fontsRemove),

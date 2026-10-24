@@ -40,6 +40,7 @@ export const IPC = {
   deployPrepare: 'deploy:prepare',
   deployCommit: 'deploy:commit',
   deployCancel: 'deploy:cancel',
+  packageReveal: 'package:reveal',
   fontsStatus: 'fonts:status',
   fontsInstall: 'fonts:install',
   fontsRemove: 'fonts:remove',
@@ -112,6 +113,8 @@ export interface InkwellApi {
   /** Writes what `prepareDeploy` returned a token for. */
   commitDeploy(token: string): Promise<DeployResult>
   cancelDeploy(): Promise<void>
+  /** Shows the last package zip written in this session in Explorer (main knows the path; the renderer cannot pass one). */
+  revealPackage(): Promise<void>
 
   /** Install Skyrim fonts for Figma (opt-in, per user): what the manifest lists. */
   getFontStatus(): Promise<FontToolStatus>

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { DeployScope, DeployTargetId, PrepareResult } from '../../shared/deploy'
+import { isPackageTarget, type DeployScope, type DeployTargetId, type PrepareResult } from '../../shared/deploy'
 import { inkwell } from '../hooks/api'
 import { strings } from '../strings'
 import { useToastStore } from './toastStore'
@@ -25,8 +25,20 @@ export interface DeployStore {
 const toast = useToastStore.getState
 
 export const useDeployStore = create<DeployStore>()((set, get) => {
-  const commit = async (p: Prepared): Promise<void> => {
+  const commit = async (target: DeployTargetId, p: Prepared): Promise<void> => {
     const r = await inkwell!.commitDeploy(p.token)
+    if (r.cancelled) return
+    if (isPackageTarget(target)) {
+      if (!r.ok || !r.zipPath) return toast().push({ tone: 'error', title: strings.deploy.toastPackageFailed, text: r.error ?? '' })
+      const warn = [...p.gate.warnings, ...p.lint.filter((l) => l.severity !== 'info')].map((l) => l.code)
+      const vortex = target === 'vortex'
+      return toast().push({
+        tone: warn.length ? 'info' : 'ok',
+        title: vortex ? strings.deploy.toastVortex : strings.deploy.toastPackaged,
+        text: `${(vortex ? strings.deploy.vortexText : strings.deploy.packageText)(r.zipPath, r.written ?? 0)}${warn.length ? ` ${warn.join(', ')}` : ''}`,
+        action: { label: strings.deploy.openFolder, run: () => void inkwell?.revealPackage() }
+      }, 15000)
+    }
     if (r.ok) {
       const lint = [...p.gate.warnings, ...p.lint.filter((l) => l.severity !== 'info')]
       toast().push({
@@ -46,9 +58,9 @@ export const useDeployStore = create<DeployStore>()((set, get) => {
       set({ busy: true })
       try {
         const p = await inkwell.prepareDeploy(target, get().scope, get().scope === 'active' ? activeSwf : undefined)
-        if (!p.ok) toast().push({ tone: 'error', title: strings.deploy.toastFailed, text: p.error })
+        if (!p.ok) toast().push({ tone: 'error', title: isPackageTarget(target) ? strings.deploy.toastPackageFailed : strings.deploy.toastFailed, text: p.error })
         else if (p.needsConfirm) set({ confirm: { target, prepared: p } })
-        else await commit(p)
+        else await commit(target, p)
       } finally {
         set({ busy: false })
       }
@@ -58,7 +70,7 @@ export const useDeployStore = create<DeployStore>()((set, get) => {
       if (!c || !inkwell || !c.prepared.gate.ok) return // blocked: the button is disabled and main refuses the commit anyway
       set({ confirm: null, busy: true })
       try {
-        await commit(c.prepared)
+        await commit(c.target, c.prepared)
       } finally {
         set({ busy: false })
       }

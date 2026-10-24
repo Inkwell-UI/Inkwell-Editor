@@ -326,7 +326,7 @@ export const strings = {
     buildNoFfdec: 'FFDec or Java was not found',
     buildNoSwfs: 'No SWF to build yet',
     deploy: 'Deploy',
-    package: 'Package',
+    package: 'Package Mod',
     setup: 'Setup',
     planned: 'Planned',
     setupTip: 'Open the settings'
@@ -544,6 +544,28 @@ export const strings = {
     done: (msg: string) => msg,
     failed: (e: string) => `Deploy failed: ${e}`,
     toastDone: 'Deployed',
-    toastFailed: 'Deploy failed'
+    toastFailed: 'Deploy failed',
+    // Package Mod and the Vortex target: the same files as a deploy, saved as one zip (docs/deploy.md, Package)
+    targetNotes: {
+      package: 'Saves a zip you choose the place of; install it with MO2 (Install a new mod from archive) or Vortex',
+      vortex: 'Vortex has no folder Inkwell may write into: this saves the zip, then install it in Vortex (Mods > Install From File)'
+    } as Record<string, string>,
+    packageMenuLabel: 'Package Mod',
+    packageTitle: 'Package Mod',
+    packageBody: 'One zip with the mod files at its root (Interface, Scripts, Source, plugin; textures in dds mode), built and gated like a deploy. MO2 and Vortex install it as it is.',
+    packageSave: 'Save zip...',
+    packageScope: (all: boolean, name?: string) => (all ? 'All SWFs of the project (scope from the Deploy menu)' : `Only the active SWF${name ? ` (${name})` : ''} (scope from the Deploy menu)`),
+    packageRunning: 'Packaging...',
+    saveTitle: 'Save mod package',
+    zipFilter: 'Zip archive',
+    packageBlockedTitle: 'Package blocked',
+    packageBlockedBody: (n: number) => `Blocked: ${n} lint error(s) in the SWFs being packaged. Nothing was written. Fix them in Figma (or the overlay) and package again.`,
+    packageFolder: 'Default folder (the save dialog lets you choose):',
+    toastPackaged: 'Package saved',
+    toastVortex: 'Package ready for Vortex',
+    packageText: (path: string, n: number) => `${n} file(s) in ${path}. Install it with MO2 (Install a new mod from archive) or Vortex (Install From File).`,
+    vortexText: (path: string, n: number) => `${n} file(s) in ${path}. In Vortex: Mods > Install From File, choose this zip, then enable and deploy it there.`,
+    toastPackageFailed: 'Package failed',
+    openFolder: 'Open folder'
   }
 }

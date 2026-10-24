@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron'
-import { writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { basename, dirname, join } from 'node:path'
 import { IPC } from '../shared/ipc'
 import type { DeployScope, DeployTargetId } from '../shared/deploy'
 import type { CheckId, PathSettingKey, SetSettingResult, SettingKey } from '../shared/doctor'
@@ -23,7 +23,15 @@ const broadcast = (channel: string, payload: unknown): void => {
   // closing the app closes the plugin's socket, which updates state after the windows are gone
   for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed() && !w.webContents.isDestroyed()) w.webContents.send(channel, payload)
 }
-const session = createSession({ appPath: app.getAppPath(), userData: app.getPath('userData'), editorVersion: app.getVersion(), broadcast })
+/** Save dialog for Package Mod. INKWELL_SHOTS_PACKAGE_DIR (screenshot runs) answers it with that folder, since a script cannot click a native dialog. */
+async function chooseZip(defaultPath: string): Promise<string | undefined> {
+  const stub = process.env['INKWELL_SHOTS_PACKAGE_DIR']
+  if (stub) return join(stub, basename(defaultPath))
+  await mkdir(dirname(defaultPath), { recursive: true }).catch(() => undefined) // <project>/dist, so the dialog opens there
+  const r = await dialog.showSaveDialog(win!, { title: strings.deploy.saveTitle, defaultPath, filters: [{ name: strings.deploy.zipFilter, extensions: ['zip'] }] })
+  return r.canceled || !r.filePath ? undefined : r.filePath
+}
+const session = createSession({ appPath: app.getAppPath(), userData: app.getPath('userData'), editorVersion: app.getVersion(), broadcast, chooseZip })
 
 /** Both windows run the same renderer; `?panel=preview` makes it show only the preview stage. */
 function load(w: BrowserWindow, panel?: 'preview'): void {
@@ -139,6 +147,10 @@ ipcMain.handle(IPC.deployTargets, () => session.deployTargets())
 ipcMain.handle(IPC.deployPrepare, (_e, id: DeployTargetId, scope: DeployScope, active?: string) => session.deployPrepare(id, scope, active))
 ipcMain.handle(IPC.deployCommit, (_e, token: string) => session.deployCommit(token))
 ipcMain.handle(IPC.deployCancel, () => session.deployCancel())
+ipcMain.handle(IPC.packageReveal, () => {
+  const p = session.lastPackage()
+  if (p) shell.showItemInFolder(p)
+})
 ipcMain.handle(IPC.fontsStatus, () => session.fontStatus())
 ipcMain.handle(IPC.fontsInstall, () => session.installFonts())
 ipcMain.handle(IPC.fontsRemove, () => session.removeFonts())

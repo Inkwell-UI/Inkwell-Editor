@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, Copy, Hammer, Package, Settings2, FileStack, PenLine } from 'lucide-react'
+import { ChevronDown, Copy, Hammer, Settings2, FileStack, PenLine } from 'lucide-react'
 import { PRODUCT_NAME } from '../../shared/product'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useProject } from '../hooks/useProject'
@@ -13,7 +13,7 @@ import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
 import { WORKSPACE_IDS } from '../workspace/workspaces'
-import { DeployMenu } from './DeployMenu'
+import { DeployMenu, PackageMenu } from './DeployMenu'
 
 function Dot({ tone }: { tone: DotTone }) {
   return <span className={`dot dot-${tone}`} aria-hidden="true" />
@@ -140,7 +140,7 @@ export function GameDot() {
   )
 }
 
-/** Zone 1 (UX 4.1): project, SWF switcher, target pill, workspace switcher, Setup, connection dots, Build All, Deploy (MO2) and Package (planned). */
+/** Zone 1 (UX 4.1): project, SWF switcher, target pill, workspace switcher, Setup, connection dots, Build All, Deploy and Package Mod. */
 export function TopBar() {
   const project = useProject()
   const swf = useActiveSwf()
@@ -164,7 +164,7 @@ export function TopBar() {
       <span className="spacer" />
       <Btn icon={Hammer} variant="primary" onClick={() => void inkwell?.buildAll()} reason={buildReason} testId="build-all">{compiling ? strings.top.building : strings.top.buildAll}</Btn>
       <DeployMenu />
-      <Btn icon={Package} reason={strings.top.planned} label={strings.top.package}>{strings.top.package}<ChevronDown size={12} aria-hidden="true" /></Btn>
+      <PackageMenu />
     </header>
   )
 }
