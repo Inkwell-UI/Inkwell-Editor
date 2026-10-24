@@ -1,0 +1,112 @@
+import { Download, Loader, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { FIGMA_FACES, type FontToolProgress, type FontToolResult, type FontToolStatus } from '../../shared/fonts'
+import { inkwell } from '../hooks/api'
+import { strings } from '../strings'
+import { Btn } from '../ui/Btn'
+import { Dialog } from '../ui/Dialog'
+
+const s = strings.fonts
+/** Everything the section shows, lowercased, for the Settings search. */
+export const FONTS_TEXT = [s.title, s.intro, s.notice, s.install, s.remove, 'figma fonts everywhere futura', ...FIGMA_FACES.map((f) => `${f.family} ${f.style}`)].join(' ').toLowerCase()
+
+const stepText = (p: FontToolProgress): string => (p.step === 'install' || p.step === 'remove' ? s.steps[p.step](p.done, p.total) : s.steps[p.step])
+
+/** Settings section "Fonts for Figma" (opt-in): notice, status, Install (after a confirmation that repeats the notice and lists the faces) and Remove. Never runs by itself. */
+export function FontsForFigma() {
+  const [status, setStatus] = useState<FontToolStatus>()
+  const [loadError, setLoadError] = useState<string>()
+  const [busy, setBusy] = useState<'install' | 'remove'>()
+  const [progress, setProgress] = useState<FontToolProgress>()
+  const [result, setResult] = useState<{ kind: 'install' | 'remove'; r: FontToolResult }>()
+  const [confirm, setConfirm] = useState(false)
+  useEffect(() => {
+    void inkwell?.getFontStatus().then(setStatus, (e: unknown) => setLoadError(e instanceof Error ? e.message : String(e)))
+    return inkwell?.onFontProgress(setProgress)
+  }, [])
+  const run = (kind: 'install' | 'remove'): void => {
+    if (!inkwell) return
+    setConfirm(false)
+    setBusy(kind)
+    setResult(undefined)
+    setProgress(undefined)
+    void (kind === 'install' ? inkwell.installFonts() : inkwell.removeFonts())
+      .then(
+        (r) => {
+          setResult({ kind, r })
+          setStatus(r.status)
+        },
+        (e: unknown) => setLoadError(e instanceof Error ? e.message : String(e))
+      )
+      .finally(() => {
+        setBusy(undefined)
+        setProgress(undefined)
+      })
+  }
+  const installed = !!status?.installed
+  const notWin = status && !status.platformOk ? s.notWindows : undefined
+  const r = result?.r
+  return (
+    <section className="fonts-figma" data-testid="fonts-figma" aria-labelledby="fonts-figma-title">
+      <h3 id="fonts-figma-title">{s.title}</h3>
+      <p className="dim">{s.intro}</p>
+      <p className="banner banner-info fonts-notice" data-testid="fonts-notice"><span>{s.notice}</span></p>
+      <p className="dim">{s.quality}</p>
+      <div role="status" aria-label={s.statusLabel} data-testid="fonts-status">
+        {status && <p><strong>{installed ? s.statusInstalled(status.faces.length) : s.statusNone}</strong></p>}
+        {installed && (
+          <ul className="plain fonts-faces">
+            {status!.faces.map((f) => (
+              <li key={f.file}>
+                {f.family} / {f.style} {!f.present && <span className="tone-warn">({s.missingFile})</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+        {status && <p className="dim mono fonts-where">{s.location(status.fontsDir, status.manifestPath)}</p>}
+        {busy && (
+          <p data-testid="fonts-progress">
+            <Loader size={12} className="spin" aria-hidden="true" /> {progress ? stepText(progress) : s.working}
+          </p>
+        )}
+      </div>
+      {loadError && <p className="tone-error" role="alert">{s.loadFailed(loadError)}</p>}
+      {r && !r.ok && (
+        <p className="tone-error" role="alert" data-testid="fonts-error" data-code={r.code}>
+          <strong>{s.errors[r.code] ?? r.code}.</strong> {r.error}
+        </p>
+      )}
+      {r?.ok && <p className="tone-ok" data-testid="fonts-done">{result!.kind === 'install' ? s.installed : s.removed}</p>}
+      {r?.ok && r.warnings.length > 0 && (
+        <ul className="plain tone-warn" aria-label={s.warnings}>{r.warnings.map((w) => <li key={w}>{w}</li>)}</ul>
+      )}
+      <div className="row-actions">
+        <Btn icon={Download} variant="primary" haspopup="dialog" onClick={() => setConfirm(true)} reason={busy ? s.working : notWin ?? (installed ? s.alreadyInstalled : undefined)} testId="fonts-install">{s.install}</Btn>
+        <Btn icon={Trash2} onClick={() => run('remove')} reason={busy ? s.working : !installed ? s.nothingInstalled : undefined} testId="fonts-remove">{s.remove}</Btn>
+      </div>
+      {confirm && (
+        <Dialog title={s.confirmTitle} onClose={() => setConfirm(false)}>
+          <div data-testid="fonts-confirm">
+            <p className="banner banner-info"><span>{s.notice}</span></p>
+            <p>{s.confirmFaces(FIGMA_FACES.length)}</p>
+            <ul className="plain fonts-faces" data-testid="fonts-confirm-faces">
+              {FIGMA_FACES.map((f) => (
+                <li key={`${f.family}/${f.style}`}>
+                  {f.family} / {f.style} <span className="dim mono">{f.aliases.join(', ')}</span>
+                </li>
+              ))}
+            </ul>
+            <p>{s.confirmWhere}</p>
+            <p className="mono deploy-path">{status?.fontsDir}</p>
+            <p className="dim">{s.confirmReversible}</p>
+            <p className="dim">{s.quality}</p>
+            <div className="row-actions">
+              <Btn variant="primary" onClick={() => run('install')} testId="fonts-confirm-ok">{s.confirmAccept}</Btn>
+              <Btn onClick={() => setConfirm(false)} testId="fonts-confirm-cancel">{s.cancel}</Btn>
+            </div>
+          </div>
+        </Dialog>
+      )}
+    </section>
+  )
+}

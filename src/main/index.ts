@@ -138,6 +138,9 @@ ipcMain.handle(IPC.deployTargets, () => session.deployTargets())
 ipcMain.handle(IPC.deployPrepare, (_e, id: DeployTargetId, scope: DeployScope, active?: string) => session.deployPrepare(id, scope, active))
 ipcMain.handle(IPC.deployCommit, (_e, token: string) => session.deployCommit(token))
 ipcMain.handle(IPC.deployCancel, () => session.deployCancel())
+ipcMain.handle(IPC.fontsStatus, () => session.fontStatus())
+ipcMain.handle(IPC.fontsInstall, () => session.installFonts())
+ipcMain.handle(IPC.fontsRemove, () => session.removeFonts())
 // selection and active SWF: relayed to every other window
 ipcMain.on(IPC.uiEvent, (e, ev: UiEvent) => {
   for (const w of BrowserWindow.getAllWindows()) if (w.webContents !== e.sender && !w.isDestroyed()) w.webContents.send(IPC.uiEvent, ev)

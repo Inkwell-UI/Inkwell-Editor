@@ -1,5 +1,6 @@
 import { ArrowLeft, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { FONTS_TEXT, FontsForFigma } from '../doctor/FontsForFigma'
 import { SetupDoctorPanel } from '../doctor/SetupDoctorPanel'
 import { useDialogStore } from '../state/dialogStore'
 import { useSettingsStore } from '../state/settingsStore'
@@ -44,6 +45,7 @@ export function SettingsView() {
           </section>
         )}
         <SetupDoctorPanel query={query} />
+        {(!query.trim() || FONTS_TEXT.includes(query.trim().toLowerCase())) && <FontsForFigma />}
        </div>
       </div>
     </section>

@@ -340,3 +340,8 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .settings-body { flex: 1; overflow: auto; padding: 16px 24px; }
 .settings-col { max-width: 860px; margin: 0 auto; }
 .settings-body h3 { margin: 0 0 6px; font-size: 13px; }
+.fonts-figma { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
+.fonts-figma p { margin: 6px 0; }
+.fonts-notice, .dialog .banner { align-items: flex-start; }
+.fonts-faces { margin: 4px 0 6px; columns: 2; }
+.fonts-where { overflow-wrap: anywhere; user-select: text; }

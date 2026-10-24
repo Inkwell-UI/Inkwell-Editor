@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
+import { homedir, release } from 'node:os'
 import { join } from 'node:path'
 import { Swf } from '@inkwell-ui/spec'
 import { IPC, type SaveOverlayResult } from '../shared/ipc'
@@ -11,6 +12,9 @@ import { ffdecState } from '../shared/ffdec'
 import type { DeployResult, DeployScope, DeployState, DeployTargetId, DeployTargetInfo, PrepareResult } from '../shared/deploy'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, ResolvedSettings, SetSettingResult, SettingKey, StoredSettings } from '../shared/doctor'
 import { buildCacheAction, runBenchmark, runDoctor, type DoctorContext } from './doctor'
+import { checkSkyrim, type SkyrimFacts } from './doctor/checks'
+import { createFontTool } from './fonts'
+import { sandboxFontSystem, windowsFontSystem } from './fonts/install'
 import { createDeployService } from './deploy/service'
 import { createAssetStore, type AssetStore } from './images/assets'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
@@ -271,6 +275,21 @@ export function createSession(deps: SessionDeps) {
     const r = resolved()
     return { ...r, problems: await settingProblems(r) }
   }
+  // INKWELL_FONTS_SANDBOX=<dir>: debug runs install into <dir> with a JSON "registry", never into the user's fonts or HKCU
+  const fontsSandbox = process.env['INKWELL_FONTS_SANDBOX']
+  const [winMajor = 0, , winBuild = 0] = release().split('.').map(Number)
+  const fontTool = createFontTool({
+    sys: fontsSandbox ? sandboxFontSystem(fontsSandbox) : windowsFontSystem(process.env['LOCALAPPDATA'] ?? join(homedir(), 'AppData', 'Local')),
+    platformOk: process.platform === 'win32' && (winMajor > 10 || (winMajor === 10 && winBuild >= 17763)), // per-user fonts: Windows 10 1809+
+    findBsa: async () => {
+      await settingsReady
+      const sky: SkyrimFacts = {}
+      await checkSkyrim(doctorCtx(), sky)
+      return sky.bsa
+    },
+    ffdec: () => ({ javaPath: cfg.javaPath, ffdecDir: cfg.ffdecDir }),
+    onProgress: (p) => deps.broadcast(IPC.fontsProgress, p)
+  })
   const doctorCtx = (): DoctorContext => ({ settings: resolved(), appPath: deps.appPath, userData: deps.userData, ...(projectDir ? { projectDir } : {}), pluginConnections: state.connections, ...(meta ? { projectName: meta.name } : {}) })
 
   async function remember(r: RecentProject): Promise<void> {
@@ -326,6 +345,9 @@ export function createSession(deps: SessionDeps) {
     deployPrepare: (id: DeployTargetId, scope: DeployScope, active?: string): Promise<PrepareResult> => deploy.prepare(id, scope, active),
     deployCommit: (token: string): Promise<DeployResult> => deploy.commit(token),
     deployCancel: (): void => deploy.cancel(),
+    fontStatus: () => fontTool.status(),
+    installFonts: () => fontTool.install(),
+    removeFonts: () => fontTool.remove(),
     getProject: projectState,
     getPreviews: (): PreviewBuild[] => [...previews.values()],
     getPreviewFonts: () => fonts().fonts,

@@ -457,6 +457,55 @@ export const strings = {
     nothingToClear: 'No saved value to clear'
   },
 
+  fonts: {
+    title: 'Fonts for Figma',
+    intro:
+      "Optional. Extracts Skyrim's own fonts from your game's Skyrim - Interface.bsa and installs them for your Windows account only, so Figma shows the game's fonts. Families: Everywhere (Light, Medium, Bold) and one per other face. Figma text in these fonts maps to the right alias with no warning. Without them, use the starter kit's free lookalikes.",
+    notice:
+      "These fonts belong to Bethesda Softworks and, for Everywhere (Futura Condensed), to Adobe and Neufville. They are installed for your personal design use only. Never redistribute, upload, commit or ship them, and never put them in a shared project. This is not legal advice.",
+    quality: 'The extracted fonts have no kerning and no hinting, so spacing in Figma differs slightly from the game.',
+    statusInstalled: (n: number) => `Installed for this Windows user: ${n} face(s).`,
+    statusNone: 'Not installed.',
+    statusLabel: 'Font install status',
+    missingFile: 'file missing',
+    install: 'Install Skyrim fonts...',
+    remove: 'Remove fonts',
+    alreadyInstalled: 'Already installed; remove them first to reinstall',
+    nothingInstalled: 'Nothing is installed',
+    notWindows: 'Per-user fonts need Windows 10 (1809) or newer',
+    working: 'Working...',
+    steps: {
+      game: 'Looking for Skyrim - Interface.bsa...',
+      export: 'Exporting the fonts with FFDec (a few seconds)...',
+      convert: 'Renaming the fonts...',
+      install: (d?: number, t?: number) => `Installing ${d ?? 0} of ${t ?? 0}...`,
+      remove: (d?: number, t?: number) => `Removing ${d ?? 0} of ${t ?? 0}...`
+    },
+    errors: {
+      'not-windows': 'Not available on this system',
+      busy: 'The font tool is already running',
+      'already-installed': 'Already installed',
+      'game-not-found': 'Skyrim was not found',
+      'ffdec-missing': 'FFDec is missing',
+      'export-failed': 'FFDec could not export the fonts',
+      'faces-missing': 'The game file has unexpected fonts',
+      fstype: "The fonts' embedding flags forbid installing them",
+      foreign: 'Other fonts are in the way',
+      failed: 'The font tool failed'
+    } as Record<string, string>,
+    loadFailed: (e: string) => `The font status could not be read: ${e}`,
+    installed: 'Fonts installed. Fully quit Figma (also from the tray) and start it again to see them. Restart Inkwell to use them in the preview too.',
+    removed: 'Fonts removed. Restart Figma.',
+    warnings: 'Notes',
+    confirmTitle: 'Install Skyrim fonts for Figma?',
+    confirmFaces: (n: number) => `${n} face(s) will be installed (Figma family / style, and the alias each maps to):`,
+    confirmWhere: 'Installed for your Windows account only (no administrator rights, never system-wide) into:',
+    confirmReversible: 'Inkwell records every file and registry entry in a manifest; Remove fonts reverses exactly that. Fonts Inkwell did not install are never overwritten.',
+    confirmAccept: 'I understand, install',
+    cancel: 'Cancel',
+    location: (dir: string, manifest: string) => `Folder: ${dir}. Manifest: ${manifest}.`
+  },
+
   deploy: {
     menuLabel: 'Deploy targets',
     targetsTitle: 'Deploy target',

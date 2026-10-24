@@ -41,6 +41,10 @@ const api: InkwellApi = {
   getDeployTargets: () => ipcRenderer.invoke(IPC.deployTargets),
   prepareDeploy: (t, s, a) => ipcRenderer.invoke(IPC.deployPrepare, t, s, a),
   commitDeploy: (token) => ipcRenderer.invoke(IPC.deployCommit, token),
-  cancelDeploy: () => ipcRenderer.invoke(IPC.deployCancel)
+  cancelDeploy: () => ipcRenderer.invoke(IPC.deployCancel),
+  getFontStatus: () => ipcRenderer.invoke(IPC.fontsStatus),
+  installFonts: () => ipcRenderer.invoke(IPC.fontsInstall),
+  removeFonts: () => ipcRenderer.invoke(IPC.fontsRemove),
+  onFontProgress: (cb) => on(IPC.fontsProgress, cb)
 }
 contextBridge.exposeInMainWorld('inkwell', api)

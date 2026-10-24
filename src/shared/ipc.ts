@@ -1,5 +1,6 @@
 import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, PrepareResult } from './deploy'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, PathSettingKey, ResolvedSettings, SetSettingResult, SettingKey } from './doctor'
+import type { FontToolProgress, FontToolResult, FontToolStatus } from './fonts'
 import type { OverlayDoc } from './overlay'
 import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from './preview'
 import type { OpenResult, ProjectState, RecentProject, UiEvent } from './projectState'
@@ -38,7 +39,11 @@ export const IPC = {
   deployTargets: 'deploy:targets',
   deployPrepare: 'deploy:prepare',
   deployCommit: 'deploy:commit',
-  deployCancel: 'deploy:cancel'
+  deployCancel: 'deploy:cancel',
+  fontsStatus: 'fonts:status',
+  fontsInstall: 'fonts:install',
+  fontsRemove: 'fonts:remove',
+  fontsProgress: 'fonts:progress'
 } as const
 
 export type SaveOverlayResult = { ok: true } | { ok: false; error: string }
@@ -107,4 +112,12 @@ export interface InkwellApi {
   /** Writes what `prepareDeploy` returned a token for. */
   commitDeploy(token: string): Promise<DeployResult>
   cancelDeploy(): Promise<void>
+
+  /** Install Skyrim fonts for Figma (opt-in, per user): what the manifest lists. */
+  getFontStatus(): Promise<FontToolStatus>
+  /** Extracts the fonts from the user's own game and installs them per user. Only on an explicit, confirmed click; never rejects. */
+  installFonts(): Promise<FontToolResult>
+  /** Reverses exactly what the manifest lists; never rejects. */
+  removeFonts(): Promise<FontToolResult>
+  onFontProgress(cb: (p: FontToolProgress) => void): () => void
 }
