@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
-import type { DeployResult, DeployScope, DeployState, DeployTargetId, DeployTargetInfo, PrepareResult } from '../../shared/deploy'
+import type { DeployResult, DeployScope, DeployState, DeployTargetId, DeployTargetInfo, GateResult, PrepareResult } from '../../shared/deploy'
 import type { ResolvedSettings, StoredSettings } from '../../shared/doctor'
 import { findSkyrim } from '../doctor/skyrim'
+import { exportGate } from '../lint/gate'
 import { loadVanillaHashes, vanillaCacheRoot } from '../vanilla/cache'
 import { isConfirmed, resolveTarget, targetList, withConfirmed } from './plan'
 import { commitDeploy, prepareDeploy, type DeployInput, type DeploySwf, type Prepared } from './run'
@@ -11,7 +12,7 @@ export interface DeployDeps {
   userData: string
   appPath: string
   /** The open project, or undefined. */
-  project(): ({ dir: string; name: string; modId: string; deploy?: { preset: string; path: string }; swfs: DeploySwf[] } & Pick<DeployInput, 'imageMode' | 'assets'>) | undefined
+  project(): ({ dir: string; name: string; modId: string; deploy?: { preset: string; path: string }; swfs: DeploySwf[]; strictMode?: boolean } & Pick<DeployInput, 'imageMode' | 'assets'>) | undefined
   settings(): { stored: StoredSettings; resolved: ResolvedSettings }
   saveStored(s: StoredSettings): Promise<void>
   /** The resident FFDec wrapper (throws with a clear message when FFDec is missing). */
@@ -21,7 +22,7 @@ export interface DeployDeps {
 
 /** Deploy in two steps so the UI can ask before anything is written: `prepare` compiles and checks everything, `commit` writes. One prepared deploy is pending at a time. */
 export function createDeployService(d: DeployDeps) {
-  let pending: { token: string; input: DeployInput; prepared: Prepared; dir: string; scope: DeployScope } | undefined
+  let pending: { token: string; input: DeployInput; prepared: Prepared; dir: string; scope: DeployScope; gate: GateResult } | undefined
 
   const targets = (): DeployTargetInfo[] => {
     const p = d.project()
@@ -52,11 +53,13 @@ export function createDeployService(d: DeployDeps) {
         return r
       }
       const token = randomUUID()
-      pending = { token, input, prepared: r.prepared, dir: p.dir, scope }
-      d.report({ state: 'preparing', message: 'Ready to deploy', timing: { stages: r.prepared.stages, total: Object.values(r.prepared.stages).reduce((a, b) => a + b, 0) } })
+      const gate = exportGate(r.prepared.issues, p.strictMode === true)
+      pending = { token, input, prepared: r.prepared, dir: p.dir, scope, gate }
+      const timing = { stages: r.prepared.stages, total: Object.values(r.prepared.stages).reduce((a, b) => a + b, 0) }
+      d.report(gate.ok ? { state: 'preparing', message: 'Ready to deploy', timing } : { state: 'error', message: blockedMessage(gate), timing })
       return {
-        ok: true, token, root: t.root, files: r.prepared.info, removed: r.prepared.removed, lint: r.prepared.lint, notes: r.prepared.plan.notes,
-        needsConfirm: !isConfirmed(stored, p.dir, t.root)
+        ok: true, token, root: t.root, files: r.prepared.info, removed: r.prepared.removed, gate, lint: r.prepared.lint, notes: r.prepared.plan.notes,
+        needsConfirm: !gate.ok || !isConfirmed(stored, p.dir, t.root) // a blocked deploy always shows the dialog with the reasons
       }
     } catch (e) {
       const error = e instanceof Error ? e.message : String(e)
@@ -69,6 +72,11 @@ export function createDeployService(d: DeployDeps) {
     const c = pending
     if (!c || c.token !== token) return { ok: false, error: 'The prepared deploy is no longer valid; start the deploy again.' }
     pending = undefined
+    if (!c.gate.ok) { // never trust the renderer: a blocked deploy writes nothing
+      const error = blockedMessage(c.gate)
+      d.report({ state: 'error', message: error })
+      return { ok: false, root: c.input.root, error }
+    }
     d.report({ state: 'writing', message: `Writing ${c.prepared.files.size} files...` })
     const r = await commitDeploy(c.input, c.prepared)
     if (r.ok) {
@@ -83,3 +91,6 @@ export function createDeployService(d: DeployDeps) {
 
   return { targets, prepare, commit, cancel: (): void => void (pending = undefined) }
 }
+
+const blockedMessage = (g: GateResult): string =>
+  `Deploy blocked: ${g.blocking.length} lint error(s)${g.strict ? ' (Strict Mode promotes warnings)' : ''}. ${g.blocking.slice(0, 3).map((l) => `${l.swf ? `${l.swf}: ` : ''}${l.code}`).join(', ')}${g.blocking.length > 3 ? ', ...' : ''}`

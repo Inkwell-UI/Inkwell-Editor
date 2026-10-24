@@ -25,10 +25,25 @@ export interface DeployLintItem {
   severity: 'error' | 'warning' | 'info'
   code: string
   message: string
+  /** SWF name; absent for deploy-level notices (plan warnings). */
+  swf?: string
+  /** Figma node id, so the dialog can link to the layer. */
+  nodeId?: string
+  layerName?: string
+}
+
+/** The export gate (design spec, "Severity levels"): errors block, warnings deploy and are listed, info is panel only; Strict Mode promotes warnings. */
+export interface GateResult {
+  ok: boolean
+  strict: boolean
+  /** Errors, plus warnings promoted by Strict Mode. */
+  blocking: DeployLintItem[]
+  warnings: DeployLintItem[]
+  info: DeployLintItem[]
 }
 
 export type PrepareResult =
-  | { ok: true; token: string; root: string; files: DeployFileInfo[]; removed: string[]; needsConfirm: boolean; lint: DeployLintItem[]; notes: string[] }
+  | { ok: true; token: string; root: string; files: DeployFileInfo[]; removed: string[]; needsConfirm: boolean; gate: GateResult; lint: DeployLintItem[]; notes: string[] }
   | { ok: false; error: string; lint?: DeployLintItem[] }
 
 export interface DeployResult {

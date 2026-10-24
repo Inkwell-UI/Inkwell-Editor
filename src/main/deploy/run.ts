@@ -6,6 +6,7 @@ import { createStageTimer } from '../../shared/timing'
 import { ddsRel, type AssetStore, type ImageMode } from '../images/assets'
 import { writeDds } from '../images/dds'
 import { decodePng } from '../images/png'
+import { unreachableNodes, UNREACHABLE_MESSAGE } from '../sync/syncServer'
 import { isUnmodifiedVanilla } from '../vanilla/cache'
 import { compileWidget, type WidgetOptions } from '../widget/compileWidget'
 import { planDeploy, type DeployPlan, type SwfLike } from './plan'
@@ -15,6 +16,8 @@ export interface DeploySwf extends SwfLike {
   /** Overlay instance names by node id (they feed the compiler). */
   instanceNames?: Record<string, string>
   ir: Swf
+  /** customMenu: the latest build of this SWF in this session (deploy ships that file, so its lint is the SWF's lint). Absent = not built yet. */
+  build?: { state: 'compiling' | 'failed' | 'done'; lint: DeployLintItem[] }
 }
 
 export interface DeployInput {
@@ -43,40 +46,58 @@ export interface Prepared {
   files: Map<string, { data: Buffer; swf: string }>
   info: DeployFileInfo[]
   removed: string[]
+  /** Deploy-level notices from the plan (no SWF lint; never promoted by Strict Mode). */
   lint: DeployLintItem[]
+  /** Lint of the deployed SWFs (compile lint, unreachable layers, missing builds): the input of the export gate. */
+  issues: DeployLintItem[]
   scope: Set<string>
   stages: Record<string, number>
 }
 
 export type PrepareOutcome = { ok: true; prepared: Prepared } | { ok: false; error: string; lint?: DeployLintItem[] }
 
+const notReady = (s: DeploySwf, buildDir: string): string =>
+  !s.build ? `"${s.name}" has not been built since the project was opened. Run Build All first.`
+    : s.build.state === 'compiling' ? `"${s.name}" is still compiling. Wait for the build, then deploy.`
+      : s.build.state === 'failed' ? `"${s.name}": the last build failed. Fix it and run Build All.`
+        : `"${s.name}" has no build yet (${join(buildDir, `${s.name}.swf`)}). Run Build All first.`
+
 export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
   const plan = planDeploy({ modId: i.modId, swfs: i.swfs, root: i.root, gameDirs: i.gameDirs, hasPapyrus: !!i.papyrusExe, ...(i.only ? { only: i.only } : {}) })
   if (plan.errors.length) return { ok: false, error: plan.errors.join(' '), lint: plan.lint }
   const timer = createStageTimer()
   const lint: DeployLintItem[] = [...plan.lint]
+  const issues: DeployLintItem[] = []
   const files = new Map<string, { data: Buffer; swf: string }>()
   const allowed = new Set(plan.files.map((f) => f.rel))
   timer.start('compile')
   try {
     for (const s of i.swfs.filter((x) => !x.orphaned && (!i.only || x.name === i.only))) {
+      if (s.kind !== 'hudWidget' && s.kind !== 'customMenu') continue // menu replacements are skipped by the plan (warning)
+      const first = issues.length
+      const fail = (code: string, message: string): void => void issues.push({ severity: 'error', code, message, swf: s.name })
+      for (const id of unreachableNodes(s.ir)) issues.push({ severity: 'warning', code: 'unreachable-node', message: `"${s.ir.nodes[id]!.name}": ${UNREACHABLE_MESSAGE}.`, swf: s.name, nodeId: id, layerName: s.ir.nodes[id]!.name })
       if (s.kind === 'hudWidget') {
         const r = await compileWidget(s.ir, {
           modId: i.modId, widgetName: plan.widgets[s.name]!, ...(s.instanceNames ? { instanceNames: s.instanceNames } : {}), buildDir: join(i.buildDir, 'deploy', s.name), ffdec: i.ffdec,
           ...(i.imageMode ? { imageMode: i.imageMode } : {}), ...(i.assets ? { images: (h: string) => i.assets!.get(h) } : {}),
           ...(i.papyrusExe ? { papyrusExe: i.papyrusExe } : {}), ...(i.stubsDir ? { stubsDir: i.stubsDir } : {})
         })
-        const errs = r.lint.filter((l) => l.severity === 'error')
-        for (const l of r.lint) if (l.code !== 'papyrus-skipped') lint.push({ severity: l.severity, code: l.code, message: `${s.name}: ${l.message}` })
-        if (errs.length) return { ok: false, error: `"${s.name}" did not compile: ${errs[0]!.message}`, lint }
+        for (const l of r.lint)
+          if (l.code !== 'papyrus-skipped') issues.push({ severity: l.severity, code: l.code, message: l.message, swf: s.name, nodeId: l.nodeId, ...(l.nodeName ? { layerName: l.nodeName } : {}) })
+        if (issues.slice(first).some((l) => l.severity === 'error')) continue // blocked by the gate: nothing of this SWF is deployed
         for (const [rel, data] of Object.entries(r.files)) {
           if (!allowed.has(rel)) continue // compile output the plan does not list (no compiler: scripts and plugin) is not deployed
           files.set(rel, { data, swf: s.name })
         }
       } else if (s.kind === 'customMenu') {
-        const built = join(i.buildDir, `${s.name}.swf`)
-        const data = await readFile(built).catch(() => undefined)
-        if (!data) return { ok: false, error: `"${s.name}" has no build yet (${built}). Run Build All first.`, lint }
+        const data = s.build?.state === 'done' ? await readFile(join(i.buildDir, `${s.name}.swf`)).catch(() => undefined) : undefined
+        if (!data) {
+          fail('build-not-ready', notReady(s, i.buildDir))
+          continue
+        }
+        issues.push(...s.build!.lint.map((l) => ({ ...l, swf: s.name })))
+        if (issues.slice(first).some((l) => l.severity === 'error')) continue
         files.set(`Interface/${s.name}.swf`, { data, swf: s.name })
       }
       // dds mode: the game SWF loads img://textures/Inkwell/<modId>/<hash>.dds, so ship one DDS per image (embedded mode adds nothing)
@@ -95,7 +116,7 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
     timer.end('compile')
   }
   const missing = plan.files.filter((f) => !files.has(f.rel))
-  if (missing.length && i.papyrusExe) return { ok: false, error: `The build did not produce: ${missing.map((m) => m.rel).join(', ')}.`, lint }
+  if (missing.length && i.papyrusExe && !issues.some((l) => l.severity === 'error')) return { ok: false, error: `The build did not produce: ${missing.map((m) => m.rel).join(', ')}.`, lint }
   timer.start('vanilla')
   const vanilla = [...files].filter(([rel, f]) => rel.toLowerCase().endsWith('.swf') && isUnmodifiedVanilla(f.data, i.vanillaHashes)).map(([rel]) => rel)
   timer.end('vanilla')
@@ -105,7 +126,7 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
   const t = timer.finishBuild()
   return {
     ok: true,
-    prepared: { plan, files, info: [...files].map(([rel, f]) => ({ rel, size: f.data.length, swf: f.swf })), removed, lint, scope, stages: t.stages }
+    prepared: { plan, files, info: [...files].map(([rel, f]) => ({ rel, size: f.data.length, swf: f.swf })), removed, lint, issues, scope, stages: t.stages }
   }
 }
 

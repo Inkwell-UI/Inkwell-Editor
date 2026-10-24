@@ -50,6 +50,7 @@ export function createSession(deps: SessionDeps) {
   const lintBySwf = new Map<string, number>()
   const unreachableBySwf = new Map<string, { id: string; name: string; swfName: string }[]>()
   const reports = new Map<string, SwfReport>()
+  const buildBySwf = new Map<string, 'compiling' | 'failed' | 'done'>() // the deploy gate: a custom menu ships its last build only when it finished
   const previews = new Map<string, PreviewBuild>()
   let looseCount = 0
   let previewSeq = 0
@@ -181,6 +182,7 @@ export function createSession(deps: SessionDeps) {
     )
     srv.events.on('selection', (ids: string[]) => deps.broadcast(IPC.figmaSelection, ids))
     srv.events.on('status', (s: { swfId?: string; state: 'compiling' | 'synced' | 'error'; issues?: { message: string; code?: string; nodeId?: string }[] }) => {
+      if (s.swfId) buildBySwf.set(s.swfId, s.state === 'compiling' ? 'compiling' : s.issues?.some((i) => i.code === 'build_failed') ? 'failed' : 'done')
       if (s.swfId && s.state !== 'compiling') {
         lintBySwf.set(s.swfId, s.issues?.length ?? 0)
         const name = srv.swfs().find((i) => i.id === s.swfId)?.name ?? s.swfId
@@ -213,6 +215,7 @@ export function createSession(deps: SessionDeps) {
     try {
       await stopServer()
       reports.clear()
+      buildBySwf.clear()
       previews.clear()
       lintBySwf.clear()
       unreachableBySwf.clear()
@@ -242,9 +245,10 @@ export function createSession(deps: SessionDeps) {
       const p = projectState()
       if (!p || !meta) return undefined
       return {
-        dir: p.dir, name: p.name, modId: p.modId, deploy: meta.deploy, imageMode: meta.imageMode ?? 'embedded', assets,
+        dir: p.dir, name: p.name, modId: p.modId, deploy: meta.deploy, imageMode: meta.imageMode ?? 'embedded', assets, strictMode: p.strictMode,
         swfs: p.swfs.map((s) => ({
           name: s.name, orphaned: s.orphaned, kind: s.ir.target.kind, ir: s.ir,
+          ...(buildBySwf.has(s.id) ? { build: { state: buildBySwf.get(s.id)!, lint: (reports.get(s.id)?.lint ?? []).map(({ severity, code, message, nodeId, layerName }) => ({ severity, code, message, nodeId, layerName })) } } : {}),
           instanceNames: Object.fromEntries((Object.entries(s.overlay.nodes ?? {}) as [string, { instanceName?: string }][]).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName] as [string, string]] : [])))
         }))
       }

@@ -13,7 +13,7 @@ import { syntheticPng } from '../images/synthetic'
 import { loadProject } from '../project'
 import { frame } from '../swf/ir.testutil'
 import { sha256 } from '../vanilla/bsa'
-import { commitDeploy, prepareDeploy, type DeployInput } from './run'
+import { commitDeploy, prepareDeploy, type DeployInput, type DeploySwf } from './run'
 import { readManifest } from './write'
 
 const appPath = resolve(__dirname, '../../..')
@@ -33,7 +33,7 @@ const papyrusExe = process.env['INKWELL_PAPYRUS'] && existsSync(process.env['INK
 const noFfdec = { build: () => Promise.reject(new Error('FFDec must not be used here')) }
 
 describe('prepareDeploy guards', () => {
-  const swf = (name: string) => ({ name, orphaned: false, kind: 'customMenu' as const, ir: {} as Swf })
+  const swf = (name: string): DeploySwf => ({ name, orphaned: false, kind: 'customMenu' as const, ir: { root: 'r', nodes: { r: frame('r', []) } } as unknown as Swf, build: { state: 'done', lint: [] } })
   const input = (over: Partial<DeployInput>): DeployInput => ({
     modId: 'M', swfs: [swf('wheel')], root: join(mkdtempSync(join(tmpdir(), 'inkwell-run-')), 'mod'), gameDirs: [], buildDir: mkdtempSync(join(tmpdir(), 'inkwell-build-')),
     ffdec: noFfdec, vanillaHashes: new Set(), ...over
@@ -61,8 +61,37 @@ describe('prepareDeploy guards', () => {
     expect(r).toMatchObject({ ok: false, error: expect.stringContaining('Data folder') })
   })
 
-  it('a missing build is a clear error', async () => {
-    expect(await prepareDeploy(input({}))).toMatchObject({ ok: false, error: expect.stringContaining('Run Build All') })
+  it('a missing, unfinished or failed build is a gate error, and nothing of that SWF is deployed', async () => {
+    const issue = async (s: DeploySwf, file = true) => {
+      const i = input({ swfs: [s] })
+      if (file) writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+      const r = await prepareDeploy(i)
+      if (!r.ok) throw new Error(r.error)
+      expect(r.prepared.files.size).toBe(0)
+      return r.prepared.issues
+    }
+    expect(await issue(swf('wheel'), false)).toMatchObject([{ severity: 'error', code: 'build-not-ready', swf: 'wheel', message: expect.stringContaining('Run Build All') }])
+    const { build: _b, ...unbuilt } = swf('wheel')
+    expect(await issue(unbuilt)).toMatchObject([{ code: 'build-not-ready', message: expect.stringContaining('not been built since') }])
+    expect(await issue({ ...swf('wheel'), build: { state: 'compiling', lint: [] } })).toMatchObject([{ code: 'build-not-ready', message: expect.stringContaining('still compiling') }])
+    expect(await issue({ ...swf('wheel'), build: { state: 'failed', lint: [] } })).toMatchObject([{ code: 'build-not-ready', message: expect.stringContaining('last build failed') }])
+  })
+
+  it("a custom menu's build lint and unreachable layers feed the gate, scoped to the deployed SWF", async () => {
+    const bad: DeploySwf = { ...swf('bad'), build: { state: 'done', lint: [{ severity: 'error', code: 'font-unmapped', message: 'no alias', nodeId: '1:5', layerName: 'Title' }] } }
+    const loose = { ...swf('wheel'), ir: { root: 'r', nodes: { r: frame('r', []), x: { ...frame('x', []), name: 'Stray' } } } as unknown as Swf }
+    const i = input({ swfs: [bad, loose] })
+    writeFileSync(join(i.buildDir, 'bad.swf'), 'FWS-bad')
+    writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    const all = await prepareDeploy(i)
+    if (!all.ok) throw new Error(all.error)
+    expect(all.prepared.issues).toEqual([
+      { severity: 'error', code: 'font-unmapped', message: 'no alias', nodeId: '1:5', layerName: 'Title', swf: 'bad' },
+      { severity: 'warning', code: 'unreachable-node', message: expect.stringContaining('Stray'), swf: 'wheel', nodeId: 'x', layerName: 'Stray' }
+    ])
+    expect([...all.prepared.files.keys()]).toEqual(['Interface/wheel.swf']) // the blocked SWF contributes nothing
+    const one = await prepareDeploy({ ...i, only: 'wheel' })
+    expect(one.ok && one.prepared.issues.map((l) => l.swf)).toEqual(['wheel'])
   })
 
   it('dds image mode adds one DDS per image under textures/Inkwell/<modId>/, recorded in the manifest; embedded mode adds nothing', async () => {
