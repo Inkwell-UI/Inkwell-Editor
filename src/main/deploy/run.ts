@@ -15,6 +15,8 @@ import { readManifest, staleFiles, writeDeploy } from './write'
 export interface DeploySwf extends SwfLike {
   /** Overlay instance names by node id (they feed the compiler). */
   instanceNames?: Record<string, string>
+  /** The SWF's overlay entries by node id (widget placement override, settable texts). */
+  overlay?: WidgetOptions['overlay']
   ir: Swf
   /** customMenu: the latest build of this SWF in this session (deploy ships that file, so its lint is the SWF's lint). Absent = not built yet. */
   build?: { state: 'compiling' | 'failed' | 'done'; lint: DeployLintItem[] }
@@ -79,7 +81,7 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
       for (const id of unreachableNodes(s.ir)) issues.push({ severity: 'warning', code: 'unreachable-node', message: `"${s.ir.nodes[id]!.name}": ${UNREACHABLE_MESSAGE}.`, swf: s.name, nodeId: id, layerName: s.ir.nodes[id]!.name })
       if (s.kind === 'hudWidget') {
         const r = await compileWidget(s.ir, {
-          modId: i.modId, widgetName: plan.widgets[s.name]!, ...(s.instanceNames ? { instanceNames: s.instanceNames } : {}), buildDir: join(i.buildDir, 'deploy', s.name), ffdec: i.ffdec,
+          modId: i.modId, widgetName: plan.widgets[s.name]!, ...(s.instanceNames ? { instanceNames: s.instanceNames } : {}), ...(s.overlay ? { overlay: s.overlay } : {}), buildDir: join(i.buildDir, 'deploy', s.name), ffdec: i.ffdec,
           ...(i.imageMode ? { imageMode: i.imageMode } : {}), ...(i.assets ? { images: (h: string) => i.assets!.get(h) } : {}),
           ...(i.papyrusExe ? { papyrusExe: i.papyrusExe } : {}), ...(i.stubsDir ? { stubsDir: i.stubsDir } : {})
         })

@@ -24,10 +24,38 @@ export function normalizeOverlay(raw: Record<string, unknown>): OverlayDoc {
   return { ...raw, specVersion: typeof raw['specVersion'] === 'number' ? raw['specVersion'] : SPEC_VERSION, nodes }
 }
 
+/**
+ * Placement override of a HUD widget, stored as `anchor` on the widget frame's overlay entry (design spec: anchor overrides live in the overlay).
+ * `x`/`y` are the margin in design px (1920x1080) from the anchored screen edges, inward; `center` moves right/down by them. Absent = the Figma position.
+ */
+export interface WidgetAnchor {
+  h: 'left' | 'center' | 'right'
+  v: 'top' | 'center' | 'bottom'
+  x: number
+  y: number
+}
+const H_ANCHORS: readonly string[] = ['left', 'center', 'right']
+const V_ANCHORS: readonly string[] = ['top', 'center', 'bottom']
+
+/** The `anchor` of an overlay entry, or undefined when absent or malformed (`overlayProblems` reports malformed ones). Missing x/y are 0. */
+export function widgetAnchorOf(entry: unknown): WidgetAnchor | undefined {
+  const a = (entry as { anchor?: unknown } | undefined)?.anchor as Record<string, unknown> | undefined
+  if (!a || typeof a !== 'object' || !H_ANCHORS.includes(a['h'] as string) || !V_ANCHORS.includes(a['v'] as string)) return undefined
+  const n = (v: unknown): number | undefined => (v === undefined ? 0 : typeof v === 'number' && Number.isFinite(v) ? v : undefined)
+  const x = n(a['x'])
+  const y = n(a['y'])
+  if (x === undefined || y === undefined) return undefined
+  return { h: a['h'] as WidgetAnchor['h'], v: a['v'] as WidgetAnchor['v'], x, y }
+}
+
+/** A text layer whose overlay role is `text` is settable at runtime (a HUD widget gets AS2 `setTexts` and Papyrus `SetTexts`/`Show`/`Hide`). */
+export const isSettableText = (entry: unknown): boolean => (entry as { role?: unknown } | undefined)?.role === 'text'
+
 export interface NodeOverlayPatch {
   /** `null` removes the key. */
   role?: string | null
   instanceName?: string | null
+  anchor?: WidgetAnchor | null
 }
 
 /** Immutable edit of one node's overlay entry. Unknown keys of the entry and of the document survive; an entry left empty is removed. */
@@ -58,6 +86,7 @@ export function overlayProblems(doc: unknown): string[] {
       if (name !== undefined && (typeof name !== 'string' || instanceNameError(name))) out.push(`overlay.nodes.${id}.instanceName: not a valid identifier`)
       const role = (n as Record<string, unknown>)['role']
       if (role !== undefined && typeof role !== 'string') out.push(`overlay.nodes.${id}.role: not a string`)
+      if ((n as Record<string, unknown>)['anchor'] !== undefined && !widgetAnchorOf(n)) out.push(`overlay.nodes.${id}.anchor: needs h (left/center/right), v (top/center/bottom) and numeric x/y`)
     }
   }
   return out

@@ -26,6 +26,8 @@ export interface CompileResult {
   gfxTextExtensions: number
   /** Images the game SWF loads from DDS at runtime (dds mode); see Generated. */
   ddsImages: number
+  /** Widget only: settable text fields (see Generated). */
+  settableTexts: Generated['settableTexts']
   timings: BuildTiming
 }
 
@@ -78,5 +80,5 @@ export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<Compile
     await copyFile(base, swfPath) // nothing for FFDec to fill in
   }
   const lint = g.lint.map((l) => ({ ...l, nodeName: ir.nodes[l.nodeId]?.name }))
-  return { swfPath, lint, fonts: g.fonts.map((f) => ({ ...f, swfId: ir.id })), gfxTextExtensions: g.gfxTextExtensions, ddsImages: g.ddsImages, timings: timer.finishBuild() }
+  return { swfPath, lint, fonts: g.fonts.map((f) => ({ ...f, swfId: ir.id })), gfxTextExtensions: g.gfxTextExtensions, ddsImages: g.ddsImages, settableTexts: g.settableTexts, timings: timer.finishBuild() }
 }

@@ -68,6 +68,44 @@ describe('widgetPlacement', () => {
   it('maps the anchor point of the first frame to 1280x720 HUD space', () => {
     expect(widgetPlacement(ir())).toEqual({ hAnchor: 'right', vAnchor: 'top', x: 1253.333, y: 26.667, alpha: 50 })
   })
+  it('an overlay anchor ignores the Figma position: screen edge moved inward by the margin (design px x 2/3)', () => {
+    expect(widgetPlacement(ir(), { h: 'right', v: 'top', x: 24, y: 24 })).toEqual({ hAnchor: 'right', vAnchor: 'top', x: 1264, y: 16, alpha: 50 })
+    expect(widgetPlacement(ir(), { h: 'left', v: 'bottom', x: 30, y: 60 })).toMatchObject({ x: 20, y: 680 })
+    expect(widgetPlacement(ir(), { h: 'center', v: 'center', x: -30, y: 0 })).toMatchObject({ hAnchor: 'center', vAnchor: 'center', x: 620, y: 360 })
+  })
+})
+
+describe('settable texts (popup)', () => {
+  const popup = (opts: Partial<Parameters<typeof generate>[1]> = {}) =>
+    generate(ir(), { modId: 'WidgetMod', widget: true, settableTexts: new Set(['t1', 't2']), instanceNames: { t1: 'title', t2: 'description' }, ...opts })
+  it('lists the compiled fields in layer order with paths relative to the widget clip', () => {
+    expect(popup().settableTexts).toEqual([
+      { nodeId: 't1', layer: 'text t1', name: 'title', path: 'title' },
+      { nodeId: 't2', layer: 'text t2', name: 'description', path: 'description' }
+    ])
+  })
+  it('gives the widget clip setTexts/show/hide, starts hidden, fades through setAlpha; no Error, no filters', () => {
+    const cls = popup().as2.find((f) => f.path.endsWith('HudWidget.as'))!.source
+    for (const m of ['setTexts', 'show', 'hide', 'tick', 'applyFade']) expect(cls).toContain(`w.${m} = function`)
+    expect(cls).toContain('w.setTexts = function (a0, a1) {')
+    expect(cls).toContain('this.title.text = a0 == undefined ? "" : String(a0);')
+    expect(cls).toContain('// node t2 "text t2"')
+    expect(cls).toContain('w._visible = false;')
+    expect(cls).toContain('w.setAlpha = function (a) { this._baseAlpha = a; this.applyFade(); };')
+    expect(cls).toContain('w.initText(w.description, "t2");')
+    expect(cls).not.toMatch(/\bError\b|flash\.filters/)
+    expect(cls).toMatchSnapshot()
+  })
+  it('a static widget is unchanged (no popup code)', () => {
+    const g = generate(ir(), { modId: 'WidgetMod', widget: true })
+    expect(g.settableTexts).toEqual([])
+    expect(g.as2.find((f) => f.path.endsWith('HudWidget.as'))!.source).not.toContain('setTexts')
+  })
+  it('names that clash ignoring case are an error (Papyrus parameters are case-insensitive)', () => {
+    const g = popup({ instanceNames: { t1: 'Title', t2: 'title' } })
+    expect(g.lint.filter((l) => l.code === 'widget-text-name-clash').map((l) => l.nodeId)).toEqual(['t2'])
+    expect(g.settableTexts.map((t) => t.name)).toEqual(['Title'])
+  })
 })
 
 import { writeSwf } from '../swf/tags'

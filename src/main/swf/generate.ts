@@ -16,6 +16,8 @@ export interface GenerateOptions {
   instanceNames?: Record<string, string>
   /** HUD widget output: the first frame becomes the root clip `widget` (SkyUI contract AS2, scaled 2/3 into the 1280x720 HUD space). */
   widget?: boolean
+  /** Widget only: text node ids that Papyrus can set (overlay role `text`); the widget clip gets `setTexts`, `show`, `hide` (see widgetAs2.ts). */
+  settableTexts?: ReadonlySet<string>
   /**
    * Preview SWF for Ruffle: the same content, but text uses a device font (no ImportAssets2, no fontId/outlines), the frame code starts
    * with the preview shims (skse, gfxExtensions, bridge stubs), and `widget` is ignored: the design frame shows at the design size.
@@ -54,6 +56,15 @@ export interface Generated {
   gfxTextExtensions: number
   /** Images the game SWF loads at runtime from DDS (dds mode; 0 when embedded or in the preview). */
   ddsImages: number
+  /** Widget only: the compiled settable text fields in layer order (`name` = instance name, `path` relative to the `widget` clip). */
+  settableTexts: SettableText[]
+}
+
+export interface SettableText {
+  nodeId: string
+  layer: string
+  name: string
+  path: string
 }
 
 /** Max image side in px (lint `image-too-large`). */
@@ -209,6 +220,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   const imageMode: ImageMode = opts.preview ? 'embedded' : (opts.imageMode ?? 'embedded')
   const bitmaps = new Map<string, number>() // hash -> DefineBitsLossless2 id (one per image, shared)
   const loads: ImageLoad[] = []
+  const settable: SettableText[] = []
 
   /** One clip (sprite) showing image `hash` in a w x h box; undefined (with lint) when it cannot be drawn. */
   const imageClip = (hash: string, scaleMode: string | undefined, w: number, h: number, nodeId: string, layer: string, path: string): number | undefined => {
@@ -351,6 +363,12 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
         const { x: gx, y: gy } = m.text.gutter
         out.push(T.placeObject2({ ...base, charId: id, x: x + gx * Math.cos(r) - gy * Math.sin(r), y: y + gx * Math.sin(r) + gy * Math.cos(r) }))
         if (Object.keys(m.text.script).length) scripts.push({ nodeId: cid, layer: n.name, path: here, script: m.text.script })
+        if (opts.widget && !opts.preview && opts.settableTexts?.has(cid) && here.startsWith('root.widget.')) {
+          // Papyrus is case-insensitive: the instance name becomes a parameter name, so it must be unique ignoring case
+          if (settable.some((t) => t.name.toLowerCase() === name.toLowerCase()))
+            lint.push(issue('error', 'widget-text-name-clash', cid, `Another settable text is already named "${name}" (Papyrus ignores case). Give this layer a different instance name.`))
+          else settable.push({ nodeId: cid, layer: n.name, name, path: here.slice('root.widget.'.length) })
+        }
       }
       depth++
     }
@@ -392,7 +410,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     as2.push({ path: `__Packages/mods/${mod}/${cls}.as`, source })
   }
   if (widget && wf) {
-    addClass(`${swfCls}Widget`, widgetContractClass(mod, `${swfCls}Widget`))
+    addClass(`${swfCls}Widget`, widgetContractClass(mod, `${swfCls}Widget`, settable))
     frameCode.push(`mods.${mod}.${swfCls}Widget.install(widget);`)
   }
   if (scripts.length) {
@@ -423,7 +441,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     T.endTag()
   ]
   const embeddedFonts = [...embedded].map(([name, e]) => ({ charId: e.charId, name, chars: [...e.chars].join('') }))
-  return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length }
+  return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable }
 }
 
 /** `node-off-stage`: a visible layer whose box lies entirely outside the frame (the stage), so it never shows. One warning per subtree. */

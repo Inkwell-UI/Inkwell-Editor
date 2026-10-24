@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { promoteStrict } from './lint'
-import { ident, instanceNameError, normalizeOverlay, overlayProblems, patchNodeOverlay } from './overlay'
+import { ident, instanceNameError, isSettableText, normalizeOverlay, overlayProblems, patchNodeOverlay, widgetAnchorOf } from './overlay'
 
 describe('instance names', () => {
   it('default is the sanitized layer name (same function as the compiler)', () => {
@@ -44,5 +44,26 @@ describe('promoteStrict', () => {
     expect(promoteStrict(rows, false)).toEqual(rows)
     expect(promoteStrict(rows, true).map((r) => r.severity)).toEqual(['error', 'info', 'error'])
     expect(rows[0]!.severity).toBe('warning') // input untouched
+  })
+})
+
+describe('widget anchor override and settable texts', () => {
+  it('parses an anchor (missing x/y = 0) and rejects malformed ones, which overlayProblems reports', () => {
+    expect(widgetAnchorOf({ anchor: { h: 'right', v: 'top', x: 24, y: 24 } })).toEqual({ h: 'right', v: 'top', x: 24, y: 24 })
+    expect(widgetAnchorOf({ anchor: { h: 'left', v: 'bottom' } })).toEqual({ h: 'left', v: 'bottom', x: 0, y: 0 })
+    for (const a of [{ h: 'stretch', v: 'top' }, { h: 'left', v: 'top', x: '4' }, 'right', null]) expect(widgetAnchorOf({ anchor: a })).toBeUndefined()
+    expect(widgetAnchorOf(undefined)).toBeUndefined()
+    expect(overlayProblems({ nodes: { a: { anchor: { h: 'left', v: 'top', x: 1, y: 2 } } } })).toEqual([])
+    expect(overlayProblems({ nodes: { a: { anchor: { h: 'up', v: 'top' } } } })).toEqual([expect.stringContaining('overlay.nodes.a.anchor')])
+  })
+  it('anchor is patched like the other keys', () => {
+    const d = patchNodeOverlay({ nodes: {} }, 'f', { anchor: { h: 'right', v: 'top', x: 24, y: 24 } })
+    expect(d.nodes).toEqual({ f: { anchor: { h: 'right', v: 'top', x: 24, y: 24 } } })
+    expect(patchNodeOverlay(d, 'f', { anchor: null }).nodes).toEqual({})
+  })
+  it('role text makes a layer settable', () => {
+    expect(isSettableText({ role: 'text' })).toBe(true)
+    expect(isSettableText({ role: 'button' })).toBe(false)
+    expect(isSettableText(undefined)).toBe(false)
   })
 })
