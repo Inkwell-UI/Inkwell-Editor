@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { IPC } from '../shared/ipc'
@@ -153,7 +153,27 @@ ipcMain.on(IPC.previewRendered, (_e, r: PreviewRendered) => {
   }
 })
 
+/** The default menu with Settings added to Edit; every other menu keeps its Electron role. */
+function buildMenu(): void {
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      { role: 'fileMenu' },
+      {
+        label: 'Edit',
+        submenu: [
+          { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+          { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }, { type: 'separator' },
+          { label: 'Settings...', accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) }
+        ]
+      },
+      { role: 'viewMenu' },
+      { role: 'windowMenu' }
+    ])
+  )
+}
+
 void app.whenReady().then(async () => {
+  buildMenu()
   createWindow()
   // INKWELL_PROJECT: open this project at start (otherwise the start screen shows)
   const dir = process.env['INKWELL_PROJECT']

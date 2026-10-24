@@ -13,6 +13,7 @@ import { inkwell } from '../hooks/api'
 import { useDialogStore } from '../state/dialogStore'
 import { Toasts } from '../ui/Toasts'
 import { Dialogs } from './Dialogs'
+import { SettingsView } from './SettingsView'
 import { StartScreen } from './StartScreen'
 import { StatusBar } from './StatusBar'
 import { TopBar } from './TopBar'
@@ -40,6 +41,7 @@ function WorkspaceView() {
 export function AppShell() {
   const project = useProject()
   const swf = useActiveSwf()
+  const settingsOpen = useDialogStore((s) => s.open) === 'settings'
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -63,8 +65,11 @@ export function AppShell() {
   // first launch: the Setup Doctor opens by itself when a check fails (main marks it as seen either way)
   useEffect(() => {
     if (isPreviewWindow()) return
-    void inkwell?.doctorFirstLaunch().then((show) => show && useDialogStore.getState().show('setupDoctor'))
+    void inkwell?.doctorFirstLaunch().then((show) => show && useDialogStore.getState().show('settings'))
   }, [])
+
+  // Edit > Settings in the application menu
+  useEffect(() => inkwell?.onOpenSettings(() => useDialogStore.getState().show('settings')), [])
 
   // a selection whose node vanished (IR changed, other SWF) is dropped
   useEffect(() => {
@@ -75,7 +80,7 @@ export function AppShell() {
   if (project === null)
     return (
       <>
-        <StartScreen />
+        {settingsOpen ? <SettingsView /> : <StartScreen />}
         <Dialogs />
         <Toasts />
       </>
@@ -83,7 +88,7 @@ export function AppShell() {
   return (
     <div className="shell">
       <TopBar />
-      <main className="shell-main"><WorkspaceView /></main>
+      <main className="shell-main">{settingsOpen ? <SettingsView /> : <WorkspaceView />}</main>
       <StatusBar />
       <Dialogs />
       <Toasts />

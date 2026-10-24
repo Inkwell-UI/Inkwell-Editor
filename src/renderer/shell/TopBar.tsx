@@ -83,7 +83,8 @@ function WorkspaceSwitcher() {
   )
 }
 
-function FigmaDot() {
+/** Connection dots live in the status bar (Zone 6B), so their popovers open upward. */
+export function FigmaDot() {
   const sync = useSyncState()
   const c = figmaConnection(sync)
   const mirror = useSettingsStore((s) => s.mirrorFigma)
@@ -94,8 +95,9 @@ function FigmaDot() {
     <Popover
       label={strings.top.figmaDetails}
       align="end"
+      up
       trigger={(p) => (
-        <button type="button" className="btn btn-dot" {...p} title={`${strings.top.figma}: ${label}`} aria-label={`${strings.top.figma}: ${label}`} data-testid="dot-figma" data-tone={c.tone}>
+        <button type="button" className="item item-button" {...p} title={`${strings.top.figma}: ${label}`} aria-label={`${strings.top.figma}: ${label}`} data-testid="dot-figma" data-tone={c.tone}>
           <Dot tone={c.tone} /> {strings.top.figma}
         </button>
       )}
@@ -121,13 +123,14 @@ function FigmaDot() {
   )
 }
 
-function GameDot() {
+export function GameDot() {
   return (
     <Popover
       label={strings.top.gameDetails}
       align="end"
+      up
       trigger={(p) => (
-        <button type="button" className="btn btn-dot" {...p} title={`${strings.top.game}: ${strings.top.gameStatus}`} aria-label={`${strings.top.game}: ${strings.top.gameStatus}`} data-testid="dot-game" data-tone="off">
+        <button type="button" className="item item-button" {...p} title={`${strings.top.game}: ${strings.top.gameStatus}`} aria-label={`${strings.top.game}: ${strings.top.gameStatus}`} data-testid="dot-game" data-tone="off">
           <Dot tone="off" /> {strings.top.game}
         </button>
       )}
@@ -159,9 +162,7 @@ export function TopBar() {
       </Btn>
       <WorkspaceSwitcher />
       <span className="spacer" />
-      <Btn icon={Stethoscope} variant="quiet" onClick={() => show('setupDoctor')} label={strings.top.setupTip} testId="open-setup" />
-      <FigmaDot />
-      <GameDot />
+      <Btn icon={Stethoscope} variant="quiet" onClick={() => show('settings')} label={strings.top.setupTip} testId="open-setup" />
       <Btn icon={Hammer} variant="primary" onClick={() => void inkwell?.buildAll()} reason={buildReason} testId="build-all">{compiling ? strings.top.building : strings.top.buildAll}</Btn>
       <DeployMenu />
       <Btn icon={Package} reason={strings.top.planned} label={strings.top.package}>{strings.top.package}<ChevronDown size={12} aria-hidden="true" /></Btn>

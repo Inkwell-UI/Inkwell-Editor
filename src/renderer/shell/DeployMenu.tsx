@@ -58,7 +58,7 @@ function Targets({ close }: { close(): void }) {
       </fieldset>
       {hasCustom && <p className="dim">{strings.deploy.custom}</p>}
       <div className="row-actions">
-        <Btn icon={FolderCog} onClick={() => { close(); show('setupDoctor') }} testId="deploy-folders">{strings.deploy.setFolders}</Btn>
+        <Btn icon={FolderCog} onClick={() => { close(); show('settings') }} testId="deploy-folders">{strings.deploy.setFolders}</Btn>
       </div>
     </div>
   )

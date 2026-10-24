@@ -7,6 +7,7 @@ import { useTimingStore } from '../state/timingStore'
 import { formatMs } from '../model/statusBar'
 import { strings } from '../strings'
 import { Popover } from '../ui/Popover'
+import { FigmaDot, GameDot } from './TopBar'
 
 /** Deploy progress and the last result with its stage timings (compile, vanilla check, write). */
 function DeployItem() {
@@ -74,7 +75,7 @@ export function StatusBar() {
         </div>
       </Popover>
       {ffdec?.status === 'notFound' ? (
-        <button type="button" className="item item-button is-error" onClick={() => show('setupDoctor')} data-testid="ffdec" title={strings.status.openDoctor}>
+        <button type="button" className="item item-button is-error" onClick={() => show('settings')} data-testid="ffdec" title={strings.status.openDoctor}>
           {strings.status.ffdecNotFound}
         </button>
       ) : (
@@ -83,6 +84,8 @@ export function StatusBar() {
       {sync?.deploy && <DeployItem />}
       <span className="item">{strings.status.packs}</span>
       <span className="spacer" />
+      <FigmaDot />
+      <GameDot />
       <span className="item" title={strings.status.undoTip(undo.swfName)} data-testid="undo-scope">{strings.status.undo}</span>
     </footer>
   )

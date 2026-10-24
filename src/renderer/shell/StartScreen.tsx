@@ -33,7 +33,7 @@ export function StartScreen() {
           <Btn icon={FolderPlus} variant="primary" reason={noApi ?? (busy ? strings.start.busy : undefined)} onClick={() => void run(() => inkwell?.newProject(strings.start.newDialog))} testId="start-new">{strings.start.newProject}</Btn>
           <Btn icon={FolderOpen} reason={noApi ?? (busy ? strings.start.busy : undefined)} onClick={() => void run(() => inkwell?.openProject(undefined, strings.start.openDialog))} testId="start-open">{strings.start.openProject}</Btn>
           <Btn icon={Sparkles} reason={noApi ?? (busy ? strings.start.busy : undefined)} onClick={() => void run(() => inkwell?.openExample(strings.start.exampleDialog))} testId="start-example">{strings.start.example}</Btn>
-          <Btn icon={Stethoscope} variant="quiet" reason={noApi} onClick={() => show('setupDoctor')} label={strings.top.setupTip} testId="start-setup">{strings.top.setup}</Btn>
+          <Btn icon={Stethoscope} variant="quiet" reason={noApi} onClick={() => show('settings')} label={strings.top.setupTip} testId="start-setup">{strings.top.setup}</Btn>
         </div>
         <p className="dim">{strings.start.exampleNote}</p>
         {error && <p role="alert" className="tone-error">{error}</p>}

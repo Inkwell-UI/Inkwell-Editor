@@ -29,6 +29,7 @@ const api: InkwellApi = {
   sendUiEvent: (e) => ipcRenderer.send(IPC.uiEvent, e),
   onUiEvent: (cb) => on(IPC.uiEvent, cb),
   onFigmaSelection: (cb) => on(IPC.figmaSelection, cb),
+  onOpenSettings: (cb) => on(IPC.menuSettings, cb),
   runDoctor: (only) => ipcRenderer.invoke(IPC.doctorRun, only),
   runBenchmark: () => ipcRenderer.invoke(IPC.doctorBenchmark),
   buildVanillaCache: () => ipcRenderer.invoke(IPC.doctorBuildCache),

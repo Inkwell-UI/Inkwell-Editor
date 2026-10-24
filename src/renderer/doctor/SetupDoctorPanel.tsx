@@ -93,6 +93,10 @@ function SettingField({ name, folder, row, d }: { name: SettingKey; folder: bool
   )
 }
 
+/** Everything a row shows or can set, lowercased, for the Settings search. */
+const rowText = (r: CheckResult): string =>
+  [r.id, strings.doctor.titles[r.id] ?? r.label, r.detail, ...(ROW_SETTINGS[r.id] ?? []).flatMap((f) => [f.key, strings.doctor.fields[f.key], strings.doctor.envVars[f.key]])].join(' ').toLowerCase()
+
 function Row({ row, d }: { row: CheckResult; d: DoctorHook }) {
   const checking = d.checking.includes(row.id)
   const Icon = checking ? Loader : ICON[row.status]
@@ -114,7 +118,7 @@ function Row({ row, d }: { row: CheckResult; d: DoctorHook }) {
             {fields.map((f) => <SettingField key={f.key} name={f.key} folder={f.folder} row={row} d={d} />)}
           </div>
         )}
-        {(fix || extra?.length) && (
+        {(fix || !!extra?.length) && (
           <div className="row-actions">
             {fix && <FixButton row={row} fix={fix} d={d} primary={row.status === 'fail'} />}
             {extra?.map((f) => <FixButton key={f.label} row={row} fix={f} d={d} extra />)}
@@ -145,8 +149,10 @@ function Benchmark({ d }: { d: DoctorHook }) {
 }
 
 /** Setup Doctor (UX 5.3): one row per check (icon, detail, its editable settings, fix actions), Re-run and the two on-request tasks. Takes no props; the modal in shell/Dialogs.tsx and the first-launch flow just render it. */
-export function SetupDoctorPanel() {
+export function SetupDoctorPanel({ query = '' }: { query?: string }) {
   const d = useSetupDoctor()
+  const q = query.trim().toLowerCase()
+  const rows = d.results?.filter((r) => !q || rowText(r).includes(q))
   const count = (s: string): number => d.results?.filter((r) => r.status === s).length ?? 0
   return (
     <div className="doctor" data-testid="setup-doctor">
@@ -157,8 +163,9 @@ export function SetupDoctorPanel() {
       </div>
       {d.loadError && <p className="tone-error" role="alert" data-testid="doctor-load-error">{strings.doctor.loadFailed(d.loadError)}</p>}
       <ul className="plain checks" aria-label={strings.dialogs.doctor.title}>
-        {d.results?.map((r) => <Row key={r.id} row={r} d={d} />)}
+        {rows?.map((r) => <Row key={r.id} row={r} d={d} />)}
       </ul>
+      {q && rows?.length === 0 && <p className="dim" role="status">{strings.settings.noMatch}</p>}
     </div>
   )
 }

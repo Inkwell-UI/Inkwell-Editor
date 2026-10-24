@@ -355,6 +355,16 @@ export const strings = {
     noElectron: 'Needs the desktop app'
   },
 
+  settings: {
+    title: 'Settings',
+    back: 'Back',
+    backTip: 'Close the settings (Esc)',
+    search: 'Search settings',
+    searchPlaceholder: 'Search settings...',
+    general: 'General',
+    noMatch: 'No setting matches the search.'
+  },
+
   dialogs: {
     config: {
       title: 'Menu configuration',

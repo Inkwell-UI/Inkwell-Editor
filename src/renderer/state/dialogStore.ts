@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
-/** Which stub dialog is open (`configOwnership`, `setupDoctor`, `figmaSetup`), or null. API: `open`, `show(id)`, `close()`. */
-export type DialogId = 'configOwnership' | 'setupDoctor' | 'figmaSetup'
+/** Which stub dialog is open (`configOwnership`, `figmaSetup`) or the Settings view (`settings`, full window, see AppShell), or null. API: `open`, `show(id)`, `close()`. */
+export type DialogId = 'configOwnership' | 'settings' | 'figmaSetup'
 export interface DialogStore {
   open: DialogId | null
   show(id: DialogId): void

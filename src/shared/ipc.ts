@@ -26,6 +26,7 @@ export const IPC = {
   previewDetached: 'preview:detached',
   uiEvent: 'ui:event',
   figmaSelection: 'figma:selection',
+  menuSettings: 'menu:settings',
   doctorRun: 'doctor:run',
   doctorBenchmark: 'doctor:benchmark',
   doctorBuildCache: 'doctor:buildCache',
@@ -80,6 +81,8 @@ export interface InkwellApi {
   onUiEvent(cb: (e: UiEvent) => void): () => void
   /** The layers selected in Figma (the plugin's `selection` message). */
   onFigmaSelection(cb: (ids: string[]) => void): () => void
+  /** Edit > Settings in the application menu. */
+  onOpenSettings(cb: () => void): () => void
 
   /** Setup Doctor (UX 5.3): every check (or only `only`), in parallel; never rejects. */
   runDoctor(only?: CheckId[]): Promise<CheckResult[]>
