@@ -18,7 +18,7 @@
   /* text */
   --fg: #e4e4e7;
   --fg-dim: #a1a1aa;
-  --fg-faint: #8b8b95;
+  --fg-faint: #9d9da7;
   --on-accent: #18181b;
 
   /* accent and states */
@@ -27,9 +27,9 @@
   --focus: #ffffff;
   --ok: #4cd694;
   --warn: #f59e0b;
-  --err: #ef4444;
+  --err: #f87171;
   --info: #7cb7ff;
-  --off: #8b8b95;
+  --off: #9d9da7;
   --ok-bg: #12301f;
   --warn-bg: #3a2c0c;
   --err-bg: #3a1417;
