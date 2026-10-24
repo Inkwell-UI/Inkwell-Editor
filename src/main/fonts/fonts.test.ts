@@ -181,6 +181,19 @@ describe('install and uninstall (temp folder, in-memory registry)', () => {
     expect(existsSync(m.fonts[2]!.file)).toBe(false)
   })
 
+  it("adopts the spike script's manifest so Remove reverses it (no hash: file deleted by path)", async () => {
+    const sys = sysWith()
+    await mkdir(sys.fontsDir, { recursive: true })
+    const file = join(sys.fontsDir, 'Inkwell-SkyrimBooks-Regular.ttf')
+    await writeFile(file, 'spike output')
+    sys.values.set('SkyrimBooks Regular (TrueType)', file)
+    await mkdir(join(dir, 'Inkwell'), { recursive: true })
+    await writeFile(sys.manifestPath, '﻿' + JSON.stringify({ installed: { file, regName: 'SkyrimBooks Regular (TrueType)' } }))
+    expect((await fontStatus(sys)).faces).toEqual([{ family: 'SkyrimBooks', style: 'Regular', file, present: true }])
+    expect(await uninstallFonts(sys)).toEqual([])
+    expect(existsSync(file) || sys.values.size || existsSync(sys.manifestPath)).toBeFalsy()
+  })
+
   it('a damaged manifest is never guessed from', async () => {
     const sys = sysWith()
     await mkdir(join(dir, 'Inkwell'), { recursive: true })

@@ -11,6 +11,7 @@ import { PRODUCT_NAME } from '../shared/product'
 import { strings } from '../renderer/strings'
 import { copyExample, createProject } from './project/lifecycle'
 import { runDoctorDriver } from './screenshotDoctor'
+import { runFontShots } from './screenshotFonts'
 import { runShots } from './screenshotDriver'
 import { runSetupShots } from './screenshotSetup'
 import { createSession } from './session'
@@ -186,6 +187,8 @@ void app.whenReady().then(async () => {
   const shotsDir = process.env['INKWELL_SHOTS_DIR']
   if (process.env['INKWELL_DOCTOR_DRIVER'])
     void runDoctorDriver({ outDir: shotsDir ?? join(app.getPath('userData'), 'doctor-shots'), projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, session, dialog: debugDialog }).catch((e: unknown) => { console.error('[driver] failed:', e); app.exit(1) })
+  else if (shotsDir && process.env['INKWELL_SHOTS_FONTS'])
+    void runFontShots({ outDir: shotsDir, win: () => win }).then(() => app.exit(0), (e: unknown) => { console.error('[inkwell] font screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_SETUP'])
     void runSetupShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] screenshots failed:', e); app.exit(1) })
   else if (shotsDir) void runShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, previewWin: () => previewWin, session }).catch((e: unknown) => { console.error('[inkwell] screenshots failed:', e); app.exit(1) })

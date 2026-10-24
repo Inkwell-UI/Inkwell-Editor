@@ -58,7 +58,8 @@ export interface ManifestEntry {
   style: string
   file: string
   regName: string
-  sha256: string
+  /** Absent for a manifest adopted from the spike's script. */
+  sha256?: string
 }
 export interface Manifest {
   version: 1
@@ -71,7 +72,17 @@ const sha = (b: Uint8Array): string => createHash('sha256').update(b).digest('he
 export async function readManifest(path: string): Promise<Manifest | undefined> {
   const text = await readFile(path, 'utf8').catch(() => undefined)
   if (text === undefined) return undefined
-  const m = JSON.parse(text) as Manifest // a damaged manifest throws: never guess what to delete
+  const m = JSON.parse(text.replace(/^\uFEFF/, '')) as Manifest & { installed?: { file: string; regName: string } | { file: string; regName: string }[] } // a damaged manifest throws: never guess what to delete
+  // the spike's install-fonts.ps1 wrote { installed: [{ file, regName }] } (a lone object for one font) at the same path; adopt it so Remove can reverse it
+  if (m.installed && typeof m.installed === 'object')
+    return {
+      version: 1,
+      installedAt: '',
+      fonts: ([] as { file: string; regName: string }[]).concat(m.installed).map((f) => {
+        const [family = f.regName, style = ''] = f.regName.replace(/ \(TrueType\)$/, '').split(' ')
+        return { family, style, file: f.file, regName: f.regName }
+      })
+    }
   if (m.version !== 1 || !Array.isArray(m.fonts)) throw new Error(`Unrecognised font manifest ${path}`)
   return m
 }
@@ -145,7 +156,7 @@ export async function uninstallFonts(sys: FontSystem, onStep?: (done: number, to
     if (cur !== undefined && cur.toLowerCase() === f.file.toLowerCase()) await sys.regDelete(f.regName)
     else if (cur !== undefined) warnings.push(`Registry value "${f.regName}" now points to ${cur}; left alone.`)
     const bytes = await readFile(f.file).catch(() => undefined)
-    if (bytes && sha(bytes) !== f.sha256) warnings.push(`${f.file} was changed since Inkwell installed it; left alone.`)
+    if (bytes && f.sha256 && sha(bytes) !== f.sha256) warnings.push(`${f.file} was changed since Inkwell installed it; left alone.`)
     else if (bytes) {
       try {
         await unlink(f.file)

@@ -58,6 +58,7 @@ export async function extractFonts(bsaPath: string, exportFonts: (swf: string, o
       const face = matchFace(bytes)
       if (face && !fonts.some((x) => x.face === face)) fonts.push(convertFont(bytes, face))
     }
+    fonts.sort((a, b) => FIGMA_FACES.indexOf(a.face) - FIGMA_FACES.indexOf(b.face))
     const missing = FIGMA_FACES.filter((f) => !fonts.some((x) => x.face === f)).map((f) => `${f.family}/${f.style}`)
     if (missing.some((m) => m.startsWith('Everywhere/'))) throw new Refused('faces-missing', `FFDec's export lacks ${missing.join(', ')}; this game version's fonts_en.swf is not the one Inkwell knows.`)
     return { fonts, warnings: missing.length ? [`Not found in fonts_en.swf, so not installed: ${missing.join(', ')}.`] : [] }
