@@ -209,3 +209,29 @@ describe('generate', () => {
     })
   })
 })
+
+describe('layout lint (export gate rules)', () => {
+  const codes = (g: ReturnType<typeof gen>, code: string) => g.lint.filter((l) => l.code === code).map((l) => l.nodeId)
+
+  it('node-off-stage: a layer entirely outside the frame warns once per subtree; inside, touching or rotated does not', () => {
+    const t = (x: number, y: number, rotation = 0) => ({ transform: { x, y, width: 100, height: 40, rotation } })
+    const g = gen([
+      frame('f', ['in', 'edge', 'right', 'up', 'rot', 'box']),
+      rectShape('in', t(10, 10)), rectShape('edge', t(-99, 0)), rectShape('right', t(1920, 0)), rectShape('up', t(0, -40)), rectShape('rot', t(-500, 0, 45)),
+      frame('box', ['inner'], t(1900, 1000)), rectShape('inner', t(30, 0)) // inner is at 1930: off stage through its parent's offset
+    ])
+    expect(codes(g, 'node-off-stage')).toEqual(['right', 'up', 'inner'])
+  })
+
+  it('text-zero-size: a text box with no width or height warns', () => {
+    const g = gen([frame('f', ['a', 'b']), textNode('a', { transform: { x: 0, y: 0, width: 0, height: 30, rotation: 0 } }), textNode('b')])
+    expect(codes(g, 'text-zero-size')).toEqual(['a'])
+  })
+
+  it('instance-name-duplicate: an overlay instance name a sibling already uses warns; layer-name clashes stay silent', () => {
+    const g = generate(swf([frame('f', ['a', 'b', 'c']), textNode('a', { name: 'title' }), textNode('b'), textNode('c', { name: 'same' })]), { modId: 'M', instanceNames: { b: 'title' } })
+    expect(codes(g, 'instance-name-duplicate')).toEqual(['b'])
+    const quiet = gen([frame('f', ['a', 'b']), textNode('a', { name: 'x' }), textNode('b', { name: 'x' })])
+    expect(codes(quiet, 'instance-name-duplicate')).toEqual([])
+  })
+})

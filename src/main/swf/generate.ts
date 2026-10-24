@@ -292,6 +292,8 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
       if (n.mask) lint.push(issue('warning', 'mask-ignored', cid, 'Masks are not supported yet; ignored.'))
 
       let name = ident(opts.instanceNames?.[cid] ?? n.name)
+      if (opts.instanceNames?.[cid] && names.has(name))
+        lint.push(issue('warning', 'instance-name-duplicate', cid, `Instance name "${name}" is already used by a sibling; this one compiles as "${name}_2" or later, so scripts using the name reach the other clip.`))
       for (let i = 2; names.has(name); i++) name = `${ident(opts.instanceNames?.[cid] ?? n.name)}_${i}`
       names.add(name)
       const { x, y, rotation } = n.transform
@@ -377,6 +379,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   } else {
     lint.push(issue('error', 'root-invalid', ir.root, 'The root node is missing or not a frame; nothing compiled.'))
   }
+  if (root?.type === 'frame') lint.push(...offStage(ir))
 
   const mod = ident(opts.modId)
   const swfCls = ident(ir.id).replace(/^_?([a-z])/, (_, c: string) => c.toUpperCase())
@@ -421,4 +424,28 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   ]
   const embeddedFonts = [...embedded].map(([name, e]) => ({ charId: e.charId, name, chars: [...e.chars].join('') }))
   return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length }
+}
+
+/** `node-off-stage`: a visible layer whose box lies entirely outside the frame (the stage), so it never shows. One warning per subtree. */
+export function offStage(ir: Swf): LintIssue[] {
+  const out: LintIssue[] = []
+  const seen = new Set<string>()
+  const walk = (id: string, ox: number, oy: number): void => {
+    for (const cid of ir.nodes[id]?.children ?? []) {
+      const n = ir.nodes[cid]
+      if (!n || !n.visible || seen.has(cid)) continue
+      seen.add(cid)
+      const { x, y, width, height, rotation } = n.transform
+      const ax = ox + x
+      const ay = oy + y
+      // shortcut: rotated layers are not checked (their box is not axis-aligned); add corner math if rotated off-stage layers turn up
+      if (!rotation && (ax + width <= 0 || ay + height <= 0 || ax >= ir.stage.width || ay >= ir.stage.height)) {
+        out.push(issue('warning', 'node-off-stage', cid, `"${n.name}" is outside the ${ir.stage.width}x${ir.stage.height} frame and will not be visible.`))
+        continue
+      }
+      if (!rotation) walk(cid, ax, ay)
+    }
+  }
+  walk(ir.root, 0, 0)
+  return out
 }

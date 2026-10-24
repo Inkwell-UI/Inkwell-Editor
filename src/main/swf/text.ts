@@ -155,6 +155,7 @@ export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[];
 
   const { sizing } = node
   const { width, height } = node.transform
+  if (!(width > 0 && height > 0)) lint.push(issue('warning', 'text-zero-size', node.id, `Text box is ${width}x${height} px; the text field will show nothing. Give it a size in Figma.`))
   const script: TextScript = {}
   if (node.verticalAlign !== 'top') script.verticalAlign = node.verticalAlign
   if (node.textFit !== 'none') script.textAutoSize = node.textFit
