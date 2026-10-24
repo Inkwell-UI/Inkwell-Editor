@@ -6,6 +6,7 @@ import { useElementSize } from '../hooks/useElementSize'
 import { usePreviewBuilds } from '../hooks/usePreviewBuilds'
 import { useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
+import { usableSnapshot } from '../model/connection'
 import { firstError } from '../model/lintRows'
 import { AspectFrame } from '../preview/AspectFrame'
 import { createPreviewController, type PreviewController } from '../preview/controller'
@@ -106,10 +107,10 @@ export function PreviewPanel() {
           {!inWindow && <Btn onClick={jumpToError} reason={err ? undefined : strings.stage.noErrorRow} testId="show-error">{strings.stage.showError}</Btn>}
         </div>
       )}
-      {sync && sync.server === 'listening' && sync.connections === 0 && (
-        <div className="banner banner-info" data-testid="snapshot-banner">
+      {project && sync && sync.server === 'listening' && sync.connections === 0 && (
+        <div className="banner banner-info" data-testid="snapshot-banner" data-snapshot={usableSnapshot(project.snapshot) ? 'yes' : 'no'}>
           <WifiOff size={14} aria-hidden="true" />
-          <span title={strings.stage.snapshot}>{strings.stage.snapshot}</span>
+          {usableSnapshot(project.snapshot) ? <span title={strings.stage.snapshot}>{strings.stage.snapshot}</span> : <span title={strings.stage.noSnapshot}>{strings.stage.noSnapshot}</span>}
           <Btn icon={Link2Off} reason={strings.stage.setupGuideReason}>{strings.stage.setupGuide}</Btn>
         </div>
       )}

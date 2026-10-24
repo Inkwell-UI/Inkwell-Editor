@@ -6,7 +6,7 @@ import { Swf } from '@inkwell-ui/spec'
 import { IPC, type SaveOverlayResult } from '../shared/ipc'
 import { normalizeOverlay, type OverlayDoc } from '../shared/overlay'
 import type { PreviewBuild, PreviewRendered } from '../shared/preview'
-import type { OpenResult, ProjectState, RecentProject } from '../shared/projectState'
+import type { OpenResult, ProjectState, RecentProject, SnapshotInfo } from '../shared/projectState'
 import { flattenReports, type SwfReport, type SyncUiState } from '../shared/syncState'
 import { ffdecState } from '../shared/ffdec'
 import type { DeployResult, DeployScope, DeployState, DeployTargetId, DeployTargetInfo, PrepareResult } from '../shared/deploy'
@@ -23,6 +23,7 @@ import { loadProject, type ProjectMeta } from './project'
 import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
 import { writeProjectSetting } from './project/settings'
+import { readSnapshot, staleSwfs, type FigmaSnapshot, type SnapshotSource } from './project/snapshot'
 import { createBuildPipeline } from './sync/buildPipeline'
 import { startSyncServer, type Layer, type SwfInfo } from './sync/syncServer'
 
@@ -59,6 +60,11 @@ export function createSession(deps: SessionDeps) {
   const buildBySwf = new Map<string, 'compiling' | 'failed' | 'done'>() // the deploy gate: a custom menu ships its last build only when it finished
   const previews = new Map<string, PreviewBuild>()
   let looseCount = 0
+  let snapshot: SnapshotInfo | undefined
+  let snapshotSource: SnapshotSource | undefined // the connected plugin's hello; never the session token
+  const snapshotInfo = (s: FigmaSnapshot, stale: string[]): SnapshotInfo => ({
+    updatedAt: s.updatedAt, swfs: Object.keys(s.swfs).length, stale, ...(s.source?.pluginVersion ? { pluginVersion: s.source.pluginVersion } : {}), ...(s.source?.fileKey ? { fileKey: s.source.fileKey } : {})
+  })
   let previewSeq = 0
   let latestSeq = 0
   let buildSeq = 0
@@ -114,7 +120,7 @@ export function createSession(deps: SessionDeps) {
         return ir ? [{ id: i.id, name: i.name, orphaned: i.orphaned, ir, overlay: overlays.get(i.id) ?? normalizeOverlay({}) }] : []
       })
       .sort((a, b) => a.name.localeCompare(b.name))
-    return { dir: projectDir, name: meta.name, modId: meta.modId, strictMode: strict, swfs }
+    return { dir: projectDir, name: meta.name, modId: meta.modId, strictMode: strict, swfs, ...(snapshot ? { snapshot } : {}) }
   }
   const pushProject = (): void => {
     clearTimeout(pushTimer)
@@ -144,7 +150,12 @@ export function createSession(deps: SessionDeps) {
         initial[name] = ir
         overlays.set(ir.id, normalizeOverlay(s.overlay))
       }
-    } else meta = undefined
+      const r = await readSnapshot(dir) // a missing or broken snapshot never stops the project from opening: builds use ir.json
+      snapshot = r.snapshot ? snapshotInfo(r.snapshot, staleSwfs(r.snapshot, initial)) : r.error ? { updatedAt: '', swfs: 0, stale: [], error: r.error } : undefined
+    } else {
+      meta = undefined
+      snapshot = undefined
+    }
     projectDir = dir
     assets = createAssetStore(dir)
     pipeline = createBuildPipeline({
@@ -159,6 +170,11 @@ export function createSession(deps: SessionDeps) {
         reports.set(report.swfId, report)
         update({ timing, timingSwf: report.name, buildSeq: ++buildSeq, previewMs: undefined, ...flattenReports(reports.values()) })
         refreshFfdec()
+        pushProject()
+      },
+      snapshotSource: () => snapshotSource,
+      onSnapshot: (s) => {
+        snapshot = snapshotInfo(s, [])
         pushProject()
       },
       onPreview: (p) => {
@@ -187,6 +203,7 @@ export function createSession(deps: SessionDeps) {
       update({ connectionIssue: { kind: 'auth', message: reason === 'token' ? 'The plugin used a wrong session token.' : 'Connection from a disallowed origin was refused.' } })
     )
     srv.events.on('selection', (ids: string[]) => deps.broadcast(IPC.figmaSelection, ids))
+    srv.events.on('hello', (h: SnapshotSource) => void (snapshotSource = h))
     srv.events.on('status', (s: { swfId?: string; state: 'compiling' | 'synced' | 'error'; issues?: { message: string; code?: string; nodeId?: string }[] }) => {
       if (s.swfId) buildBySwf.set(s.swfId, s.state === 'compiling' ? 'compiling' : s.issues?.some((i) => i.code === 'build_failed') ? 'failed' : 'done')
       if (s.swfId && s.state !== 'compiling') {

@@ -4,6 +4,7 @@ import { PRODUCT_NAME } from '../../shared/product'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
+import type { SnapshotInfo } from '../../shared/projectState'
 import { figmaConnection, type DotTone } from '../model/connection'
 import { useDialogStore } from '../state/dialogStore'
 import { useProjectStore } from '../state/projectStore'
@@ -86,7 +87,9 @@ function WorkspaceSwitcher() {
 /** Connection dots live in the status bar (Zone 6B), so their popovers open upward. */
 export function FigmaDot() {
   const sync = useSyncState()
-  const c = figmaConnection(sync)
+  const project = useProject()
+  const snap = project?.snapshot
+  const c = figmaConnection(sync, snap)
   const mirror = useSettingsStore((s) => s.mirrorFigma)
   const setMirror = useSettingsStore((s) => s.setMirrorFigma)
   const [copied, setCopied] = useState(false)
@@ -106,6 +109,7 @@ export function FigmaDot() {
         <p><strong>{label}</strong></p>
         {sync?.connectionIssue && <p className={c.tone === 'error' ? 'tone-error' : 'tone-warn'}>{sync.connectionIssue.message}</p>}
         {sync?.server === 'error' && <p className="tone-error">{strings.top.serverError(sync.error)}</p>}
+        {project && <SnapshotFacts snap={snap} />}
         <dl className="facts">
           <dt>{strings.syncPort}</dt><dd className="mono">{sync?.port ?? '-'}</dd>
           <dt>{strings.syncToken}</dt>
@@ -120,6 +124,22 @@ export function FigmaDot() {
         <p className="dim">{strings.top.mirrorNote}</p>
       </div>
     </Popover>
+  )
+}
+
+function SnapshotFacts({ snap }: { snap: SnapshotInfo | undefined }) {
+  return (
+    <div data-testid="snapshot-facts">
+      <h3>{strings.top.snapshotTitle}</h3>
+      {!snap ? <p className="dim">{strings.top.snapshotNone}</p>
+        : snap.error ? <p className="tone-warn">{strings.top.snapshotBroken(snap.error)}</p>
+          : (
+            <>
+              <p className="dim">{strings.top.snapshotSaved(new Date(snap.updatedAt).toLocaleString(), snap.swfs)}. {strings.top.snapshotFrom(snap.pluginVersion, snap.fileKey)}</p>
+              {snap.stale.length > 0 && <p className="tone-warn">{strings.top.snapshotStale(snap.stale)}</p>}
+            </>
+          )}
+    </div>
   )
 }
 

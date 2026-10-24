@@ -21,6 +21,20 @@ export interface ProjectState {
   /** Strict Mode (design spec): warnings count as errors. Stored in project.json. */
   strictMode: boolean
   swfs: SwfDoc[]
+  /** figma/snapshot.json (docs/sync-server.md, Figma snapshot); absent when the project has none (never synced, or older than the snapshot). */
+  snapshot?: SnapshotInfo
+}
+
+export interface SnapshotInfo {
+  /** Time of its last real change. */
+  updatedAt: string
+  swfs: number
+  pluginVersion?: string
+  fileKey?: string
+  /** SWFs whose ir.json no longer matches the snapshot (edited or merged outside a sync); builds use ir.json. */
+  stale: string[]
+  /** The file exists but could not be read; the project still opens and builds from ir.json. */
+  error?: string
 }
 
 export interface RecentProject {
