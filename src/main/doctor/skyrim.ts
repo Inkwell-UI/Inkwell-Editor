@@ -14,7 +14,7 @@ export const SKYRIM_FOLDER = 'Skyrim Special Edition'
 
 /** `reg query` output -> value of one REG_SZ value (`InstallPath    REG_SZ    C:\...`). */
 export function parseRegValue(out: string, name: string): string | undefined {
-  const m = new RegExp(`^\\s*${name}\\s+REG_(?:EXPAND_)?SZ\\s+(.+?)\\s*$`, 'im').exec(out)
+  const m = new RegExp(`^\\s*${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+REG_(?:EXPAND_)?SZ\\s+(.+?)\\s*$`, 'im').exec(out)
   return m?.[1]
 }
 
