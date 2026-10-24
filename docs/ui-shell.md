@@ -11,7 +11,7 @@ Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, In
 Zone 4  graph             GraphPanel             empty state, AS2 split placeholder
 Zone 5  inspector         InspectorPanel
 Zone 6A bottom dock tabs  lintBudget | localization | trace | mockData
-Zone 6B StatusBar         shell/StatusBar.tsx    spec, last build + history, FFDec, Deploy (progress, result, stage timings), packs, undo scope
+Zone 6B StatusBar         shell/StatusBar.tsx    spec, last build + history, FFDec, lint counts (`Lint: N Err, M Warn`, strict applied; opens the Lint dock), Deploy (progress, result, stage timings), packs, undo scope
 ```
 
 Zones 2 to 6A are layout panels; Zones 1 and 6B are shell chrome around the layout (they are never moved or resized).
@@ -58,7 +58,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 - **Main owns the project** (`main/session.ts`): sync server, build pipeline, latest reports and previews, overlays. `open(dir)` restarts the server on the same port and token (the Figma plugin only reconnects) and pushes `ProjectState` (IR + overlay of every SWF) after swfs change, statuses and builds.
 - **Overlay edits** (Inspector role and instance name) go through `overlayStore.editNode` (one history entry), are saved by `saveOverlay` (validated against the spec's `Overlay` schema and identifier rules, unknown keys kept, serialized with the project's other writes by `project/lock.ts`) and trigger a rebuild of that SWF (instance names feed the compiler). The pipeline re-reads `overlay.json` before it saves, so a build never writes back an older overlay. The renderer's overlay store is the source of truth while the project is open; later pushes do not overwrite it.
 - **Undo** (UX 5.5): one history per SWF (`Ctrl+Z`, `Ctrl+Shift+Z`/`Ctrl+Y`, or the Inspector buttons; not while typing in a field). The status bar shows `Undo: SWF`. Figma edits never enter it and the visual IR is never touched.
-- **Strict Mode** (`project.json` `strictMode`): the lint dock promotes warnings to errors for display (`shared/lint.ts` `promoteStrict`), and the sync server promotes them in the build status (the only build gate that exists: status `error`).
+- **Strict Mode** (`project.json` `strictMode`): the lint dock promotes warnings to errors for display (`shared/lint.ts` `promoteStrict`), the sync server promotes them in the build status (status `error`), and Deploy's export gate promotes them so they block (`docs/deploy.md`, Export gate).
 - **One validation source:** the dock, the Navigator badges and the Inspector's issues all read `useDockRows()` (compiler lint rows + unreachable layers + a synthetic `build-failed` row when a build threw).
 - **Build failure:** the stage keeps the last good SWF (`usePreviewBuilds`), shows `Build failed - showing last good build` and its `Show error` button opens the Lint dock on the first error. If FFDec/Java is missing, Build All is disabled and the status bar says `FFDec: not found` (opens the Settings view).
 - **Status bar timings:** `timingLine` formats the stages and the Ruffle time; the bar is amber when edit-to-preview (pipeline total + Ruffle first frame) is above 1000 ms; a click opens the last 50 builds. The Ruffle time exists only for the SWF the stage shows.
@@ -75,7 +75,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 - **Workspace:** add an id to `WorkspaceId`/`WORKSPACE_IDS` and an entry to `WORKSPACES` in `workspace/workspaces.ts` (call `make(id, shares)` or write the layout by hand), add its name to `strings.top.workspaceNames`, and extend the `Ctrl+N` handler in `shell/AppShell.tsx`. `panelRegistry.test.ts` checks it shows every panel once.
 - **Dialog:** add an id to `DialogId`, copy to `strings.dialogs`, a branch in `shell/Dialogs.tsx`. `setupDoctor` shows the real `SetupDoctorPanel` (wide dialog); it is reachable from the top bar, the start screen and the status bar link `FFDec: not found`, and opens by itself on the first launch where a check fails. Dialogs and the toast stack also render on the start screen.
 - **Popover:** `ui/Popover.tsx` flips to the other side when the panel would leave the window.
-- **Deploy:** the dropdown shows each target folder exactly; the first deploy to a folder opens a confirmation dialog (path and file list). See `docs/deploy.md`.
+- **Deploy:** the dropdown shows each target folder exactly, the last builds' error/warning counts and whether Strict Mode is on; the first deploy to a folder opens a confirmation dialog (path and file list). A deploy the export gate blocks always opens it as `Deploy blocked` with the blocking issues (each links to its layer) and Deploy disabled with the reason; warnings are listed either way. See `docs/deploy.md`.
 
 ## Deferred, and why
 
