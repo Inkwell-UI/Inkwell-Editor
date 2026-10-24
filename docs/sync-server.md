@@ -16,6 +16,26 @@ A `ws` server in the Electron main process, started on app ready and closed on q
 - Server options added for the UI: `strict()` (Strict Mode: warnings become errors in the status), `rebuild(swfId)` / `rebuildAll()` (Build All, overlay saves). Events `handshakeFailed` (version/spec mismatch message) and `rejected` (`'token'` | `'origin'`) tell the UI why the plugin could not connect (amber / red Figma dot). `main/session.ts` restarts the server on the same port and token when another project is opened.
 - The window (the Figma popover, Inspector, dock and status bar now) shows, for the latest build of each swf (kept per swf id, so frames never overwrite each other): a **Fonts** table (swf, layer, Figma `family/style`, text style name, resolved Skyrim alias or `unmapped`, and how: `text style` | `family/style` | `fallback` | `unmapped`) and a **Lint** list (errors first; severity, code, message, swf, layer name). `compileSwf` returns the fonts as `fonts`; they are not lint issues and not in the lint count.
 
+## Figma snapshot (`src/main/project/snapshot.ts`, design spec "Project format")
+
+The project builds and deploys without Figma from what the sync already stores: the visual IR in `swfs/<name>/ir.json` and the images in `assets/<hash>.png`. `figma/snapshot.json` records where that came from, so a project opened offline says what it is built from:
+
+| Key | Content |
+| --- | --- |
+| `schema` | `1` |
+| `specVersion`, `protocolVersion` | of the editor that wrote it |
+| `source` | `{pluginVersion, fileKey?}` from the plugin's last `hello` (absent until a plugin connected; kept when a later write has none). Never the session token. The protocol has no page id or name, so none is stored. |
+| `swfs.<folder>` | `frameId` (the top-level frame's node id = swfId), `frameName` (the Figma name), `rootHash` (`treeHash`: `hashNode` over the map node id -> `hashNode(node)`, the same per-node hashes the plugin's `hashTree` sends), `nodes` (count), `assets` (image hashes it uses, sorted) |
+| `missingAssets` | referenced images not in `assets/` yet (absent when none) |
+| `updatedAt` | ISO time of the last change of anything above |
+
+- **Written** by the build pipeline right after `ir.json`, in the same project lock, atomically (temp + rename), sorted keys (`stableStringify`). It is rewritten only when its content (all but `updatedAt`) changed, so an offline Build All, a rebuild or an unchanged sync cause no git churn. The server debounces patches (100 ms) before the pipeline runs, so a sync burst writes it at most once per SWF build. A failed write is a `snapshot-write-failed` warning; the build goes on (`ir.json` is already saved).
+- **Read on open** (`session.ts`): missing = no snapshot (older projects; the next sync writes one), corrupt or invalid = reported in the Figma popover and ignored. Each SWF's `rootHash` is compared with its `ir.json`; a mismatch (hand edit, git merge) is listed as stale in the popover. Builds always use `ir.json`.
+- **Reconnect:** the server's store is loaded from `ir.json`, so the plugin's `hashTree` after `hello` gets a `resend` of only the nodes that differ (protocol unchanged; the snapshot's `rootHash` is the root of exactly those per-node hashes). No protocol or spec change was needed.
+- **UI:** with no plugin connected the Figma dot reads `Disconnected (Using Snapshot)` when a usable snapshot exists, else `Disconnected`; the preview banner is the UX 5.4 text ("Working from the Figma snapshot. ...") or, without a snapshot, "Not connected to Figma, and this project has no Figma snapshot yet. ...". The Figma popover shows the snapshot (time, SWFs, plugin, stale SWFs or the read error).
+- The samples carry a snapshot (no `source`); a test checks it matches their `ir.json`.
+- Tests: `project/snapshot.test.ts` (content, root hash, stable bytes, no churn, corrupt/invalid/missing, unknown keys kept, stale, samples), `sync/buildPipeline.test.ts` (offline build of `samples/hud-widget` from disk with no server writes the snapshot once, plugin recorded), `sync/syncServer.test.ts` (hello event, reconnect gets an empty resend for an unchanged tree and only the changed node otherwise), `renderer/model/connection.test.ts` (label states). Screenshots: `INKWELL_SHOTS_SNAPSHOT=1` with the `INKWELL_SHOTS_DIR` driver (`l1`..`l5`, see `src/main/screenshotDriver.ts`; it deletes and edits files in the scratch project).
+
 ## Config
 
 | Env | Default |

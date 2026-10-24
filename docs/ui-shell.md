@@ -7,7 +7,7 @@ Implements phases 1 and 2 of the UI/UX architecture spec (phase 2: the Settings 
 ```
 Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, workspace switcher, Setup (opens the Doctor), connection dots, Build All, Deploy (shell/DeployMenu.tsx: MO2 folders, Vortex = zip), Package Mod (same file: saves the zip; docs/deploy.md)
 Zone 2  left tabs         navigator | contracts | assets
-Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, Inspect overlay, banners, GFx note, last good build
+Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, Inspect overlay, banners (build failed; Figma not connected: snapshot / no snapshot), GFx note, last good build
 Zone 4  graph             GraphPanel             empty state, AS2 split placeholder
 Zone 5  inspector         InspectorPanel
 Zone 6A bottom dock tabs  lintBudget | localization | trace | mockData
