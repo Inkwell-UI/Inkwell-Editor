@@ -15,6 +15,8 @@ import { frame } from '../swf/ir.testutil'
 import { sha256 } from '../vanilla/bsa'
 import { commitDeploy, prepareDeploy, type DeployInput, type DeploySwf } from './run'
 import { readManifest } from './write'
+import { readZipEntry } from '../doctor/zip'
+import { writeZip } from './zip'
 
 const appPath = resolve(__dirname, '../../..')
 const ffdecDir = process.env['INKWELL_FFDEC'] ?? 'C:\\Program Files (x86)\\FFDec'
@@ -154,6 +156,10 @@ describe.skipIf(!can)('real deploy of samples/hud-widget into a temp folder', ()
       expect(['FWS', 'CWS']).toContain(swf.subarray(0, 3).toString('latin1'))
       const m = await readManifest(root)
       expect(Object.keys(m!.files).sort()).toEqual(rels)
+      // Package Mod zips exactly these bytes at the archive root (the layout MO2 and Vortex install as is)
+      const zip = writeZip([...r.prepared.files].map(([name, f]) => ({ name, data: f.data })))
+      for (const rel of rels) expect(readZipEntry(zip, rel)).toEqual(readFileSync(join(root, ...rel.split('/'))))
+      if (process.env['INKWELL_PACKAGE_OUT']) writeFileSync(process.env['INKWELL_PACKAGE_OUT'], zip) // manual check with an independent extractor
       // same input again: byte-identical output, nothing rewritten
       const r2 = await prepareDeploy(input)
       if (!r2.ok) throw new Error(r2.error)

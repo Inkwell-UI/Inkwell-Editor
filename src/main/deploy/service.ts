@@ -1,28 +1,32 @@
 import { randomUUID } from 'node:crypto'
-import { join } from 'node:path'
-import type { DeployResult, DeployScope, DeployState, DeployTargetId, DeployTargetInfo, GateResult, PrepareResult } from '../../shared/deploy'
+import { dirname, isAbsolute, join } from 'node:path'
+import { isPackageTarget, type DeployResult, type DeployScope, type DeployState, type DeployTargetId, type DeployTargetInfo, type GateResult, type PrepareResult } from '../../shared/deploy'
 import type { ResolvedSettings, StoredSettings } from '../../shared/doctor'
 import { findSkyrim } from '../doctor/skyrim'
 import { exportGate } from '../lint/gate'
 import { loadVanillaHashes, vanillaCacheRoot } from '../vanilla/cache'
-import { isConfirmed, resolveTarget, targetList, withConfirmed } from './plan'
+import { isConfirmed, isGameData, packageDir, packageFileName, resolveTarget, targetList, withConfirmed } from './plan'
 import { commitDeploy, prepareDeploy, type DeployInput, type DeploySwf, type Prepared } from './run'
+import { writeAtomic } from './write'
+import { writeZip } from './zip'
 
 export interface DeployDeps {
   userData: string
   appPath: string
   /** The open project, or undefined. */
-  project(): ({ dir: string; name: string; modId: string; deploy?: { preset: string; path: string }; swfs: DeploySwf[]; strictMode?: boolean } & Pick<DeployInput, 'imageMode' | 'assets'>) | undefined
+  project(): ({ dir: string; name: string; version: string; modId: string; deploy?: { preset: string; path: string }; swfs: DeploySwf[]; strictMode?: boolean } & Pick<DeployInput, 'imageMode' | 'assets'>) | undefined
   settings(): { stored: StoredSettings; resolved: ResolvedSettings }
   saveStored(s: StoredSettings): Promise<void>
   /** The resident FFDec wrapper (throws with a clear message when FFDec is missing). */
   ffdec(): DeployInput['ffdec']
   report(s: DeployState): void
+  /** Package targets: the native save dialog, starting at `defaultPath`; undefined = cancelled. */
+  chooseZip?(defaultPath: string): Promise<string | undefined>
 }
 
 /** Deploy in two steps so the UI can ask before anything is written: `prepare` compiles and checks everything, `commit` writes. One prepared deploy is pending at a time. */
 export function createDeployService(d: DeployDeps) {
-  let pending: { token: string; input: DeployInput; prepared: Prepared; dir: string; scope: DeployScope; gate: GateResult } | undefined
+  let pending: { token: string; id: DeployTargetId; input: DeployInput; prepared: Prepared; dir: string; zipName: string; scope: DeployScope; gate: GateResult } | undefined
 
   const targets = (): DeployTargetInfo[] => {
     const p = d.project()
@@ -39,7 +43,8 @@ export function createDeployService(d: DeployDeps) {
     const t = resolveTarget(id, resolved, p)
     if ('error' in t) return { ok: false, error: t.error }
     if (scope === 'active' && !activeName) return { ok: false, error: 'No SWF is selected.' }
-    d.report({ state: 'preparing', message: 'Compiling for deploy...' })
+    const pkg = isPackageTarget(id)
+    d.report({ state: 'preparing', message: pkg ? 'Compiling for the package...' : 'Compiling for deploy...' })
     try {
       const gameDirs = (await findSkyrim({ ...(resolved.skyrimPath ? { manual: resolved.skyrimPath } : {}) })).map((c) => c.path)
       const input: DeployInput = {
@@ -54,12 +59,13 @@ export function createDeployService(d: DeployDeps) {
       }
       const token = randomUUID()
       const gate = exportGate(r.prepared.issues, p.strictMode === true)
-      pending = { token, input, prepared: r.prepared, dir: p.dir, scope, gate }
+      pending = { token, id, input, prepared: r.prepared, dir: p.dir, zipName: packageFileName(p.name, p.version), scope, gate }
       const timing = { stages: r.prepared.stages, total: Object.values(r.prepared.stages).reduce((a, b) => a + b, 0) }
-      d.report(gate.ok ? { state: 'preparing', message: 'Ready to deploy', timing } : { state: 'error', message: blockedMessage(gate), timing })
+      d.report(gate.ok ? { state: 'preparing', message: pkg ? 'Ready to package' : 'Ready to deploy', timing } : { state: 'error', message: blockedMessage(gate, pkg), timing })
       return {
-        ok: true, token, root: t.root, files: r.prepared.info, removed: r.prepared.removed, gate, lint: r.prepared.lint, notes: r.prepared.plan.notes,
-        needsConfirm: !gate.ok || !isConfirmed(stored, p.dir, t.root) // a blocked deploy always shows the dialog with the reasons
+        ok: true, token, root: t.root, files: r.prepared.info, removed: pkg ? [] : r.prepared.removed, gate, lint: r.prepared.lint, notes: r.prepared.plan.notes,
+        // a blocked deploy always shows the dialog with the reasons; a package asks through the save dialog instead
+        needsConfirm: !gate.ok || (!pkg && !isConfirmed(stored, p.dir, t.root))
       }
     } catch (e) {
       const error = e instanceof Error ? e.message : String(e)
@@ -73,10 +79,11 @@ export function createDeployService(d: DeployDeps) {
     if (!c || c.token !== token) return { ok: false, error: 'The prepared deploy is no longer valid; start the deploy again.' }
     pending = undefined
     if (!c.gate.ok) { // never trust the renderer: a blocked deploy writes nothing
-      const error = blockedMessage(c.gate)
+      const error = blockedMessage(c.gate, isPackageTarget(c.id))
       d.report({ state: 'error', message: error })
       return { ok: false, root: c.input.root, error }
     }
+    if (isPackageTarget(c.id)) return writePackage(c)
     d.report({ state: 'writing', message: `Writing ${c.prepared.files.size} files...` })
     const r = await commitDeploy(c.input, c.prepared)
     if (r.ok) {
@@ -89,8 +96,34 @@ export function createDeployService(d: DeployDeps) {
     return r
   }
 
+  /** The same files as a deploy, as one zip with the mod layout at its root (what MO2 "Install mod from archive" and Vortex expect). */
+  async function writePackage(c: NonNullable<typeof pending>): Promise<DeployResult> {
+    const t0 = performance.now()
+    let out: string | undefined
+    try {
+      out = await d.chooseZip?.(join(packageDir(c.dir), c.zipName))
+      if (!out) {
+        d.report({ state: 'done', message: 'Package cancelled; nothing was written.' })
+        return { ok: false, cancelled: true }
+      }
+      if (!/\.zip$/i.test(out)) out += '.zip'
+      if (!isAbsolute(out)) throw new Error(`"${out}" is not an absolute path.`)
+      if (isGameData(dirname(out), c.input.gameDirs)) throw new Error(`Refusing to save the package into the game's Data folder (${dirname(out)}). Save it anywhere else and install it with MO2 or Vortex.`)
+      d.report({ state: 'writing', message: `Writing ${c.prepared.files.size} files to ${out}...` })
+      await writeAtomic(out, writeZip([...c.prepared.files].map(([name, f]) => ({ name, data: f.data }))))
+      const stages = { ...c.prepared.stages, write: performance.now() - t0 }
+      const timing = { stages, total: Object.values(stages).reduce((a, b) => a + b, 0) }
+      d.report({ state: 'done', timing, message: `Packaged ${c.prepared.files.size} file(s) to ${out}` })
+      return { ok: true, root: dirname(out), zipPath: out, written: c.prepared.files.size, unchanged: 0, timing }
+    } catch (e) {
+      const error = e instanceof Error ? e.message : String(e)
+      d.report({ state: 'error', message: error })
+      return { ok: false, ...(out ? { root: dirname(out) } : {}), error }
+    }
+  }
+
   return { targets, prepare, commit, cancel: (): void => void (pending = undefined) }
 }
 
-const blockedMessage = (g: GateResult): string =>
-  `Deploy blocked: ${g.blocking.length} lint error(s)${g.strict ? ' (Strict Mode promotes warnings)' : ''}. ${g.blocking.slice(0, 3).map((l) => `${l.swf ? `${l.swf}: ` : ''}${l.code}`).join(', ')}${g.blocking.length > 3 ? ', ...' : ''}`
+const blockedMessage = (g: GateResult, pkg = false): string =>
+  `${pkg ? 'Package' : 'Deploy'} blocked: ${g.blocking.length} lint error(s)${g.strict ? ' (Strict Mode promotes warnings)' : ''}. ${g.blocking.slice(0, 3).map((l) => `${l.swf ? `${l.swf}: ` : ''}${l.code}`).join(', ')}${g.blocking.length > 3 ? ', ...' : ''}`

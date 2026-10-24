@@ -1,11 +1,12 @@
 import type { BuildTiming } from './timing'
 
-/** Deploy types shared by main and renderer (UX 4.1). MO2 only for now; Vortex and Package are listed but disabled. */
-export type DeployTargetId = 'mo2Mod' | 'mo2Overwrite'
+/** Deploy types shared by main and renderer (UX 4.1). `package` and `vortex` both save a zip (Vortex installs it; nothing is written into Vortex's folders). */
+export type DeployTargetId = 'mo2Mod' | 'mo2Overwrite' | 'package' | 'vortex'
+export const isPackageTarget = (id: DeployTargetId): boolean => id === 'package' || id === 'vortex'
 export type DeployScope = 'all' | 'active'
 
 export interface DeployTargetInfo {
-  id: DeployTargetId | 'vortex' | 'package'
+  id: DeployTargetId
   label: string
   /** The exact folder that will be written (shown in the dropdown). */
   path?: string
@@ -56,6 +57,10 @@ export interface DeployResult {
   /** Previously deployed files that were left alone because they changed since. */
   kept?: string[]
   timing?: BuildTiming
+  /** Package targets: the zip that was written. */
+  zipPath?: string
+  /** The user closed the save dialog; nothing was written. */
+  cancelled?: boolean
 }
 
 /** Progress and last result, shown in the status bar and as a toast. */

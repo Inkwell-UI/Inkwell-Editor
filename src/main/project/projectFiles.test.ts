@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { loadProject } from './index'
-import { copyExample, createProject } from './lifecycle'
+import { copyExample, createProject, PROJECT_GITIGNORE } from './lifecycle'
 import { writeOverlay } from './overlayFile'
 import { addRecent, loadRecent, saveRecent } from './recent'
 import { writeProjectSetting } from './settings'
@@ -18,6 +18,7 @@ describe('new and example projects', () => {
     const p = await loadProject(dir)
     expect(p.meta).toMatchObject({ name: 'My Mod', modId: 'My_Mod', version: '0.1.0' })
     expect(p.swfs).toEqual({})
+    expect(await readFile(join(dir, '.gitignore'), 'utf8')).toBe('build/\ndist/\n') // build output and Package Mod zips are never committed
   })
   it('refuses a folder that already has files', async () => {
     const dir = await tmp()
@@ -29,6 +30,7 @@ describe('new and example projects', () => {
     const dir = join(await tmp(), 'ex')
     await copyExample(sample, dir)
     expect(await readdir(dir)).not.toContain('build')
+    expect(await readFile(join(dir, '.gitignore'), 'utf8')).toBe(PROJECT_GITIGNORE)
     expect((await loadProject(dir)).meta.name).toBe('HUD Minimal')
   })
 })

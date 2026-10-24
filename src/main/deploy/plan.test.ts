@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isConfirmed, isGameData, planDeploy, resolveTarget, safeJoin, targetList, withConfirmed, type SwfLike } from './plan'
+import { isConfirmed, isGameData, packageFileName, planDeploy, resolveTarget, safeJoin, targetList, withConfirmed, type SwfLike } from './plan'
 import { resolveSettings } from '../settings'
 
 const ROOT = 'C:\\Modding\\MO2\\mods\\My Mod'
@@ -76,10 +76,15 @@ describe('targets', () => {
     expect(resolveTarget('mo2Mod', s({ mo2ModsDir: 'C:\\m', mo2ModName: '..\\x' }), proj)).toHaveProperty('error')
     expect(resolveTarget('mo2Mod', s({}), { ...proj, deploy: { preset: 'mo2', path: 'C:\\M\\mods\\Test' } })).toEqual({ root: 'C:\\M\\mods\\Test' })
   })
-  it('the list shows exact paths; Vortex and Package are disabled as Planned', () => {
-    const l = targetList(s({ mo2ModsDir: 'C:\\MO2\\mods' }), proj, () => false)
-    expect(l.map((t) => [t.id, t.path ?? null, t.disabledReason ? true : false])).toEqual([['mo2Mod', 'C:\\MO2\\mods\\My Mod', false], ['mo2Overwrite', null, true], ['vortex', null, true], ['package', null, true]])
-    expect(l.slice(2).map((t) => t.disabledReason)).toEqual(['Planned', 'Planned'])
+  it('the list shows exact paths; Vortex and Package save a zip, by default in <project>/dist', () => {
+    const l = targetList(s({ mo2ModsDir: 'C:\\MO2\\mods' }), { ...proj, dir: 'D:\\Proj\\A' }, () => false)
+    expect(l.map((t) => [t.id, t.path ?? null, t.disabledReason ? true : false])).toEqual([['mo2Mod', 'C:\\MO2\\mods\\My Mod', false], ['mo2Overwrite', null, true], ['vortex', 'D:\\Proj\\A\\dist', false], ['package', 'D:\\Proj\\A\\dist', false]])
+    expect(resolveTarget('vortex', s({}), proj)).toHaveProperty('error') // no project folder
+  })
+  it('package file name is <Name>-<version>.zip without characters Windows forbids', () => {
+    expect(packageFileName('My Mod', '0.1.0')).toBe('My Mod-0.1.0.zip')
+    expect(packageFileName('a/b:c*', '1.0 ')).toBe('a_b_c_-1.0.zip')
+    expect(packageFileName('...', '')).toBe('mod-0.zip')
   })
 })
 

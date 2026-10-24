@@ -24,6 +24,8 @@ export function safeJoin(root: string, rel: string): string {
 }
 
 export interface ProjectLike {
+  /** Project folder; package targets default to `<dir>/dist`. */
+  dir?: string
   name: string
   modId: string
   deploy?: { preset: string; path: string }
@@ -36,6 +38,7 @@ export interface SwfLike {
 
 /** Folder a target writes to, or the reason it has none. A leaf name (mod name) may not contain separators. */
 export function resolveTarget(id: DeployTargetId, s: Pick<ResolvedSettings, 'mo2ModsDir' | 'mo2OverwriteDir' | 'mo2ModName'>, p: ProjectLike): { root: string } | { error: string } {
+  if (id === 'package' || id === 'vortex') return p.dir ? { root: packageDir(p.dir) } : { error: 'No project is open.' }
   if (id === 'mo2Overwrite') return s.mo2OverwriteDir ? { root: resolve(s.mo2OverwriteDir) } : { error: 'Set the MO2 overwrite folder in Settings.' }
   if (s.mo2ModsDir) {
     const mod = s.mo2ModName || p.name
@@ -51,7 +54,17 @@ export function targetList(s: ResolvedSettings, p: ProjectLike, confirmed: (root
     const r = resolveTarget(id, s, p)
     return 'root' in r ? { id, label, path: r.root, confirmed: confirmed(r.root) } : { id, label, disabledReason: r.error }
   }
-  return [t('mo2Mod', 'MO2 mod folder'), t('mo2Overwrite', 'MO2 overwrite folder'), { id: 'vortex', label: 'Vortex staging', disabledReason: 'Planned' }, { id: 'package', label: 'Package Mod', disabledReason: 'Planned' }]
+  // Vortex has no folder Inkwell may write into (its staging folder is Vortex's own state), so the Vortex target saves the same zip as Package Mod
+  return [t('mo2Mod', 'MO2 mod folder'), t('mo2Overwrite', 'MO2 overwrite folder'), t('vortex', 'Vortex (zip to install)'), t('package', 'Package Mod (zip)')]
+}
+
+/** Default folder for packages (git-ignored in new projects and the samples). */
+export const packageDir = (projectDir: string): string => join(projectDir, 'dist')
+
+/** `<Name>-<version>.zip` with characters Windows forbids in file names replaced by `_`. */
+export function packageFileName(name: string, version: string): string {
+  const clean = (s: string): string => s.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_').trim().replace(/[. ]+$/, '')
+  return `${clean(name) || 'mod'}-${clean(version) || '0'}.zip`
 }
 
 export interface PlannedFile {

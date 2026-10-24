@@ -38,6 +38,7 @@ describe('project format', () => {
     const b = await files(out)
     delete a['figma/.gitkeep']
     delete a['shared/.gitkeep']
+    delete a['.gitignore'] // not part of the project format (createProject writes it once)
     expect(b).toEqual(a)
   })
 

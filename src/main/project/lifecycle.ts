@@ -1,5 +1,5 @@
-import { cp, mkdir, readdir } from 'node:fs/promises'
-import { basename } from 'node:path'
+import { cp, mkdir, readdir, writeFile } from 'node:fs/promises'
+import { basename, join } from 'node:path'
 import { ident } from '../../shared/overlay'
 import { loadProject, saveProject } from './index'
 
@@ -14,7 +14,11 @@ export async function createProject(dir: string, name = basename(dir)): Promise<
   await assertEmpty(dir)
   await mkdir(dir, { recursive: true })
   await saveProject(dir, { meta: { name, modId: ident(name), version: '0.1.0', deploy: { preset: 'folder', path: '' } }, swfs: {} })
+  await writeFile(join(dir, '.gitignore'), PROJECT_GITIGNORE)
 }
+
+/** Build output and packages are derived and never committed (the samples carry the same file). */
+export const PROJECT_GITIGNORE = 'build/\ndist/\n'
 
 /** Copies a sample project (never its git-ignored `build/` output) into an empty folder and checks that the copy loads. */
 export async function copyExample(src: string, dest: string): Promise<void> {
