@@ -37,6 +37,8 @@ Each returns `{ id, label, status: pass|warn|fail|skipped, detail, fix?, extra? 
 
 **One change, one partial re-run.** `setSetting` and `browseSetting` return `SetSettingResult` (`{ ok: true, settings, cancelled? }` or `{ ok: false, error }`), never a bare rejection. Then only `checksForSetting(key)` run (`runDoctor(only)`) and `mergeResults` replaces those rows (Java -> `java`; Skyrim -> `skyrim`, `vanilla`, `mo2`; the MO2 keys -> `mo2`). Failures end up on the field (`role="alert"`): a refused value (line breaks; a mod name that is a path), a disk write failure (with the path), an IPC failure, a failing dialog. `ResolvedSettings.problems` (from `inspectSetting`, computed for every explicitly set value) gives the specific message under the field: does not exist, is a file not a folder, is a folder not a file, not a `.exe`, not an FFDec or Skyrim folder (no `lib\ffdec_lib.jar` / `SkyrimSE.exe`), not a `.json` manifest. A wrong path is saved anyway (its check row then fails with the same words); only malformed values are refused. Pasted values lose surrounding quotes (Explorer's "Copy as path"). The Deploy dropdown asks for its targets whenever it opens, so it shows new folders at once.
 
+**Fonts for Figma** (`doctor/FontsForFigma.tsx`) sits below the checks: the opt-in tool that installs the game's fonts per user for Figma, with its notice, status, confirmation dialog, Install and Remove. See `docs/font-install.md`.
+
 IPC: `runDoctor(only?)`, `runBenchmark`, `buildVanillaCache`, `doctorFirstLaunch`, `getSettings`, `setSetting`, `browseSetting`, `openExternal`.
 
 ## What went wrong before ("after Browse the fields don't fill and nothing is checked")

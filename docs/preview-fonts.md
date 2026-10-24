@@ -10,7 +10,7 @@ Cost, warm wrapper, 8 text fields: preview compile 33 ms with device fonts vs ab
 
 ## Source per face (priority)
 
-1. **Installed Skyrim fonts**, read-only, from `%LOCALAPPDATA%\Microsoft\Windows\Fonts` (`Inkwell-Everywhere-Light|Medium|Bold.ttf`, `Inkwell-<Face>-Regular.ttf` for Handwritten, Dragon, Falmer, Dwemer, Daedric, MageScript, SkyrimSymbols), as put there by the opt-in font tool. Never copied, written or committed.
+1. **Installed Skyrim fonts**, read-only, from `%LOCALAPPDATA%\Microsoft\Windows\Fonts` (`Inkwell-Everywhere-Light|Medium|Bold.ttf`, `Inkwell-<Face>-Regular.ttf` for Handwritten, Dragon, Falmer, Dwemer, Daedric, MageScript, SkyrimSymbols), as put there by the opt-in font tool (`docs/font-install.md`; restart Inkwell after installing). Never copied, written or committed.
 2. **Bundled OFL lookalikes** in `resources/preview-fonts/` (licences and README there): Barlow Condensed Light/Regular/Bold for the Everywhere faces, Barlow Condensed Regular for the faces with no lookalike (Handwritten, Dragon, cipher fonts, symbols), Share Tech Mono for `$ConsoleFont`.
 
 `INKWELL_PREVIEW_FONTS=auto|installed|bundled` (default `auto`) forces the source; `installed` still falls back per face when a file is missing. The alias-to-face table is `FACES` in `src/main/previewFonts.ts` (`$StartMenuFont` and `$DialogueFont` use Everywhere Medium).
