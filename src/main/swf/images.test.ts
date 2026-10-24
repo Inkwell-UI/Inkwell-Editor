@@ -113,7 +113,7 @@ describe('images, embedded mode (default)', () => {
   })
 
   it('lint: missing asset (error, not drawn), too large (error), power of two is not a concern when embedded', () => {
-    const big: Rgba = { width: 2049, height: 4, rgba: Buffer.alloc(2049 * 4 * 4) }
+    const big: Rgba = { width: 4097, height: 4, rgba: Buffer.alloc(4097 * 4 * 4) }
     const g = generate(swf([frame('f', ['i', 'j', 'k']), image('i', 'f'.repeat(40)), image('j', 'e'.repeat(40)), image('k', B.hash)], { id: 'x' }), {
       modId: 'M', images: (h) => (h === 'e'.repeat(40) ? big : images(h))
     })

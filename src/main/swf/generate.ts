@@ -57,7 +57,7 @@ export interface Generated {
 }
 
 /** Max image side in px (lint `image-too-large`). */
-export const MAX_IMAGE_SIDE = 2048
+export const MAX_IMAGE_SIDE = 4096
 
 /** Where a bitmap of iw x ih goes in a w x h box: the drawn rectangle and the bitmap's scale and top-left offset (px). */
 export function fitImage(mode: 'fill' | 'fit' | 'tile', iw: number, ih: number, w: number, h: number): { rect: { x: number; y: number; w: number; h: number }; scale: number; tx: number; ty: number; repeat?: boolean } {

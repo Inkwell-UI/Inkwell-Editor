@@ -25,7 +25,7 @@ Scale modes: `fill` (cover, centred, cropped by the shape or the mask) and `fit`
 | Code | Severity | When |
 | --- | --- | --- |
 | `image-missing-asset` | error | the PNG for a hash is not in `assets/` (or unreadable); the image is not drawn. Normal for a moment during the first sync. |
-| `image-too-large` | error | a side over 2048 px |
+| `image-too-large` | error | a side over 4096 px |
 | `image-not-power-of-two` | warning, dds mode only | a side that is not 64, 128, 256... (the game may refuse such textures; unverified) |
 | `image-scale-mode` | warning | `crop`, `tile` or an unknown mode |
 | `frame-fill-unsupported` | info | a non-image frame fill (draw a rectangle instead) |
