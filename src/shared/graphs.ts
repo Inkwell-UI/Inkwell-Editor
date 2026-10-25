@@ -14,6 +14,13 @@ export const summarize = (g: Graph): GraphSummary => ({ id: g.id, name: g.name, 
 
 export type GraphResult<T = Record<never, never>> = ({ ok: true } & T) | { ok: false; error: string }
 
+/** The generated AS2 class of one graph (the AS2 split view): source plus the source map (generated line, 1-based, to graph node id). */
+export interface GraphAs2 {
+  source: string
+  /** Lines of scaffolding have no entry. */
+  lines: Record<string, string>
+}
+
 /** A file-safe graph id from a name (`Show Title` -> `show-title`), unique among `taken`. */
 export function newGraphId(name: string, taken: ReadonlySet<string>): string {
   const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'graph'

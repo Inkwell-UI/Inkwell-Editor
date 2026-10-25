@@ -26,6 +26,7 @@ const api: InkwellApi = {
   saveGraph: (swf, g) => ipcRenderer.invoke(IPC.graphsSave, swf, g),
   createGraph: (swf, name, scope) => ipcRenderer.invoke(IPC.graphsCreate, swf, name, scope),
   deleteGraph: (swf, id) => ipcRenderer.invoke(IPC.graphsDelete, swf, id),
+  graphAs2: (swf, graph) => ipcRenderer.invoke(IPC.graphsAs2, swf, graph),
   getPacks: () => ipcRenderer.invoke(IPC.packsGet),
   setStrictMode: (on) => ipcRenderer.invoke(IPC.strictSet, on),
   buildAll: () => ipcRenderer.invoke(IPC.buildAll),

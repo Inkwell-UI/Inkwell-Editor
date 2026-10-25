@@ -3,7 +3,8 @@ import { existsSync } from 'node:fs'
 import { homedir, release } from 'node:os'
 import { join } from 'node:path'
 import { Graph, Swf } from '@inkwell-ui/spec'
-import { defIndex, emptyGraph, newGraphId, summarize, type GraphResult, type GraphSummary, type PackSet } from '../shared/graphs'
+import { bindingsOf } from '../shared/graphBinding'
+import { defIndex, emptyGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type PackSet } from '../shared/graphs'
 import { validateGraph } from '../shared/graphValidate'
 import { IPC, type SaveOverlayResult } from '../shared/ipc'
 import { normalizeOverlay, type OverlayDoc } from '../shared/overlay'
@@ -28,6 +29,8 @@ import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
 import { writeProjectSetting } from './project/settings'
 import { readSnapshot, staleSwfs, type FigmaSnapshot, type SnapshotSource } from './project/snapshot'
+import { generate } from './swf/generate'
+import { loadCodegenPacks } from './codegen/packs'
 import { createBuildPipeline } from './sync/buildPipeline'
 import { startSyncServer, type Layer, type SwfInfo } from './sync/syncServer'
 
@@ -61,6 +64,9 @@ export function createSession(deps: SessionDeps) {
   const graphs = new Map<string, Map<string, Graph>>() // swf name -> graph id -> graph (the renderer saves; main validates)
   let packs: Promise<PackSet> | undefined
   const getPacks = (): Promise<PackSet> => (packs ??= loadPacks([corePackDir(deps.appPath)]))
+  let codegenPacks: ReturnType<typeof loadCodegenPacks> | undefined
+  /** Overlay without mock data: mock data is delivered to Ruffle live and never needs a build. */
+  const withoutMock = (d: OverlayDoc | undefined): string => JSON.stringify({ ...d, mockData: undefined })
   const lintBySwf = new Map<string, number>()
   const unreachableBySwf = new Map<string, { id: string; name: string; swfName: string }[]>()
   const reports = new Map<string, SwfReport>()
@@ -148,6 +154,10 @@ export function createSession(deps: SessionDeps) {
     }
     const rows = [...graphIssues.values()].flat().map((x) => x.row)
     update({ graphLint: rows, lintCount: lintTotal() })
+  }
+  const rebuildSwf = (name: string): void => {
+    const info = server?.swfs().find((i) => i.name === name)
+    if (info && !info.orphaned) server!.rebuild(info.id)
   }
   const pushProject = (): void => {
     clearTimeout(pushTimer)
@@ -422,8 +432,10 @@ export function createSession(deps: SessionDeps) {
       if (!projectDir || !info) return { ok: false, error: 'No such swf in the open project' }
       const r = await writeOverlay(projectDir, swfName, doc)
       if (r.ok) {
-        overlays.set(info.id, normalizeOverlay(doc))
-        server!.rebuild(info.id) // instance names feed the compiler
+        const next = normalizeOverlay(doc)
+        const changed = withoutMock(overlays.get(info.id)) !== withoutMock(next)
+        overlays.set(info.id, next)
+        if (changed) server!.rebuild(info.id) // instance names and data bindings feed the compiler
       }
       return r
     },
@@ -446,8 +458,30 @@ export function createSession(deps: SessionDeps) {
       if (r.ok) {
         m.set(parsed.data.id, parsed.data)
         await refreshGraphLint().catch(() => undefined)
+        rebuildSwf(swf) // the Ruffle preview runs the graphs: a graph edit is a preview edit
       }
       return r
+    },
+    /** The AS2 class of one open graph (AS2 split view): codegen only, the same code a build runs; the graph is the editor's current copy, not necessarily saved. */
+    async graphAs2(swf: string, doc: unknown): Promise<GraphResult<{ as2: GraphAs2 }>> {
+      const info = server?.swfs().find((i) => i.name === swf)
+      const ir = info && !info.orphaned ? server?.ir(info.id) : undefined
+      if (!info || !ir || !meta) return { ok: false, error: 'No such swf in the open project' }
+      const parsed = Graph.safeParse(doc)
+      if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid graph' }
+      const live = parsed.data
+      const all = [live, ...[...(graphs.get(swf)?.values() ?? [])].filter((g) => g.id !== live.id)]
+      try {
+        const cg = await (codegenPacks ??= loadCodegenPacks([corePackDir(deps.appPath)]))
+        const nodes = overlays.get(info.id)?.nodes ?? {}
+        const instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (typeof o.instanceName === 'string' && o.instanceName ? [[id, o.instanceName]] : [])))
+        const out = generate(ir, { modId: meta.modId, instanceNames, graphs: { graphs: all, packs: cg.packs }, bindings: bindingsOf(nodes) })
+        const c = out.graphClasses.find((x) => x.graphId === live.id)
+        if (!c) return { ok: false, error: 'No code was generated for this graph' }
+        return { ok: true, as2: { source: c.source, lines: c.map.lines } }
+      } catch (e) {
+        return { ok: false, error: e instanceof Error ? e.message : String(e) }
+      }
     },
     async createGraph(swf: string, name: string, scope: 'menu' | 'component'): Promise<GraphResult<{ graph: Graph }>> {
       const m = graphs.get(swf)
@@ -468,6 +502,7 @@ export function createSession(deps: SessionDeps) {
       if (r.ok) {
         m.delete(id)
         await refreshGraphLint().catch(() => undefined)
+        rebuildSwf(swf)
       }
       return r
     },

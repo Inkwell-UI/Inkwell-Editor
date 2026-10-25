@@ -2,7 +2,7 @@ import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, Prepa
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, PathSettingKey, ResolvedSettings, SetSettingResult, SettingKey } from './doctor'
 import type { FontToolProgress, FontToolResult, FontToolStatus } from './fonts'
 import type { Graph } from '@inkwell-ui/spec'
-import type { GraphResult, GraphSummary, PackSet } from './graphs'
+import type { GraphAs2, GraphResult, GraphSummary, PackSet } from './graphs'
 import type { OverlayDoc } from './overlay'
 import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from './preview'
 import type { OpenResult, ProjectState, RecentProject, UiEvent } from './projectState'
@@ -28,6 +28,7 @@ export const IPC = {
   graphsSave: 'graphs:save',
   graphsCreate: 'graphs:create',
   graphsDelete: 'graphs:delete',
+  graphsAs2: 'graphs:as2',
   packsGet: 'packs:get',
   strictSet: 'project:strict',
   buildAll: 'build:all',
@@ -87,6 +88,8 @@ export interface InkwellApi {
   saveGraph(swfName: string, graph: Graph): Promise<GraphResult>
   createGraph(swfName: string, name: string, scope: Graph['scope']): Promise<GraphResult<{ graph: Graph }>>
   deleteGraph(swfName: string, id: string): Promise<GraphResult>
+  /** Runs codegen on the open (unsaved) `graph` next to the SWF's other saved graphs and returns its AS2 class with the source map (the AS2 split view). Not a build: no FFDec. */
+  graphAs2(swfName: string, graph: Graph): Promise<GraphResult<{ as2: GraphAs2 }>>
   /** Node definitions of the loaded packs (the bundled core pack today). Data only; `problems` lists files that failed their schema. */
   getPacks(): Promise<PackSet>
   /** Strict Mode, stored in project.json; rebuilds every SWF so the build status follows. */

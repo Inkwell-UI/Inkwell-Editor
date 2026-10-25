@@ -13,7 +13,7 @@ import { copyExample, createProject } from './project/lifecycle'
 import { runDoctorDriver } from './screenshotDoctor'
 import { runFontShots } from './screenshotFonts'
 import { runShots } from './screenshotDriver'
-import { runGraphShots } from './screenshotGraph'
+import { runDebugShots, runGraphShots } from './screenshotGraph'
 import { runSetupShots } from './screenshotSetup'
 import { createSession } from './session'
 
@@ -124,6 +124,7 @@ ipcMain.handle(IPC.graphsLoad, (_e, swf: string, id: string) => session.loadGrap
 ipcMain.handle(IPC.graphsSave, (_e, swf: string, g: unknown) => session.saveGraph(swf, g))
 ipcMain.handle(IPC.graphsCreate, (_e, swf: string, name: string, scope: 'menu' | 'component') => session.createGraph(swf, name, scope))
 ipcMain.handle(IPC.graphsDelete, (_e, swf: string, id: string) => session.deleteGraph(swf, id))
+ipcMain.handle(IPC.graphsAs2, (_e, swf: string, g: unknown) => session.graphAs2(swf, g))
 ipcMain.handle(IPC.packsGet, () => session.getPacks())
 ipcMain.handle(IPC.strictSet, (_e, on: boolean) => session.setStrictMode(on))
 ipcMain.handle(IPC.buildAll, () => session.buildAll())
@@ -208,6 +209,8 @@ void app.whenReady().then(async () => {
     void runDoctorDriver({ outDir: shotsDir ?? join(app.getPath('userData'), 'doctor-shots'), projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, session, dialog: debugDialog }).catch((e: unknown) => { console.error('[driver] failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_FONTS'])
     void runFontShots({ outDir: shotsDir, win: () => win }).then(() => app.exit(0), (e: unknown) => { console.error('[inkwell] font screenshots failed:', e); app.exit(1) })
+  else if (shotsDir && process.env['INKWELL_SHOTS_GRAPH'] === 'debug')
+    void runDebugShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] debug screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_GRAPH'])
     void runGraphShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] graph screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_SETUP'])
