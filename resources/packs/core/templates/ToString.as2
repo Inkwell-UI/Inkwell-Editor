@@ -1,0 +1,2 @@
+// [{{node.id}}] core/ToString@1
+String({{in.value}})

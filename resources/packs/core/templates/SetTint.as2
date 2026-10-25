@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetTint@1
+new Color({{in.target}}).setRGB({{in.color}});
+{{next.then}}

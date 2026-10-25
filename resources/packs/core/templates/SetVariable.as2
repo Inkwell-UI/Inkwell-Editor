@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetVariable@1
+{{var.variable}} = {{in.value}};
+{{next.then}}

@@ -1,0 +1,29 @@
+{
+  "kind": "And",
+  "major": 1,
+  "title": "And",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "Bool",
+      "default": false
+    },
+    {
+      "name": "b",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/And.as2"
+}

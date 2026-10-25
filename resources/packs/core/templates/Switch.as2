@@ -1,0 +1,17 @@
+// [{{node.id}}] core/Switch@1
+switch ({{in.value}}) {
+case {{field.case0}}:
+    {{next.case0}}
+    break;
+case {{field.case1}}:
+    {{next.case1}}
+    break;
+case {{field.case2}}:
+    {{next.case2}}
+    break;
+case {{field.case3}}:
+    {{next.case3}}
+    break;
+default:
+    {{next.default}}
+}

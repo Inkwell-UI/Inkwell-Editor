@@ -1,0 +1,7 @@
+// [{{node.id}}] core/OnTimer@1
+__g.t_{{node.uid}} = setInterval(function() {
+    if (!{{field.repeat}}) {
+        clearInterval(__g.t_{{node.uid}});
+    }
+    {{guarded.then}}
+}, {{field.seconds}} * 1000);

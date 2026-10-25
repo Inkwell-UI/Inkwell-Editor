@@ -1,0 +1,31 @@
+{
+  "kind": "FormatNumber",
+  "major": 1,
+  "title": "Format Number",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "decimals": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 6,
+      "default": 0
+    }
+  },
+  "as2Template": "templates/FormatNumber.as2"
+}

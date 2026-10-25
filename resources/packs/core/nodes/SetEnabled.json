@@ -1,0 +1,45 @@
+{
+  "kind": "SetEnabled",
+  "major": 1,
+  "title": "Set Enabled",
+  "category": "Components",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Button",
+      "typeFrom": "kind"
+    },
+    {
+      "name": "enabled",
+      "type": "Bool",
+      "default": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Button",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/SetEnabled.as2"
+}

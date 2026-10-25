@@ -1,0 +1,30 @@
+{
+  "kind": "OnTimer",
+  "major": 1,
+  "title": "On Timer",
+  "category": "Events",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "seconds": {
+      "type": "number",
+      "minimum": 0.01,
+      "default": 1
+    },
+    "repeat": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "as2Template": "templates/OnTimer.as2",
+  "extra": {
+    "entry": true
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "kind": "ForEach",
+  "major": 1,
+  "title": "For Each",
+  "category": "Flow",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "body",
+      "type": "Exec"
+    },
+    {
+      "name": "completed",
+      "type": "Exec"
+    },
+    {
+      "name": "item",
+      "type": "Object",
+      "default": {}
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/ForEach.as2"
+}

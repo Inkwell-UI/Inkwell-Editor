@@ -1,0 +1,2 @@
+// [{{node.id}}] core/FormatNumber@1
+String(Math.round({{in.value}} * Math.pow(10, {{field.decimals}})) / Math.pow(10, {{field.decimals}}))

@@ -1,0 +1,4 @@
+// [{{node.id}}] core/SetPosition@1
+{{in.target}}._x = {{in.x}};
+{{in.target}}._y = {{in.y}};
+{{next.then}}

@@ -1,0 +1,60 @@
+{
+  "kind": "Switch",
+  "major": 1,
+  "title": "Switch",
+  "category": "Flow",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "case0",
+      "type": "Exec"
+    },
+    {
+      "name": "case1",
+      "type": "Exec"
+    },
+    {
+      "name": "case2",
+      "type": "Exec"
+    },
+    {
+      "name": "case3",
+      "type": "Exec"
+    },
+    {
+      "name": "default",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "case0": {
+      "type": "string",
+      "default": ""
+    },
+    "case1": {
+      "type": "string",
+      "default": ""
+    },
+    "case2": {
+      "type": "string",
+      "default": ""
+    },
+    "case3": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "as2Template": "templates/Switch.as2"
+}

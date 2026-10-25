@@ -1,0 +1,19 @@
+{
+  "kind": "Group",
+  "major": 1,
+  "title": "Group",
+  "category": "Editor-only",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [],
+  "outputs": [],
+  "fields": {
+    "name": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "extra": {
+    "editorOnly": true
+  }
+}

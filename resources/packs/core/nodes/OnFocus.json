@@ -1,0 +1,39 @@
+{
+  "kind": "OnFocus",
+  "major": 1,
+  "title": "On Focus",
+  "category": "Events",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "target",
+      "type": "Button",
+      "typeFrom": "kind"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Button",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/OnFocus.as2",
+  "extra": {
+    "entry": true
+  }
+}

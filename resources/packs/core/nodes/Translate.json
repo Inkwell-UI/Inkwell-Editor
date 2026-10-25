@@ -1,0 +1,27 @@
+{
+  "kind": "Translate",
+  "major": 1,
+  "title": "Translate",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "key",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Translate.as2",
+  "extra": {
+    "unverifiedInGame": "relies on the engine translating $KEY when assigned to a TextField"
+  }
+}

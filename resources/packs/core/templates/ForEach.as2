@@ -1,0 +1,9 @@
+// [{{node.id}}] core/ForEach@1
+var {{node.uid}}_arr = {{in.array}};
+var {{node.uid}}_body = function({{out.item}}, {{out.index}}) {
+    {{next.body}}
+};
+for (var {{node.uid}}_i = 0; {{node.uid}}_i < {{node.uid}}_arr.length; {{node.uid}}_i++) {
+    {{node.uid}}_body({{node.uid}}_arr[{{node.uid}}_i], {{node.uid}}_i);
+}
+{{next.completed}}

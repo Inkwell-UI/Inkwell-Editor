@@ -1,0 +1,4 @@
+// [{{node.id}}] core/OnFocus@1
+{{in.target}}.onSetFocus = function() {
+    {{guarded.then}}
+};

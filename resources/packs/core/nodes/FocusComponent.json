@@ -1,0 +1,40 @@
+{
+  "kind": "FocusComponent",
+  "major": 1,
+  "title": "Focus Component",
+  "category": "Components",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Button",
+      "typeFrom": "kind"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Button",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/FocusComponent.as2"
+}

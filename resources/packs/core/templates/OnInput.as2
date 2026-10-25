@@ -1,0 +1,4 @@
+// [{{node.id}}] core/OnInput@1
+__g.addInputHandler({{field.action}}, function() {
+    {{guarded.then}}
+});

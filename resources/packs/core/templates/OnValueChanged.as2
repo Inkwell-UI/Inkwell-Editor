@@ -1,0 +1,6 @@
+// [{{node.id}}] core/OnValueChanged@1
+__g.h_{{node.uid}} = function(e) {
+    var {{out.value}} = Number(e.target.value) || 0;
+    {{guarded.then}}
+};
+{{in.target}}.addEventListener("change", __g, "h_{{node.uid}}");

@@ -1,0 +1,5 @@
+// [{{node.id}}] core/DoOnce@1
+if (!__g.s_{{node.uid}}) {
+    __g.s_{{node.uid}} = true;
+    {{next.then}}
+}

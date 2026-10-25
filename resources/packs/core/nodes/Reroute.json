@@ -1,0 +1,28 @@
+{
+  "kind": "Reroute",
+  "major": 1,
+  "title": "Reroute",
+  "category": "Editor-only",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "String",
+      "default": "",
+      "typeFrom": "connection"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "out",
+      "type": "String",
+      "default": "",
+      "typeFrom": "connection"
+    }
+  ],
+  "fields": {},
+  "extra": {
+    "editorOnly": true
+  }
+}

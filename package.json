@@ -14,7 +14,8 @@
     "compile:ingame": "tsx scripts/compile-ingame.ts",
     "compile:widget": "tsx scripts/compile-widget.ts",
     "compile:images": "tsx scripts/compile-images.ts",
-    "deploy:widget": "tsx scripts/deploy-widget.ts"
+    "deploy:widget": "tsx scripts/deploy-widget.ts",
+    "sync:core-pack": "node scripts/sync-core-pack.mjs"
   },
   "dependencies": {
     "@inkwell-ui/spec": "link:../Inkwell-Spec",

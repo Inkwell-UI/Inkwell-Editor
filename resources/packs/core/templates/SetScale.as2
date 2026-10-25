@@ -1,0 +1,4 @@
+// [{{node.id}}] core/SetScale@1
+{{in.target}}._xscale = {{in.x}};
+{{in.target}}._yscale = {{in.y}};
+{{next.then}}

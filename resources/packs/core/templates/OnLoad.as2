@@ -1,0 +1,4 @@
+// [{{node.id}}] core/OnLoad@1
+__g.onLoad = function() {
+    {{guarded.then}}
+};

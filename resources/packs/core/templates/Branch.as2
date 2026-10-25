@@ -1,0 +1,6 @@
+// [{{node.id}}] core/Branch@1
+if ({{in.condition}}) {
+    {{next.true}}
+} else {
+    {{next.false}}
+}

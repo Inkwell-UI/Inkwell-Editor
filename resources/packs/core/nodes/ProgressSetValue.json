@@ -1,0 +1,38 @@
+{
+  "kind": "ProgressSetValue",
+  "major": 1,
+  "title": "Progress: Set Value",
+  "category": "Components",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Clip"
+    },
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "frames": {
+      "type": "integer",
+      "minimum": 2,
+      "default": 100,
+      "description": "Frames of the meter clip; value 0..1 maps onto 1..frames"
+    }
+  },
+  "as2Template": "templates/ProgressSetValue.as2"
+}

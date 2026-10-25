@@ -1,0 +1,33 @@
+{
+  "kind": "SetVariable",
+  "major": 1,
+  "title": "Set Variable",
+  "category": "Variables",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "value",
+      "type": "String",
+      "default": "",
+      "typeFrom": "variable"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "variable": {
+      "type": "string",
+      "description": "Id of a graph variable"
+    }
+  },
+  "as2Template": "templates/SetVariable.as2"
+}

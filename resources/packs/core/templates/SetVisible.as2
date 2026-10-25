@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetVisible@1
+{{in.target}}._visible = {{in.visible}};
+{{next.then}}

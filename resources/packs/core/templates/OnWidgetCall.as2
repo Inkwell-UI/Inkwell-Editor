@@ -1,0 +1,4 @@
+// [{{node.id}}] core/OnWidgetCall@1
+__g.{{raw.name}} = function({{params}}) {
+    {{guarded.then}}
+};

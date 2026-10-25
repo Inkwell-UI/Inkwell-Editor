@@ -1,0 +1,53 @@
+{
+  "kind": "Compare",
+  "major": 1,
+  "title": "Compare",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "Number",
+      "default": 0,
+      "typeFrom": "valueType"
+    },
+    {
+      "name": "b",
+      "type": "Number",
+      "default": 0,
+      "typeFrom": "valueType"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "Number",
+        "String",
+        "Bool"
+      ],
+      "default": "Number"
+    },
+    "op": {
+      "type": "string",
+      "enum": [
+        "==",
+        "!=",
+        "<",
+        "<=",
+        ">",
+        ">="
+      ],
+      "default": "=="
+    }
+  },
+  "as2Template": "templates/Compare.as2"
+}

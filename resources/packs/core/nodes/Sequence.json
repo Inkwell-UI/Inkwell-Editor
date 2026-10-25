@@ -1,0 +1,34 @@
+{
+  "kind": "Sequence",
+  "major": 1,
+  "title": "Sequence",
+  "category": "Flow",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then0",
+      "type": "Exec"
+    },
+    {
+      "name": "then1",
+      "type": "Exec"
+    },
+    {
+      "name": "then2",
+      "type": "Exec"
+    },
+    {
+      "name": "then3",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Sequence.as2"
+}

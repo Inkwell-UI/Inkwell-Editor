@@ -1,0 +1,4 @@
+// [{{node.id}}] core/OnBlur@1
+{{in.target}}.onKillFocus = function() {
+    {{guarded.then}}
+};

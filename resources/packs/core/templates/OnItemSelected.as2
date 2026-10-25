@@ -1,0 +1,7 @@
+// [{{node.id}}] core/OnItemSelected@1
+__g.h_{{node.uid}} = function(e) {
+    var {{out.index}} = Number(e.index) || 0;
+    var {{out.item}} = e.data || {};
+    {{guarded.then}}
+};
+{{in.target}}.addEventListener("itemClick", __g, "h_{{node.uid}}");

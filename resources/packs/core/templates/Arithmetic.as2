@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Arithmetic@1
+(isFinite({{in.a}} {{raw.op}} {{in.b}}) ? ({{in.a}} {{raw.op}} {{in.b}}) : 0)

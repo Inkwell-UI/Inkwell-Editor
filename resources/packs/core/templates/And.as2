@@ -1,0 +1,2 @@
+// [{{node.id}}] core/And@1
+{{in.a}} && {{in.b}}

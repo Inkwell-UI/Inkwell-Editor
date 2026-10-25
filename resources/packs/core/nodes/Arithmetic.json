@@ -1,0 +1,41 @@
+{
+  "kind": "Arithmetic",
+  "major": 1,
+  "title": "Arithmetic",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "b",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "op": {
+      "type": "string",
+      "enum": [
+        "+",
+        "-",
+        "*",
+        "/",
+        "%"
+      ],
+      "default": "+"
+    }
+  },
+  "as2Template": "templates/Arithmetic.as2"
+}

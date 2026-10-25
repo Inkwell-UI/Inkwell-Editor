@@ -1,0 +1,36 @@
+{
+  "kind": "OnItemSelected",
+  "major": 1,
+  "title": "On Item Selected",
+  "category": "Events",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "target",
+      "type": "List"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "item",
+      "type": "Object",
+      "default": {}
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/OnItemSelected.as2",
+  "extra": {
+    "entry": true,
+    "unverifiedInGame": "CLIK addEventListener"
+  }
+}

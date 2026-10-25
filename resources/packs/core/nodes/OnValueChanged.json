@@ -1,0 +1,45 @@
+{
+  "kind": "OnValueChanged",
+  "major": 1,
+  "title": "On Value Changed",
+  "category": "Events",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/OnValueChanged.as2",
+  "extra": {
+    "entry": true,
+    "unverifiedInGame": "CLIK addEventListener"
+  }
+}

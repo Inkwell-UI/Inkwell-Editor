@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Concat@1
+String({{in.a}}) + String({{in.b}})

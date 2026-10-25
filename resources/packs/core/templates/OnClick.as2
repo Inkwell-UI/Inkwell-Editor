@@ -1,0 +1,4 @@
+// [{{node.id}}] core/OnClick@1
+{{in.target}}.onRelease = function() {
+    {{guarded.then}}
+};

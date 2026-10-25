@@ -1,0 +1,5 @@
+// [{{node.id}}] core/Delay@1
+var {{node.uid}}_iv = setInterval(function() {
+    clearInterval({{node.uid}}_iv);
+    {{guarded.then}}
+}, {{in.seconds}} * 1000);

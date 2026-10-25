@@ -1,0 +1,2 @@
+// [{{node.id}}] core/ToNumber@1
+(Number({{in.value}}) || 0)

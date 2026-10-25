@@ -1,0 +1,4 @@
+// [{{node.id}}] core/OnOpen@1
+__g.onOpen = function() {
+    {{guarded.then}}
+};

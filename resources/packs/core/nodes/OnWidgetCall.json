@@ -1,0 +1,53 @@
+{
+  "kind": "OnWidgetCall",
+  "major": 1,
+  "title": "On Widget Call",
+  "category": "Events",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+      "default": "Show",
+      "description": "AS2 handler name and Papyrus function name"
+    },
+    "params": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "String",
+              "Number",
+              "Bool"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "as2Template": "templates/OnWidgetCall.as2",
+  "extra": {
+    "entry": true,
+    "dynamicOutputs": "params"
+  }
+}

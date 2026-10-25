@@ -1,0 +1,4 @@
+// [{{node.id}}] core/OnClose@1
+__g.onClose = function() {
+    {{guarded.then}}
+};

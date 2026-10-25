@@ -1,0 +1,2 @@
+// [{{node.id}}] core/GetText@1
+({{in.target}}.text == undefined ? "" : String({{in.target}}.text))

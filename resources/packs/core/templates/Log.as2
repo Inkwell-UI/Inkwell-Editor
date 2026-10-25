@@ -1,0 +1,3 @@
+// [{{node.id}}] core/Log@1
+trace("[Inkwell] {{raw.level}} {{node.id}}: " + {{in.message}});
+{{next.then}}

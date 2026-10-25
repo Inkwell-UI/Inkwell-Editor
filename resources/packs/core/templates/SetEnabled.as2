@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetEnabled@1
+{{in.target}}.enabled = {{in.enabled}};
+{{next.then}}

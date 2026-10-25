@@ -1,0 +1,24 @@
+{
+  "kind": "Not",
+  "major": 1,
+  "title": "Not",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Not.as2"
+}

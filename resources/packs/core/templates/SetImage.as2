@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetImage@1
+{{in.target}}.loadMovie({{in.url}});
+{{next.then}}

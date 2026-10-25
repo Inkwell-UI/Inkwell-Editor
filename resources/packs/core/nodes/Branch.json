@@ -1,0 +1,31 @@
+{
+  "kind": "Branch",
+  "major": 1,
+  "title": "Branch",
+  "category": "Flow",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "condition",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "outputs": [
+    {
+      "name": "true",
+      "type": "Exec"
+    },
+    {
+      "name": "false",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Branch.as2"
+}

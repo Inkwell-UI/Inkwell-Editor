@@ -1,0 +1,27 @@
+{
+  "kind": "OnInput",
+  "major": 1,
+  "title": "On Input",
+  "category": "Events",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "action": {
+      "type": "string",
+      "default": "Accept",
+      "description": "Mapped action name"
+    }
+  },
+  "as2Template": "templates/OnInput.as2",
+  "extra": {
+    "entry": true,
+    "needsGlue": "addInputHandler"
+  }
+}

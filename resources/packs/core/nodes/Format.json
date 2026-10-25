@@ -1,0 +1,44 @@
+{
+  "kind": "Format",
+  "major": 1,
+  "title": "Format",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "pattern",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "a",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "b",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "c",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "d",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Format.as2"
+}

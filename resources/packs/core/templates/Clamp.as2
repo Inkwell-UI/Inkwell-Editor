@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Clamp@1
+Math.min(Math.max({{in.value}}, {{in.min}}), {{in.max}})

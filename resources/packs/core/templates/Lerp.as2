@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Lerp@1
+{{in.a}} + ({{in.b}} - {{in.a}}) * {{in.t}}

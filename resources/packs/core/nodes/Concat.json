@@ -1,0 +1,29 @@
+{
+  "kind": "Concat",
+  "major": 1,
+  "title": "Concat",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "b",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Concat.as2"
+}

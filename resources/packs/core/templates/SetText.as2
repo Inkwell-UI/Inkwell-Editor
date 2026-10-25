@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetText@1
+{{in.target}}.text = {{in.text}};
+{{next.then}}

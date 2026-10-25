@@ -1,0 +1,26 @@
+{
+  "kind": "GetText",
+  "major": 1,
+  "title": "Get Text",
+  "category": "Components",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "target",
+      "type": "Text"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/GetText.as2",
+  "extra": {
+    "volatile": true
+  }
+}

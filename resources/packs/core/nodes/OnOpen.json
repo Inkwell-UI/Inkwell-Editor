@@ -1,0 +1,20 @@
+{
+  "kind": "OnOpen",
+  "major": 1,
+  "title": "On Open",
+  "category": "Events",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/OnOpen.as2",
+  "extra": {
+    "entry": true
+  }
+}

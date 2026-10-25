@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Compare@1
+{{in.a}} {{raw.op}} {{in.b}}

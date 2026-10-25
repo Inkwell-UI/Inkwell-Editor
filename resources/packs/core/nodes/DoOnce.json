@@ -1,0 +1,22 @@
+{
+  "kind": "DoOnce",
+  "major": 1,
+  "title": "Do Once",
+  "category": "Flow",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/DoOnce.as2"
+}

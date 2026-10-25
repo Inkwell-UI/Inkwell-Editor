@@ -1,0 +1,3 @@
+// [{{node.id}}] core/FocusComponent@1
+Selection.setFocus({{in.target}});
+{{next.then}}

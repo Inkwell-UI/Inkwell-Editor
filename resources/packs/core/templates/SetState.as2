@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetState@1
+{{in.target}}.gotoAndStop({{in.state}});
+{{next.then}}

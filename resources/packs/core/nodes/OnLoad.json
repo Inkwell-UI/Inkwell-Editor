@@ -1,0 +1,20 @@
+{
+  "kind": "OnLoad",
+  "major": 1,
+  "title": "On Load",
+  "category": "Events",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/OnLoad.as2",
+  "extra": {
+    "entry": true
+  }
+}

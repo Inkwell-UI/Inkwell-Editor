@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Format@1
+{{in.pattern}}.split("{0}").join({{in.a}}).split("{1}").join({{in.b}}).split("{2}").join({{in.c}}).split("{3}").join({{in.d}})
