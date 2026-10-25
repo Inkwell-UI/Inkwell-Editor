@@ -1,0 +1,74 @@
+/* Graph canvas (Zone 4). Colours come from theme.css only; Knotwork's --kw-* variables are mapped onto the app's. */
+:root {
+  --kw-select: var(--focus);
+  --kw-select-soft: rgba(255, 255, 255, 0.28);
+  --kw-bg-panel: var(--surface-1);
+  --kw-bg-app: var(--bg);
+  --kw-border: var(--line);
+  --kw-text: var(--fg);
+  --kw-text-dim: var(--fg-dim);
+}
+
+.graph-flow { position: relative; flex: 1; min-height: 0; min-width: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--sunken); outline: none; }
+.graph-flow:focus-visible { border-color: var(--focus); }
+.graph-flow .react-flow { --xy-background-color: var(--sunken); --xy-edge-stroke-default: var(--fg-faint); font-family: inherit; }
+.graph-flow .react-flow__controls-button { background: var(--surface-2); color: var(--fg); border-color: var(--line); }
+.graph-flow .react-flow__controls-button svg { fill: currentColor; }
+.graph-minimap.react-flow__minimap { background: var(--surface-1); border: 1px solid var(--line); border-radius: 4px; }
+.graph-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; text-align: center; padding: 16px; }
+.graph-keys { position: absolute; left: 8px; bottom: 6px; font-size: 11px; pointer-events: none; z-index: 5; }
+
+/* wires: Exec thick and white, data thin and in the colour of the type it carries */
+.react-flow__edge.gw-exec .react-flow__edge-path { stroke-linecap: round; }
+.react-flow__edge.gw-data .react-flow__edge-path { stroke-dasharray: none; }
+
+/* nodes */
+.gn { min-width: 176px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 6px; font-size: 12px; color: var(--fg); box-shadow: 0 2px 8px var(--shadow); }
+.gn.is-selected { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus), 0 2px 8px var(--shadow); }
+.gn[data-status="error"] { border-color: var(--err); }
+.gn[data-status="warning"] { border-color: var(--warn); }
+.gn-head { display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: var(--surface-3); border-top: 3px solid var(--gn-accent, var(--line-strong)); border-bottom: 1px solid var(--line); border-radius: 5px 5px 0 0; font-weight: 600; }
+.gn-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gn-tag { font-size: 10px; font-weight: 500; color: var(--fg-dim); border: 1px solid var(--line-strong); border-radius: 8px; padding: 0 6px; white-space: nowrap; }
+.gn-badge { display: inline-flex; }
+.gn-badge.is-error { color: var(--err); }
+.gn-badge.is-warning { color: var(--warn); }
+.gn-sub { padding: 2px 10px; color: var(--fg-dim); font-size: 11px; }
+.gn-pins { display: flex; justify-content: space-between; gap: 18px; padding: 6px 0; }
+.gn-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gn-col-out { align-items: flex-end; }
+.gn-pin-head { position: relative; display: flex; align-items: center; padding: 3px 14px; min-height: 18px; }
+.gn-pin-head.gn-out { justify-content: flex-end; text-align: right; }
+.gn-pin-head.is-bad .gn-pin-label { color: var(--err); text-decoration: underline wavy; }
+.gn-pin-type { color: var(--fg-dim); font-size: 10px; }
+.gn-inline { padding: 0 14px 4px; }
+.gn-fields { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px 8px; border-top: 1px solid var(--line); }
+.gn-field { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.gn-field-label { color: var(--fg-dim); font-size: 11px; }
+.gn-input { box-sizing: border-box; width: 100%; max-width: 220px; background: var(--bg); color: var(--fg); border: 1px solid var(--line-strong); border-radius: 4px; padding: 2px 6px; font: inherit; font-size: 12px; }
+.gn-input[type="checkbox"] { width: auto; }
+.gn-input:focus { outline: 2px solid var(--focus); outline-offset: 0; }
+.gn-input.is-bad, .gn-input[aria-invalid="true"] { border-color: var(--err); }
+.gn-params { display: flex; flex-direction: column; gap: 4px; }
+.gn-param { display: grid; grid-template-columns: 1fr auto auto; gap: 4px; align-items: center; }
+.gn-icon, .gn-add { display: inline-flex; align-items: center; gap: 4px; background: transparent; color: var(--fg-dim); border: 1px solid var(--line-strong); border-radius: 4px; padding: 1px 6px; font: inherit; font-size: 11px; cursor: pointer; }
+.gn-icon:hover, .gn-add:hover { color: var(--fg); background: var(--hover); }
+.gn-unknown .gn-head-unknown { background: repeating-linear-gradient(135deg, var(--warn-bg) 0 8px, var(--surface-3) 8px 16px); border-top-color: var(--warn); }
+.gn-comment { background: var(--info-bg); border-color: var(--info); min-width: 200px; }
+.gn-comment .gn-head { background: transparent; border-top-color: var(--info); }
+.gn-comment textarea { margin: 0 8px 8px; width: calc(100% - 16px); max-width: none; resize: vertical; }
+.gn-group { min-width: 0; background: rgba(255, 255, 255, 0.03); border-style: dashed; padding: 6px; box-shadow: none; }
+.react-flow__node-inkwell:has(.gn-group) { z-index: -1 !important; }
+.gn-reroute { min-width: 0; width: 44px; height: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 10px; padding: 0; }
+.gn-reroute .gn-pin-head { padding: 0; min-height: 0; }
+
+/* pins: shape + colour (the colour is set inline from theme.css; the shape here) */
+.gn .gn-handle.react-flow__handle { width: 12px; height: 12px; min-width: 0; min-height: 0; border: 0; border-radius: 0; background: currentColor; }
+.gn-handle[data-shape="circle"] { border-radius: 50% !important; }
+.gn-handle[data-shape="triangle"] { clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.gn-handle[data-shape="diamond"] { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.gn-handle[data-shape="hexagon"] { clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); }
+.gn-handle[data-shape="octagon"] { clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }
+.gn-handle[data-shape="frame"] { clip-path: polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, 28% 28%, 28% 72%, 72% 72%, 72% 28%, 28% 28%); }
+.gn-handle[data-shape="unknown"] { color: var(--warn); background: repeating-linear-gradient(45deg, currentColor 0 3px, transparent 3px 6px); }
+.gn-handle.valid, .gn-handle.connectingto { scale: 1.5; }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, CircleX, Component, DollarSign, FileCode, Frame, Gamepad2, Image as ImageIcon, Link2, Search, Shapes, TriangleAlert, Type, Workflow, type LucideIcon } from 'lucide-react'
+import { GraphsList } from '../graph/GraphsList'
 import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import { buildLayerTree, filterTree, flattenTree, type Badge, type LayerRow } from '../model/layerTree'
@@ -38,7 +39,7 @@ function Badges({ badges }: { badges: Badge[] }) {
 }
 
 /**
- * Zone 2, tab 1 (UX 4.2): GRAPHS (empty until visual scripting), LAYERS (the active SWF's IR tree with badges), ORPHANED OVERLAYS and
+ * Zone 2, tab 1 (UX 4.2): GRAPHS (`graph/GraphsList.tsx`: the SWF's graphs, [+ Graph], rename, delete), LAYERS (the active SWF's IR tree with badges), ORPHANED OVERLAYS and
  * UNREACHABLE FIGMA LAYERS. Data: the project (IR, overlay), the single lint source (`useDockRows`) and the sync state. Selecting a row
  * goes through the selection store (source `navigator`).
  */
@@ -80,13 +81,7 @@ export function NavigatorPanel() {
           <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={strings.nav.search} aria-label={strings.nav.search} />
         </label>
 
-        <section aria-labelledby="nav-graphs">
-          <header className="section-title">
-            <h3 id="nav-graphs">{strings.nav.graphs}</h3>
-            <Btn label={strings.nav.addGraph} reason={strings.nav.addGraphReason}>{strings.nav.addGraphShort}</Btn>
-          </header>
-          <p className="empty">{strings.nav.graphsEmpty}</p>
-        </section>
+        <GraphsList />
 
         <section aria-labelledby="nav-layers">
           <header className="section-title"><h3 id="nav-layers">{strings.nav.layers}</h3></header>

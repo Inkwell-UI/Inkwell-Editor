@@ -5,6 +5,7 @@ import { describeTextMapping } from '../../main/swf/text'
 import { widgetFrame } from '../../main/widget/frame'
 import { debugHotkeyOf, ident, instanceNameError, ROLES, widgetAnchorOf, type WidgetAnchor } from '../../shared/overlay'
 import type { FontRow } from '../../shared/syncState'
+import { GraphNodeInspector } from '../graph/GraphNodeInspector'
 import { useUndo } from '../hooks/useUndo'
 import { useActiveOverlay, useActiveSwf, useDockRows } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
@@ -36,7 +37,7 @@ export function InspectorPanel() {
   if (inspects === 'graphNode')
     return (
       <Panel title={strings.insp.title}>
-        <p className="empty">{strings.insp.graphNode(graphNode)}</p>
+        <GraphNodeInspector />
       </Panel>
     )
   if (!node || !swf)

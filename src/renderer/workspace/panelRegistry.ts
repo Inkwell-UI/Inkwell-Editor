@@ -9,6 +9,8 @@ import { MockDataPanel } from '../panels/MockDataPanel'
 import { NavigatorPanel } from '../panels/NavigatorPanel'
 import { PreviewPanel } from '../panels/PreviewPanel'
 import { TracePanel } from '../panels/TracePanel'
+import { DataBindingPanel } from '../panels/DataBindingPanel'
+import { VariablesPanel } from '../panels/VariablesPanel'
 import { strings } from '../strings'
 
 /** What a panel adds to its tab when it sits in a tab group (a hook, so it can read stores). */
@@ -44,7 +46,9 @@ export const panelRegistry = {
   lintBudget: { title: strings.dock.lintTitle, component: LintBudgetPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 }, useTabInfo: useLintTab },
   localization: { title: strings.loc.title, component: LocalizationPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } },
   trace: { title: strings.trace.title, component: TracePanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } },
-  mockData: { title: strings.mock.title, component: MockDataPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } }
+  mockData: { title: strings.mock.title, component: MockDataPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } },
+  variables: { title: strings.vars.title, component: VariablesPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
+  dataBinding: { title: strings.bind.title, component: DataBindingPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } }
 } satisfies Record<string, PanelDef>
 
 export type PanelId = keyof typeof panelRegistry

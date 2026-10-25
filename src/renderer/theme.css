@@ -50,9 +50,26 @@
   --inspect-selected: #ffd166;
   --inspect-selected-bg: rgba(255, 209, 102, 0.14);
 
-  /* graph pin colors (Zone 4 will use them) */
+  /* graph pin colors (Zone 4). Each type also has its own shape (graph.css), so colour is never the only cue. */
   --pin-exec: #ffffff;
   --pin-bool: #e5484d;
   --pin-number: #4ade80;
   --pin-string: #e879f9;
+  --pin-array: #fb923c;
+  --pin-object: #facc15;
+  --pin-text: #38bdf8;
+  --pin-button: #818cf8;
+  --pin-list: #2dd4bf;
+  --pin-image: #f472b6;
+  --pin-clip: #a3a3a3;
+
+  /* graph node categories (header stripe, spawn menu swatch) */
+  --cat-events: #f97316;
+  --cat-flow: #a78bfa;
+  --cat-variables: #34d399;
+  --cat-logic: #60a5fa;
+  --cat-components: #f472b6;
+  --cat-debug: #a1a1aa;
+  --cat-editor-only: #71717a;
+  --cat-other: #71717a;
 }
