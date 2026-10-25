@@ -27,6 +27,26 @@
         "pin": "then"
       },
       "to": {
+        "node": "tint1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "tint1",
+        "pin": "then"
+      },
+      "to": {
+        "node": "pa1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pa1",
+        "pin": "then"
+      },
+      "to": {
         "node": "start",
         "pin": "in"
       }
@@ -257,6 +277,16 @@
         "pin": "then"
       },
       "to": {
+        "node": "tint2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "tint2",
+        "pin": "then"
+      },
+      "to": {
         "node": "addDelay",
         "pin": "in"
       }
@@ -347,6 +377,30 @@
       "pos": {
         "x": 520,
         "y": 0
+      }
+    },
+    {
+      "fields": {
+        "value": 3368703,
+        "variable": "tint"
+      },
+      "id": "tint1",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 780,
+        "y": -200
+      }
+    },
+    {
+      "fields": {
+        "value": 60,
+        "variable": "panelAlpha"
+      },
+      "id": "pa1",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 780,
+        "y": -400
       }
     },
     {
@@ -568,6 +622,18 @@
     },
     {
       "fields": {
+        "value": 3394662,
+        "variable": "tint"
+      },
+      "id": "tint2",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 3000,
+        "y": 700
+      }
+    },
+    {
+      "fields": {
         "variable": "lines"
       },
       "id": "addDelay",
@@ -631,6 +697,20 @@
       "name": "lines",
       "scope": "component",
       "type": "String"
+    },
+    {
+      "default": 0,
+      "id": "tint",
+      "name": "tint",
+      "scope": "component",
+      "type": "Number"
+    },
+    {
+      "default": 100,
+      "id": "panelAlpha",
+      "name": "panelAlpha",
+      "scope": "component",
+      "type": "Number"
     }
   ]
 }

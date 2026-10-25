@@ -122,6 +122,8 @@ export async function runPopupShots(o: { outDir: string; projectDir: string; win
   await snap('z5-nodes-first')
   console.log('[popup] Nodes(false) after 0.6 s:', JSON.stringify(n1))
   check('Nodes(false): Format and For Each (3 items) ran, the Set Text came before Do Once and Delay', n1 === 'start, fail=false [item 0] [item 1] [item 2]', n1)
+  const pa = Math.round(Number(await get('Popup.report.report_panel._alpha')))
+  check('data binding: the report panel alpha follows variable panelAlpha (60)', pa === 60, String(pa))
   await wait(1300)
   const n2 = await get('Popup.report.status.text')
   await snap('z6-nodes-delay')

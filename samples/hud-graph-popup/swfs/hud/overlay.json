@@ -28,6 +28,9 @@
         "nodes"
       ]
     },
+    "4:2": {
+      "dataBinding": "tint=var:tint;alpha=var:panelAlpha"
+    },
     "4:3": {
       "instanceName": "status"
     }
