@@ -221,3 +221,238 @@ export async function runGraphShots(o: { outDir: string; projectDir: string; win
   console.log('[shots] graph variables:', JSON.stringify(g.variables), 'settext fields:', JSON.stringify(g.nodes.find((n) => n.id === 'settext')?.fields))
   app.exit(0)
 }
+
+/**
+ * Debug only (`INKWELL_SHOTS_GRAPH=debug` + `INKWELL_SHOTS_DIR` + `INKWELL_SHOTS_PROJECT=<scratch copy of samples/hud-graph>`, and `INKWELL_CORE_PACK=<core pack
+ * copy plus tests/fixtures/packs/throw-node>`): Phase 6 end to end in the real Ruffle preview inside Electron (docs/debugging.md, Verifying). It rewrites the
+ * copy's graph (a Throw entry `Boom`, a variable bound to the subtitle, Set Variable after the Log) and overlay (binding, mock data), then: AS2 split view
+ * (node -> lines, line -> node, live update after an edit, timing of that edit to the new preview), Play panel (Show("Hello Ruffle") and Boom), Runtime Trace
+ * panel (lines, click selects the node), pin value badges, mock data, a Lint row opening its graph node. Prints what it saw; states d0-start ... d9-lint-click.
+ * Never run it on a project you care about.
+ */
+export async function runDebugShots(o: { outDir: string; projectDir: string; win: () => BrowserWindow | undefined; session: ReturnType<typeof createSession> }): Promise<void> {
+  await mkdir(o.outDir, { recursive: true })
+  const main = (): BrowserWindow => o.win()!
+  const js = <T>(code: string): Promise<T> => main().webContents.executeJavaScript(code) as Promise<T>
+  const snap = async (name: string): Promise<void> => {
+    await wait(700)
+    await writeFile(join(o.outDir, `${name}.png`), (await main().webContents.capturePage()).toPNG())
+    console.log(`[debug] shot ${name}`)
+  }
+  const q = (sel: string): string => JSON.stringify(sel)
+  const has = (sel: string): Promise<boolean> => js<boolean>(`!!document.querySelector(${q(sel)})`)
+  const click = (sel: string): Promise<boolean> => js<boolean>(`(() => { const e = document.querySelector(${q(sel)}); if (!e) return false; e.click(); return true })()`)
+  const must = async (sel: string): Promise<void> => {
+    if (!(await click(sel))) throw new Error(`Not found: ${sel}`)
+  }
+  const text = (sel: string): Promise<string> => js<string>(`document.querySelector(${q(sel)})?.textContent ?? ''`)
+  const count = (sel: string): Promise<number> => js<number>(`document.querySelectorAll(${q(sel)}).length`)
+  const timing = (): Promise<string> => text('[data-testid="timing"]')
+  const until = async (what: string, fn: () => boolean | Promise<boolean>, ms = 30000): Promise<void> => {
+    const t0 = Date.now()
+    while (!(await fn())) {
+      if (Date.now() - t0 > ms) {
+        await snap('dfail').catch(() => undefined)
+        throw new Error(`Timed out waiting for ${what} (status bar: ${await timing().catch(() => '?')})`)
+      }
+      await wait(100)
+    }
+  }
+  const setValue = (sel: string, value: string): Promise<boolean> =>
+    js<boolean>(`(() => { const e = document.querySelector(${q(sel)}); if (!e) return false; const proto = e instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(e, ${JSON.stringify(value)}); e.dispatchEvent(new Event(e instanceof HTMLSelectElement ? 'change' : 'input', { bubbles: true })); return true })()`)
+  const key = (keyCode: string, modifiers: ('control' | 'shift')[] = []): void => {
+    for (const type of ['keyDown', 'keyUp'] as const) main().webContents.sendInputEvent({ type, keyCode, modifiers })
+  }
+  const check = (what: string, ok: boolean, detail = ''): void => console.log(`[debug] ${ok ? 'OK    ' : 'FAILED'} ${what}${detail ? `: ${detail}` : ''}`)
+  const realClick = async (sel: string): Promise<void> => {
+    const p = await js<{ x: number; y: number }>(`(() => { const r = document.querySelector(${q(sel)}).getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) } })()`)
+    main().webContents.sendInputEvent({ type: 'mouseMove', x: p.x, y: p.y })
+    main().webContents.sendInputEvent({ type: 'mouseDown', x: p.x, y: p.y, button: 'left', clickCount: 1 })
+    main().webContents.sendInputEvent({ type: 'mouseUp', x: p.x, y: p.y, button: 'left', clickCount: 1 })
+  }
+  const lines = (): Promise<string[]> => js<string[]>(`[...document.querySelectorAll('[data-testid="trace-lines"] li')].map((e) => e.textContent)`)
+  const selectedTitle = (): Promise<string> => text('.gn.is-selected .gn-title')
+
+  // ---- the scratch project: Boom (throws), a variable bound to the subtitle, Set Variable after the Log, mock data
+  const file = join(o.projectDir, 'swfs', 'hud', 'graphs', 'main.json')
+  const g = JSON.parse(await readFile(file, 'utf8')) as { nodes: unknown[]; edges: unknown[]; variables: unknown[] }
+  if (!JSON.stringify(g.nodes).includes('"boom"')) {
+    g.nodes.push(
+      { id: 'boom', kind: 'core/OnWidgetCall@1', fields: { name: 'Boom', params: [] }, pos: { x: 0, y: 380 } },
+      { id: 'throw', kind: 'core/Throw@1', fields: { message: 'deliberate error' }, pos: { x: 260, y: 380 } },
+      { id: 'setgreet', kind: 'core/SetVariable@1', fields: { variable: 'greeting' }, pos: { x: 1040, y: 0 } }
+    )
+    g.edges.push(
+      { from: { node: 'boom', pin: 'then' }, to: { node: 'throw', pin: 'in' } },
+      { from: { node: 'log', pin: 'then' }, to: { node: 'setgreet', pin: 'in' } },
+      { from: { node: 'call', pin: 'title' }, to: { node: 'setgreet', pin: 'value' } }
+    )
+    g.variables.push({ id: 'greeting', name: 'greeting', type: 'String', scope: 'menu', default: 'hi' })
+    await writeFile(file, JSON.stringify(g, null, 2))
+    const ofile = join(o.projectDir, 'swfs', 'hud', 'overlay.json')
+    const ov = JSON.parse(await readFile(ofile, 'utf8')) as { nodes: Record<string, Record<string, unknown>>; mockData?: unknown }
+    ov.nodes['2:5'] = { ...ov.nodes['2:5'], dataBinding: 'text=var:greeting' }
+    ov.mockData = { greeting: 'Mock says hi' }
+    await writeFile(ofile, JSON.stringify(ov, null, 2))
+  }
+
+  main().webContents.on('console-message', (...a: unknown[]) => {
+    const e = a[0] as { level?: unknown; message?: string }
+    const level = typeof e?.level === 'string' ? e.level : a[1]
+    const msg = e?.message ?? String(a[2])
+    if (level === 'error' || level === 'warning' || level === 2 || level === 3) console.log(`[renderer ${String(level)}]`, msg.slice(0, 600))
+  })
+  main().setContentSize(1700, 1000)
+  main().center()
+  // every console line the page writes (what Ruffle logs for trace()) is kept in window.__con for the report
+  await js(`window.__con = []; for (const l of ['log', 'info', 'debug', 'warn']) { const o = console[l].bind(console); console[l] = (...a) => { window.__con.push(l + ': ' + a.map((x) => typeof x === 'string' ? x : JSON.stringify(x)).join(' ')); o(...a) } }; 0`)
+  const fit = async (): Promise<void> => (await click('.react-flow__controls-fitview'), await wait(600))
+  const r = await o.session.open(o.projectDir)
+  if (!r.ok) throw new Error(`open failed: ${JSON.stringify(r)}`)
+  o.session.debug.seedBuilds()
+  await wait(1500)
+  key('2', ['control']) // Behaviour
+  await until('graph canvas', () => has('[data-testid="graph-canvas"]'))
+  await until('Ruffle preview built and drawn', async () => (await timing()).includes('Ruffle'), 60000)
+  console.log('[debug] first build:', await timing())
+  await wait(1500)
+  await snap('d0-start')
+  const get = (path: string): Promise<string> => js<string>(`String(document.querySelector('ruffle-player').inkwellGet(${JSON.stringify(path)}))`)
+  console.log('[debug] movie before any call: title.text =', JSON.stringify(await get('Hud.title.text')), ' subtitle.text =', JSON.stringify(await get('Hud.subtitle.text')), '(subtitle is bound to variable greeting, mock data greeting = "Mock says hi")')
+  const warns = (): Promise<number> => js<number>(`window.__con.filter((l) => l.includes('WARN')).length`)
+  console.log('[debug] Ruffle warnings after load:', await warns())
+
+  // ---- 6.1 AS2 split view
+  await must('[data-testid="as2-split"]')
+  await until('as2 code', () => has('[data-testid="as2-code"]'))
+  const n0 = await count('.as2-line')
+  check('AS2 split shows the generated class', n0 > 20 && (await text('[data-testid="as2-code"]')).includes('class mods.InkwellGraphTest.HudGraph_main'), `${n0} lines`)
+  await realClick('[data-testid="node-core/SetText@1"] .gn-head')
+  await until('highlighted lines', async () => (await count('.as2-line.is-hit')) > 0, 10000)
+  const hit = await js<string[]>(`[...document.querySelectorAll('.as2-line.is-hit')].map((e) => e.textContent)`)
+  check('selecting Set Text highlights its lines', hit.some((l) => l.includes('.text = ')), JSON.stringify(hit))
+  await snap('d1-split-node-selected')
+  const logLine = await js<number>(`[...document.querySelectorAll('.as2-line.is-mapped')].findIndex((e) => e.textContent.includes('trace("[Inkwell] info'))`)
+  await js(`document.querySelectorAll('.as2-line.is-mapped')[${logLine}].click()`)
+  await wait(700)
+  check('clicking an AS2 line selects its node', (await selectedTitle()) === 'Log', await selectedTitle())
+  await snap('d2-split-line-clicked')
+
+  // ---- 6.2 Play panel (a taller preview strip: focus the splitter between preview and graph, ArrowDown)
+  await js(`document.querySelector('.splitter-row').focus()`)
+  for (let i = 0; i < 6; i++) key('Down')
+  await wait(500)
+  await must('[data-testid="tab-play"]')
+  await until('play panel', () => has('[data-testid="play-panel"]'))
+  await setValue('[data-testid="play-entry"]', 'main/call')
+  await wait(300)
+  await setValue('[data-testid="play-param-title"]', 'Hello Ruffle')
+  await wait(200)
+  await snap('d3-play-before-call')
+  await must('[data-testid="play-call"]')
+  await wait(1200)
+  console.log('[debug] Ruffle warnings after the Show call:', await warns())
+  const t1 = await get('Hud.title.text')
+  const s1 = await get('Hud.subtitle.text')
+  check('Show("Hello Ruffle") changed the title text in the movie (Set Text)', t1 === 'Hello Ruffle', JSON.stringify(t1))
+  check('the bound subtitle followed Set Variable greeting', s1 === 'Hello Ruffle', JSON.stringify(s1))
+  await js(`(() => { const z = document.querySelector('.zoom button:last-child'); for (let i = 0; i < 6; i++) z?.click() })()`)
+  await wait(500)
+  await js(`(() => { const s = document.querySelector('.stage-scroll'); const h = document.querySelector('.ruffle-host').getBoundingClientRect(); const r = s.getBoundingClientRect(); s.scrollLeft += h.right - r.right + 10; s.scrollTop += h.top - r.top - 4 })()`)
+  await snap('d4b-zoomed-widget')
+  await js(`(() => { const z = document.querySelector('.zoom-value'); z?.click() })()`)
+  console.log('[debug] play result:', await text('[data-testid="play-result"]'))
+  await snap('d4-play-after-call')
+  check('Show called in the movie', (await text('[data-testid="play-result"]')).includes('Called Show("Hello Ruffle")'))
+
+  // ---- 6.3 trace panel
+  await must('[data-testid="tab-trace"]')
+  await until('trace lines', async () => (await count('[data-testid="trace-lines"] li')) > 0, 8000).catch(() => undefined)
+  const traced = await lines()
+  console.log('[debug] console as the page saw it (last 12):', JSON.stringify((await js<string[]>('window.__con')).slice(-12)))
+  console.log('[debug] trace lines:', JSON.stringify(traced))
+  check('Log node line arrived with its node id', traced.some((l) => l.includes('INFO') && l.includes('#log') && l.includes('shown')))
+  check('timestamp is shown', traced.some((l) => /^\[\d\d:\d\d:\d\d\.\d{3}\]/.test(l)))
+  check('Ruffle notice is shown', (await text('[data-testid="trace-notice"]')).includes('not the game'))
+  // the graph needs room for the pin badges: preview strip back to its size, AS2 split closed
+  await js(`document.querySelector('.splitter-row').focus()`)
+  for (let i = 0; i < 6; i++) key('Up')
+  await must('[data-testid="as2-split"]')
+  await wait(500)
+  await fit()
+  const pins = await js<string[]>(`[...document.querySelectorAll('[data-testid="pin-value"]')].map((e) => e.closest('.gn').querySelector('.gn-title').textContent + ' = ' + e.textContent)`)
+  console.log('[debug] pin badges:', JSON.stringify(pins))
+  check('pin value badges on the canvas', pins.length >= 2)
+  await snap('d5-trace-and-pins')
+  await realClick('[data-testid="node-core/SetText@1"] .gn-head')
+  await wait(400)
+  await js(`document.querySelector('.trace-line.is-link').click()`)
+  await wait(600)
+  check('clicking a trace line selects the node', (await selectedTitle()) === 'Log', await selectedTitle())
+
+  // ---- the deliberate error: Boom throws, the widget keeps working
+  await must('[data-testid="tab-play"]')
+  await wait(300)
+  await setValue('[data-testid="play-entry"]', 'main/boom')
+  await wait(300)
+  await must('[data-testid="play-call"]')
+  await wait(800)
+  await must('[data-testid="tab-trace"]')
+  await wait(500)
+  const after = await lines()
+  check('Boom: the failing node id is traced as an error', after.some((l) => l.includes('ERROR') && l.includes('#throw') && l.includes('deliberate error')), JSON.stringify(after.slice(-2)))
+  await snap('d6-error-trace')
+  await must('[data-testid="tab-play"]')
+  await setValue('[data-testid="play-entry"]', 'main/call')
+  await wait(300)
+  await setValue('[data-testid="play-param-title"]', 'Still alive')
+  await wait(200)
+  await must('[data-testid="play-call"]')
+  await wait(1200)
+  await must('[data-testid="tab-trace"]')
+  await wait(400)
+  const last = await lines()
+  check('after the error the widget still works (Show("Still alive") logged again)', last.filter((l) => l.includes('#log') && l.includes('shown')).length >= 2, `${last.length} lines`)
+  await snap('d7-after-error')
+
+  // ---- live update + edit-to-preview time: change the Log message in the canvas
+  await must('[data-testid="as2-split"]')
+  await until('as2 code again', () => has('[data-testid="as2-code"]'))
+  await fit()
+  const before = await timing()
+  const t0 = Date.now()
+  await js(`(() => { const e = document.querySelector('[data-testid="node-core/Log@1"] input[type="text"], [data-testid="node-core/Log@1"] .gn-inline input'); e.focus(); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(e, 'edited!'); e.dispatchEvent(new Event('input', { bubbles: true })); e.blur() })()`)
+  await until('as2 shows the edit', async () => (await text('[data-testid="as2-code"]')).includes('edited!'), 10000)
+  check('AS2 view followed the edit', true, `${Date.now() - t0} ms`)
+  await until('new build timing', async () => { const t = await timing(); return t !== before && t.includes('Ruffle') }, 20000)
+  console.log(`[debug] graph edit to the new preview frame: ${Date.now() - t0} ms wall clock; status bar: ${await timing()}`)
+  await wait(500)
+  await must('[data-testid="tab-play"]')
+  await setValue('[data-testid="play-entry"]', 'main/call')
+  await wait(200)
+  await setValue('[data-testid="play-param-title"]', 'After edit')
+  await wait(200)
+  await must('[data-testid="play-call"]')
+  await wait(800)
+  await must('[data-testid="tab-trace"]')
+  await wait(300)
+  const edited = await lines()
+  check('the rebuilt preview runs the edited graph', edited.slice(-3).some((l) => l.includes('edited!')), JSON.stringify(edited.slice(-2)))
+  await snap('d8-edited')
+
+  // ---- 6.4 a Lint row for a graph issue opens the graph and selects the node
+  await fit()
+  await setValue('[data-testid="node-core/SetText@1"] [data-testid="layer-picker"]', '')
+  await until('graph lint row', async () => (await text('[data-testid="lint-counts"]')).match(/[1-9]/) !== null, 15000)
+  await must('[data-testid="tab-lintBudget"]')
+  await wait(500)
+  await fit()
+  await realClick('[data-testid="node-core/Log@1"] .gn-head')
+  await wait(300)
+  await js(`[...document.querySelectorAll('.lint-table tr.is-link')].find((r) => r.textContent.includes('graph-required-pin'))?.click()`)
+  await wait(900)
+  check('Lint row selected the graph node', (await selectedTitle()) === 'Set Text', await selectedTitle())
+  await snap('d9-lint-click')
+  await wait(500)
+  app.exit(0)
+}
