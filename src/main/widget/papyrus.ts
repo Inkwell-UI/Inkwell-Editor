@@ -222,21 +222,19 @@ function graphApi(name: string, modId: string, calls: readonly WidgetCall[], hot
     const params = c.params.map((p) => `${PTYPE[p.type]} ${pname(p.type, p.name)}`).join(', ')
     const fills = c.params.map((p, i) => {
       const v = pname(p.type, p.name)
-      return p.type === 'String' ? `		a[${i}] = ${v}` : p.type === 'Number' ? `		a[${i}] = ${v} as String` : `		If ${v}
-			a[${i}] = "true"
-		Else
-			a[${i}] = "false"
-		EndIf`
+      return p.type === 'String' ? `	a[${i}] = ${v}` : p.type === 'Number' ? `	a[${i}] = ${v} as String` : `	If ${v}
+		a[${i}] = "true"
+	Else
+		a[${i}] = "false"
+	EndIf`
     })
     const call = c.params.length
-      ? `		a = new String[${c.params.length}]
-${fills.join('\n')}
-		UI.InvokeStringA("HUD Menu", WidgetRoot + ".${c.name}", a)`
+      ? `		UI.InvokeStringA("HUD Menu", WidgetRoot + ".${c.name}", a)`
       : `		UI.InvokeBool("HUD Menu", WidgetRoot + ".${c.name}", True)`
     return `
 ; generated from the graph's On Widget Call "${c.name}"
 Function ${c.name}(${params})
-${c.params.length ? '	String[] a\n' : ''}	If Ready
+${c.params.length ? `	String[] a = new String[${c.params.length}]\n${fills.join('\n')}\n` : ''}	If Ready
 ${call}
 	Else
 		_pendingCall = "${c.name}"

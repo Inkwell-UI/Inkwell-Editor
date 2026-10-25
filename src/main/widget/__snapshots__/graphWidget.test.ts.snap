@@ -57,16 +57,15 @@ String[] _pendingArgs
 
 ; generated from the graph's On Widget Call "Popup"
 Function Popup(String asTitle, Float afHold, Bool abSticky)
-	String[] a
+	String[] a = new String[3]
+	a[0] = asTitle
+	a[1] = afHold as String
+	If abSticky
+		a[2] = "true"
+	Else
+		a[2] = "false"
+	EndIf
 	If Ready
-		a = new String[3]
-		a[0] = asTitle
-		a[1] = afHold as String
-		If abSticky
-			a[2] = "true"
-		Else
-			a[2] = "false"
-		EndIf
 		UI.InvokeStringA("HUD Menu", WidgetRoot + ".Popup", a)
 	Else
 		_pendingCall = "Popup"
@@ -175,10 +174,9 @@ String[] _pendingArgs
 
 ; generated from the graph's On Widget Call "Show"
 Function Show(String asTitle)
-	String[] a
+	String[] a = new String[1]
+	a[0] = asTitle
 	If Ready
-		a = new String[1]
-		a[0] = asTitle
 		UI.InvokeStringA("HUD Menu", WidgetRoot + ".Show", a)
 	Else
 		_pendingCall = "Show"

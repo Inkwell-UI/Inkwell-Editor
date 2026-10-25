@@ -59,12 +59,11 @@ String[] _pendingArgs
 
 ; generated from the graph's On Widget Call "Show"
 Function Show(String asTitle, String asDescription, Float afHold)
-	String[] a
+	String[] a = new String[3]
+	a[0] = asTitle
+	a[1] = asDescription
+	a[2] = afHold as String
 	If Ready
-		a = new String[3]
-		a[0] = asTitle
-		a[1] = asDescription
-		a[2] = afHold as String
 		UI.InvokeStringA("HUD Menu", WidgetRoot + ".Show", a)
 	Else
 		_pendingCall = "Show"
@@ -85,14 +84,13 @@ EndFunction
 
 ; generated from the graph's On Widget Call "Nodes"
 Function Nodes(Bool abFail)
-	String[] a
+	String[] a = new String[1]
+	If abFail
+		a[0] = "true"
+	Else
+		a[0] = "false"
+	EndIf
 	If Ready
-		a = new String[1]
-		If abFail
-			a[0] = "true"
-		Else
-			a[0] = "false"
-		EndIf
 		UI.InvokeStringA("HUD Menu", WidgetRoot + ".Nodes", a)
 	Else
 		_pendingCall = "Nodes"

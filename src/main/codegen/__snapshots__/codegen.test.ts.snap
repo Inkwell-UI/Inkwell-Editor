@@ -13,6 +13,7 @@ exports[`golden AS2 per node kind > core/And@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -30,6 +31,7 @@ exports[`golden AS2 per node kind > core/Arithmetic@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -53,6 +55,7 @@ exports[`golden AS2 per node kind > core/Branch@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -70,6 +73,7 @@ exports[`golden AS2 per node kind > core/Clamp@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -87,6 +91,7 @@ exports[`golden AS2 per node kind > core/Compare@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -104,6 +109,7 @@ exports[`golden AS2 per node kind > core/Concat@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -129,6 +135,7 @@ exports[`golden AS2 per node kind > core/Delay@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -150,6 +157,7 @@ exports[`golden AS2 per node kind > core/DoOnce@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -188,6 +196,7 @@ exports[`golden AS2 per node kind > core/Fade@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -207,6 +216,7 @@ exports[`golden AS2 per node kind > core/FocusComponent@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -233,6 +243,7 @@ exports[`golden AS2 per node kind > core/ForEach@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -250,6 +261,7 @@ exports[`golden AS2 per node kind > core/Format@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -267,6 +279,7 @@ exports[`golden AS2 per node kind > core/FormatNumber@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -284,6 +297,7 @@ exports[`golden AS2 per node kind > core/GetText@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -301,6 +315,7 @@ exports[`golden AS2 per node kind > core/GetVariable@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -318,6 +333,7 @@ exports[`golden AS2 per node kind > core/Lerp@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -337,6 +353,7 @@ exports[`golden AS2 per node kind > core/Log@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -354,6 +371,7 @@ exports[`golden AS2 per node kind > core/Not@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -520,6 +538,7 @@ exports[`golden AS2 per node kind > core/OnWidgetCall@1 1`] = `
             }
         };
         __g.base.Show = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Show((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -537,6 +556,7 @@ exports[`golden AS2 per node kind > core/Or@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -556,6 +576,7 @@ exports[`golden AS2 per node kind > core/ProgressSetValue@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -580,6 +601,7 @@ exports[`golden AS2 per node kind > core/Sequence@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -599,6 +621,7 @@ exports[`golden AS2 per node kind > core/SetAlpha@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -618,6 +641,7 @@ exports[`golden AS2 per node kind > core/SetEnabled@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -637,6 +661,7 @@ exports[`golden AS2 per node kind > core/SetImage@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -657,6 +682,7 @@ exports[`golden AS2 per node kind > core/SetPosition@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -677,6 +703,7 @@ exports[`golden AS2 per node kind > core/SetScale@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -696,6 +723,7 @@ exports[`golden AS2 per node kind > core/SetState@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -715,6 +743,7 @@ exports[`golden AS2 per node kind > core/SetText@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -734,6 +763,7 @@ exports[`golden AS2 per node kind > core/SetTint@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -753,6 +783,7 @@ exports[`golden AS2 per node kind > core/SetVariable@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -772,6 +803,7 @@ exports[`golden AS2 per node kind > core/SetVisible@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -809,6 +841,7 @@ exports[`golden AS2 per node kind > core/Switch@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -828,6 +861,7 @@ exports[`golden AS2 per node kind > core/Throw@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
@@ -845,6 +879,7 @@ exports[`golden AS2 per node kind > core/ToNumber@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -862,6 +897,7 @@ exports[`golden AS2 per node kind > core/ToString@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;
@@ -879,6 +915,7 @@ exports[`golden AS2 per node kind > core/Translate@1 1`] = `
             }
         };
         __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
         };"
 `;

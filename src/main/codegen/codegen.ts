@@ -408,7 +408,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         calls.push({ name, params })
         // Papyrus passes the arguments as one string array (no mixed-type Invoke exists); the clip method converts them to the typed parameters
         const conv = params.map((p, k) => (p.type === 'String' ? `a[${k}] == undefined ? "" : String(a[${k}])` : p.type === 'Number' ? `Number(a[${k}]) || 0` : `a[${k}] == true || a[${k}] == "true"`))
-        init.push({ t: `__g.base.${name} = function(a) {`, n: n.id }, { t: `    __g.${name}(${conv.map((c) => `(${c})`).join(', ')});`, n: n.id }, { t: '};', n: n.id })
+        init.push({ t: `__g.base.${name} = function(a) {`, n: n.id }, { t: '    if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array', n: n.id }, { t: `    __g.${name}(${conv.map((c) => `(${c})`).join(', ')});`, n: n.id }, { t: '};', n: n.id })
       } catch (e) {
         if (!(e instanceof Skip)) throw e
       }
