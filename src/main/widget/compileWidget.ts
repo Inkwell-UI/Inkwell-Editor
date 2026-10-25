@@ -5,6 +5,7 @@ import { createStageTimer, type BuildTiming } from '../../shared/timing'
 import { compileSwf, type CompileOptions } from '../swf/compile'
 import { ident } from '../swf/generate'
 import type { LintIssue } from '../swf/lint'
+import { bindingsOf } from '../../shared/graphBinding'
 import { debugHotkeyOf, isSettableText, widgetAnchorOf, type OverlayDoc } from '../../shared/overlay'
 import { buildEsp } from './esp'
 import { widgetFrame, widgetPlacement } from './frame'
@@ -41,7 +42,7 @@ export async function compileWidget(ir: Swf, opts: WidgetOptions): Promise<Widge
   const timer = createStageTimer()
 
   const settableTexts = new Set(Object.entries(opts.overlay ?? {}).filter(([id, o]) => isSettableText(o) && ir.nodes[id]?.type === 'text').map(([id]) => id))
-  const swf = await compileSwf(ir, { ...opts, widget: true, settableTexts, outPath: join(opts.buildDir, `${widgetName}.swf`) })
+  const swf = await compileSwf(ir, { ...opts, ...(opts.graphs ? { bindings: bindingsOf(opts.overlay) } : {}), widget: true, settableTexts, outPath: join(opts.buildDir, `${widgetName}.swf`) })
 
   timer.start('papyrus')
   const scripts = generateScripts({ modId: opts.modId, widgetName, displayName: ir.name, placement, texts: swf.settableTexts, debugHotkey: debugHotkeyOf(frameEntry), calls: swf.graphCalls })

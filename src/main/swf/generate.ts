@@ -14,6 +14,8 @@ import type { CodegenPacks } from '../codegen/packs'
 export interface GenerateOptions {
   /** Visual-scripting graphs of this SWF compiled to AS2 classes (docs/codegen.md). Absent or empty: nothing is added, the output is unchanged. */
   graphs?: { graphs: readonly Graph[]; packs: CodegenPacks }
+  /** Overlay `dataBinding` strings by Figma layer id; applied by the graph classes (docs/codegen.md, Data binding). Without graphs nothing is bound. */
+  bindings?: Record<string, string>
   /** Mod id: AS2 classes live under `mods.<modId>.*`. */
   modId: string
   /** Overlay instance names by node id; the default is the sanitized layer name. */
@@ -74,6 +76,45 @@ export interface SettableText {
   name: string
   path: string
 }
+
+/**
+ * Preview only (docs/debugging.md): the callbacks the editor calls through Ruffle's ExternalInterface. `inkwellCall(name, args)` runs the clip method of an
+ * On Widget Call (what Papyrus does in game); `inkwellGet("Hud.title.text")` reads a value from the movie (a debugging and test aid), `inkwellMockReset()` / `inkwellMock(key, value)` replace the mock values and `inkwellMockDone()` tells the graph classes
+ * (`Inkwell.mockListeners`) to re-read them.
+ */
+const PREVIEW_BRIDGE = [
+  '_global.Inkwell.mock = {};',
+  '_global.Inkwell.mockListeners = [];',
+  'try {',
+  '    flash.external.ExternalInterface.addCallback("inkwellCall", null, function(name, args) {',
+  '        var f = _root[name];',
+  '        if (typeof (f) != "function") return false;',
+  '        f.call(_root, args);',
+  '        return true;',
+  '    });',
+  '    flash.external.ExternalInterface.addCallback("inkwellGet", null, function(path) {',
+  '        var o = _root;',
+  '        var p = String(path).split(".");',
+  '        for (var k = 0; k < p.length; k++) o = o[p[k]];',
+  '        return o;',
+  '    });',
+  '    flash.external.ExternalInterface.addCallback("inkwellMockReset", null, function() {',
+  '        _global.Inkwell.mock = {};',
+  '        return true;',
+  '    });',
+  '    flash.external.ExternalInterface.addCallback("inkwellMock", null, function(key, value) {',
+  '        _global.Inkwell.mock[key] = value;',
+  '        return true;',
+  '    });',
+  '    flash.external.ExternalInterface.addCallback("inkwellMockDone", null, function() {',
+  '        var l = _global.Inkwell.mockListeners;',
+  '        for (var k = 0; k < l.length; k++) l[k]();',
+  '        return true;',
+  '    });',
+  '} catch (e) {',
+  '    trace("[Inkwell] preview bridge unavailable: " + e);',
+  '}'
+]
 
 /** Max image side in px (lint `image-too-large`). */
 export const MAX_IMAGE_SIDE = 4096
@@ -424,7 +465,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   const basePrefix = widget && wf ? 'root.widget.' : 'root.'
   const gen = opts.graphs?.graphs.length
     ? generateGraphClasses({
-        modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs,
+        modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}),
         layerPath: (id) => (id === (widget && wf ? wf.frame.id : ir.root) ? '' : layerPaths.get(id)?.startsWith(basePrefix) ? layerPaths.get(id)!.slice(basePrefix.length) : undefined)
       })
     : undefined
@@ -448,7 +489,8 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     frameCode.unshift(
       '_global.gfxExtensions = true;',
       'if (_global.skse == undefined) _global.skse = { plugins: {}, SendModEvent: function() {}, GetPluginVersion: function() { return 0; } };',
-      'if (_global.Inkwell == undefined) _global.Inkwell = { bridge: { send: function() {}, on: function() {} } };'
+      'if (_global.Inkwell == undefined) _global.Inkwell = { bridge: { send: function() {}, on: function() {} } };',
+      ...PREVIEW_BRIDGE
     )
   gen?.classes.forEach((c, k) => {
     addClass(c.cls, c.source)

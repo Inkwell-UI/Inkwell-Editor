@@ -167,4 +167,34 @@ describe('build pipeline: offline (no sync server) and figma/snapshot.json', () 
     await createBuildPipeline({ ...base, projectDir: dir, buildDir: join(dir, 'build'), ffdec }).onChange(ir.id, ir, 'hud')
     expect(as2.flat().filter((f) => f.startsWith('HudGraph'))).toEqual([])
   })
+
+  it('overlay data bindings reach the graph class of both builds; only the preview build carries the debug code', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'inkwell-bind-'))
+    await cp(resolve(__dirname, '../../../samples/hud-graph'), dir, { recursive: true })
+    const gfile = join(dir, 'swfs', 'hud', 'graphs', 'main.json')
+    const g = JSON.parse(await readFile(gfile, 'utf8')) as { variables: unknown[] }
+    g.variables.push({ id: 'greeting', name: 'greeting', type: 'String', scope: 'menu', default: 'hi' })
+    await writeFile(gfile, JSON.stringify(g))
+    const ofile = join(dir, 'swfs', 'hud', 'overlay.json')
+    const ov = JSON.parse(await readFile(ofile, 'utf8')) as { nodes: Record<string, Record<string, unknown>> }
+    ov.nodes['2:5'] = { ...ov.nodes['2:5'], dataBinding: 'text=var:greeting;alpha=mock:fade' }
+    await writeFile(ofile, JSON.stringify(ov))
+    const sources: string[] = []
+    const ffdec = {
+      build: async (job: FfdecJob) => {
+        sources.push(await readFile(join(job.scripts!, '__Packages', 'mods', 'InkwellGraphTest', 'HudGraph_main.as'), 'utf8'))
+        await copyFile(job.base, job.out)
+        return { ok: true, ms: 0, wallMs: 0 }
+      }
+    }
+    const ir = Swf.parse((await loadProject(dir)).swfs['hud']!.ir)
+    await createBuildPipeline({ ...base, projectDir: dir, buildDir: join(dir, 'build'), ffdec, packDirs: [resolve(__dirname, '../../../resources/packs/core')] }).onChange(ir.id, ir, 'hud')
+    const [game, preview] = sources as [string, string]
+    expect(game).toContain('__g.b_greeting = function()')
+    expect(game).toContain('__g.base.Hud.subtitle.text = String(__g.v_greeting);')
+    expect(game).not.toMatch(/function pv\(|mockListeners/)
+    expect(preview).toContain('__g.b_greeting = function()')
+    expect(preview).toContain('function pv(nodeId, pin, v)')
+    expect(preview).toContain('if (m["fade"] != undefined)')
+  })
 })

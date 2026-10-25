@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { Overlay } from '@inkwell-ui/spec'
-import { formatBindings, mockDataOf, parseBindings, setMockKey, withBinding, withMockData } from './graphBinding'
+import { bindingsOf, formatBindings, mockDataOf, parseBindings, setMockKey, withBinding, withMockData } from './graphBinding'
 import { overlayProblems, patchNodeOverlay } from './overlay'
+
+describe('bindingsOf', () => {
+  it('collects the dataBinding strings of an overlay by node id', () => {
+    expect(bindingsOf({ a: { dataBinding: 'text=var:x' }, b: {}, c: { dataBinding: '' }, d: { dataBinding: 5 } })).toEqual({ a: 'text=var:x' })
+    expect(bindingsOf(undefined)).toEqual({})
+  })
+})
 
 describe('data binding string', () => {
   it('round-trips the four properties in a fixed order', () => {

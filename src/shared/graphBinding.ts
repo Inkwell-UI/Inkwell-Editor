@@ -56,3 +56,7 @@ export function setMockKey(data: MockData, key: string, next: string | undefined
   if (next !== undefined && (!BIND_NAME.test(next) || (next !== key && Object.hasOwn(data, next)))) return data
   return Object.fromEntries(Object.entries(data).flatMap(([k, v]) => (k === key ? (next === undefined ? [] : [[next, v] as const]) : [[k, v] as const])))
 }
+
+/** The `dataBinding` strings of an overlay's node entries by node id (what codegen binds). */
+export const bindingsOf = (nodes: Record<string, { dataBinding?: unknown }> | undefined): Record<string, string> =>
+  Object.fromEntries(Object.entries(nodes ?? {}).flatMap(([id, o]) => (typeof o?.dataBinding === 'string' && o.dataBinding ? [[id, o.dataBinding]] : [])))

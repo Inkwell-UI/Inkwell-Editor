@@ -1,5 +1,6 @@
 import { pinCompat, type Graph, type GraphNode, type NodeDef, type PinType } from '@inkwell-ui/spec'
 import { resolvePins, type ResolvedPin } from '../../shared/graphValidate'
+import { parseBindings, type BindProp } from '../../shared/graphBinding'
 import { ident } from '../../shared/overlay'
 import type { CodegenPacks } from './packs'
 
@@ -45,6 +46,13 @@ export interface CodegenInput {
   packs: CodegenPacks
   /** Clip path of a Figma layer relative to the base clip, `''` for the base clip itself, undefined when the layer is not compiled. */
   layerPath: (figmaId: string) => string | undefined
+  /** Overlay `dataBinding` strings by Figma layer id (grammar: `shared/graphBinding.ts`). `var:` bindings are applied on init and after every Set Variable. */
+  bindings?: Readonly<Record<string, string>>
+  /**
+   * Ruffle preview build (debugging, docs/debugging.md): pure node outputs and On Widget Call parameters are traced as `[Inkwell] pin <node>.<pin> = <value>`,
+   * `mock:` bindings and variables named like a mock key follow the mock data Ruffle Play mode delivers. Never set for the game SWF.
+   */
+  preview?: boolean
 }
 
 interface Line {
@@ -124,7 +132,7 @@ interface Val {
 const key = (node: string, pin: string): string => `${node}\u0000${pin}`
 
 /** Generates one AS2 class for one graph. */
-function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssue[]): GraphClass {
+function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssue[], first: boolean): GraphClass {
   const file = `__Packages/mods/${ident(i.modId)}/${cls}.as`
   const issue = (message: string, nodeId?: string): void => void issues.push({ graphId: g.id, ...(nodeId ? { nodeId } : {}), code: 'graph-codegen', message })
   const nodes = new Map(g.nodes.map((n) => [n.id, n]))
@@ -163,6 +171,26 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     else {
       dataIn.set(key(b.id, e.to.pin), { node: a.id, pin: e.from.pin })
       consumers.set(key(a.id, e.from.pin), (consumers.get(key(a.id, e.from.pin)) ?? 0) + 1)
+    }
+  }
+
+  // ---- data bindings (overlay `dataBinding`) ----
+  const clipOf = (layer: string): string | undefined => {
+    const p = i.layerPath(layer)
+    return p === undefined ? undefined : p === '' ? '__g.base' : `__g.base.${p}`
+  }
+  const apply = (prop: BindProp, clip: string, x: string): string =>
+    prop === 'text' ? `${clip}.text = String(${x});` : prop === 'visible' ? `${clip}._visible = (${x} == true || ${x} == "true");` : prop === 'alpha' ? `${clip}._alpha = Number(${x});` : `new Color(${clip}).setRGB(Number(${x}));`
+  const binders = new Map<string, string[]>() // variable id -> statements that copy it to its bound properties
+  const mockBound: string[] = []
+  for (const [layer, str] of Object.entries(i.bindings ?? {}).sort(([a], [b]) => (a < b ? -1 : 1))) {
+    const clip = clipOf(layer)
+    if (clip === undefined) continue
+    for (const b of parseBindings(str).bindings) {
+      if (b.source === 'var') {
+        const v = g.variables.find((x) => x.id === b.name)
+        if (v) binders.set(v.id, [...(binders.get(v.id) ?? []), apply(b.prop, clip, `__g.v_${varNames.get(v.id)}`)])
+      } else if (i.preview && first) mockBound.push(`if (m[${as2Literal(b.name)}] != undefined) { ${apply(b.prop, clip, `m[${as2Literal(b.name)}]`)} }`)
     }
   }
 
@@ -282,6 +310,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     }
     const volatile = inVol || (d.extra as { volatile?: unknown } | undefined)?.volatile === true
     const out = d.outputs[0]?.name ?? 'value'
+    if (i.preview) expr = `__g.pv("${safeId(n.id)}", "${safeId(out)}", ${expr})`
     if (!volatile && (consumers.get(key(n.id, out)) ?? 0) > 1 && !isTrivial(expr)) {
       const t = temp(uids.get(n.id)!)
       ctx.pre.push({ t: `var ${t} = ${expr};`, n: n.id })
@@ -318,6 +347,10 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         if (own) {
           if (!(pinsOf.get(n.id)?.outputs ?? []).some((p) => p.name === own[3] && p.type === 'Exec')) throw new Skip(`template uses the unknown exec output "${own[3]}".`)
           const sub = chain(n, own[3]!, ctx)
+          if (own[2] === 'guarded' && isEntry && i.preview && lines.some((l) => l.includes('{{params}}')))
+            for (const p of [...outs].reverse()) sub.unshift({ t: `__g.pv("${safeId(n.id)}", "${safeId(p)}", ${uids.get(n.id)}_${p});`, n: n.id })
+          const boundVar = n.kind.startsWith('core/SetVariable@') ? String(n.fields['variable']) : undefined
+          if (boundVar && binders.has(boundVar)) out.push({ t: `${own[1]}__g.b_${varNames.get(boundVar)}();`, n: n.id })
           if (own[2] === 'next') out.push(...ind(sub, own[1]!))
           else
             out.push(
@@ -343,6 +376,24 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   // ---- the class ----
   const init: Line[] = [{ t: 'var __g = this;' }]
   for (const v of g.variables) init.push({ t: `__g.v_${varNames.get(v.id)} = ${as2Literal(v.default ?? defaultOf(v.type))};` })
+  for (const [vid, stmts] of binders) {
+    const vn = varNames.get(vid)!
+    init.push({ t: `__g.b_${vn} = function() {` }, { t: '    try {' }, ...stmts.map((t) => ({ t: `        ${t}` })), { t: '    } catch (e) {' }, { t: `        __g.fail("binding:${vn}", e);` }, { t: '    }' }, { t: '};' }, { t: `__g.b_${vn}();` })
+  }
+  if (i.preview) {
+    // Ruffle Play mode: `_global.Inkwell.mock` is filled by the editor (inkwellMock callback); a variable named like a key takes its value, then bindings follow
+    const fromMock = g.variables.flatMap((v) => {
+      const x = `m[${as2Literal(v.name)}]`
+      const val = v.type === 'Number' ? `Number(${x})` : v.type === 'String' ? `String(${x})` : v.type === 'Bool' ? `(${x} == true || ${x} == "true")` : undefined
+      return val ? [`if (${x} != undefined) { __g.v_${varNames.get(v.id)} = ${val};${binders.has(v.id) ? ` __g.b_${varNames.get(v.id)}();` : ''} }`] : []
+    })
+    if (fromMock.length || mockBound.length)
+      init.push(
+        { t: '__g.mock = function() {' }, { t: '    var m = _global.Inkwell.mock;' },
+        ...[...fromMock, ...mockBound].map((t) => ({ t: `    try { ${t} } catch (e) { __g.fail("mock", e); }` })),
+        { t: '};' }, { t: 'if (_global.Inkwell.mockListeners != undefined) _global.Inkwell.mockListeners.push(__g.mock);' }, { t: '__g.mock();' }
+      )
+  }
   const calls: WidgetCall[] = []
   const root: Ctx = { cache: new Cache(), pre: [], entry: '', stack: new Set() }
   for (const n of g.nodes) {
@@ -390,6 +441,16 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     { t: '        } catch (x) {' },
     { t: '        }' },
     { t: '    }' },
+    ...(i.preview
+      ? [
+          { t: '    // preview only: live pin values for the editor (traced as "[Inkwell] pin <node>.<pin> = <value>"); passes the value through' },
+          { t: '    function pv(nodeId, pin, v) {' },
+          { t: '        var s = typeof (v) == "string" ? "\\"" + v.split("\\n").join("\\\\n") + "\\"" : String(v);' },
+          { t: '        trace("[Inkwell] pin " + nodeId + "." + pin + " = " + s);' },
+          { t: '        return v;' },
+          { t: '    }' }
+        ]
+      : []),
     { t: '    // On Input glue: the host calls handleInput("<action>"); 0.2 has no input source yet (the runtime comes in 0.3)' },
     { t: '    function addInputHandler(action, fn) {' },
     { t: '        if (this.inputHandlers[action] == undefined) this.inputHandlers[action] = [];' },
@@ -417,11 +478,11 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
 export function generateGraphClasses(i: CodegenInput): { classes: GraphClass[]; issues: CodegenIssue[] } {
   const issues: CodegenIssue[] = []
   const used = new Set<string>()
-  const classes = i.graphs.map((g) => {
+  const classes = i.graphs.map((g, k) => {
     let cls = `${i.swfCls}Graph_${ident(g.id)}`
     for (let k = 2; used.has(cls); k++) cls = `${i.swfCls}Graph_${ident(g.id)}_${k}`
     used.add(cls)
-    return generateOne(g, cls, i, issues)
+    return generateOne(g, cls, i, issues, k === 0)
   })
   return { classes, issues }
 }
