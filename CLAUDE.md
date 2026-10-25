@@ -24,7 +24,7 @@ Use yarn (not npm).
 
 Run test + typecheck before finishing any change. `electron` downloads its binary in a postinstall; if `yarn dev` says "Electron uninstall", run `node node_modules/electron/install.js`.
 
-Layout: `src/main` (Electron main, `project/` = project.json + folder load/save), `src/renderer` (React; all UI strings in `strings.ts`, all colors in `theme.css`; panels, hooks, workspace layout and preview pieces: see `docs/ui-panels.md`; zones, workspaces, stores and the selection model: `docs/ui-shell.md`), `src/shared` (`product.ts` holds the product name; `timing.ts` stage timer). `samples/hud-minimal` is the golden sample project.
+Layout: `src/main` (Electron main, `project/` = project.json + folder load/save + `graphFiles.ts`, `packs/` = pack loader; graph data layer, packs, store and validation: `docs/graphs.md`), `src/renderer` (React; all UI strings in `strings.ts`, all colors in `theme.css`; panels, hooks, workspace layout and preview pieces: see `docs/ui-panels.md`; zones, workspaces, stores and the selection model: `docs/ui-shell.md`), `src/shared` (`product.ts` holds the product name; `timing.ts` stage timer). `samples/hud-minimal` is the golden sample project.
 
 ## Stack
 
@@ -37,6 +37,7 @@ Electron, React, React Flow, Knotwork (`@nicklaj/knotwork`, pinned to a GitHub t
 - **Shared formats are defined in inkwell-spec.** Never define or change the IR, sync protocol, debug protocol, menu JSON/INI or pack manifest here; change the spec first, then consume the new version.
 - **Never drop unknown data:** IR `extra`, nodes from missing packs, unknown contract entries all survive load and save.
 - **One validation source:** issues are computed once, pinned to graph nodes and Figma node IDs; components read them, never recompute.
+- **Graphs** (`swfs/<name>/graphs/<id>.json`): validated by `src/shared/graphValidate.ts` only (main for the Lint dock and export gate, renderer through Knotwork `createValidation` for badges); a node targeting a deleted Figma layer is an orphan, never dropped; the SWF's one undo history orders overlay and graph edits (`state/swfHistory.ts`). See `docs/graphs.md`.
 - **Generic graph code belongs in Knotwork.** If a change isn't Inkwell-specific (indexes, rules, undo, spawn menu, clipboard, navigation), make it in the Knotwork repo and bump the pinned tag.
 - **No per-node scans** of node or edge arrays; use Knotwork's indexes. Only visible graph nodes are mounted.
 - **Generated AS2 is readable and source-mapped** to node IDs. Classes are namespaced `mods.<modId>.*`; translation keys `$Inkwell_<Mod>_…`.

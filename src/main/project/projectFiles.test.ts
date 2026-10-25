@@ -1,3 +1,4 @@
+import { SPEC_VERSION } from '@inkwell-ui/spec'
 import { mkdtemp, readFile, readdir, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -40,7 +41,7 @@ describe('overlay.json writes', () => {
     const dir = await tmp()
     expect(await writeOverlay(dir, 'Menu', { nodes: { a: { instanceName: 'Ok', future: [1] } }, extra: true })).toEqual({ ok: true })
     const saved = JSON.parse(await readFile(join(dir, 'swfs/Menu/overlay.json'), 'utf8'))
-    expect(saved).toEqual({ extra: true, nodes: { a: { future: [1], instanceName: 'Ok' } }, specVersion: 4 })
+    expect(saved).toEqual({ extra: true, nodes: { a: { future: [1], instanceName: 'Ok' } }, specVersion: SPEC_VERSION })
     expect((await writeOverlay(dir, 'Menu', { nodes: { a: { instanceName: 'not ok' } } })).ok).toBe(false)
     expect((await writeOverlay(dir, '../evil', { nodes: {} })).ok).toBe(false)
     expect((await writeOverlay(dir, 'Menu', 'x')).ok).toBe(false)

@@ -1,3 +1,4 @@
+import { SPEC_VERSION } from '@inkwell-ui/spec'
 import { cp, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -65,7 +66,7 @@ describe('project format', () => {
     ir.nodes['1:3'] = { ...label, extra: { text: { align, verticalAlign } } }
     await writeFile(f, JSON.stringify(ir))
     const loaded = (await loadProject(dir)).swfs['hud']!.ir as any
-    expect(loaded.specVersion).toBe(4)
+    expect(loaded.specVersion).toBe(SPEC_VERSION)
     expect(loaded.nodes['1:3']).toMatchObject({ align: 'center', verticalAlign: 'center' })
     expect(loaded.nodes['1:3'].extra).toBeUndefined()
     expect(loaded.extra).toEqual({ fromFuturePack: { a: 1 } })

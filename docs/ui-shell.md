@@ -31,6 +31,7 @@ Layout (default), Behaviour, Localization: three layouts as data, Blender-style 
 | `selectionStore` | selected component, selected graph node, what the Inspector shows, highlighted issue | no |
 | `projectStore` | open project (IR + overlays), active SWF | no (main owns it) |
 | `overlayStore` | one zundo-backed overlay store per SWF; saves every change to `swfs/<name>/overlay.json` through main | disk, via IPC |
+| `graphStore` / `swfHistory` | one zundo store per graph (Knotwork `createHistory`), ordered with the overlay store into the SWF's one undo history; saves to `swfs/<name>/graphs/<id>.json` (`docs/graphs.md`) | disk, via IPC |
 | `syncStore` | latest `SyncUiState` | no |
 | `timingStore` | last 50 builds in memory | no |
 | `lintStore`, `popoutStore`, `dialogStore` | display filters, detached flag, open dialog | no |
