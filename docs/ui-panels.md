@@ -14,16 +14,18 @@ The editor window is a **workspace**: a layout (plain data) places **panels** (s
 
 | id | Component | Zone | Data | Shows |
 | --- | --- | --- | --- | --- |
-| `navigator` | `NavigatorPanel` | 2 (tab) | project IR + overlay, `useDockRows()`, sync state | graphs (empty), LAYERS tree with badges and filter, orphaned overlays, unreachable Figma layers |
+| `navigator` | `NavigatorPanel` | 2 (tab) | project IR + overlay, `useDockRows()`, sync state, graph docs | GRAPHS (the SWF's graphs with their events, `[+ Graph]`, rename, delete: `graph/GraphsList.tsx`), LAYERS tree with badges and filter, orphaned overlays, unreachable Figma layers |
 | `contracts` | `ContractsPanel` | 2 (tab) | active SWF target | `Only for menu replacements` (tab disabled), else `Contract validation arrives in 0.5` |
-| `assets` | `AssetsPanel` | 2 (tab) | none | Variables / Imported AS2 / Node packs empty states |
+| `assets` | `AssetsPanel` | 2 (tab) | none | Imported AS2 / Node packs empty states |
 | `preview` | `PreviewPanel` | 3 | `usePreviewBuilds()`, project, sync state, selection store | stage toolbar, aspect frame, safe zones, Inspect overlay, banners, GFx note, last good build |
-| `graph` | `GraphPanel` | 4 | active SWF, selection | graph header and empty state, AS2 split placeholder (Knotwork arrives in 0.2) |
-| `inspector` | `InspectorPanel` | 5 | selection, project, overlay store, sync fonts, `useDockRows()` | issues, GFx mapping, font resolution, behavior overlay (editable role and instance name), Figma Source |
+| `graph` | `GraphPanel` | 4 | active SWF, overlay, graph docs, packs, selection | breadcrumb and event jump list, the Knotwork canvas of the open graph (`graph/GraphCanvas.tsx`), empty state with `+ Graph`, AS2 split placeholder |
+| `inspector` | `InspectorPanel` | 5 | selection, project, overlay store, sync fonts, `useDockRows()` | for a selected graph node: kind, its issues, its field editors (`graph/GraphNodeInspector.tsx`); for a layer: issues, GFx mapping, font resolution, behavior overlay (editable role and instance name), Figma Source |
 | `lintBudget` | `LintBudgetPanel` | 6A (tab) | `useDockRows()`, lint store, project | lint list with severity filter, current-SWF-only, Strict Mode, HUD budget meter |
 | `localization` | `LocalizationPanel` | 6A (tab) | none | table scaffold, `arrives in 0.4` |
 | `trace` | `TracePanel` | 6A (tab) | none | `Start Skyrim with Dev Mode enabled` (arrives with the runtime) |
-| `mockData` | `MockDataPanel` | 6A (tab) | none | empty state |
+| `mockData` | `MockDataPanel` | 6A (tab) | active overlay | key/value list (key, type, value) stored in the overlay under `mockData`; presets disabled |
+| `variables` | `VariablesPanel` | 2 (tab, Behaviour) | graph stores of the active SWF | variables per graph with add (name, type, scope menu/component), rename, retype, default, delete |
+| `dataBinding` | `DataBindingPanel` | 6A (tab, Behaviour) | selection, overlay, graph stores | the selected layer's text/visible/alpha/tint bound to a graph variable or a mock data field (`dataBinding` overlay string) |
 
 The top bar (Zone 1) and the status bar (Zone 6B) are shell chrome in `src/renderer/shell/`, not layout panels. The old Connection, Build status, Timing, Fonts and Lint panels are gone: the connection details (port, token, copy) are in the Figma dot popover, timings in the status bar, the font report in the Inspector and the lint list in the dock.
 
@@ -31,7 +33,7 @@ The top bar (Zone 1) and the status bar (Zone 6B) are shell chrome in `src/rende
 
 - `useSyncState(): SyncUiState | undefined` (live; fed by the bridge into `syncStore`).
 - `usePreviewBuilds(): StageEntry[]` (one per SWF, sorted by name). Each entry has `latest`, `shown` (the latest build with a SWF, else the last good one: the stage is never blank) and `stale`. **Restore hook:** on mount it asks main for the latest builds (`getPreviewBuilds`), so a reload restores the preview. Mock data later goes here.
-- `useProject()`, `useActiveSwf()`, `useActiveOverlay()` (the active SWF's undoable overlay), `useDockRows()` (the one merged lint list, Strict Mode applied), `useUndo()`.
+- `useProject()`, `useActiveSwf()`, `useActiveOverlay()` (the active SWF's undoable overlay), `useSwfGraphs()` (the active SWF's graph ids, open graph id and store; loads them), `usePacks()` (pack node definitions over IPC, once), `useDockRows()` (the one merged lint list, Strict Mode applied), `useUndo()`.
 - `useElementSize(): [ref, {width, height}]` (ResizeObserver) for fluid sizing.
 
 ### IPC (`src/shared/ipc.ts`, preload `window.inkwell`)
@@ -77,4 +79,4 @@ Ruffle approximates Flash, not Scaleform GFx. It cannot load `gfxfontlib.swf`, s
 
 ## Debug
 
-`INKWELL_PREVIEW_FONTS=auto|installed|bundled` forces the preview font source. `INKWELL_SCREENSHOT=<png>`: builds the project's SWFs at start (needs `INKWELL_PROJECT`), saves the window to the PNG after the first preview rendered, then exits. `INKWELL_SHOTS_DIR=<folder>` + `INKWELL_SHOTS_PROJECT=<scratch project copy>`: `src/main/screenshotDriver.ts` drives the real UI (keyboard, DOM clicks, synthetic pointer events on the Inspect overlay) and saves a-start, b-wire, c-verify, d-debug, e-selected, i-stage-hover, j-stage-select, k-overlay-edit, f-compile-fail (a failure injected into the sync server's `onChange`), g-popout and h-detached-main. It builds into and edits the project it is given: use a copy, a separate `--user-data-dir` and `env -u ELECTRON_RUN_AS_NODE`.
+`INKWELL_PREVIEW_FONTS=auto|installed|bundled` forces the preview font source. `INKWELL_SCREENSHOT=<png>`: builds the project's SWFs at start (needs `INKWELL_PROJECT`), saves the window to the PNG after the first preview rendered, then exits. `INKWELL_SHOTS_GRAPH=1` + `INKWELL_SHOTS_DIR` + `INKWELL_SHOTS_PROJECT=<scratch copy of samples/hud-graph>`: `src/main/screenshotGraph.ts` drives the Behaviour mode (empty Graphs list, `+ Graph`, the slice graph with an injected unknown pack node, Space spawn menu, wire dropped on empty canvas, a node with an issue badge, Ctrl+F, Variables, mock data, data binding, node click selecting its layer, event jump, a real mouse drag undone by one Ctrl+Z) and prints what it found on disk (`g1-graphs-empty`, `g1b-graph-created`, `g2-slice`, `g3-spawn-menu`, `g3-spawn-menu-search`, `g3b-spawn-from-pin`, `g4-node-issues`, `g8-node-inspector`, `g4b-find`, `g5-variables`, `g6a-mock-data`, `g6-binding`, `g7-layer-selected`). Run `yarn build` first, then `electron . --user-data-dir=<scratch>` with `ELECTRON_RUN_AS_NODE` unset; it deletes and restores the copy's graph files and reloads the window once. `INKWELL_SHOTS_DIR=<folder>` + `INKWELL_SHOTS_PROJECT=<scratch project copy>`: `src/main/screenshotDriver.ts` drives the real UI (keyboard, DOM clicks, synthetic pointer events on the Inspect overlay) and saves a-start, b-wire, c-verify, d-debug, e-selected, i-stage-hover, j-stage-select, k-overlay-edit, f-compile-fail (a failure injected into the sync server's `onChange`), g-popout and h-detached-main. It builds into and edits the project it is given: use a copy, a separate `--user-data-dir` and `env -u ELECTRON_RUN_AS_NODE`.

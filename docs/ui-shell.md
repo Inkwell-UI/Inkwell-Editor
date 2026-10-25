@@ -8,7 +8,7 @@ Implements phases 1 and 2 of the UI/UX architecture spec (phase 2: the Settings 
 Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, mode switcher, connection dots, Build All, Deploy (shell/DeployMenu.tsx: MO2 folders, Vortex and Package Mod = zip; docs/deploy.md)
 Zone 2  left tabs         navigator | contracts | assets
 Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, Inspect overlay, banners (build failed; Figma not connected: snapshot / no snapshot), GFx note, last good build
-Zone 4  graph             GraphPanel             empty state, AS2 split placeholder
+Zone 4  graph             GraphPanel             breadcrumb, event jump list, Knotwork canvas (docs/graphs.md, Graph UI), AS2 split placeholder
 Zone 5  inspector         InspectorPanel
 Zone 6A bottom dock tabs  lintBudget | localization | trace | mockData
 Zone 6B StatusBar         shell/StatusBar.tsx    spec, last build + history, FFDec, lint counts (`Lint: N Err, M Warn`, strict applied; opens the Lint dock), Deploy (progress, result, stage timings), packs, undo scope
@@ -18,7 +18,7 @@ Zones 2 to 6A are layout panels; Zones 1 and 6B are shell chrome around the layo
 
 ## Modes (`workspace/workspaces.ts`)
 
-Layout (default), Behaviour, Localization: three layouts as data, Blender-style one job per mode, so each shows only the panels it needs (Layout: Navigator, Assets, preview, Inspector, Lint; Behaviour: Navigator, Contracts, preview strip, Graph, Inspector, Trace, Mock Data, Lint; Localization: Navigator, preview, Inspector, Localization, Lint). Together they cover every panel. Switch with the top bar or `Ctrl+1/2/3`. Each remembers its own split sizes and chosen tabs (`state/workspaceStore.ts`, localStorage behind `state/safeStorage.ts`; nothing in the project). A splitter drag is stored under the split's key; double-click resets it.
+Layout (default), Behaviour, Localization: three layouts as data, Blender-style one job per mode, so each shows only the panels it needs (Layout: Navigator, Assets, preview, Inspector, Lint; Behaviour: Navigator, Contracts, Variables, preview strip, Graph, Inspector, Trace, Mock Data, Data Binding, Lint; Localization: Navigator, preview, Inspector, Localization, Lint). Together they cover every panel. Switch with the top bar or `Ctrl+1/2/3`. Each remembers its own split sizes and chosen tabs (`state/workspaceStore.ts`, localStorage behind `state/safeStorage.ts`; nothing in the project). A splitter drag is stored under the split's key; double-click resets it.
 
 **Pop out preview.** The stage toolbar's pop-out button asks main to open a second window with the same renderer (`?panel=preview`, only the preview panel with its toolbar and a SWF picker). Main broadcasts sync state, project, preview builds and the Figma selection to every window; selection and the active SWF cross between windows as `UiEvent`s (relayed by main, `origin: 'remote'` so they do not echo). While detached, the main window removes the preview from the layout (`removePanel`), so the graph takes the center. Closing the detached window (or its Dock button) re-docks. The preview's Ruffle time is reported by whichever window shows the stage.
 
@@ -31,6 +31,7 @@ Layout (default), Behaviour, Localization: three layouts as data, Blender-style 
 | `selectionStore` | selected component, selected graph node, what the Inspector shows, highlighted issue | no |
 | `projectStore` | open project (IR + overlays), active SWF | no (main owns it) |
 | `overlayStore` | one zundo-backed overlay store per SWF; saves every change to `swfs/<name>/overlay.json` through main | disk, via IPC |
+| `graphDocs` | per SWF: graph ids and the open graph (`[+ Graph]`, delete, rename attach/detach the id in the overlay `scripts`) | no (the files are) |
 | `graphStore` / `swfHistory` | one zundo store per graph (Knotwork `createHistory`), ordered with the overlay store into the SWF's one undo history; saves to `swfs/<name>/graphs/<id>.json` (`docs/graphs.md`) | disk, via IPC |
 | `syncStore` | latest `SyncUiState` | no |
 | `timingStore` | last 50 builds in memory | no |
@@ -52,7 +53,7 @@ One selected component (a Figma layer, by node id) and one selected graph node.
 | Lint row (`selectFromLint({key, nodeId, graphNode?})`) | the issue's | the issue's, else keep | component, issue highlighted | would select the layer (planned) |
 | Layer selected in Figma (`applyFigmaSelection(ids, swfs, activeSwfId)`) | set (may switch the active SWF) | keep | component | origin |
 
-Figma -> Inkwell: the plugin's `selection` message reaches the server, main forwards it (`onFigmaSelection`), the bridge resolves it against the project's IR. The "Mirror Figma selection" checkbox in the Figma dot popover turns it off. **Inkwell -> Figma does not exist**: the protocol has no message for it, so `Select in Figma` and `Focus in Figma` are disabled with `needs a protocol message (planned)`. Graph nodes arrive with visual scripting; the store and the Inspector's empty state are ready.
+Figma -> Inkwell: the plugin's `selection` message reaches the server, main forwards it (`onFigmaSelection`), the bridge resolves it against the project's IR. The "Mirror Figma selection" checkbox in the Figma dot popover turns it off. **Inkwell -> Figma does not exist**: the protocol has no message for it, so `Select in Figma` and `Focus in Figma` are disabled with `needs a protocol message (planned)`. A selected component opens its graph (the first of its overlay `scripts` that exists; `model/graphNav.ts`, applied in `state/bridge.ts`), and a clicked graph node selects the component its first component pin targets (`graph/GraphNodeInspector.tsx` is its Inspector view).
 
 ## Data flow
 
@@ -82,10 +83,10 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 
 | Item | Arrives with |
 | --- | --- |
-| Graphs, `[+ Graph]`, AS2 view content, drag-to-graph, Space/Ctrl+F | visual scripting (0.2, Knotwork) |
-| Variables, imported AS2, node packs (Assets) | 0.2 / 0.5 |
+| AS2 view content, drag-to-graph, Tidy Layout | debug phase (0.2), later |
+| Imported AS2, node packs (Assets) | 0.2 / 0.5 |
 | Contract validation, Contracts tab content | 0.5 |
-| Anchor override, loc keys, bindings, focus controls (disabled in the Inspector) | anchoring codegen, 0.4, 0.2, 0.5 |
+| Anchor override, loc keys, focus controls (disabled in the Inspector) | anchoring codegen, 0.4, 0.5 |
 | Localization table, Theme, Locale, Pseudo-Loc, Prompts, Focus Graph, Occupied HUD | 0.4, 0.4, 0.4, 0.5, 0.5, 0.6+ |
 | Relink / Discard orphans | needs the overlay store's relink operation |
 | Select in Figma, Focus in Figma | a protocol message in `inkwell-spec` |
@@ -93,7 +94,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 | Custom menu JSON in Deploy, target pill's Config Ownership dialog | runtime config formats (0.3) |
 | Figma plugin screenshot guide in the Settings view, setup guide link | later |
 | Play-mode virtual gamepad | later |
-| Mock data editor | 0.2 |
+| Mock data presets and JSON view | 0.3 |
 
 ## Known limits
 
