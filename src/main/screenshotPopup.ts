@@ -97,10 +97,11 @@ export async function runPopupShots(o: { outDir: string; projectDir: string; win
   check('Show: faded in to 100 and visible', shown === 'visible=true alpha=100', shown)
   await wait(2000) // 0.65 + 2.0 = 2.65 s: still inside the 0.3 + 3 s hold
   check('hold: still visible at full alpha', (await card()) === 'visible=true alpha=100', await card())
-  await wait(800) // 3.45 s: fading out (starts at 3.3 s, ends 3.6 s)
+  await until('the fade-out to start', async () => Number(await get('Popup.card._alpha')) < 100, 6000) // starts 0.3 + 3 s after the call, lasts 0.3 s
   const fading = await card()
   await snap('z3-fading-out', 0)
   console.log('[popup] during the fade-out:', fading)
+  check('fade-out: alpha between 0 and 100 while fading', Number(await get('Popup.card._alpha')) < 100)
   await wait(1000)
   const gone = await card()
   check('fade out ended hidden', gone.startsWith('visible=false'), gone)
