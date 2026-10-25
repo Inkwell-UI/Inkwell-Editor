@@ -14,6 +14,7 @@ import { runDoctorDriver } from './screenshotDoctor'
 import { runFontShots } from './screenshotFonts'
 import { runShots } from './screenshotDriver'
 import { runDebugShots, runGraphShots } from './screenshotGraph'
+import { runPopupShots } from './screenshotPopup'
 import { runSetupShots } from './screenshotSetup'
 import { createSession } from './session'
 
@@ -209,6 +210,8 @@ void app.whenReady().then(async () => {
     void runDoctorDriver({ outDir: shotsDir ?? join(app.getPath('userData'), 'doctor-shots'), projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, session, dialog: debugDialog }).catch((e: unknown) => { console.error('[driver] failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_FONTS'])
     void runFontShots({ outDir: shotsDir, win: () => win }).then(() => app.exit(0), (e: unknown) => { console.error('[inkwell] font screenshots failed:', e); app.exit(1) })
+  else if (shotsDir && process.env['INKWELL_SHOTS_GRAPH'] === 'popup')
+    void runPopupShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] popup screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_GRAPH'] === 'debug')
     void runDebugShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] debug screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_GRAPH'])

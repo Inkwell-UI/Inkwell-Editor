@@ -1,0 +1,636 @@
+{
+  "comments": [],
+  "edges": [
+    {
+      "from": {
+        "node": "call",
+        "pin": "then"
+      },
+      "to": {
+        "node": "showReport",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "showReport",
+        "pin": "then"
+      },
+      "to": {
+        "node": "full",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "full",
+        "pin": "then"
+      },
+      "to": {
+        "node": "start",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "call",
+        "pin": "fail"
+      },
+      "to": {
+        "node": "fmt",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "fmt",
+        "pin": "value"
+      },
+      "to": {
+        "node": "start",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "start",
+        "pin": "then"
+      },
+      "to": {
+        "node": "log",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "log",
+        "pin": "then"
+      },
+      "to": {
+        "node": "txt1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "get1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "txt1",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "txt1",
+        "pin": "then"
+      },
+      "to": {
+        "node": "br",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "call",
+        "pin": "fail"
+      },
+      "to": {
+        "node": "br",
+        "pin": "condition"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "true"
+      },
+      "to": {
+        "node": "throw",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "false"
+      },
+      "to": {
+        "node": "loop",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "loop",
+        "pin": "body"
+      },
+      "to": {
+        "node": "add",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "get2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cat",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "loop",
+        "pin": "index"
+      },
+      "to": {
+        "node": "item",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "item",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cat",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cat",
+        "pin": "value"
+      },
+      "to": {
+        "node": "add",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "loop",
+        "pin": "completed"
+      },
+      "to": {
+        "node": "txt2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "get3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "txt2",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "txt2",
+        "pin": "then"
+      },
+      "to": {
+        "node": "seq",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "seq",
+        "pin": "then0"
+      },
+      "to": {
+        "node": "once",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "once",
+        "pin": "then"
+      },
+      "to": {
+        "node": "addOnce",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "get4",
+        "pin": "value"
+      },
+      "to": {
+        "node": "catOnce",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "catOnce",
+        "pin": "value"
+      },
+      "to": {
+        "node": "addOnce",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "seq",
+        "pin": "then1"
+      },
+      "to": {
+        "node": "wait",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "wait",
+        "pin": "then"
+      },
+      "to": {
+        "node": "addDelay",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "get5",
+        "pin": "value"
+      },
+      "to": {
+        "node": "catDelay",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "catDelay",
+        "pin": "value"
+      },
+      "to": {
+        "node": "addDelay",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "addDelay",
+        "pin": "then"
+      },
+      "to": {
+        "node": "txt3",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "get6",
+        "pin": "value"
+      },
+      "to": {
+        "node": "txt3",
+        "pin": "text"
+      }
+    }
+  ],
+  "groups": [],
+  "id": "nodes",
+  "name": "Nodes test",
+  "nodes": [
+    {
+      "fields": {
+        "name": "Nodes",
+        "params": [
+          {
+            "name": "fail",
+            "type": "Bool"
+          }
+        ]
+      },
+      "id": "call",
+      "kind": "core/OnWidgetCall@1",
+      "pos": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "kind": "Clip",
+        "target": "4:1",
+        "visible": true
+      },
+      "id": "showReport",
+      "kind": "core/SetVisible@1",
+      "pos": {
+        "x": 260,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "alpha": 100,
+        "kind": "Clip",
+        "target": "4:1"
+      },
+      "id": "full",
+      "kind": "core/SetAlpha@1",
+      "pos": {
+        "x": 520,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "variable": "lines"
+      },
+      "id": "start",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 780,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "pattern": "start, fail={0}"
+      },
+      "id": "fmt",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 780,
+        "y": 200
+      }
+    },
+    {
+      "fields": {
+        "level": "info",
+        "message": "Nodes called"
+      },
+      "id": "log",
+      "kind": "core/Log@1",
+      "pos": {
+        "x": 1040,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "target": "4:3"
+      },
+      "id": "txt1",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 1300,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "variable": "lines"
+      },
+      "id": "get1",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 1300,
+        "y": 200
+      }
+    },
+    {
+      "fields": {},
+      "id": "br",
+      "kind": "core/Branch@1",
+      "pos": {
+        "x": 1560,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "message": "deliberate error: Nodes(true)"
+      },
+      "id": "throw",
+      "kind": "core/Throw@1",
+      "pos": {
+        "x": 1820,
+        "y": -200
+      }
+    },
+    {
+      "fields": {
+        "array": [
+          10,
+          20,
+          30
+        ]
+      },
+      "id": "loop",
+      "kind": "core/ForEach@1",
+      "pos": {
+        "x": 1820,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "variable": "lines"
+      },
+      "id": "add",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 2080,
+        "y": 100
+      }
+    },
+    {
+      "fields": {},
+      "id": "cat",
+      "kind": "core/Concat@1",
+      "pos": {
+        "x": 2080,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "variable": "lines"
+      },
+      "id": "get2",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 2080,
+        "y": 460
+      }
+    },
+    {
+      "fields": {
+        "pattern": " [item {0}]"
+      },
+      "id": "item",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 2080,
+        "y": 560
+      }
+    },
+    {
+      "fields": {
+        "target": "4:3"
+      },
+      "id": "txt2",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 2340,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "variable": "lines"
+      },
+      "id": "get3",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 2340,
+        "y": 200
+      }
+    },
+    {
+      "fields": {},
+      "id": "seq",
+      "kind": "core/Sequence@1",
+      "pos": {
+        "x": 2600,
+        "y": 0
+      }
+    },
+    {
+      "fields": {},
+      "id": "once",
+      "kind": "core/DoOnce@1",
+      "pos": {
+        "x": 2860,
+        "y": -100
+      }
+    },
+    {
+      "fields": {
+        "variable": "lines"
+      },
+      "id": "addOnce",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 3120,
+        "y": -100
+      }
+    },
+    {
+      "fields": {
+        "b": " once"
+      },
+      "id": "catOnce",
+      "kind": "core/Concat@1",
+      "pos": {
+        "x": 3120,
+        "y": 100
+      }
+    },
+    {
+      "fields": {
+        "variable": "lines"
+      },
+      "id": "get4",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 3120,
+        "y": 200
+      }
+    },
+    {
+      "fields": {
+        "seconds": 1
+      },
+      "id": "wait",
+      "kind": "core/Delay@1",
+      "pos": {
+        "x": 2860,
+        "y": 200
+      }
+    },
+    {
+      "fields": {
+        "variable": "lines"
+      },
+      "id": "addDelay",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 3120,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "b": " delay"
+      },
+      "id": "catDelay",
+      "kind": "core/Concat@1",
+      "pos": {
+        "x": 3120,
+        "y": 460
+      }
+    },
+    {
+      "fields": {
+        "variable": "lines"
+      },
+      "id": "get5",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 3120,
+        "y": 560
+      }
+    },
+    {
+      "fields": {
+        "target": "4:3"
+      },
+      "id": "txt3",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 3380,
+        "y": 200
+      }
+    },
+    {
+      "fields": {
+        "variable": "lines"
+      },
+      "id": "get6",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 3380,
+        "y": 400
+      }
+    }
+  ],
+  "scope": "component",
+  "specVersion": 5,
+  "variables": [
+    {
+      "default": "",
+      "id": "lines",
+      "name": "lines",
+      "scope": "component",
+      "type": "String"
+    }
+  ]
+}

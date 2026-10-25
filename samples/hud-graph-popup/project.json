@@ -1,0 +1,10 @@
+{
+  "author": "Inkwell",
+  "deploy": {
+    "path": "C:/Modding/MO2/mods/Inkwell Graph Test",
+    "preset": "mo2"
+  },
+  "modId": "InkwellGraphPopup",
+  "name": "Inkwell Graph Test",
+  "version": "0.2.0"
+}

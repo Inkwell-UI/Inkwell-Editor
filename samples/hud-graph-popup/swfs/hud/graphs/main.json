@@ -1,0 +1,415 @@
+{
+  "comments": [],
+  "edges": [
+    {
+      "from": {
+        "node": "load",
+        "pin": "then"
+      },
+      "to": {
+        "node": "hideCard0",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "hideCard0",
+        "pin": "then"
+      },
+      "to": {
+        "node": "hideReport0",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "show",
+        "pin": "then"
+      },
+      "to": {
+        "node": "setTitle",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "show",
+        "pin": "title"
+      },
+      "to": {
+        "node": "setTitle",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "setTitle",
+        "pin": "then"
+      },
+      "to": {
+        "node": "setDesc",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "show",
+        "pin": "description"
+      },
+      "to": {
+        "node": "setDesc",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "setDesc",
+        "pin": "then"
+      },
+      "to": {
+        "node": "alpha0",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "alpha0",
+        "pin": "then"
+      },
+      "to": {
+        "node": "visOn",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "visOn",
+        "pin": "then"
+      },
+      "to": {
+        "node": "fadeIn",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "fadeIn",
+        "pin": "done"
+      },
+      "to": {
+        "node": "holdOrStay",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "show",
+        "pin": "hold"
+      },
+      "to": {
+        "node": "sticky",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "sticky",
+        "pin": "value"
+      },
+      "to": {
+        "node": "holdOrStay",
+        "pin": "condition"
+      }
+    },
+    {
+      "from": {
+        "node": "holdOrStay",
+        "pin": "true"
+      },
+      "to": {
+        "node": "wait",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "show",
+        "pin": "hold"
+      },
+      "to": {
+        "node": "wait",
+        "pin": "seconds"
+      }
+    },
+    {
+      "from": {
+        "node": "wait",
+        "pin": "then"
+      },
+      "to": {
+        "node": "fadeOut",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "fadeOut",
+        "pin": "done"
+      },
+      "to": {
+        "node": "visOff",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "hide",
+        "pin": "then"
+      },
+      "to": {
+        "node": "hideFade",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "hideFade",
+        "pin": "done"
+      },
+      "to": {
+        "node": "hideOff",
+        "pin": "in"
+      }
+    }
+  ],
+  "groups": [],
+  "id": "main",
+  "name": "Popup",
+  "nodes": [
+    {
+      "fields": {},
+      "id": "load",
+      "kind": "core/OnLoad@1",
+      "pos": {
+        "x": 0,
+        "y": -300
+      }
+    },
+    {
+      "fields": {
+        "kind": "Clip",
+        "target": "3:1",
+        "visible": false
+      },
+      "id": "hideCard0",
+      "kind": "core/SetVisible@1",
+      "pos": {
+        "x": 260,
+        "y": -300
+      }
+    },
+    {
+      "fields": {
+        "kind": "Clip",
+        "target": "4:1",
+        "visible": false
+      },
+      "id": "hideReport0",
+      "kind": "core/SetVisible@1",
+      "pos": {
+        "x": 520,
+        "y": -300
+      }
+    },
+    {
+      "fields": {
+        "name": "Show",
+        "params": [
+          {
+            "name": "title",
+            "type": "String"
+          },
+          {
+            "name": "description",
+            "type": "String"
+          },
+          {
+            "name": "hold",
+            "type": "Number"
+          }
+        ]
+      },
+      "id": "show",
+      "kind": "core/OnWidgetCall@1",
+      "pos": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "target": "3:3"
+      },
+      "id": "setTitle",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 300,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "target": "3:4"
+      },
+      "id": "setDesc",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 560,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "alpha": 0,
+        "kind": "Clip",
+        "target": "3:1"
+      },
+      "id": "alpha0",
+      "kind": "core/SetAlpha@1",
+      "pos": {
+        "x": 820,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "kind": "Clip",
+        "target": "3:1",
+        "visible": true
+      },
+      "id": "visOn",
+      "kind": "core/SetVisible@1",
+      "pos": {
+        "x": 1080,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "from": 0,
+        "kind": "Clip",
+        "seconds": 0.3,
+        "target": "3:1",
+        "to": 100
+      },
+      "id": "fadeIn",
+      "kind": "core/Fade@1",
+      "pos": {
+        "x": 1340,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "b": 0,
+        "op": ">",
+        "valueType": "Number"
+      },
+      "id": "sticky",
+      "kind": "core/Compare@1",
+      "pos": {
+        "x": 1340,
+        "y": 200
+      }
+    },
+    {
+      "fields": {},
+      "id": "holdOrStay",
+      "kind": "core/Branch@1",
+      "pos": {
+        "x": 1600,
+        "y": 0
+      }
+    },
+    {
+      "fields": {},
+      "id": "wait",
+      "kind": "core/Delay@1",
+      "pos": {
+        "x": 1860,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "from": 100,
+        "kind": "Clip",
+        "seconds": 0.3,
+        "target": "3:1",
+        "to": 0
+      },
+      "id": "fadeOut",
+      "kind": "core/Fade@1",
+      "pos": {
+        "x": 2120,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "kind": "Clip",
+        "target": "3:1",
+        "visible": false
+      },
+      "id": "visOff",
+      "kind": "core/SetVisible@1",
+      "pos": {
+        "x": 2380,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "name": "Hide",
+        "params": []
+      },
+      "id": "hide",
+      "kind": "core/OnWidgetCall@1",
+      "pos": {
+        "x": 0,
+        "y": 400
+      }
+    },
+    {
+      "fields": {
+        "from": 100,
+        "kind": "Clip",
+        "seconds": 0.3,
+        "target": "3:1",
+        "to": 0
+      },
+      "id": "hideFade",
+      "kind": "core/Fade@1",
+      "pos": {
+        "x": 300,
+        "y": 400
+      }
+    },
+    {
+      "fields": {
+        "kind": "Clip",
+        "target": "3:1",
+        "visible": false
+      },
+      "id": "hideOff",
+      "kind": "core/SetVisible@1",
+      "pos": {
+        "x": 560,
+        "y": 400
+      }
+    }
+  ],
+  "scope": "menu",
+  "specVersion": 5,
+  "variables": []
+}

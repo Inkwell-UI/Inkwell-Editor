@@ -1,0 +1,37 @@
+{
+  "bindings": [],
+  "nodes": {
+    "2:1": {
+      "anchor": {
+        "h": "right",
+        "v": "top",
+        "x": 24,
+        "y": 24
+      },
+      "debugHotkey": 65,
+      "scripts": [
+        "main"
+      ]
+    },
+    "3:1": {
+      "instanceName": "card"
+    },
+    "3:3": {
+      "instanceName": "title"
+    },
+    "3:4": {
+      "instanceName": "description"
+    },
+    "4:1": {
+      "instanceName": "report",
+      "scripts": [
+        "nodes"
+      ]
+    },
+    "4:3": {
+      "instanceName": "status"
+    }
+  },
+  "specVersion": 5,
+  "version": 1
+}
