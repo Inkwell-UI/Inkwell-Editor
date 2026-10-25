@@ -16,6 +16,12 @@ describe('dock rows', () => {
     expect(new Set(rows.map((r) => r.key)).size).toBe(5)
     expect(rows.filter((r) => r.code === 'unreachable-node').map((r) => r.swfName)).toEqual(['A', ''])
   })
+  it('graph issues keep their graph and graph node; one without a layer has no layer id; Strict Mode promotes their warnings', () => {
+    const g = l({ nodeId: '', layerName: '', code: 'graph-dangling-exec', graphId: 'menu', graphNodeId: 'n1' })
+    const [row] = buildDockRows({ lint: [g], strict: true })
+    expect(row).toMatchObject({ severity: 'error', graphId: 'menu', graphNodeId: 'n1' })
+    expect(row!.nodeId).toBeUndefined()
+  })
   it('strict mode promotes warnings to errors in the displayed list; info stays', () => {
     const rows = buildDockRows({ lint: [l({}), l({ severity: 'info', code: 'i' })], strict: true })
     expect(rows.map((r) => r.severity)).toEqual(['error', 'info'])

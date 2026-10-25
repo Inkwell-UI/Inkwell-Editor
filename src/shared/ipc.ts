@@ -1,6 +1,8 @@
 import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, PrepareResult } from './deploy'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, PathSettingKey, ResolvedSettings, SetSettingResult, SettingKey } from './doctor'
 import type { FontToolProgress, FontToolResult, FontToolStatus } from './fonts'
+import type { Graph } from '@inkwell-ui/spec'
+import type { GraphResult, GraphSummary, PackSet } from './graphs'
 import type { OverlayDoc } from './overlay'
 import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from './preview'
 import type { OpenResult, ProjectState, RecentProject, UiEvent } from './projectState'
@@ -21,6 +23,12 @@ export const IPC = {
   projectExample: 'project:example',
   projectRecent: 'project:recent',
   overlaySave: 'overlay:save',
+  graphsList: 'graphs:list',
+  graphsLoad: 'graphs:load',
+  graphsSave: 'graphs:save',
+  graphsCreate: 'graphs:create',
+  graphsDelete: 'graphs:delete',
+  packsGet: 'packs:get',
   strictSet: 'project:strict',
   buildAll: 'build:all',
   previewDetach: 'preview:detach',
@@ -73,6 +81,14 @@ export interface InkwellApi {
   getRecentProjects(): Promise<RecentProject[]>
   /** Writes `swfs/<swfName>/overlay.json` (validated; unknown keys kept as sent). */
   saveOverlay(swfName: string, overlay: OverlayDoc): Promise<SaveOverlayResult>
+  /** Graphs of one SWF (`swfs/<swfName>/graphs/*.json`, docs/graphs.md): summaries, one graph, write (validated; unknown keys kept), create (an id is made from the name; one menu graph per SWF), delete. Never reject. */
+  listGraphs(swfName: string): Promise<GraphResult<{ graphs: GraphSummary[] }>>
+  loadGraph(swfName: string, id: string): Promise<GraphResult<{ graph: Graph }>>
+  saveGraph(swfName: string, graph: Graph): Promise<GraphResult>
+  createGraph(swfName: string, name: string, scope: Graph['scope']): Promise<GraphResult<{ graph: Graph }>>
+  deleteGraph(swfName: string, id: string): Promise<GraphResult>
+  /** Node definitions of the loaded packs (the bundled core pack today). Data only; `problems` lists files that failed their schema. */
+  getPacks(): Promise<PackSet>
   /** Strict Mode, stored in project.json; rebuilds every SWF so the build status follows. */
   setStrictMode(on: boolean): Promise<void>
   /** Queues a build of every SWF that has a Figma frame; resolves with how many. */

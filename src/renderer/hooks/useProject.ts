@@ -34,13 +34,13 @@ export function useDockRows(): DockRow[] {
   return useMemo(
     () =>
       buildDockRows({
-        lint: sync?.lint ?? [],
+        lint: [...(sync?.lint ?? []), ...(sync?.graphLint ?? [])],
         ...(sync?.looseLayers ? { looseLayers: sync.looseLayers } : {}),
         ...(sync?.unreachableNodes ? { unreachable: sync.unreachableNodes } : {}),
         ...(sync ? { build: sync.build } : {}),
         ...(sync?.buildError ? { buildError: sync.buildError } : {}),
         strict
       }),
-    [sync?.lint, sync?.looseLayers, sync?.unreachableNodes, sync?.build, sync?.buildError, strict]
+    [sync?.lint, sync?.graphLint, sync?.looseLayers, sync?.unreachableNodes, sync?.build, sync?.buildError, strict]
   )
 }

@@ -2,14 +2,16 @@ import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { homedir, release } from 'node:os'
 import { join } from 'node:path'
-import { Swf } from '@inkwell-ui/spec'
+import { Graph, Swf } from '@inkwell-ui/spec'
+import { defIndex, emptyGraph, newGraphId, summarize, type GraphResult, type GraphSummary, type PackSet } from '../shared/graphs'
+import { validateGraph } from '../shared/graphValidate'
 import { IPC, type SaveOverlayResult } from '../shared/ipc'
 import { normalizeOverlay, type OverlayDoc } from '../shared/overlay'
 import type { PreviewBuild, PreviewRendered } from '../shared/preview'
 import type { OpenResult, ProjectState, RecentProject, SnapshotInfo } from '../shared/projectState'
-import { flattenReports, type SwfReport, type SyncUiState } from '../shared/syncState'
+import { flattenReports, type LintRow, type SwfReport, type SyncUiState } from '../shared/syncState'
 import { ffdecState } from '../shared/ffdec'
-import type { DeployResult, DeployScope, DeployState, DeployTargetId, DeployTargetInfo, PrepareResult } from '../shared/deploy'
+import type { DeployLintItem, DeployResult, DeployScope, DeployState, DeployTargetId, DeployTargetInfo, PrepareResult } from '../shared/deploy'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, ResolvedSettings, SetSettingResult, SettingKey, StoredSettings } from '../shared/doctor'
 import { buildCacheAction, runBenchmark, runDoctor, type DoctorContext } from './doctor'
 import { checkSkyrim, type SkyrimFacts } from './doctor/checks'
@@ -19,7 +21,9 @@ import { createDeployService } from './deploy/service'
 import { createAssetStore, type AssetStore } from './images/assets'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
+import { corePackDir, loadPacks } from './packs'
 import { loadProject, type ProjectMeta } from './project'
+import { deleteGraph, readGraph, writeGraph } from './project/graphFiles'
 import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
 import { writeProjectSetting } from './project/settings'
@@ -54,6 +58,9 @@ export function createSession(deps: SessionDeps) {
   let meta: ProjectMeta | undefined
   let strict = false
   const overlays = new Map<string, OverlayDoc>() // swf id -> overlay (the renderer is the source of truth once it saves)
+  const graphs = new Map<string, Map<string, Graph>>() // swf name -> graph id -> graph (the renderer saves; main validates)
+  let packs: Promise<PackSet> | undefined
+  const getPacks = (): Promise<PackSet> => (packs ??= loadPacks([corePackDir(deps.appPath)]))
   const lintBySwf = new Map<string, number>()
   const unreachableBySwf = new Map<string, { id: string; name: string; swfName: string }[]>()
   const reports = new Map<string, SwfReport>()
@@ -122,6 +129,26 @@ export function createSession(deps: SessionDeps) {
       .sort((a, b) => a.name.localeCompare(b.name))
     return { dir: projectDir, name: meta.name, modId: meta.modId, strictMode: strict, swfs, ...(snapshot ? { snapshot } : {}) }
   }
+  /** Graph issues of every built SWF as lint rows and deploy items: the single place graphs are validated for the Lint dock and the export gate. */
+  const graphIssues = new Map<string, { row: LintRow; item: DeployLintItem }[]>() // swf name -> issues
+  const lintTotal = (): number => [...lintBySwf.values()].reduce((a, b) => a + b, 0) + looseCount + [...graphIssues.values()].reduce((a, b) => a + b.length, 0)
+  async function refreshGraphLint(): Promise<void> {
+    const defs = defIndex(await getPacks())
+    graphIssues.clear()
+    for (const i of server?.swfs() ?? []) {
+      const ir = i.orphaned ? undefined : server?.ir(i.id)
+      const all = [...(graphs.get(i.name)?.values() ?? [])]
+      if (!ir || !all.length) continue
+      const layers = new Set(Object.keys(ir.nodes))
+      graphIssues.set(i.name, all.flatMap((g) => validateGraph(g, { defs, layers, siblings: all }).map((x) => {
+        const layerName = x.targetId ? (ir.nodes[x.targetId]?.name ?? x.targetId) : ''
+        const row: LintRow = { swfName: i.name, nodeId: x.targetId ?? '', layerName, severity: x.level, code: x.code, message: `${g.name}: ${x.message}`, graphId: g.id, graphNodeId: x.nodeId! }
+        return { row, item: { severity: x.level, code: x.code, message: row.message, ...(x.targetId ? { nodeId: x.targetId, layerName } : {}) } }
+      })))
+    }
+    const rows = [...graphIssues.values()].flat().map((x) => x.row)
+    update({ graphLint: rows, lintCount: lintTotal() })
+  }
   const pushProject = (): void => {
     clearTimeout(pushTimer)
     pushTimer = setTimeout(() => deps.broadcast(IPC.projectUpdate, projectState()), 50)
@@ -141,6 +168,7 @@ export function createSession(deps: SessionDeps) {
   async function start(dir: string | undefined, keep?: { port: number; token: string }): Promise<void> {
     const initial: Record<string, Swf> = {}
     overlays.clear()
+    graphs.clear()
     if (dir) {
       const p = await loadProject(dir)
       meta = p.meta
@@ -149,6 +177,7 @@ export function createSession(deps: SessionDeps) {
         const ir = Swf.parse(s.ir)
         initial[name] = ir
         overlays.set(ir.id, normalizeOverlay(s.overlay))
+        graphs.set(name, new Map(Object.entries(s.graphs ?? {})))
       }
       const r = await readSnapshot(dir) // a missing or broken snapshot never stops the project from opening: builds use ir.json
       snapshot = r.snapshot ? snapshotInfo(r.snapshot, staleSwfs(r.snapshot, initial)) : r.error ? { updatedAt: '', swfs: 0, stale: [], error: r.error } : undefined
@@ -217,18 +246,21 @@ export function createSession(deps: SessionDeps) {
       update({
         build: s.state,
         buildError: s.state === 'error' ? s.issues?.[0]?.message : undefined,
-        lintCount: [...lintBySwf.values()].reduce((a, b) => a + b, 0) + looseCount,
+        lintCount: lintTotal(),
         unreachableNodes: [...unreachableBySwf.values()].flat()
       })
+      void refreshGraphLint().catch(() => undefined) // a deleted layer can orphan a graph node
       pushProject()
     })
     srv.events.on('swfs', (infos: SwfInfo[], loose: Layer[]) => {
       looseCount = loose.length
-      update({ swfCount: infos.length, orphanedCount: infos.filter((i) => i.orphaned).length, looseLayers: loose, lintCount: [...lintBySwf.values()].reduce((a, b) => a + b, 0) + looseCount })
+      update({ swfCount: infos.length, orphanedCount: infos.filter((i) => i.orphaned).length, looseLayers: loose, lintCount: lintTotal() })
+      void refreshGraphLint().catch(() => undefined)
       pushProject()
     })
     update({ swfCount: srv.swfs().length, server: 'listening', error: undefined, port: srv.port, token: srv.token, looseLayers: [] })
     refreshFfdec()
+    await refreshGraphLint().catch(() => undefined)
   }
 
   /** Switch to `dir` (or to no project). Everything of the previous project is dropped. */
@@ -241,9 +273,10 @@ export function createSession(deps: SessionDeps) {
       buildBySwf.clear()
       previews.clear()
       lintBySwf.clear()
+      graphIssues.clear()
       unreachableBySwf.clear()
       looseCount = 0
-      update({ connections: 0, build: 'idle', buildError: undefined, lintCount: 0, fonts: [], lint: [], timing: undefined, previewMs: undefined, unreachableNodes: [], connectionIssue: undefined })
+      update({ connections: 0, build: 'idle', buildError: undefined, lintCount: 0, fonts: [], lint: [], graphLint: [], timing: undefined, previewMs: undefined, unreachableNodes: [], connectionIssue: undefined })
       await start(dir, keep)
       if (dir && meta) await remember({ dir, name: meta.name, openedAt: new Date().toISOString() })
       pushProjectNow()
@@ -272,6 +305,7 @@ export function createSession(deps: SessionDeps) {
         swfs: p.swfs.map((s) => ({
           name: s.name, orphaned: s.orphaned, kind: s.ir.target.kind, ir: s.ir,
           ...(buildBySwf.has(s.id) ? { build: { state: buildBySwf.get(s.id)!, lint: (reports.get(s.id)?.lint ?? []).map(({ severity, code, message, nodeId, layerName }) => ({ severity, code, message, nodeId, layerName })) } } : {}),
+          ...(graphIssues.get(s.name)?.length ? { graphLint: graphIssues.get(s.name)!.map((x) => x.item) } : {}),
           ...(s.overlay.nodes ? { overlay: s.overlay.nodes } : {}),
           instanceNames: Object.fromEntries((Object.entries(s.overlay.nodes ?? {}) as [string, { instanceName?: string }][]).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName] as [string, string]] : [])))
         }))
@@ -388,6 +422,50 @@ export function createSession(deps: SessionDeps) {
       if (r.ok) {
         overlays.set(info.id, normalizeOverlay(doc))
         server!.rebuild(info.id) // instance names feed the compiler
+      }
+      return r
+    },
+    getPacks,
+    listGraphs(swf: string): GraphResult<{ graphs: GraphSummary[] }> {
+      const m = graphs.get(swf)
+      return m ? { ok: true, graphs: [...m.values()].map(summarize).sort((a, b) => a.id.localeCompare(b.id)) } : { ok: false, error: 'No such swf in the open project' }
+    },
+    async loadGraph(swf: string, id: string): Promise<GraphResult<{ graph: Graph }>> {
+      if (!projectDir || !graphs.has(swf)) return { ok: false, error: 'No such swf in the open project' }
+      return readGraph(projectDir, swf, id)
+    },
+    /** The renderer is the source of truth for open graphs (like overlays); main keeps the saved copy for validation. */
+    async saveGraph(swf: string, doc: unknown): Promise<GraphResult> {
+      const m = graphs.get(swf)
+      if (!projectDir || !m) return { ok: false, error: 'No such swf in the open project' }
+      const parsed = Graph.safeParse(doc)
+      if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid graph' }
+      const r = await writeGraph(projectDir, swf, parsed.data)
+      if (r.ok) {
+        m.set(parsed.data.id, parsed.data)
+        await refreshGraphLint().catch(() => undefined)
+      }
+      return r
+    },
+    async createGraph(swf: string, name: string, scope: 'menu' | 'component'): Promise<GraphResult<{ graph: Graph }>> {
+      const m = graphs.get(swf)
+      if (!projectDir || !m) return { ok: false, error: 'No such swf in the open project' }
+      if (scope === 'menu' && [...m.values()].some((g) => g.scope === 'menu')) return { ok: false, error: 'This SWF already has its menu graph' }
+      const graph = emptyGraph(newGraphId(name, new Set(m.keys())), name, scope)
+      const r = await writeGraph(projectDir, swf, graph)
+      if (!r.ok) return r
+      m.set(graph.id, graph)
+      await refreshGraphLint().catch(() => undefined)
+      return { ok: true, graph }
+    },
+    /** Removes the file only; the caller also removes the id from the overlay `scripts` (the renderer owns overlays). */
+    async deleteGraph(swf: string, id: string): Promise<GraphResult> {
+      const m = graphs.get(swf)
+      if (!projectDir || !m) return { ok: false, error: 'No such swf in the open project' }
+      const r = await deleteGraph(projectDir, swf, id)
+      if (r.ok) {
+        m.delete(id)
+        await refreshGraphLint().catch(() => undefined)
       }
       return r
     },

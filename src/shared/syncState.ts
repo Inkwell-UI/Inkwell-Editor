@@ -21,6 +21,8 @@ export interface SyncUiState {
   /** Latest build of every swf, flattened (added later; absent in older states). */
   fonts?: FontRow[]
   lint?: LintRow[]
+  /** Issues of the visual-scripting graphs (the one graph validation, run in main); the Lint dock shows them with `lint`. */
+  graphLint?: LintRow[]
   /** FFDec / Java / wrapper availability (the status bar and the Setup Doctor stub). */
   ffdec?: FfdecState
   /** Progress or result of the last Deploy (status bar and toast). */
@@ -65,6 +67,9 @@ export interface LintRow {
   severity: 'error' | 'warning' | 'info'
   code: string
   message: string
+  /** Graph issues (docs/graphs.md): the graph and the graph node the issue is pinned to. `nodeId` is then the targeted Figma layer, or '' when there is none. */
+  graphId?: string
+  graphNodeId?: string
 }
 /** What one build of one swf reports; the main process keeps the latest per swf id so frames never overwrite each other. */
 export interface SwfReport {

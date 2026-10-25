@@ -13,6 +13,9 @@ export interface DockRow {
   /** Figma node id; absent for project-level failures (a build that threw). */
   nodeId?: string
   layerName: string
+  /** Set for graph issues: the graph and graph node to open. */
+  graphId?: string
+  graphNodeId?: string
 }
 
 export const BUILD_FAILED_CODE = 'build-failed'
@@ -30,7 +33,7 @@ export function buildDockRows(input: {
   strict: boolean
 }): DockRow[] {
   const raw: Omit<DockRow, 'key'>[] = [
-    ...input.lint.map((l) => ({ severity: l.severity, code: l.code, message: l.message, swfName: l.swfName, nodeId: l.nodeId, layerName: l.layerName })),
+    ...input.lint.map((l) => ({ severity: l.severity, code: l.code, message: l.message, swfName: l.swfName, ...(l.nodeId ? { nodeId: l.nodeId } : {}), layerName: l.layerName, ...(l.graphId ? { graphId: l.graphId } : {}), ...(l.graphNodeId ? { graphNodeId: l.graphNodeId } : {}) })),
     ...(input.unreachable ?? []).map((u) => ({ severity: 'warning' as const, code: 'unreachable-node', message: unreachableMessage(u.name), swfName: u.swfName, nodeId: u.id, layerName: u.name })),
     ...(input.looseLayers ?? []).map((u) => ({ severity: 'warning' as const, code: 'unreachable-node', message: unreachableMessage(u.name), swfName: '', nodeId: u.id, layerName: u.name }))
   ]
