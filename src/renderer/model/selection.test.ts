@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clearSelection, initialSelection, pruneSelection, resolveFigmaSelection, selectComponent, selectFromLint, selectGraphNode, SELECTION_RULES } from './selection'
+import { clearSelection, initialSelection, pruneSelection, resolveFigmaSelection, revealGraphNode, selectComponent, selectFromLint, selectGraphNode, SELECTION_RULES } from './selection'
 
 describe('selection model (UX 2.4)', () => {
   it('navigator/stage/figma set the component and keep the graph node', () => {
@@ -16,6 +16,13 @@ describe('selection model (UX 2.4)', () => {
     const s = { component: 'a', graphNode: 'g0', inspects: 'graphNode' as const }
     expect(selectFromLint(s, { key: 'k', nodeId: 'b' })).toEqual({ component: 'b', graphNode: 'g0', inspects: 'component', issue: 'k' })
     expect(selectFromLint(s, { key: 'k', nodeId: 'b', graphNode: 'g9' }).graphNode).toBe('g9')
+  })
+  it('a graph node remembers its graph; a lint row for a graph node shows the node in the Inspector', () => {
+    expect(selectGraphNode(initialSelection, 'n', undefined, 'main')).toEqual({ graphNode: 'n', graph: 'main', inspects: 'graphNode' })
+    expect(selectComponent(selectGraphNode(initialSelection, 'n', 'a', 'main'), 'b', 'navigator')).toMatchObject({ component: 'b', graphNode: 'n', graph: 'main' })
+    expect(selectFromLint(initialSelection, { key: 'k', nodeId: 'b', graphNode: 'n', graph: 'main' })).toEqual({ component: 'b', graphNode: 'n', graph: 'main', inspects: 'graphNode', issue: 'k' })
+    expect(selectFromLint({ graphNode: 'old', graph: 'g', inspects: 'graphNode' }, { key: 'k', nodeId: 'b' })).toMatchObject({ graphNode: 'old', graph: 'g', inspects: 'component' })
+    expect(revealGraphNode({ component: 'a', inspects: 'component' }, 'main', 'n')).toEqual({ component: 'a', graph: 'main', graphNode: 'n', inspects: 'graphNode' })
   })
   it('a later selection clears the issue highlight', () => {
     expect(selectComponent(selectFromLint(initialSelection, { key: 'k', nodeId: 'b' }), 'c', 'navigator').issue).toBeUndefined()

@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { SplitSquareHorizontal, Zap } from 'lucide-react'
 import { nodeIndex } from '@nicklaj/knotwork'
 import { useStore } from 'zustand'
+import { As2View } from '../graph/As2View'
 import { GraphCanvas } from '../graph/GraphCanvas'
 import { useGraphActions } from '../graph/useGraphActions'
 import { useSwfGraphs } from '../hooks/useGraphs'
@@ -18,7 +19,7 @@ import { Panel } from './Panel'
 
 /**
  * Zone 4: the Knotwork graph of the active SWF's open graph (UX 4.4): breadcrumb (SWF > graph > layer > node; the segments are links), the event jump
- * list, the canvas, and the AS2 split placeholder (the source-mapped AS2 view arrives with the debug phase). Which graph is open is `state/graphDocs`:
+ * list, the canvas, and the AS2 split view (`graph/As2View.tsx`: generated class, selected node's lines highlighted, click a line to select its node). Which graph is open is `state/graphDocs`:
  * the Navigator's Graphs section sets it, and selecting a component that has a graph opens that graph (bridge).
  */
 export function GraphPanel() {
@@ -63,7 +64,13 @@ function OpenGraph({ store, graphId, split }: { store: GraphStore; graphId: stri
   const nodes = useStore(store, (s) => s.nodes)
   const selectedNode = useSelectionStore((s) => s.graphNode)
   const selectComponent = useSelectionStore((s) => s.selectComponent)
+  const reveal = useSelectionStore((s) => s.reveal)
+  const revealNode = useSelectionStore((s) => s.revealGraphNode)
   const [focus, setFocus] = useState<{ id: string; n: number }>()
+  // a Lint row, trace line or AS2 line pointed at a node of this graph: select it and centre the canvas on it
+  useEffect(() => {
+    if (reveal && reveal.graph === graphId && nodeIndex(store.getState().nodes).has(reveal.node)) setFocus({ id: reveal.node, n: reveal.n })
+  }, [reveal, graphId, store])
   const events = useMemo(() => eventNodes(defs, nodes), [defs, nodes])
   const owner = ownersOfGraph(overlay, graphId).find((id) => id !== swf.ir.root && swf.ir.nodes[id])
   const node = selectedNode ? nodeIndex(nodes).get(selectedNode) : undefined
@@ -88,10 +95,7 @@ function OpenGraph({ store, graphId, split }: { store: GraphStore; graphId: stri
       <div className={`graph-body${split ? ' is-split' : ''}`}>
         <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} />
         {split && (
-          <div className="as2-view" role="region" aria-label={strings.graph.as2Title}>
-            <h3>{strings.graph.as2Title}</h3>
-            <p className="empty">{strings.graph.as2Empty}</p>
-          </div>
+          <As2View swfName={swf.name} store={store} selectedNode={selectedNode} onPick={(id) => revealNode(graphId, id)} />
         )}
       </div>
     </>

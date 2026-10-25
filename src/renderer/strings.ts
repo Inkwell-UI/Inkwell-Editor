@@ -155,7 +155,11 @@ export const strings = {
     tidyReason: 'Not built yet',
     as2Split: 'AS2 Split',
     as2Title: 'Generated AS2 (read-only)',
-    as2Empty: 'The source-mapped AS2 view arrives with the debug phase.',
+    pinValueTip: (v: string) => `Last value in the Ruffle preview: ${v}`,
+    as2Loading: 'Generating AS2...',
+    as2Hint: 'Select a node to highlight its lines. Click a line to select its node.',
+    as2Selected: (id: string, lines: number) => `Node ${id}: ${lines} line${lines === 1 ? '' : 's'}`,
+    as2LineTip: (id: string) => `Select node ${id}`,
     loading: 'Loading graphs...',
     empty: 'No graph for this SWF yet. + Graph creates its menu graph.',
     emptyCanvas: 'Empty graph. Press Space to add a node, or drag a wire out of a pin.',
@@ -340,7 +344,26 @@ export const strings = {
     live: 'LIVE TRACE',
     watch: 'LIVE VARIABLE WATCH',
     watchCols: ['Scope', 'Name', 'Value'],
-    start: 'Start Skyrim with Dev Mode enabled'
+    start: 'Start Skyrim with Dev Mode enabled',
+    source: 'Source: Ruffle preview',
+    notice: 'Ruffle preview, not the game; in-game traces need the Runtime (0.3).',
+    errorsOnly: 'Warnings and errors only',
+    nothingToClear: 'no trace lines',
+    empty: 'No trace output yet. Fire an entry from the Play tab, or run the preview.',
+    select: (title: string) => `Select the ${title} node`,
+    watchLater: 'Variable watch arrives with the runtime (0.3). Pin values from the preview show on the canvas.'
+  },
+
+  play: {
+    title: 'Play',
+    entry: 'Entry',
+    call: 'Call',
+    noEntries: "No On Widget Call in this SWF's graphs. Add one to the graph to fire it from here.",
+    noParams: 'This entry has no parameters.',
+    noPreview: 'the preview is not running in this window',
+    called: (name: string, args: readonly string[], at: string) => `${at}  Called ${name}(${args.map((a) => JSON.stringify(a)).join(', ')})`,
+    failed: (name: string) => `Could not call ${name}: the preview has no such method (rebuild pending, or the graph did not compile).`,
+    notice: 'Ruffle preview, not the game: arguments go in as strings, like Papyrus. Mock data is delivered from the Mock Data tab.'
   },
 
   mock: {

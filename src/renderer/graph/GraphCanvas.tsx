@@ -160,21 +160,23 @@ function Canvas({ swf, overlay, store, defs, focusNode }: Parameters<typeof Grap
   const onSelectionChange = useCallback(
     ({ nodes: sel }: { nodes: FlowNode[] }) => {
       const one = sel.length === 1 ? sel[0] : undefined
-      if (one) select(one.id, nodeTarget(defs.get(one.data.kind), one))
+      if (one) select(one.id, nodeTarget(defs.get(one.data.kind), one), String(store.getState().meta["id"]))
     },
-    [defs, select]
+    [defs, select, store]
   )
 
   // jump to a node (event list, Find): select it and centre on it
+  const focused = useRef(false)
   useEffect(() => {
     if (!focusNode) return
+    focused.current = true
     store.getState().setSelection([focusNode.id])
     void rf.fitView({ nodes: [{ id: focusNode.id }], duration: 250, maxZoom: 1.2, padding: 0.4 })
   }, [focusNode, rf, store])
 
   // fit once the nodes have been measured (the first fit runs before their inline fields have their final size)
   useEffect(() => {
-    const t = setTimeout(() => void rf.fitView({ padding: 0.15, maxZoom: 1 }), 250)
+    const t = setTimeout(() => !focused.current && void rf.fitView({ padding: 0.15, maxZoom: 1 }), 250)
     return () => clearTimeout(t)
   }, [rf])
 

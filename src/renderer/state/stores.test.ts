@@ -20,6 +20,15 @@ describe('selection store', () => {
     s.selectComponent('b', 'navigator')
     expect(useSelectionStore.getState()).toMatchObject({ component: 'b', graphNode: 'g1', inspects: 'component', origin: 'local' })
   })
+  it('a lint row for a graph node selects it and asks the Graph panel to reveal it (each request is new)', () => {
+    const s = useSelectionStore.getState()
+    s.selectFromLint({ key: 'k', nodeId: 'x', graphNode: 'n1', graph: 'main' })
+    expect(useSelectionStore.getState()).toMatchObject({ component: 'x', graphNode: 'n1', graph: 'main', inspects: 'graphNode', reveal: { graph: 'main', node: 'n1', n: 1 } })
+    s.revealGraphNode('main', 'n1')
+    expect(useSelectionStore.getState().reveal?.n).toBe(2)
+    s.selectComponent('y', 'navigator')
+    expect(useSelectionStore.getState()).toMatchObject({ component: 'y', graphNode: 'n1', graph: 'main' })
+  })
   it('lint selection highlights the issue and a later click clears it', () => {
     useSelectionStore.getState().selectFromLint({ key: 'k', nodeId: 'x' })
     expect(useSelectionStore.getState().issue).toBe('k')

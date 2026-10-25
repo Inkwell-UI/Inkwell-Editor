@@ -7,6 +7,7 @@ import { LintBudgetPanel, useLintTab } from '../panels/LintBudgetPanel'
 import { LocalizationPanel } from '../panels/LocalizationPanel'
 import { MockDataPanel } from '../panels/MockDataPanel'
 import { NavigatorPanel } from '../panels/NavigatorPanel'
+import { PlayPanel } from '../panels/PlayPanel'
 import { PreviewPanel } from '../panels/PreviewPanel'
 import { TracePanel } from '../panels/TracePanel'
 import { DataBindingPanel } from '../panels/DataBindingPanel'
@@ -45,6 +46,7 @@ export const panelRegistry = {
   inspector: { title: strings.insp.title, component: InspectorPanel, defaultSize: { width: 320, height: 500 }, minSize: { width: 240, height: 120 } },
   lintBudget: { title: strings.dock.lintTitle, component: LintBudgetPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 }, useTabInfo: useLintTab },
   localization: { title: strings.loc.title, component: LocalizationPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } },
+  play: { title: strings.play.title, component: PlayPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } },
   trace: { title: strings.trace.title, component: TracePanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } },
   mockData: { title: strings.mock.title, component: MockDataPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } },
   variables: { title: strings.vars.title, component: VariablesPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },

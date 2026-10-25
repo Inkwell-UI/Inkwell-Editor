@@ -7,6 +7,7 @@ import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import { categoryVar, fieldRows, nodePins, PIN_STYLE, type FieldRow, type LayerOption } from '../model/graphModel'
 import { inHandle, outHandle, pinName, type FlowNode, type GraphStore } from '../state/graphStore'
 import type { createGraphValidation } from '../state/graphValidation'
+import { usePinValue } from '../state/traceStore'
 import { strings } from '../strings'
 import { FieldEditor } from './FieldEditors'
 
@@ -24,8 +25,10 @@ const useCtx = (): GraphCtx => useContext(GraphContext)!
 const pinLabel = (p: { name: string; type: string }, def: NodeDef | undefined, side: 'inputs' | 'outputs'): string =>
   ((def?.[side].find((x) => x.name === p.name) as { label?: string } | undefined)?.label) ?? p.name
 
-function Pin({ side, name, type, label, bad }: { side: 'in' | 'out'; name: string; type: keyof typeof PIN_STYLE | 'unknown'; label: string; bad?: boolean }) {
+function Pin({ side, name, type, label, bad, node }: { side: 'in' | 'out'; name: string; type: keyof typeof PIN_STYLE | 'unknown'; label: string; bad?: boolean; node?: string }) {
   const style = type === 'unknown' ? undefined : PIN_STYLE[type]
+  // last value the Ruffle preview traced for this output (preview builds only; docs/debugging.md)
+  const value = usePinValue(side === 'out' && node ? node : '', name)
   return (
     <div className={`gn-pin-head gn-${side}${bad ? ' is-bad' : ''}`} title={`${label}: ${type}`}>
       <Handle
@@ -36,6 +39,7 @@ function Pin({ side, name, type, label, bad }: { side: 'in' | 'out'; name: strin
         {...{ 'data-pin': type, 'data-shape': style?.shape ?? 'unknown' }}
         style={style ? { color: style.color } : undefined}
       />
+      {value !== undefined && <span className="gn-pin-val mono" title={strings.graph.pinValueTip(value)} data-testid="pin-value">{value.length > 24 ? `${value.slice(0, 23)}…` : value}</span>}
       <span className="gn-pin-label">{label}{type !== 'unknown' && ['Text', 'Button', 'List', 'Image', 'Clip'].includes(type) ? <span className="gn-pin-type"> {type}</span> : null}</span>
     </div>
   )
@@ -131,7 +135,7 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
       <div className="gn-pins">
         <div className="gn-col">{pinRows(pins.inputs, 'inputs')}</div>
         <div className="gn-col gn-col-out">
-          {pins.outputs.map((p) => <Pin key={p.name} side="out" name={p.name} type={p.type} label={pinLabel(p, def, 'outputs')} />)}
+          {pins.outputs.map((p) => <Pin key={p.name} side="out" name={p.name} type={p.type} label={pinLabel(p, def, 'outputs')} node={id} />)}
         </div>
       </div>
       {own.length > 0 && (

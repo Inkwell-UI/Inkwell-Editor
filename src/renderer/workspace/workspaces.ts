@@ -40,7 +40,7 @@ export const WORKSPACE_IDS: readonly WorkspaceId[] = ['layout', 'behaviour', 'lo
 export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
   // Layout: the stage is the whole centre; assets and the lint dock support it.
   layout: { id: 'layout', layout: frame(tabs(['navigator', 'assets']), preview, tabs(['lintBudget']), { main: 5, dock: 1.1 }) },
-  // Behaviour: the graph is large, the preview a strip; contracts and variables (left tabs), trace, mock data and data binding (dock tabs) are the supporting views.
+  // Behaviour: the graph is large, the preview a strip; contracts and variables (left tabs), play, trace, mock data and data binding (dock tabs) are the supporting views.
   behaviour: {
     id: 'behaviour',
     layout: frame(
@@ -50,7 +50,7 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
         direction: 'column',
         children: [{ ...preview, size: 2 }, { kind: 'panel', panel: 'graph', size: 3 }]
       },
-      tabs(['trace', 'mockData', 'dataBinding', 'lintBudget'], 'trace'),
+      tabs(['play', 'trace', 'mockData', 'dataBinding', 'lintBudget'], 'trace'),
       { main: 5, dock: 1.4 }
     )
   },

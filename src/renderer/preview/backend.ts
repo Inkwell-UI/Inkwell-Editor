@@ -5,6 +5,8 @@ export interface PreviewBackendEvents {
   loaded: undefined
   error: string
   firstFrame: undefined
+  /** One line of the movie's `trace()` output (docs/debugging.md, Trace channel). */
+  trace: string
 }
 
 /**
@@ -18,6 +20,8 @@ export interface PreviewBackend {
   load(build: PreviewBuild): Promise<void>
   /** Subscribes to an event; returns the unsubscribe function. */
   on<E extends keyof PreviewBackendEvents>(event: E, cb: (value: PreviewBackendEvents[E]) => void): () => void
+  /** Calls an `ExternalInterface` callback of the running movie (the preview shims in swf/generate.ts: `inkwellCall`, `inkwellMock`...). False when nothing is running, it has no such callback, or the callback answered false (`inkwellCall`: no such clip method). */
+  call(fn: string, ...args: unknown[]): boolean
   /** Stops the movie and releases everything; the backend is unusable afterwards. */
   dispose(): void
 }

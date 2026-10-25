@@ -17,6 +17,8 @@ export type SelectionSource = ComponentSource | 'graph' | 'lint'
 export interface SelectionState {
   component?: string
   graphNode?: string
+  /** The graph the selected graph node lives in (a graph node id is only unique inside its graph). */
+  graph?: string
   /** What the Inspector shows. */
   inspects: 'none' | 'component' | 'graphNode'
   /** Lint issue to highlight in the Inspector (set by a lint row click, cleared by any other selection). */
@@ -44,20 +46,28 @@ export const SELECTION_RULES: Record<SelectionSource, SelectionRule> = {
 export const initialSelection: SelectionState = { inspects: 'none' }
 
 export function selectComponent(s: SelectionState, id: string, _source: ComponentSource): SelectionState {
-  return { ...(s.graphNode ? { graphNode: s.graphNode } : {}), component: id, inspects: 'component' }
+  return { ...(s.graphNode ? { graphNode: s.graphNode } : {}), ...(s.graph ? { graph: s.graph } : {}), component: id, inspects: 'component' }
 }
 
 /** A graph node click. `target` is the component the node refers to, if it has one. */
-export function selectGraphNode(s: SelectionState, graphNode: string, target?: string): SelectionState {
+export function selectGraphNode(s: SelectionState, graphNode: string, target?: string, graph?: string): SelectionState {
   const component = target ?? s.component
-  return { ...(component ? { component } : {}), graphNode, inspects: 'graphNode' }
+  return { ...(component ? { component } : {}), graphNode, ...(graph ? { graph } : {}), inspects: 'graphNode' }
 }
 
 /** A lint row click: the issue's component, its graph node if it has one (else the graph selection stays), the issue highlighted. */
-export function selectFromLint(s: SelectionState, issue: { key: string; nodeId?: string; graphNode?: string }): SelectionState {
+export function selectFromLint(s: SelectionState, issue: { key: string; nodeId?: string; graphNode?: string; graph?: string }): SelectionState {
   const graphNode = issue.graphNode ?? s.graphNode
+  const graph = issue.graphNode ? issue.graph : s.graph
   const component = issue.nodeId ?? s.component
-  return { ...(component ? { component } : {}), ...(graphNode ? { graphNode } : {}), inspects: component ? 'component' : s.inspects, issue: issue.key }
+  // an issue on a graph node shows that node in the Inspector (the component, when the issue has one, stays selected in the Navigator)
+  const inspects = issue.graphNode && issue.graph ? 'graphNode' : component ? 'component' : s.inspects
+  return { ...(component ? { component } : {}), ...(graphNode ? { graphNode } : {}), ...(graph ? { graph } : {}), inspects, issue: issue.key }
+}
+
+/** A trace line or an AS2 line points at a node of a graph: select it (the Graph panel opens that graph and centres the node). */
+export function revealGraphNode(s: SelectionState, graph: string, graphNode: string): SelectionState {
+  return { ...(s.component ? { component: s.component } : {}), graph, graphNode, inspects: 'graphNode' }
 }
 
 export const clearSelection = (): SelectionState => ({ inspects: 'none' })
@@ -65,7 +75,7 @@ export const clearSelection = (): SelectionState => ({ inspects: 'none' })
 /** Drops a selection whose node no longer exists (after the IR changed or another SWF became active). */
 export function pruneSelection(s: SelectionState, exists: (nodeId: string) => boolean): SelectionState {
   if (!s.component || exists(s.component)) return s
-  return { ...(s.graphNode ? { graphNode: s.graphNode } : {}), inspects: s.graphNode ? 'graphNode' : 'none' }
+  return { ...(s.graphNode ? { graphNode: s.graphNode } : {}), ...(s.graph ? { graph: s.graph } : {}), inspects: s.graphNode ? 'graphNode' : 'none' }
 }
 
 /**

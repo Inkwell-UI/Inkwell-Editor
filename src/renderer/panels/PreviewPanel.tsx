@@ -4,12 +4,15 @@ import type { AspectId } from '../../shared/preview'
 import { inkwell } from '../hooks/api'
 import { useElementSize } from '../hooks/useElementSize'
 import { usePreviewBuilds } from '../hooks/usePreviewBuilds'
-import { useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
+import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import { usableSnapshot } from '../model/connection'
 import { firstError } from '../model/lintRows'
 import { AspectFrame } from '../preview/AspectFrame'
+import { mockDataOf } from '../../shared/graphBinding'
 import { createPreviewController, type PreviewController } from '../preview/controller'
+import { deliverMock } from '../preview/mockDelivery'
+import { previewBus } from '../preview/previewBus'
 import { stepZoom } from '../preview/geometry'
 import { InspectOverlay } from '../preview/InspectOverlay'
 import { RuffleBackend } from '../preview/RuffleBackend'
@@ -20,6 +23,7 @@ import { SwfViewport } from '../preview/SwfViewport'
 import { useLintStore } from '../state/lintStore'
 import { isPreviewWindow, usePopoutStore } from '../state/popoutStore'
 import { useProjectStore } from '../state/projectStore'
+import { useTraceStore } from '../state/traceStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { useWorkspaceStore } from '../state/workspaceStore'
 import { strings } from '../strings'
@@ -56,15 +60,25 @@ export function PreviewPanel() {
   useEffect(() => {
     const c = createPreviewController({ backend: new RuffleBackend(), report: (r) => inkwell?.reportPreviewRendered(r) })
     setCtl(c)
-    return () => c.dispose()
+    // trace output and the Play panel / mock data bridge (docs/debugging.md)
+    const offs = [c.backend.on('trace', (raw) => useTraceStore.getState().push(raw)), previewBus.attach(c.backend)]
+    return () => (offs.forEach((off) => off()), c.dispose())
   }, [])
 
   const entry = entries.find((e) => e.latest.swfId === swf?.id) ?? (swf ? undefined : entries[0])
   const build = entry?.shown
   useEffect(() => {
-    if (ctl && build) void ctl.show(build)
+    if (ctl && build) {
+      useTraceStore.getState().newBuild() // pin values belong to the build that traced them
+      void ctl.show(build)
+    }
   }, [ctl, build])
   const state = useSyncExternalStore(ctl?.subscribe ?? (() => () => {}), ctl?.getState ?? (() => idle))
+  // Mock data feeds the running movie, never a build: after every load (a rebuild restarts the movie) and whenever the data changes.
+  const mockJson = JSON.stringify(mockDataOf(useActiveOverlay()))
+  useEffect(() => {
+    if (ctl && state.status === 'ready') deliverMock(ctl.backend, JSON.parse(mockJson) as Record<string, string | number | boolean>)
+  }, [ctl, state.status, state.seq, mockJson])
 
   const failed = sync?.build === 'error' || !!entry?.stale
   const err = firstError(dock)

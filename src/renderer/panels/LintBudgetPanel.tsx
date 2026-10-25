@@ -4,6 +4,7 @@ import { inkwell } from '../hooks/api'
 import { useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { BUDGET_LIMITS, budgetState, countBudget } from '../model/budget'
 import { countSeverities, filterDockRows } from '../model/lintRows'
+import { openGraphNode } from '../state/graphReveal'
 import { useLintStore } from '../state/lintStore'
 import { useProjectStore } from '../state/projectStore'
 import { useSelectionStore } from '../state/selectionStore'
@@ -48,6 +49,8 @@ export function LintBudgetPanel() {
   const budget = swf ? countBudget(swf.ir) : undefined
 
   const open = (r: (typeof rows)[number]): void => {
+    // a graph issue opens that graph and selects the node (its layer, when it has one, is selected too)
+    if (r.graphId && r.graphNodeId && openGraphNode({ swfName: r.swfName, graph: r.graphId, node: r.graphNodeId, lintKey: r.key, ...(r.nodeId ? { component: r.nodeId } : {}) })) return
     if (!r.nodeId) return
     const target = project?.swfs.find((s) => s.name === r.swfName)
     if (target) useProjectStore.getState().setActiveSwf(target.id)
@@ -81,7 +84,7 @@ export function LintBudgetPanel() {
               {rows.map((r) => {
                 const Icon = ICON[r.severity]
                 return (
-                  <tr key={r.key} className={`${r.nodeId ? 'is-link' : ''}${issue === r.key ? ' is-highlighted' : ''}`} onClick={() => open(r)}>
+                  <tr key={r.key} className={`${r.nodeId || r.graphNodeId ? 'is-link' : ''}${issue === r.key ? ' is-highlighted' : ''}`} onClick={() => open(r)}>
                     <td className={TONE[r.severity]}><Icon size={13} aria-hidden="true" /> {strings.dock.severity[r.severity]}</td>
                     <td className="mono">{r.code}</td>
                     <td>
