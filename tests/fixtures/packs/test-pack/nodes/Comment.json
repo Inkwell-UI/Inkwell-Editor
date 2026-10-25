@@ -1,0 +1,19 @@
+{
+  "kind": "Comment",
+  "major": 1,
+  "title": "Comment",
+  "category": "Editor-only",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [],
+  "outputs": [],
+  "fields": {
+    "text": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "extra": {
+    "editorOnly": true
+  }
+}

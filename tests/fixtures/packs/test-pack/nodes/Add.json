@@ -1,0 +1,3 @@
+{ "kind": "Add", "major": 1, "title": "Add", "category": "Math", "pure": true,
+  "inputs": [ { "name": "a", "type": "Number", "default": 0 }, { "name": "b", "type": "Number", "default": 0 } ],
+  "outputs": [ { "name": "value", "type": "Number", "default": 0 } ] }

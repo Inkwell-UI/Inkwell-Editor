@@ -1,0 +1,7 @@
+{
+  "extra": { "note": "test fixture, a small copy of the core pack's shape" },
+  "id": "core",
+  "version": "0.2.0",
+  "compatible": { "tool": "^0.1.0" },
+  "dependencies": {}
+}

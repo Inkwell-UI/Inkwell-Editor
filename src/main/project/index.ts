@@ -1,7 +1,8 @@
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { migrate, SPEC_VERSION } from '@inkwell-ui/spec'
+import { migrate, SPEC_VERSION, type Graph } from '@inkwell-ui/spec'
 import { z } from 'zod'
+import { readGraphs, writeGraph } from './graphFiles'
 
 // project.json is editor-owned. Unknown keys are kept (looseObject) so they survive load -> save.
 export const ProjectMetaSchema = z.looseObject({
@@ -25,7 +26,8 @@ export type Opaque = z.infer<typeof OpaqueObject>
 
 export interface Project {
   meta: ProjectMeta
-  swfs: Record<string, { ir: Opaque; overlay: Opaque }>
+  /** `graphs`: the SWF's `graphs/<id>.json` files by graph id (docs/graphs.md). */
+  swfs: Record<string, { ir: Opaque; overlay: Opaque; graphs?: Record<string, Graph> }>
   /** Raw text of packs.lock (format not defined yet); undefined if absent. */
   packsLock?: string
 }
@@ -57,7 +59,8 @@ export async function loadProject(dir: string): Promise<Project> {
     swfs[e.name] = {
       // Old projects open through the spec's migrations (specVersion is saved back as current).
       ir: OpaqueObject.parse(await readJson(join(swfDir, e.name, 'ir.json')).then(upgrade)),
-      overlay: OpaqueObject.parse(await readJson(join(swfDir, e.name, 'overlay.json')))
+      overlay: OpaqueObject.parse(await readJson(join(swfDir, e.name, 'overlay.json'))),
+      graphs: Object.fromEntries((await readGraphs(dir, e.name)).graphs.map((g) => [g.id, g]))
     }
   }
   const packsLock = await readFile(join(dir, 'packs.lock'), 'utf8').catch(() => undefined)
@@ -73,6 +76,11 @@ export async function saveProject(dir: string, project: Project): Promise<void> 
     await mkdir(d, { recursive: true })
     await writeFile(join(d, 'ir.json'), stableStringify(swf.ir))
     await writeFile(join(d, 'overlay.json'), stableStringify(swf.overlay))
+    // graph files are written, never deleted here: a graph the editor could not read must survive
+    for (const g of Object.values(swf.graphs ?? {})) {
+      const r = await writeGraph(dir, name, g)
+      if (!r.ok) throw new Error(r.error)
+    }
   }
   // Owner decision: swf folders no longer in the project are deleted.
   const existing = await readdir(join(dir, 'swfs'), { withFileTypes: true }).catch(() => [])

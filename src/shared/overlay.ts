@@ -64,6 +64,8 @@ export interface NodeOverlayPatch {
   instanceName?: string | null
   anchor?: WidgetAnchor | null
   debugHotkey?: number | null
+  /** Graph ids attached to this node (`swfs/<name>/graphs/<id>.json`). */
+  scripts?: string[] | null
 }
 
 /** Immutable edit of one node's overlay entry. Unknown keys of the entry and of the document survive; an entry left empty is removed. */
@@ -94,6 +96,8 @@ export function overlayProblems(doc: unknown): string[] {
       if (name !== undefined && (typeof name !== 'string' || instanceNameError(name))) out.push(`overlay.nodes.${id}.instanceName: not a valid identifier`)
       const role = (n as Record<string, unknown>)['role']
       if (role !== undefined && typeof role !== 'string') out.push(`overlay.nodes.${id}.role: not a string`)
+      const scripts = (n as Record<string, unknown>)['scripts']
+      if (scripts !== undefined && !(Array.isArray(scripts) && scripts.every((x) => typeof x === 'string'))) out.push(`overlay.nodes.${id}.scripts: not a list of graph ids`)
       const key = (n as Record<string, unknown>)['debugHotkey']
       if (key !== undefined && !isScanCode(key)) out.push(`overlay.nodes.${id}.debugHotkey: needs an integer scan code 1..255`)
       if ((n as Record<string, unknown>)['anchor'] !== undefined && !widgetAnchorOf(n)) out.push(`overlay.nodes.${id}.anchor: needs h (left/center/right), v (top/center/bottom) and numeric x/y`)

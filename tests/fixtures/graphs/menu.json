@@ -1,0 +1,148 @@
+{
+  "comments": [
+    {
+      "id": "c1",
+      "pos": {
+        "x": 10,
+        "y": -40
+      },
+      "text": "hello"
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "n1",
+        "pin": "then"
+      },
+      "to": {
+        "node": "n2",
+        "pin": "in"
+      }
+    },
+    {
+      "extra": {
+        "e": 1
+      },
+      "from": {
+        "node": "n1",
+        "pin": "title"
+      },
+      "to": {
+        "node": "n2",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "n2",
+        "pin": "then"
+      },
+      "to": {
+        "node": "n3",
+        "pin": "in"
+      }
+    }
+  ],
+  "extra": {
+    "k": 1
+  },
+  "futureTop": {
+    "a": 1,
+    "b": 2
+  },
+  "groups": [
+    {
+      "id": "g1",
+      "name": "Show",
+      "nodes": [
+        "n1",
+        "n2"
+      ],
+      "pos": {
+        "x": -10,
+        "y": -10
+      },
+      "size": {
+        "height": 100,
+        "width": 500
+      }
+    }
+  ],
+  "id": "menu",
+  "name": "Menu",
+  "nodes": [
+    {
+      "fields": {
+        "name": "Show",
+        "params": [
+          {
+            "name": "title",
+            "type": "String"
+          }
+        ]
+      },
+      "futureNode": true,
+      "id": "n1",
+      "kind": "core/OnWidgetCall@1",
+      "pos": {
+        "x": 0,
+        "y": 0,
+        "z": 3
+      }
+    },
+    {
+      "fields": {
+        "target": "1:2"
+      },
+      "id": "n2",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 240,
+        "y": 0
+      }
+    },
+    {
+      "extra": {
+        "note": "kept"
+      },
+      "fields": {},
+      "id": "n3",
+      "kind": "core/Branch@1",
+      "pos": {
+        "x": 480,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "alpha": [
+          1,
+          2
+        ],
+        "zeta": 1
+      },
+      "id": "n4",
+      "kind": "other/Mystery@2",
+      "mystery": {
+        "k": "v"
+      },
+      "pos": {
+        "x": 0,
+        "y": 200
+      }
+    }
+  ],
+  "scope": "menu",
+  "specVersion": 5,
+  "variables": [
+    {
+      "default": 0,
+      "futureVar": 1,
+      "id": "v1",
+      "name": "count",
+      "scope": "menu",
+      "type": "Number"
+    }
+  ]
+}

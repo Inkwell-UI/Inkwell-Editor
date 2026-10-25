@@ -1,0 +1,31 @@
+{
+  "kind": "SetText",
+  "major": 1,
+  "title": "Set Text",
+  "category": "Components",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Text"
+    },
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/SetText.as2"
+}
