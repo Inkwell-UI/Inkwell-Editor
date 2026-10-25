@@ -20,6 +20,8 @@ export interface WidgetOptions extends Pick<CompileOptions, 'modId' | 'buildDir'
   stubsDir?: string
   /** The SWF's overlay entries by node id: `anchor` / `debugHotkey` on the widget frame (placement override, test key), role `text` makes a text layer settable. */
   overlay?: OverlayDoc['nodes']
+  /** The SWF's graphs and the packs that compile them. With On Widget Call entries the widget's Papyrus API and AS2 come from the graph; otherwise nothing changes. */
+  graphs?: CompileOptions['graphs']
 }
 
 export interface WidgetResult {
@@ -42,7 +44,7 @@ export async function compileWidget(ir: Swf, opts: WidgetOptions): Promise<Widge
   const swf = await compileSwf(ir, { ...opts, widget: true, settableTexts, outPath: join(opts.buildDir, `${widgetName}.swf`) })
 
   timer.start('papyrus')
-  const scripts = generateScripts({ modId: opts.modId, widgetName, displayName: ir.name, placement, texts: swf.settableTexts, debugHotkey: debugHotkeyOf(frameEntry) })
+  const scripts = generateScripts({ modId: opts.modId, widgetName, displayName: ir.name, placement, texts: swf.settableTexts, debugHotkey: debugHotkeyOf(frameEntry), calls: swf.graphCalls })
   const lint: LintIssue[] = [...swf.lint]
   const files: Record<string, Buffer> = { [`Interface/exported/widgets/${opts.modId}/${widgetName}.swf`]: await readFile(swf.swfPath) }
   for (const s of scripts) files[`Source/Scripts/${s.name}.psc`] = Buffer.from(s.source)

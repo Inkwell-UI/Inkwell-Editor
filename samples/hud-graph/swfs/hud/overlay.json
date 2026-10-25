@@ -1,0 +1,16 @@
+{
+  "bindings": [],
+  "nodes": {
+    "2:4": {
+      "instanceName": "title",
+      "scripts": [
+        "main"
+      ]
+    },
+    "2:5": {
+      "instanceName": "subtitle"
+    }
+  },
+  "specVersion": 5,
+  "version": 1
+}

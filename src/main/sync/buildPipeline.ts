@@ -1,12 +1,15 @@
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import type { Graph } from '@inkwell-ui/spec'
 import type { PreviewBuild } from '../../shared/preview'
 import type { SwfReport } from '../../shared/syncState'
 import { createStageTimer, type BuildTiming } from '../../shared/timing'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
 import type { AssetStore, ImageMode } from '../images/assets'
+import { loadCodegenPacks, type CodegenPacks } from '../codegen/packs'
 import { loadProject, saveProject, type Project } from '../project'
+import { readGraphs } from '../project/graphFiles'
 import { exclusive } from '../project/lock'
 import { snapshotContent, writeSnapshot, type FigmaSnapshot, type SnapshotSource } from '../project/snapshot'
 import type { PreviewFontSet } from '../previewFonts'
@@ -23,6 +26,8 @@ export interface PipelineConfig {
   jarPath: string
   /** Called after every build with the preview SWF bytes (or the reason there are none). A failed preview never fails the build. */
   onPreview?: (p: Omit<PreviewBuild, 'seq'>) => void
+  /** Pack folders whose node templates compile the project's graphs into the SWF (the preview too); none = graphs are not compiled. */
+  packDirs?: string[]
   /** Preview text fonts (see previewFonts.ts); without it the preview uses Ruffle's generic device fonts. */
   previewFonts?: PreviewFontSet
   /** Tests inject a fake FFDec; the install and jar checks are skipped. */
@@ -58,6 +63,7 @@ export function toReport(swfId: string, name: string, r: Pick<Awaited<ReturnType
 /** The server's default onChange: persist the IR (if a project is open), compile it with the resident FFDec wrapper, return lint as sync issues. */
 export function createBuildPipeline(cfg: PipelineConfig) {
   let project: Promise<Project> | undefined
+  let codegenPacks: ReturnType<typeof loadCodegenPacks> | undefined
   let ffdec: { build: Parameters<typeof compileSwf>[1]['ffdec']['build']; stop?: () => void } | undefined
 
   /** The resident wrapper (created on first use; shared with Deploy). A missing FFDec is a clear error status, not a crash; the server keeps running. */
@@ -107,14 +113,20 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     timer.end('sync')
     const sync = timer.finishBuild()
 
+    // graphs of this SWF as last saved (the renderer saves them; Phase 6 rebuilds on save)
+    let graphs: { graphs: Graph[]; packs: CodegenPacks } | undefined
+    if (cfg.projectDir && cfg.packDirs?.length) {
+      const gs = (await readGraphs(cfg.projectDir, name)).graphs
+      if (gs.length) graphs = { graphs: gs, packs: (await (codegenPacks ??= loadCodegenPacks(cfg.packDirs))).packs }
+    }
     const images = cfg.assets ? (h: string) => cfg.assets!.get(h) : undefined
-    const r = await compileSwf(ir, { modId, instanceNames, buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}) })
+    const r = await compileSwf(ir, { modId, instanceNames, ...(graphs ? { graphs } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}) })
     // Preview SWF: same content with device-font text, built after the game SWF. Its failure is reported to the preview panel only.
     const pt = createStageTimer()
     pt.start('preview-build')
     const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: ir.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
     try {
-      const pr = await compileSwf(ir, { modId, instanceNames, buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
+      const pr = await compileSwf(ir, { modId, instanceNames, ...(graphs ? { graphs } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
       const buf = await readFile(pr.swfPath)
       preview.bytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
       preview.notes = {

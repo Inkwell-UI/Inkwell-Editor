@@ -1,4 +1,4 @@
-import { copyFile, cp, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises'
+import { copyFile, cp, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -145,5 +145,26 @@ describe('build pipeline: offline (no sync server) and figma/snapshot.json', () 
     const ir = Swf.parse((await loadProject(dir)).swfs['hud']!.ir)
     await p.onChange(ir.id, ir, 'hud')
     expect((await readSnapshot(dir)).snapshot?.source).toEqual({ pluginVersion: '0.9.0', fileKey: 'K' })
+  })
+
+  it('compiles saved graphs into the game SWF and the Ruffle preview (packDirs set); without packDirs nothing changes', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'inkwell-graphs-'))
+    await cp(resolve(__dirname, '../../../samples/hud-graph'), dir, { recursive: true })
+    const as2: string[][] = []
+    const ffdec = {
+      build: async (job: FfdecJob) => {
+        as2.push(job.scripts ? await readdir(join(job.scripts, '__Packages', 'mods', 'InkwellGraphTest')) : [])
+        await copyFile(job.base, job.out)
+        return { ok: true, ms: 0, wallMs: 0 }
+      }
+    }
+    const ir = Swf.parse((await loadProject(dir)).swfs['hud']!.ir)
+    const withPacks = createBuildPipeline({ ...base, projectDir: dir, buildDir: join(dir, 'build'), ffdec, packDirs: [resolve(__dirname, '../../../resources/packs/core')] })
+    const r = await withPacks.onChange(ir.id, ir, 'hud')
+    expect(as2.map((a) => a.filter((f) => f.startsWith('HudGraph')))).toEqual([['HudGraph_main.as'], ['HudGraph_main.as']]) // game, then preview
+    expect(r.issues?.filter((i) => (i as { severity?: string }).severity === 'error')).toEqual([])
+    as2.length = 0
+    await createBuildPipeline({ ...base, projectDir: dir, buildDir: join(dir, 'build'), ffdec }).onChange(ir.id, ir, 'hud')
+    expect(as2.flat().filter((f) => f.startsWith('HudGraph'))).toEqual([])
   })
 })

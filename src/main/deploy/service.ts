@@ -2,7 +2,9 @@ import { randomUUID } from 'node:crypto'
 import { dirname, isAbsolute, join } from 'node:path'
 import { isPackageTarget, type DeployResult, type DeployScope, type DeployState, type DeployTargetId, type DeployTargetInfo, type GateResult, type PrepareResult } from '../../shared/deploy'
 import type { ResolvedSettings, StoredSettings } from '../../shared/doctor'
+import { loadCodegenPacks } from '../codegen/packs'
 import { findSkyrim } from '../doctor/skyrim'
+import { corePackDir } from '../packs'
 import { exportGate } from '../lint/gate'
 import { loadVanillaHashes, vanillaCacheRoot } from '../vanilla/cache'
 import { isConfirmed, isGameData, packageDir, packageFileName, resolveTarget, targetList, withConfirmed } from './plan'
@@ -50,7 +52,7 @@ export function createDeployService(d: DeployDeps) {
       const input: DeployInput = {
         modId: p.modId, swfs: p.swfs, root: t.root, gameDirs, ...(p.imageMode ? { imageMode: p.imageMode } : {}), ...(p.assets ? { assets: p.assets } : {}), ...(scope === 'active' && activeName ? { only: activeName } : {}),
         buildDir: join(p.dir, 'build'), ffdec: d.ffdec(), ...(resolved.papyrusExe ? { papyrusExe: resolved.papyrusExe } : {}),
-        stubsDir: join(d.appPath, 'resources/papyrus-stubs'), vanillaHashes: await loadVanillaHashes(vanillaCacheRoot(d.userData))
+        stubsDir: join(d.appPath, 'resources/papyrus-stubs'), packs: (await loadCodegenPacks([corePackDir(d.appPath)])).packs, vanillaHashes: await loadVanillaHashes(vanillaCacheRoot(d.userData))
       }
       const r = await prepareDeploy(input)
       if (!r.ok) {

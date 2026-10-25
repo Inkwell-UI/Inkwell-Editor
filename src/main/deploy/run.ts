@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { imageHashes, type Swf } from '@inkwell-ui/spec'
+import { imageHashes, type Graph, type Swf } from '@inkwell-ui/spec'
+import type { CodegenPacks } from '../codegen/packs'
 import type { DeployFileInfo, DeployLintItem, DeployResult } from '../../shared/deploy'
 import { createStageTimer } from '../../shared/timing'
 import { ddsRel, type AssetStore, type ImageMode } from '../images/assets'
@@ -22,6 +23,8 @@ export interface DeploySwf extends SwfLike {
   build?: { state: 'compiling' | 'failed' | 'done'; lint: DeployLintItem[] }
   /** Issues of the SWF's visual-scripting graphs (the one graph validation); errors block the export like compile lint. */
   graphLint?: DeployLintItem[]
+  /** The SWF's graphs; a hudWidget compiles them into its widget class and Papyrus API (needs `DeployInput.packs`). */
+  graphs?: Graph[]
 }
 
 export interface DeployInput {
@@ -42,6 +45,8 @@ export interface DeployInput {
   imageMode?: ImageMode
   /** The project's image assets (widget compiles read pixels; dds mode reads the PNGs). */
   assets?: Pick<AssetStore, 'get' | 'png'>
+  /** Node definitions and templates for compiling graphs; without them graphs are not compiled. */
+  packs?: CodegenPacks
 }
 
 /** Everything is compiled and checked before the first byte is written. */
@@ -84,7 +89,7 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
       if (s.graphLint) issues.push(...s.graphLint.map((l) => ({ ...l, swf: s.name })))
       if (s.kind === 'hudWidget') {
         const r = await compileWidget(s.ir, {
-          modId: i.modId, widgetName: plan.widgets[s.name]!, ...(s.instanceNames ? { instanceNames: s.instanceNames } : {}), ...(s.overlay ? { overlay: s.overlay } : {}), buildDir: join(i.buildDir, 'deploy', s.name), ffdec: i.ffdec,
+          modId: i.modId, widgetName: plan.widgets[s.name]!, ...(s.instanceNames ? { instanceNames: s.instanceNames } : {}), ...(s.overlay ? { overlay: s.overlay } : {}), ...(i.packs && s.graphs?.length ? { graphs: { graphs: s.graphs, packs: i.packs } } : {}), buildDir: join(i.buildDir, 'deploy', s.name), ffdec: i.ffdec,
           ...(i.imageMode ? { imageMode: i.imageMode } : {}), ...(i.assets ? { images: (h: string) => i.assets!.get(h) } : {}),
           ...(i.papyrusExe ? { papyrusExe: i.papyrusExe } : {}), ...(i.stubsDir ? { stubsDir: i.stubsDir } : {})
         })

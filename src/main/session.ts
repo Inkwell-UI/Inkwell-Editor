@@ -191,6 +191,7 @@ export function createSession(deps: SessionDeps) {
       ...cfg,
       assets,
       previewFonts: fonts(),
+      packDirs: [corePackDir(deps.appPath)],
       ...(dir ? { projectDir: dir } : {}),
       buildDir: dir ? join(dir, 'build') : join(deps.userData, 'build'),
       jarPath,
@@ -305,6 +306,7 @@ export function createSession(deps: SessionDeps) {
         swfs: p.swfs.map((s) => ({
           name: s.name, orphaned: s.orphaned, kind: s.ir.target.kind, ir: s.ir,
           ...(buildBySwf.has(s.id) ? { build: { state: buildBySwf.get(s.id)!, lint: (reports.get(s.id)?.lint ?? []).map(({ severity, code, message, nodeId, layerName }) => ({ severity, code, message, nodeId, layerName })) } } : {}),
+          ...(graphs.get(s.name)?.size ? { graphs: [...graphs.get(s.name)!.values()] } : {}),
           ...(graphIssues.get(s.name)?.length ? { graphLint: graphIssues.get(s.name)!.map((x) => x.item) } : {}),
           ...(s.overlay.nodes ? { overlay: s.overlay.nodes } : {}),
           instanceNames: Object.fromEntries((Object.entries(s.overlay.nodes ?? {}) as [string, { instanceName?: string }][]).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName] as [string, string]] : [])))

@@ -1,0 +1,134 @@
+{
+  "specVersion": 5,
+  "id": "main",
+  "name": "Main",
+  "scope": "menu",
+  "nodes": [
+    {
+      "id": "call",
+      "kind": "core/OnWidgetCall@1",
+      "fields": {
+        "name": "Show",
+        "params": [
+          {
+            "name": "title",
+            "type": "String"
+          }
+        ]
+      },
+      "pos": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "settext",
+      "kind": "core/SetText@1",
+      "fields": {
+        "target": "2:4"
+      },
+      "pos": {
+        "x": 260,
+        "y": 0
+      }
+    },
+    {
+      "id": "branch",
+      "kind": "core/Branch@1",
+      "fields": {},
+      "pos": {
+        "x": 520,
+        "y": 0
+      }
+    },
+    {
+      "id": "notempty",
+      "kind": "core/Compare@1",
+      "fields": {
+        "valueType": "String",
+        "op": "!="
+      },
+      "pos": {
+        "x": 260,
+        "y": 160
+      }
+    },
+    {
+      "id": "log",
+      "kind": "core/Log@1",
+      "fields": {
+        "level": "info",
+        "message": "shown"
+      },
+      "pos": {
+        "x": 780,
+        "y": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "call",
+        "pin": "then"
+      },
+      "to": {
+        "node": "settext",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "call",
+        "pin": "title"
+      },
+      "to": {
+        "node": "settext",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "settext",
+        "pin": "then"
+      },
+      "to": {
+        "node": "branch",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "call",
+        "pin": "title"
+      },
+      "to": {
+        "node": "notempty",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "notempty",
+        "pin": "value"
+      },
+      "to": {
+        "node": "branch",
+        "pin": "condition"
+      }
+    },
+    {
+      "from": {
+        "node": "branch",
+        "pin": "true"
+      },
+      "to": {
+        "node": "log",
+        "pin": "in"
+      }
+    }
+  ],
+  "variables": [],
+  "comments": [],
+  "groups": []
+}

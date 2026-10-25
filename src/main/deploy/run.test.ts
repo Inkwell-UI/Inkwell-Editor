@@ -10,6 +10,7 @@ import { createFfdecWrapper } from '../build/ffdecWrapper'
 import { createAssetStore } from '../images/assets'
 import { readDdsBgra8, readDdsHeader } from '../images/dds'
 import { syntheticPng } from '../images/synthetic'
+import { loadCodegenPacks } from '../codegen/packs'
 import { loadProject } from '../project'
 import { frame } from '../swf/ir.testutil'
 import { sha256 } from '../vanilla/bsa'
@@ -167,6 +168,29 @@ describe.skipIf(!can)('real deploy of samples/hud-widget into a temp folder', ()
       const again = await commitDeploy(input, r2.prepared)
       expect(again).toMatchObject({ ok: true, removed: [] })
       expect(again.ok && again.written).toBeLessThanOrEqual(rels.filter((f) => f.endsWith('.pex')).length)
+    } finally {
+      ffdec.stop()
+    }
+  }, 120000)
+})
+
+describe.skipIf(!can)('deploy of samples/hud-graph (graph-driven widget)', () => {
+  it('ships the graph SWF and the typed Papyrus API from On Widget Call', async () => {
+    const project = await loadProject(join(appPath, 'samples/hud-graph'))
+    const s = project.swfs['hud']!
+    const root = join(mkdtempSync(join(tmpdir(), 'inkwell-real-')), 'Graph Mod')
+    const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
+    try {
+      const input: DeployInput = {
+        modId: project.meta.modId, swfs: [{ name: 'hud', orphaned: false, kind: 'hudWidget', ir: Swf.parse(s.ir), instanceNames: { '2:4': 'title', '2:5': 'subtitle' }, graphs: Object.values(s.graphs ?? {}) }], root, gameDirs: [],
+        buildDir: mkdtempSync(join(tmpdir(), 'inkwell-rb-')), ffdec, packs: (await loadCodegenPacks([join(appPath, 'resources/packs/core')])).packs,
+        ...(papyrusExe ? { papyrusExe } : {}), stubsDir: join(appPath, 'resources/papyrus-stubs'), vanillaHashes: new Set()
+      }
+      const r = await prepareDeploy(input)
+      if (!r.ok) throw new Error(r.error)
+      expect(r.prepared.issues.filter((i) => i.severity === 'error')).toEqual([])
+      expect((await commitDeploy(input, r.prepared)).ok).toBe(true)
+      expect(readFileSync(join(root, 'Source', 'Scripts', 'InkwellGraphTest_Hud.psc'), 'utf8')).toContain('Function Show(String asTitle)')
     } finally {
       ffdec.stop()
     }
