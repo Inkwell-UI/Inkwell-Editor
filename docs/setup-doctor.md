@@ -24,7 +24,7 @@ Each returns `{ id, label, status: pass|warn|fail|skipped, detail, fix?, extra? 
 
 ## Settings (`src/main/settings.ts`)
 
-`<userData>/settings.json`, validated on load (unknown keys, wrong types and empty values are dropped; a damaged file means defaults). `resolveSettings(stored, env)`: an environment variable beats the stored value, which beats the default; `source` says which. Keys: `ffdecDir` (`INKWELL_FFDEC`), `javaPath` (`INKWELL_JAVA`), `papyrusExe` (`INKWELL_PAPYRUS`), `creationKitSources` (`INKWELL_CK_SOURCES`), `skyrimPath` (`INKWELL_SKYRIM`), `figmaManifest` (`INKWELL_FIGMA_MANIFEST`), `mo2ModsDir` (`INKWELL_MO2_MODS`), `mo2OverwriteDir` (`INKWELL_MO2_OVERWRITE`), `mo2ModName`; plus `deployConfirmed` and `doctorSeen`. A changed Java or FFDec path restarts the build pipeline (the project is reopened on the same sync port and token).
+`<userData>/settings.json`, validated on load (unknown keys, wrong types and empty values are dropped; a damaged file means defaults). `resolveSettings(stored, env)`: an environment variable beats the stored value, which beats the default; `source` says which. Keys: `ffdecDir` (`INKWELL_FFDEC`), `javaPath` (`INKWELL_JAVA`), `papyrusExe` (`INKWELL_PAPYRUS`), `creationKitSources` (`INKWELL_CK_SOURCES`), `skyrimPath` (`INKWELL_SKYRIM`), `figmaManifest` (`INKWELL_FIGMA_MANIFEST`), `mo2ModsDir` (`INKWELL_MO2_MODS`), `mo2OverwriteDir` (`INKWELL_MO2_OVERWRITE`), `mo2ModName`; plus `deployConfirmed`, `doctorSeen` and `figmaPlugins` (SHA-256 of approved Figma plugin secrets, `docs/sync-server.md`). A changed Java or FFDec path restarts the build pipeline (the project is reopened on the same sync port).
 
 
 ## UI

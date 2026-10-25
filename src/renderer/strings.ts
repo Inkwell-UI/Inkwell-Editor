@@ -43,8 +43,6 @@ export const strings = {
   badgeShimsTitle: 'Active shims in the preview SWF:',
   badgeShims: ['skse.* (stub)', 'gfxExtensions (stub)', 'Inkwell AS2 bridge (stub)', 'Preview font shim (gfxfontlib.swf cannot load in Ruffle)'],
   syncPort: 'Port',
-  syncToken: 'Session token',
-  syncCopy: 'Copy',
 
   stage: {
     toolbar: 'Stage controls',
@@ -402,6 +400,7 @@ export const strings = {
       mismatch: 'Version mismatch',
       authError: 'Authentication failed',
       serverError: 'Sync server error',
+      pending: 'Waiting for approval',
       snapshot: 'Disconnected (Using Snapshot)',
       disconnected: 'Disconnected',
       starting: 'Starting'
@@ -414,8 +413,7 @@ export const strings = {
     snapshotStale: (names: string[]) => `Changed outside a sync since the snapshot: ${names.join(', ')}. Builds use ir.json; the next sync from Figma brings it back in line.`,
     snapshotBroken: (e: string) => `${e} Builds use ir.json; the next sync rewrites it.`,
     gameStatus: 'Not connected (dev mode arrives with the runtime)',
-    copied: 'Copied',
-    noToken: 'The server has no token yet',
+    approvalNote: 'Open Figma and run the Inkwell plugin: it connects by itself. The first time, this window asks you to allow it.',
     mirror: 'Mirror Figma selection',
     mirrorNote: 'Selecting a layer in Figma selects it here. Selecting here cannot select it in Figma yet.',
     buildAll: 'Build All',
@@ -474,7 +472,31 @@ export const strings = {
     search: 'Search settings',
     searchPlaceholder: 'Search settings...',
     general: 'General',
+    figmaPlugins: {
+      title: 'Figma plugins',
+      none: 'No Figma plugin is approved yet. The first plugin that connects asks for your permission.',
+      count: (n: number) => `${n} Figma plugin${n === 1 ? ' is' : 's are'} approved on this computer.`,
+      forget: 'Forget all Figma plugins',
+      confirmTitle: 'Forget all Figma plugins?',
+      confirmBody: 'Every approved plugin is removed and disconnected. Each one has to ask for your permission again the next time it connects.',
+      confirmYes: 'Forget plugins',
+      cancel: 'Cancel',
+      done: 'All Figma plugins were forgotten.',
+      failed: (e: string) => `Could not forget the plugins: ${e}`,
+      search: 'figma plugins forget approved permission allow connect'
+    },
     noMatch: 'No setting matches the search.'
+  },
+
+  approve: {
+    title: 'A Figma plugin wants to connect',
+    question: 'A Figma plugin wants to connect: Allow?',
+    version: 'Plugin version',
+    file: 'Figma file',
+    origin: 'Origin',
+    warn: 'Only allow it if you just started the Inkwell plugin in Figma yourself. Any website can try to reach this computer.',
+    allow: 'Allow',
+    deny: 'Deny'
   },
 
   dialogs: {

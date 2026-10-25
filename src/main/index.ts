@@ -11,6 +11,7 @@ import { PRODUCT_NAME } from '../shared/product'
 import { strings } from '../renderer/strings'
 import { copyExample, createProject } from './project/lifecycle'
 import { runDoctorDriver } from './screenshotDoctor'
+import { runFigmaShots } from './screenshotFigma'
 import { runFontShots } from './screenshotFonts'
 import { runShots } from './screenshotDriver'
 import { runDebugShots, runGraphShots } from './screenshotGraph'
@@ -131,6 +132,9 @@ ipcMain.handle(IPC.strictSet, (_e, on: boolean) => session.setStrictMode(on))
 ipcMain.handle(IPC.buildAll, () => session.buildAll())
 ipcMain.handle(IPC.previewDetach, (_e, detached: boolean) => setDetached(detached))
 ipcMain.handle(IPC.previewDetached, () => !!previewWin && !previewWin.isDestroyed())
+ipcMain.handle(IPC.figmaApproval, (_e, id: number, allow: boolean) => session.answerFigmaApproval(id, allow === true))
+ipcMain.handle(IPC.figmaPluginCount, () => session.figmaPluginCount())
+ipcMain.handle(IPC.figmaForget, () => session.forgetFigmaPlugins())
 ipcMain.handle(IPC.doctorRun, (_e, only?: CheckId[]) => session.runDoctor(only))
 ipcMain.handle(IPC.doctorBenchmark, () => session.runBenchmark())
 ipcMain.handle(IPC.doctorBuildCache, () => session.buildVanillaCache())
@@ -208,6 +212,8 @@ void app.whenReady().then(async () => {
   const shotsDir = process.env['INKWELL_SHOTS_DIR']
   if (process.env['INKWELL_DOCTOR_DRIVER'])
     void runDoctorDriver({ outDir: shotsDir ?? join(app.getPath('userData'), 'doctor-shots'), projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, session, dialog: debugDialog }).catch((e: unknown) => { console.error('[driver] failed:', e); app.exit(1) })
+  else if (shotsDir && process.env['INKWELL_SHOTS_FIGMA'])
+    void runFigmaShots({ outDir: shotsDir, userData: app.getPath('userData'), projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] figma screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_FONTS'])
     void runFontShots({ outDir: shotsDir, win: () => win }).then(() => app.exit(0), (e: unknown) => { console.error('[inkwell] font screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_GRAPH'] === 'popup')

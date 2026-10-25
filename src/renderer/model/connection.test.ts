@@ -23,6 +23,12 @@ describe('figma connection dot', () => {
     expect(figmaConnection(s({ connectionIssue: { kind: 'version', message: 'x' } }), snap).status).toBe('mismatch')
     expect(strings.top.figmaStatus['snapshot']).toBe('Disconnected (Using Snapshot)') // UX spec 4.6 wording
   })
+  it('a plugin waiting for approval is amber "Waiting for approval"; after Allow it is connected', () => {
+    const approval = { id: 1, pluginVersion: '1', fileName: 'F', origin: 'null' }
+    expect(figmaConnection(s({ approval }))).toEqual({ status: 'pending', tone: 'warn' })
+    expect(strings.top.figmaStatus['pending']).toBe('Waiting for approval')
+    expect(figmaConnection(s({ connections: 1 }))).toEqual({ status: 'synced', tone: 'ok' })
+  })
   it('a dead server is red; before the first answer it is grey', () => {
     expect(figmaConnection(s({ server: 'error' })).tone).toBe('error')
     expect(figmaConnection(undefined).status).toBe('starting')

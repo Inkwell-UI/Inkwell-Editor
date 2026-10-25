@@ -87,7 +87,6 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .menu-divider { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-dim); padding: 8px 8px 2px; border-top: 1px solid var(--line); margin-top: 4px; }
 .details p { margin: 4px 0; }
 .details .check, .check { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
-.token { word-break: break-all; }
 .history table { width: 100%; }
 .history h3 { margin-bottom: 4px; }
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 4px 0; }

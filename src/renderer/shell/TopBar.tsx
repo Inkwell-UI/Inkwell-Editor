@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ChevronDown, Copy, Hammer, Settings2, FileStack, PenLine } from 'lucide-react'
+
+import { ChevronDown, Hammer, Settings2, FileStack, PenLine } from 'lucide-react'
 import { PRODUCT_NAME } from '../../shared/product'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useProject } from '../hooks/useProject'
@@ -92,7 +92,6 @@ export function FigmaDot() {
   const c = figmaConnection(sync, snap)
   const mirror = useSettingsStore((s) => s.mirrorFigma)
   const setMirror = useSettingsStore((s) => s.setMirrorFigma)
-  const [copied, setCopied] = useState(false)
   const label = strings.top.figmaStatus[c.status]
   return (
     <Popover
@@ -112,12 +111,8 @@ export function FigmaDot() {
         {project && <SnapshotFacts snap={snap} />}
         <dl className="facts">
           <dt>{strings.syncPort}</dt><dd className="mono">{sync?.port ?? '-'}</dd>
-          <dt>{strings.syncToken}</dt>
-          <dd className="mono token">{sync?.token ?? '-'}</dd>
         </dl>
-        <div className="row-actions">
-          <Btn icon={Copy} onClick={() => { if (sync?.token) void navigator.clipboard?.writeText(sync.token).then(() => setCopied(true)) }} reason={sync?.token ? undefined : strings.top.noToken}>{copied ? strings.top.copied : strings.syncCopy}</Btn>
-        </div>
+        <p className="dim">{strings.top.approvalNote}</p>
         <label className="check">
           <input type="checkbox" checked={mirror} onChange={(e) => setMirror(e.target.checked)} data-testid="mirror-setting" /> {strings.top.mirror}
         </label>

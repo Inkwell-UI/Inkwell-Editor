@@ -28,7 +28,7 @@ The editor window is a **workspace**: a layout (plain data) places **panels** (s
 | `variables` | `VariablesPanel` | 2 (tab, Behaviour) | graph stores of the active SWF | variables per graph with add (name, type, scope menu/component), rename, retype, default, delete |
 | `dataBinding` | `DataBindingPanel` | 6A (tab, Behaviour) | selection, overlay, graph stores | the selected layer's text/visible/alpha/tint bound to a graph variable or a mock data field (`dataBinding` overlay string) |
 
-The top bar (Zone 1) and the status bar (Zone 6B) are shell chrome in `src/renderer/shell/`, not layout panels. The old Connection, Build status, Timing, Fonts and Lint panels are gone: the connection details (port, token, copy) are in the Figma dot popover, timings in the status bar, the font report in the Inspector and the lint list in the dock.
+The top bar (Zone 1) and the status bar (Zone 6B) are shell chrome in `src/renderer/shell/`, not layout panels. The old Connection, Build status, Timing, Fonts and Lint panels are gone: the connection details (port, approval state) are in the Figma dot popover, timings in the status bar, the font report in the Inspector and the lint list in the dock.
 
 ### Hooks
 
