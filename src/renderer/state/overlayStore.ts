@@ -1,5 +1,6 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import { temporal, type TemporalState } from 'zundo'
+import { redoSwf, registerHistory, resetSwfHistory, undoSwf } from './swfHistory'
 import { patchNodeOverlay, type NodeOverlayPatch, type OverlayDoc } from '../../shared/overlay'
 
 /**
@@ -10,7 +11,7 @@ import { patchNodeOverlay, type NodeOverlayPatch, type OverlayDoc } from '../../
  *   NOT overwrite it: the renderer is the source of truth for overlays while the project is open (main only writes what we save).
  * - Every change (edit, undo, redo) is saved through the saver set by `setOverlaySaver` (IPC `saveOverlay`).
  * - `editNode(swfId, nodeId, patch)` is one history entry. Selection changes are not recorded (they are not in this store).
- * - `undoSwf(swfId)` / `redoSwf(swfId)`; `resetOverlays()` when another project opens.
+ * - `undoSwf(swfId)` / `redoSwf(swfId)` (the SWF's joint history, swfHistory.ts); `resetOverlays()` when another project opens.
  */
 export interface OverlayState {
   doc: OverlayDoc
@@ -38,6 +39,7 @@ export function getOverlayStore(swfId: string, name: string, initial: OverlayDoc
   ) as unknown as OverlayStore
   const entry: Entry = { name, store }
   stores.set(swfId, entry)
+  registerHistory(swfId, 'overlay', store.temporal)
   store.subscribe((s, prev) => {
     if (s.doc !== prev.doc) saver?.(entry.name, s.doc)
   })
@@ -49,6 +51,6 @@ export function editNode(swfId: string, nodeId: string, patch: NodeOverlayPatch)
   if (!e) throw new Error(`No overlay store for swf ${swfId}`)
   e.store.getState().setDoc(patchNodeOverlay(e.store.getState().doc, nodeId, patch))
 }
-export const undoSwf = (swfId: string): void => stores.get(swfId)?.store.temporal.getState().undo()
-export const redoSwf = (swfId: string): void => stores.get(swfId)?.store.temporal.getState().redo()
-export const resetOverlays = (): void => stores.clear()
+/** Undo/redo follow the SWF's one history, which also holds its graphs' edits (swfHistory.ts). */
+export { undoSwf, redoSwf }
+export const resetOverlays = (): void => (stores.clear(), resetSwfHistory())
