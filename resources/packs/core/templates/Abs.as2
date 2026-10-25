@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Abs@1
+(Math.abs({{in.value}}) || 0)

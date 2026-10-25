@@ -1,0 +1,34 @@
+{
+  "kind": "Substring",
+  "major": 1,
+  "title": "Substring",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "start",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "length",
+      "type": "Number",
+      "default": -1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Substring.as2"
+}

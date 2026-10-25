@@ -21,7 +21,7 @@ function fieldsFor(d: NodeDef): Record<string, unknown> {
   for (const [k, s] of Object.entries(d.fields) as [string, { default?: unknown; enum?: unknown[]; type?: string }][])
     f[k] = s.default ?? s.enum?.[0] ?? (s.type === 'number' || s.type === 'integer' ? 0 : s.type === 'boolean' ? false : '')
   if (d.kind === 'OnWidgetCall') f['params'] = [{ name: 'title', type: 'String' }, { name: 'hold', type: 'Number' }]
-  if (d.kind === 'GetVariable' || d.kind === 'SetVariable') f['variable'] = 'v1'
+  if (d.kind === 'GetVariable' || d.kind === 'SetVariable' || d.kind === 'Toggle') f['variable'] = 'v1'
   for (const p of d.inputs) if (['Text', 'Button', 'List', 'Image', 'Clip'].includes(p.type)) f[p.name] = 'L'
   return f
 }

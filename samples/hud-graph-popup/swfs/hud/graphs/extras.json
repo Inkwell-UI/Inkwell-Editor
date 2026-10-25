@@ -1,0 +1,837 @@
+{
+  "comments": [],
+  "edges": [
+    {
+      "from": {
+        "node": "call",
+        "pin": "then"
+      },
+      "to": {
+        "node": "show",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "show",
+        "pin": "then"
+      },
+      "to": {
+        "node": "full",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "full",
+        "pin": "then"
+      },
+      "to": {
+        "node": "c0",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "c0",
+        "pin": "then"
+      },
+      "to": {
+        "node": "c1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "c1",
+        "pin": "then"
+      },
+      "to": {
+        "node": "c2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "c2",
+        "pin": "then"
+      },
+      "to": {
+        "node": "as",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "as",
+        "pin": "then"
+      },
+      "to": {
+        "node": "txt",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "txt",
+        "pin": "then"
+      },
+      "to": {
+        "node": "tw",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "tw",
+        "pin": "done"
+      },
+      "to": {
+        "node": "txt2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "tw",
+        "pin": "then"
+      },
+      "to": {
+        "node": "loop",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "loop",
+        "pin": "body"
+      },
+      "to": {
+        "node": "wait",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "wait",
+        "pin": "then"
+      },
+      "to": {
+        "node": "txt3",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "c2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmpC",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "cmpC",
+        "pin": "value"
+      },
+      "to": {
+        "node": "as",
+        "pin": "condition"
+      }
+    },
+    {
+      "from": {
+        "node": "add",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mul",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "mul",
+        "pin": "value"
+      },
+      "to": {
+        "node": "rnd",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "split",
+        "pin": "value"
+      },
+      "to": {
+        "node": "join",
+        "pin": "array"
+      }
+    },
+    {
+      "from": {
+        "node": "rnd",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmpB",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "cmpB",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sel",
+        "pin": "condition"
+      }
+    },
+    {
+      "from": {
+        "node": "rnd",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt1",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "join",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt1",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sub",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt1",
+        "pin": "c"
+      }
+    },
+    {
+      "from": {
+        "node": "sel",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt1",
+        "pin": "d"
+      }
+    },
+    {
+      "from": {
+        "node": "p1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "p2",
+        "pin": "array"
+      }
+    },
+    {
+      "from": {
+        "node": "p2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "len",
+        "pin": "array"
+      }
+    },
+    {
+      "from": {
+        "node": "p2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "get",
+        "pin": "array"
+      }
+    },
+    {
+      "from": {
+        "node": "mk",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gf",
+        "pin": "object"
+      }
+    },
+    {
+      "from": {
+        "node": "len",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "get",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "gf",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt2",
+        "pin": "c"
+      }
+    },
+    {
+      "from": {
+        "node": "c2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt2",
+        "pin": "d"
+      }
+    },
+    {
+      "from": {
+        "node": "fmt1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmtAll",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "fmt2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmtAll",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "fmtAll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "txt",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "g1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cat1",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "cat1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "txt2",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "loop",
+        "pin": "index"
+      },
+      "to": {
+        "node": "fr",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "g2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cat2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "fr",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cat2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cat2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "txt3",
+        "pin": "text"
+      }
+    }
+  ],
+  "groups": [],
+  "id": "extras",
+  "name": "Extras test",
+  "nodes": [
+    {
+      "fields": {
+        "name": "Extras",
+        "params": []
+      },
+      "id": "call",
+      "kind": "core/OnWidgetCall@1",
+      "pos": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "kind": "Clip",
+        "target": "4:1",
+        "visible": true
+      },
+      "id": "show",
+      "kind": "core/SetVisible@1",
+      "pos": {
+        "x": 260,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "alpha": 100,
+        "kind": "Clip",
+        "target": "4:1"
+      },
+      "id": "full",
+      "kind": "core/SetAlpha@1",
+      "pos": {
+        "x": 520,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "action": "reset",
+        "name": "extras"
+      },
+      "id": "c0",
+      "kind": "core/Counter@1",
+      "pos": {
+        "x": 780,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "action": "increment",
+        "name": "extras"
+      },
+      "id": "c1",
+      "kind": "core/Counter@1",
+      "pos": {
+        "x": 1040,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "action": "increment",
+        "name": "extras"
+      },
+      "id": "c2",
+      "kind": "core/Counter@1",
+      "pos": {
+        "x": 1300,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "message": "counter should be 2"
+      },
+      "id": "as",
+      "kind": "core/Assert@1",
+      "pos": {
+        "x": 1560,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "target": "4:3"
+      },
+      "id": "txt",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 1820,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "easing": "easeOut",
+        "from": 20,
+        "kind": "Clip",
+        "property": "alpha",
+        "seconds": 0.3,
+        "target": "4:2",
+        "to": 100
+      },
+      "id": "tw",
+      "kind": "core/Tween@1",
+      "pos": {
+        "x": 2080,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "target": "4:3"
+      },
+      "id": "txt2",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 2340,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "array": [
+          1,
+          2,
+          3
+        ]
+      },
+      "id": "loop",
+      "kind": "core/ForEach@1",
+      "pos": {
+        "x": 2600,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "seconds": 0.6
+      },
+      "id": "wait",
+      "kind": "core/Delay@1",
+      "pos": {
+        "x": 2860,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "target": "4:3"
+      },
+      "id": "txt3",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 3120,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "b": 2,
+        "op": "==",
+        "valueType": "Number"
+      },
+      "id": "cmpC",
+      "kind": "core/Compare@1",
+      "pos": {
+        "x": 260,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "a": 1.5,
+        "b": 2
+      },
+      "id": "add",
+      "kind": "core/Add@1",
+      "pos": {
+        "x": 520,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "b": 3
+      },
+      "id": "mul",
+      "kind": "core/Multiply@1",
+      "pos": {
+        "x": 780,
+        "y": 300
+      }
+    },
+    {
+      "fields": {},
+      "id": "rnd",
+      "kind": "core/Round@1",
+      "pos": {
+        "x": 1040,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "separator": ",",
+        "text": "a,b,c"
+      },
+      "id": "split",
+      "kind": "core/Split@1",
+      "pos": {
+        "x": 1300,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "separator": "-"
+      },
+      "id": "join",
+      "kind": "core/Join@1",
+      "pos": {
+        "x": 1560,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "length": 3,
+        "start": 0,
+        "text": "Inkwell"
+      },
+      "id": "sub",
+      "kind": "core/Substring@1",
+      "pos": {
+        "x": 1820,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "b": 10,
+        "op": ">",
+        "valueType": "Number"
+      },
+      "id": "cmpB",
+      "kind": "core/Compare@1",
+      "pos": {
+        "x": 2080,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "ifFalse": "small",
+        "ifTrue": "big",
+        "valueType": "String"
+      },
+      "id": "sel",
+      "kind": "core/Select@1",
+      "pos": {
+        "x": 2340,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "pattern": "math={0} text={1}/{2} pick={3}"
+      },
+      "id": "fmt1",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 2600,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "item": "x",
+        "valueType": "String"
+      },
+      "id": "p1",
+      "kind": "core/ArrayPush@1",
+      "pos": {
+        "x": 2860,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "item": "y",
+        "valueType": "String"
+      },
+      "id": "p2",
+      "kind": "core/ArrayPush@1",
+      "pos": {
+        "x": 3120,
+        "y": 300
+      }
+    },
+    {
+      "fields": {},
+      "id": "len",
+      "kind": "core/ArrayLength@1",
+      "pos": {
+        "x": 3380,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "index": 1,
+        "valueType": "String"
+      },
+      "id": "get",
+      "kind": "core/ArrayGet@1",
+      "pos": {
+        "x": 3640,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "key0": "name",
+        "value0": "Ada",
+        "valueType": "String"
+      },
+      "id": "mk",
+      "kind": "core/MakeObject@1",
+      "pos": {
+        "x": 3900,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "key": "name",
+        "valueType": "String"
+      },
+      "id": "gf",
+      "kind": "core/GetField@1",
+      "pos": {
+        "x": 4160,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "pattern": "arr={0}/{1} obj={2} n={3}"
+      },
+      "id": "fmt2",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 4420,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "pattern": "{0}\n{1}"
+      },
+      "id": "fmtAll",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 4680,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "target": "4:3"
+      },
+      "id": "g1",
+      "kind": "core/GetText@1",
+      "pos": {
+        "x": 4940,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "b": " tween"
+      },
+      "id": "cat1",
+      "kind": "core/Concat@1",
+      "pos": {
+        "x": 5200,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "target": "4:3"
+      },
+      "id": "g2",
+      "kind": "core/GetText@1",
+      "pos": {
+        "x": 5460,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "pattern": " retrig:{0}"
+      },
+      "id": "fr",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 5720,
+        "y": 300
+      }
+    },
+    {
+      "fields": {},
+      "id": "cat2",
+      "kind": "core/Concat@1",
+      "pos": {
+        "x": 5980,
+        "y": 300
+      }
+    }
+  ],
+  "scope": "component",
+  "specVersion": 5,
+  "variables": []
+}

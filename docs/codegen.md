@@ -41,9 +41,20 @@ Placeholders are the ones in `templates.md`. Rules the renderer adds:
 - Used by one consumer: inlined.
 - Used by several (edges counted in the whole graph): `var t_<uid> = <expr>;` before the first consumer, reused by later consumers.
 - A template that repeats `{{in.x}}` gets a non-trivial argument hoisted into `var t_<uid>_<pin>` (trivial = name path or literal).
-- **Volatile** (`extra.volatile`: Get Variable, Get Text) and everything that depends on one are never cached, so a write between two reads is seen.
+- **Volatile** (`extra.volatile`: Get Variable, Get Text, Get Alpha, Get Visible, Random) and everything that depends on one are never cached, so a write between two reads is seen (and two consumers of one Random get two numbers). Counter, Toggle and Get Position are exec nodes: their outputs are locals of the run (`<uid>_value`, `<uid>_x`), so a pure node reading them is cached normally, after the statement that made them.
 - **Scope.** A temp lives in the block where it was first needed. Branch arms, Sequence outputs, `guarded` closures and For Each bodies are child blocks: they see the temps of the enclosing blocks but their own temps are not reused by siblings or by code after them (Flash 8 has no block scope, so reuse would read an unset variable on the other path). A node that depends on `{{out.item}}` or `{{out.index}}` of a loop is therefore evaluated inside the body function, once per iteration. Temp names are unique per class (`t_p`, `t_p_2`).
 - shortcut: a loop-independent pure node first used inside a loop body is evaluated once per iteration (correct, but not hoisted before the loop); an exec node reachable by two exec wires is emitted twice with the same local names.
+
+## Node notes (the 88-node core pack)
+
+Codegen has no per-node code except the Set Variable / Toggle rule below; everything else is in the templates (`Inkwell-Core-Pack/docs/templates.md`). What the generated AS2 relies on:
+
+- **Registries on the graph instance** (`__g`, created lazily by the templates, not declared in the class): `dl` Delay timer ids by key (node's `name` field, else its node id), `tm` On Timer ids by the same rule, `tw` the running Tween records `{t, p, id}`, `ctr` Counter values by name. A second entry into a Delay clears its pending timer first (retriggerable); Cancel Delay and Stop Timer clear by key; Stop Tweens clears by target. A Delay in a For Each body therefore keeps only the last iteration's continuation.
+- **Untyped Array/Object items:** `valueType` (a field) retypes the item pins through `typeFrom` (`resolvePins`), an unwired item pin gets the zero of that type, and the template coerces its output with the same type name, so `pinCompat` against the neighbours is checked on the chosen type.
+- **Pure nodes with statements** (Array Push / Sort By Field, Make Object, Set Field, Join, Random) are one function expression called as `({ f: function(a, b) {...} }).f(<inputs>)` (a direct call of a function expression compiles with FFDec but returns `undefined` in Ruffle); `isAtomic` sees a leading `(` whose group does not close at the end and wraps them in parentheses. Array Push, Sort By Field and Set Field copy, they never change their input.
+- **Set Variable and Toggle** both refresh the variable's data bindings (`__g.b_<name>()` after the statement).
+- Get Position, Counter and Toggle are not pure (they declare locals with `var {{out.x}}`); Get Alpha, Get Visible and Random are pure and volatile.
+- Fade is untouched; it is not on the Tween registry, so Stop Tweens does not stop it.
 
 ## Source map (5.3)
 
@@ -62,7 +73,7 @@ Placeholders are the ones in `templates.md`. Rules the renderer adds:
 
 ## Tests
 
-`codegen.test.ts` (golden AS2 per node kind in `__snapshots__`, caching, errors, source map), `templates.integration.test.ts` (every core template compiled by the real FFDec; skipped with a warning without Java/FFDec/wrapper jar), `widget/graphWidget*.test.ts` (samples/hud-graph slice, Papyrus, preview path), `sync/buildPipeline.test.ts`, `deploy/run.test.ts`.
+`codegen.test.ts` (golden AS2 per node kind in `__snapshots__`, caching, errors, source map), `codegen.nodes.test.ts` (Random and Counter caching, Toggle bindings, Delay retrigger / Cancel Delay / Stop Timer, Tween registry, Array Get coercion), `templates.integration.test.ts` (every core template compiled by the real FFDec; skipped with a warning without Java/FFDec/wrapper jar), `widget/graphWidget*.test.ts` (samples/hud-graph slice, Papyrus, preview path), `sync/buildPipeline.test.ts`, `deploy/run.test.ts`.
 
 A passing FFDec compile means the AS2 **parses** and the class is in the SWF. FFDec's compiler does no type checking, and nothing here was run in Ruffle or the game.
 

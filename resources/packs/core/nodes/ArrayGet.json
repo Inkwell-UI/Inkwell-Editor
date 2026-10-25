@@ -1,0 +1,43 @@
+{
+  "kind": "ArrayGet",
+  "major": 1,
+  "title": "Array Get",
+  "category": "Data",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    }
+  ],
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "String",
+        "Number",
+        "Bool",
+        "Array",
+        "Object"
+      ],
+      "default": "String",
+      "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
+    }
+  },
+  "as2Template": "templates/ArrayGet.as2"
+}

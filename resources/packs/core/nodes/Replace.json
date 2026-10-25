@@ -1,0 +1,34 @@
+{
+  "kind": "Replace",
+  "major": 1,
+  "title": "Replace",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "find",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "replacement",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Replace.as2"
+}

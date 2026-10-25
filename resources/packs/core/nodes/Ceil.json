@@ -1,0 +1,24 @@
+{
+  "kind": "Ceil",
+  "major": 1,
+  "title": "Ceil",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Ceil.as2"
+}

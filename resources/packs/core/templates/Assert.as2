@@ -1,0 +1,5 @@
+// [{{node.id}}] core/Assert@1
+if (!{{in.condition}}) {
+    throw { node: "{{node.id}}", message: "Assert failed: " + {{in.message}} };
+}
+{{next.then}}

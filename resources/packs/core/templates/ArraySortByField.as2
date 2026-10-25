@@ -1,0 +1,2 @@
+// [{{node.id}}] core/ArraySortByField@1
+({ f: function(a, f, d) { var r = a instanceof Array ? a.concat() : []; r.sort(function(x, y) { var p = x[f]; var q = y[f]; var c = (typeof(p) == "number" && typeof(q) == "number") ? p - q : (String(p) < String(q) ? -1 : (String(p) > String(q) ? 1 : 0)); return d ? -c : c; }); return r; } }).f({{in.array}}, {{in.field}}, {{in.descending}})

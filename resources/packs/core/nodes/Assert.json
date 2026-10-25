@@ -1,0 +1,32 @@
+{
+  "kind": "Assert",
+  "major": 1,
+  "title": "Assert",
+  "category": "Debug",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "condition",
+      "type": "Bool",
+      "default": true
+    },
+    {
+      "name": "message",
+      "type": "String",
+      "default": "assertion failed"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Assert.as2"
+}

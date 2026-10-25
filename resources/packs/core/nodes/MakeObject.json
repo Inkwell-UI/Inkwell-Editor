@@ -1,0 +1,76 @@
+{
+  "kind": "MakeObject",
+  "major": 1,
+  "title": "Make Object",
+  "category": "Data",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "key0",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "value0",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    },
+    {
+      "name": "key1",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "value1",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    },
+    {
+      "name": "key2",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "value2",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    },
+    {
+      "name": "key3",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "value3",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Object",
+      "default": {}
+    }
+  ],
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "String",
+        "Number",
+        "Bool",
+        "Array",
+        "Object"
+      ],
+      "default": "String",
+      "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
+    }
+  },
+  "as2Template": "templates/MakeObject.as2"
+}

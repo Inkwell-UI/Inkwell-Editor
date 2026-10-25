@@ -1,0 +1,2 @@
+// [{{node.id}}] core/GetAlpha@1
+(Number({{in.target}}._alpha) || 0)

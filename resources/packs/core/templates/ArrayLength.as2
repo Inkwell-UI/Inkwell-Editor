@@ -1,0 +1,2 @@
+// [{{node.id}}] core/ArrayLength@1
+(Number({{in.array}}.length) || 0)

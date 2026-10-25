@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Round@1
+(Math.round({{in.value}}) || 0)

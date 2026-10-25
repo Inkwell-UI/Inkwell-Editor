@@ -1,0 +1,3 @@
+// [{{node.id}}] core/StopTimer@1
+if (__g.tm != undefined) clearInterval(__g.tm[{{field.name}}]);
+{{next.then}}

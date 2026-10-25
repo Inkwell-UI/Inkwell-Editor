@@ -1,0 +1,4 @@
+// [{{node.id}}] core/GetPosition@1
+var {{out.x}} = Number({{in.target}}._x) || 0;
+var {{out.y}} = Number({{in.target}}._y) || 0;
+{{next.then}}

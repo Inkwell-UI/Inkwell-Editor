@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Multiply@1
+({{in.a}} * {{in.b}})

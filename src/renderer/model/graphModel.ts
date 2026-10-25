@@ -101,7 +101,7 @@ export function connectionRule(defs: Defs, vars: () => Graph['variables']) {
 
 // ---- spawn menu ---------------------------------------------------------------------------------------------------------------------
 
-const CATEGORY_ORDER = ['Events', 'Flow', 'Variables', 'Logic', 'Components', 'Debug', 'Editor-only']
+const CATEGORY_ORDER = ['Events', 'Flow', 'Variables', 'Logic', 'Data', 'Components', 'Animation', 'Debug', 'Editor-only']
 export const categoryVar = (category: string): string => `var(--cat-${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}, var(--cat-other))`
 
 export function categoriesOf(defs: Defs): { id: string; label: string }[] {

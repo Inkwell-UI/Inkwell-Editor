@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Subtract@1
+({{in.a}} - {{in.b}})

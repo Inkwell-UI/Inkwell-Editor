@@ -5,3 +5,5 @@ __g.t_{{node.uid}} = setInterval(function() {
     }
     {{guarded.then}}
 }, {{field.seconds}} * 1000);
+if (__g.tm == undefined) __g.tm = {};
+__g.tm[{{field.name}} == "" ? "{{node.id}}" : {{field.name}}] = __g.t_{{node.uid}};

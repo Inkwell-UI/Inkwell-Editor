@@ -1,0 +1,4 @@
+// [{{node.id}}] core/Toggle@1
+{{var.variable}} = !({{var.variable}} == true);
+var {{out.value}} = {{var.variable}} == true;
+{{next.then}}

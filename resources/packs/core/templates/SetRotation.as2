@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetRotation@1
+{{in.target}}._rotation = {{in.degrees}};
+{{next.then}}

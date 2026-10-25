@@ -1,0 +1,45 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Delay retriggers; Cancel Delay and Stop Timer find timers by name > golden AS2 1`] = `
+"        var __g = this;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [w] core/Delay@1
+                if (__g.dl == undefined) __g.dl = {};
+                var w_k = ("hold" == "" ? "w" : "hold");
+                clearInterval(__g.dl[w_k]);
+                __g.dl[w_k] = setInterval(function() {
+                    clearInterval(__g.dl[w_k]);
+                    try {
+                        // [a] core/SetText@1
+                        __g.base.title.text = "";
+                    } catch (e) {
+                        __g.fail("e", e);
+                    }
+                }, 1 * 1000);
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };
+        // [tm] core/OnTimer@1
+        __g.t_tm = setInterval(function() {
+            if (!true) {
+                clearInterval(__g.t_tm);
+            }
+            try {
+                // [st] core/StopTimer@1
+                if (__g.tm != undefined) clearInterval(__g.tm["tick"]);
+                // [b] core/SetText@1
+                __g.base.title.text = "";
+            } catch (e) {
+                __g.fail("tm", e);
+            }
+        }, 1 * 1000);
+        if (__g.tm == undefined) __g.tm = {};
+        __g.tm["tick" == "" ? "tm" : "tick"] = __g.t_tm;"
+`;

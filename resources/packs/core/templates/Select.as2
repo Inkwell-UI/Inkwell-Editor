@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Select@1
+({{in.condition}} ? {{in.ifTrue}} : {{in.ifFalse}})

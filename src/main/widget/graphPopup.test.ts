@@ -30,39 +30,45 @@ const load = async () => {
 }
 
 describe('samples/hud-graph-popup', () => {
-  it('both graphs validate against the core pack', async () => {
+  it('all three graphs validate against the core pack', async () => {
     const { ir, graphs } = await load()
     const defs = defIndex(await loadPacks([corePack]))
-    expect(graphs.map((x) => x.id).sort()).toEqual(['main', 'nodes'])
+    expect(graphs.map((x) => x.id).sort()).toEqual(['extras', 'main', 'nodes'])
     for (const gr of graphs) expect(validateGraph(gr, { defs, layers: new Set(Object.keys(ir.nodes)), siblings: graphs }), gr.id).toEqual([])
   })
 
   it('compiles without issues; the popup graph hides the card on load and shows/hides it with Fade', async () => {
     const { g } = await load()
     expect(g.lint.filter((l) => l.severity === 'error' || l.code === 'graph-codegen')).toEqual([])
-    expect(g.graphCalls.map((c) => c.name)).toEqual(['Show', 'Hide', 'Nodes']) // the hotkey and Test() call the first one: Show
-    expect(g.graphCalls[0]!.params).toEqual([{ name: 'title', type: 'String' }, { name: 'description', type: 'String' }, { name: 'hold', type: 'Number' }])
+    expect(g.graphCalls.map((c) => c.name)).toEqual(['Extras', 'Show', 'Hide', 'Nodes']) // graph ids sort: the hotkey and Test() start with Extras, then Show
+    expect(g.graphCalls[1]!.params).toEqual([{ name: 'title', type: 'String' }, { name: 'description', type: 'String' }, { name: 'hold', type: 'Number' }])
     const main = g.as2.find((f) => f.path.endsWith('HudGraph_main.as'))!.source
     expect(main).toContain('if (__g.onLoad != undefined) __g.onLoad();')
     expect(main).toContain('__g.base.card._visible = false;')
     expect(main).toContain('setInterval(')
     expect(main).toContain('__g.base.card.title.text = show_title;')
+    const extras = g.as2.find((f) => f.path.endsWith('HudGraph_extras.as'))!.source
+    expect(extras).toContain('__g.ctr["extras"]')
+    expect(extras).toContain('__g.tw.push(')
+    expect(extras).toContain('clearInterval(__g.dl[')
     const nodes = g.as2.find((f) => f.path.endsWith('HudGraph_nodes.as'))!.source
     expect(nodes).toContain('throw { node: "throw"')
     expect(nodes).toContain('__g.base.report.status.text')
   })
 
-  it('Papyrus: Show(String, String, Float), Hide(), Nodes(Bool); calls before Ready are remembered and replayed; hotkey and Test() call Show with a 4 s hold', async () => {
+  it('Papyrus: Extras(), Show(String, String, Float), Hide(), Nodes(Bool); calls before Ready are remembered and replayed; Test() calls Extras, the hotkey cycles Extras, Show, Hide, Nodes(False), Nodes(True)', async () => {
     const { g } = await load()
     const src = generateScripts({ modId: 'InkwellGraphPopup', widgetName: 'Hud', displayName: 'Popup', placement, calls: g.graphCalls, debugHotkey: 65 })[0]!.source
     expect(src).toContain('Function Show(String asTitle, String asDescription, Float afHold)')
+    expect(src).toContain('Function Extras()')
     expect(src).toContain('Function Hide()')
     expect(src).toContain('Function Nodes(Bool abFail)')
     expect(src).toContain('_pendingCall = "Show"')
     expect(src).toContain('If c == "Show"')
     expect(src).toContain('ElseIf c == "Nodes"')
-    expect(src).toContain('ElseIf s == 3') // the hotkey cycles Show, Hide, Nodes(False), Nodes(True)
-    expect(src).toContain('w.Show("Inkwell test", "Text 2, shown by the InkwellGraphPopup_Hud test", 4.0)')
+    expect(src).toContain('ElseIf s == 3') // the hotkey cycles Extras, Show, Hide, Nodes(False), Nodes(True)
+    expect(src).toContain('w.Extras()') // Test() calls the first entry
+    expect(src).toContain('Show("Inkwell test", "Text 2, shown by the InkwellGraphPopup_Hud test", 4.0)') // hotkey step 1
     expect(src).toMatchSnapshot()
   })
 

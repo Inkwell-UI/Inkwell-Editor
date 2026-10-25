@@ -1,0 +1,40 @@
+{
+  "kind": "GetVisible",
+  "major": 1,
+  "title": "Get Visible",
+  "category": "Components",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/GetVisible.as2",
+  "extra": {
+    "volatile": true
+  }
+}

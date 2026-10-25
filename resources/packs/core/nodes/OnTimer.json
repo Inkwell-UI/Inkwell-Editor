@@ -21,6 +21,11 @@
     "repeat": {
       "type": "boolean",
       "default": true
+    },
+    "name": {
+      "type": "string",
+      "default": "",
+      "description": "Optional name, so Cancel Delay / Stop Timer can find this node (the node id is used when empty)"
     }
   },
   "as2Template": "templates/OnTimer.as2",

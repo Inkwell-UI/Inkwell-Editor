@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Modulo@1
+(isFinite({{in.a}} % {{in.b}}) ? ({{in.a}} % {{in.b}}) : 0)

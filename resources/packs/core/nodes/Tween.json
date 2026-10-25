@@ -1,0 +1,80 @@
+{
+  "kind": "Tween",
+  "major": 1,
+  "title": "Tween",
+  "category": "Animation",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    },
+    {
+      "name": "from",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "to",
+      "type": "Number",
+      "default": 100
+    },
+    {
+      "name": "seconds",
+      "type": "Number",
+      "default": 0.3
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "done",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    },
+    "property": {
+      "type": "string",
+      "enum": [
+        "alpha",
+        "x",
+        "y",
+        "scale",
+        "rotation"
+      ],
+      "default": "alpha"
+    },
+    "easing": {
+      "type": "string",
+      "enum": [
+        "linear",
+        "easeIn",
+        "easeOut",
+        "easeInOut"
+      ],
+      "default": "linear"
+    }
+  },
+  "as2Template": "templates/Tween.as2"
+}

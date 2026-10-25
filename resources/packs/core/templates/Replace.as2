@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Replace@1
+({{in.find}} == "" ? String({{in.text}}) : String({{in.text}}).split({{in.find}}).join({{in.replacement}}))

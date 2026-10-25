@@ -1,0 +1,29 @@
+{
+  "kind": "Subtract",
+  "major": 1,
+  "title": "Subtract",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "b",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Subtract.as2"
+}

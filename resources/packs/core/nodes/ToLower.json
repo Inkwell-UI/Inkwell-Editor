@@ -1,0 +1,24 @@
+{
+  "kind": "ToLower",
+  "major": 1,
+  "title": "To Lower",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/ToLower.as2"
+}

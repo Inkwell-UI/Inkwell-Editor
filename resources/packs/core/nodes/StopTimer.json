@@ -1,0 +1,28 @@
+{
+  "kind": "StopTimer",
+  "major": 1,
+  "title": "Stop Timer",
+  "category": "Flow",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "name": {
+      "type": "string",
+      "default": "",
+      "description": "Name of the On Timer node, or its node id when it has no name"
+    }
+  },
+  "as2Template": "templates/StopTimer.as2"
+}

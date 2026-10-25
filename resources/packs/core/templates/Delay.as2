@@ -1,5 +1,8 @@
 // [{{node.id}}] core/Delay@1
-var {{node.uid}}_iv = setInterval(function() {
-    clearInterval({{node.uid}}_iv);
+if (__g.dl == undefined) __g.dl = {};
+var {{node.uid}}_k = ({{field.name}} == "" ? "{{node.id}}" : {{field.name}});
+clearInterval(__g.dl[{{node.uid}}_k]);
+__g.dl[{{node.uid}}_k] = setInterval(function() {
+    clearInterval(__g.dl[{{node.uid}}_k]);
     {{guarded.then}}
 }, {{in.seconds}} * 1000);

@@ -1,0 +1,2 @@
+// [{{node.id}}] core/ArrayPush@1
+({ f: function(a, v) { var r = a instanceof Array ? a.concat() : []; r.push(v); return r; } }).f({{in.array}}, {{in.item}})

@@ -1,0 +1,32 @@
+{
+  "kind": "Toggle",
+  "major": 1,
+  "title": "Toggle",
+  "category": "Variables",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {
+    "variable": {
+      "type": "string",
+      "description": "Id of a Bool graph variable"
+    }
+  },
+  "as2Template": "templates/Toggle.as2"
+}

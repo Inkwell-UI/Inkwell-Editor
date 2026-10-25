@@ -1,0 +1,2 @@
+// [{{node.id}}] core/ToUpper@1
+String({{in.text}}).toUpperCase()

@@ -1,0 +1,40 @@
+{
+  "kind": "GetAlpha",
+  "major": 1,
+  "title": "Get Alpha",
+  "category": "Components",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/GetAlpha.as2",
+  "extra": {
+    "volatile": true
+  }
+}

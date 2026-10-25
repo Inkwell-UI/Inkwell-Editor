@@ -1,0 +1,2 @@
+// [{{node.id}}] core/GetVisible@1
+({{in.target}}._visible == true)

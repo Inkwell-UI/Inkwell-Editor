@@ -1,0 +1,2 @@
+// [{{node.id}}] core/TextLength@1
+String({{in.text}}).length

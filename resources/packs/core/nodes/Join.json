@@ -1,0 +1,29 @@
+{
+  "kind": "Join",
+  "major": 1,
+  "title": "Join",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "separator",
+      "type": "String",
+      "default": ","
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Join.as2"
+}

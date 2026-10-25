@@ -1,0 +1,24 @@
+{
+  "kind": "ArrayLength",
+  "major": 1,
+  "title": "Array Length",
+  "category": "Data",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/ArrayLength.as2"
+}

@@ -1,0 +1,2 @@
+// [{{node.id}}] core/GetField@1
+({ f: function(v, t) { if (t == "Number") return Number(v) || 0; if (t == "Bool") return v == true || v == "true"; if (t == "Array") return v instanceof Array ? v : []; if (t == "Object") return (typeof(v) == "object" && !(v instanceof Array)) ? v : {}; return v == undefined ? "" : String(v); } }).f({{in.object}}[{{in.key}}], {{field.valueType}})

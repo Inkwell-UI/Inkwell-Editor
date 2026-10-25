@@ -1,0 +1,7 @@
+// [{{node.id}}] core/Counter@1
+if (__g.ctr == undefined) __g.ctr = {};
+if (__g.ctr[{{field.name}}] == undefined) __g.ctr[{{field.name}}] = 0;
+if ({{field.action}} == "increment") __g.ctr[{{field.name}}] += {{in.by}};
+else if ({{field.action}} == "reset") __g.ctr[{{field.name}}] = 0;
+var {{out.value}} = Number(__g.ctr[{{field.name}}]) || 0;
+{{next.then}}

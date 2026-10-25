@@ -1,0 +1,2 @@
+// [{{node.id}}] core/MakeObject@1
+({ f: function(k0, v0, k1, v1, k2, v2, k3, v3) { var o = {}; if (k0 != "") o[k0] = v0; if (k1 != "") o[k1] = v1; if (k2 != "") o[k2] = v2; if (k3 != "") o[k3] = v3; return o; } }).f({{in.key0}}, {{in.value0}}, {{in.key1}}, {{in.value1}}, {{in.key2}}, {{in.value2}}, {{in.key3}}, {{in.value3}})

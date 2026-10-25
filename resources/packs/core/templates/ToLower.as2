@@ -1,0 +1,2 @@
+// [{{node.id}}] core/ToLower@1
+String({{in.text}}).toLowerCase()

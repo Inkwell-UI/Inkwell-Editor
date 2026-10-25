@@ -1,0 +1,45 @@
+// [{{node.id}}] core/Tween@1
+if (__g.tw == undefined) __g.tw = [];
+var {{node.uid}}_tg = {{in.target}};
+var {{node.uid}}_pr = {{field.property}};
+var {{node.uid}}_ea = {{field.easing}};
+var {{node.uid}}_from = {{in.from}};
+var {{node.uid}}_to = {{in.to}};
+var {{node.uid}}_ms = {{in.seconds}} * 1000;
+var {{node.uid}}_set = function(v) {
+    if ({{node.uid}}_pr == "alpha") {{node.uid}}_tg._alpha = v;
+    else if ({{node.uid}}_pr == "x") {{node.uid}}_tg._x = v;
+    else if ({{node.uid}}_pr == "y") {{node.uid}}_tg._y = v;
+    else if ({{node.uid}}_pr == "scale") {
+        {{node.uid}}_tg._xscale = v;
+        {{node.uid}}_tg._yscale = v;
+    }
+    else {{node.uid}}_tg._rotation = v;
+};
+for (var {{node.uid}}_i = __g.tw.length - 1; {{node.uid}}_i >= 0; {{node.uid}}_i--) {
+    if (__g.tw[{{node.uid}}_i].t == {{node.uid}}_tg && __g.tw[{{node.uid}}_i].p == {{node.uid}}_pr) {
+        clearInterval(__g.tw[{{node.uid}}_i].id);
+        __g.tw.splice({{node.uid}}_i, 1);
+    }
+}
+var {{node.uid}}_rec = { t: {{node.uid}}_tg, p: {{node.uid}}_pr, id: 0 };
+__g.tw.push({{node.uid}}_rec);
+var {{node.uid}}_t0 = getTimer();
+{{node.uid}}_set({{node.uid}}_from);
+{{node.uid}}_rec.id = setInterval(function() {
+    var k = ({{node.uid}}_ms > 0) ? (getTimer() - {{node.uid}}_t0) / {{node.uid}}_ms : 1;
+    if (!(k < 1)) k = 1;
+    var ez = k;
+    if ({{node.uid}}_ea == "easeIn") ez = k * k;
+    else if ({{node.uid}}_ea == "easeOut") ez = k * (2 - k);
+    else if ({{node.uid}}_ea == "easeInOut") ez = (k < 0.5) ? 2 * k * k : -1 + (4 - 2 * k) * k;
+    {{node.uid}}_set({{node.uid}}_from + ({{node.uid}}_to - {{node.uid}}_from) * ez);
+    if (k == 1) {
+        clearInterval({{node.uid}}_rec.id);
+        for (var j = __g.tw.length - 1; j >= 0; j--) {
+            if (__g.tw[j] == {{node.uid}}_rec) __g.tw.splice(j, 1);
+        }
+        {{guarded.done}}
+    }
+}, 33);
+{{next.then}}

@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Split@1
+String({{in.text}}).split({{in.separator}})

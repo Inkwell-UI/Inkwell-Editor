@@ -1,0 +1,29 @@
+{
+  "kind": "Split",
+  "major": 1,
+  "title": "Split",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "separator",
+      "type": "String",
+      "default": ","
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Split.as2"
+}

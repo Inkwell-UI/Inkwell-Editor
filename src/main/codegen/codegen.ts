@@ -349,7 +349,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           const sub = chain(n, own[3]!, ctx)
           if (own[2] === 'guarded' && isEntry && i.preview && lines.some((l) => l.includes('{{params}}')))
             for (const p of [...outs].reverse()) sub.unshift({ t: `__g.pv("${safeId(n.id)}", "${safeId(p)}", ${uids.get(n.id)}_${p});`, n: n.id })
-          const boundVar = n.kind.startsWith('core/SetVariable@') ? String(n.fields['variable']) : undefined
+          const boundVar = /^core\/(SetVariable|Toggle)@/.test(n.kind) ? String(n.fields['variable']) : undefined
           if (boundVar && binders.has(boundVar)) out.push({ t: `${own[1]}__g.b_${varNames.get(boundVar)}();`, n: n.id })
           if (own[2] === 'next') out.push(...ind(sub, own[1]!))
           else

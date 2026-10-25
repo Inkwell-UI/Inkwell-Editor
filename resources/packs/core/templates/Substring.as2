@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Substring@1
+String({{in.text}}).substr({{in.start}}, ({{in.length}} < 0 ? 999999 : {{in.length}}))

@@ -1,0 +1,10 @@
+// [{{node.id}}] core/StopTweens@1
+if (__g.tw != undefined) {
+    for (var {{node.uid}}_i = __g.tw.length - 1; {{node.uid}}_i >= 0; {{node.uid}}_i--) {
+        if (__g.tw[{{node.uid}}_i].t == {{in.target}}) {
+            clearInterval(__g.tw[{{node.uid}}_i].id);
+            __g.tw.splice({{node.uid}}_i, 1);
+        }
+    }
+}
+{{next.then}}

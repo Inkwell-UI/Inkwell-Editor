@@ -1,0 +1,2 @@
+// [{{node.id}}] core/SetField@1
+({ f: function(o, k, v) { var r = {}; for (var p in o) r[p] = o[p]; if (k != "") r[k] = v; return r; } }).f({{in.object}}, {{in.key}}, {{in.value}})

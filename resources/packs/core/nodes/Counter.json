@@ -1,0 +1,47 @@
+{
+  "kind": "Counter",
+  "major": 1,
+  "title": "Counter",
+  "category": "Variables",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "by",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "name": {
+      "type": "string",
+      "default": "counter",
+      "description": "Counters with the same name share one value"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "increment",
+        "reset",
+        "get"
+      ],
+      "default": "increment"
+    }
+  },
+  "as2Template": "templates/Counter.as2"
+}

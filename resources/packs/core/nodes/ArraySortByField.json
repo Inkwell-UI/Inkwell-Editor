@@ -1,0 +1,34 @@
+{
+  "kind": "ArraySortByField",
+  "major": 1,
+  "title": "Array Sort By Field",
+  "category": "Data",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "field",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "descending",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/ArraySortByField.as2"
+}

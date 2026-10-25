@@ -1,0 +1,24 @@
+{
+  "kind": "ToUpper",
+  "major": 1,
+  "title": "To Upper",
+  "category": "Logic",
+  "milestone": "0.2",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/ToUpper.as2"
+}
