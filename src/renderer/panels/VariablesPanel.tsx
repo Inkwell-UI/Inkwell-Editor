@@ -69,12 +69,12 @@ function GraphVariables({ store }: { store: GraphStore }) {
       {variables.map((v) => (
         <div className="var-row" key={v.id} data-testid={`var-${v.id}`}>
           <input className="gn-input" aria-label={strings.vars.name} value={v.name} onChange={(e) => a.updateVariable(v.id, { name: e.target.value })} />
+          <Btn icon={Trash2} label={strings.vars.remove(v.name)} onClick={() => a.removeVariable(v.id)} />
           <select className="gn-input" aria-label={strings.vars.type} value={v.type} onChange={(e) => a.updateVariable(v.id, { type: e.target.value as typeof v.type, default: defaultFor(e.target.value as typeof v.type) })}>
             {VARIABLE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
           <DefaultEditor type={v.type} value={v.default} onChange={(d) => a.updateVariable(v.id, { default: d })} />
           <span className="chip" title={strings.vars.scopeTip(v.scope)}>{v.scope}</span>
-          <Btn icon={Trash2} label={strings.vars.remove(v.name)} onClick={() => a.removeVariable(v.id)} />
         </div>
       ))}
     </section>

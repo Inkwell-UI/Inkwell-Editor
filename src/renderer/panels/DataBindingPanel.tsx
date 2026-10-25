@@ -36,6 +36,7 @@ export function DataBindingPanel() {
       <div className="bind" data-testid="binding-panel" data-graphs={ids.length}>
         <p className="bind-head"><strong>{node.name}</strong> <span className="dim">{strings.nav.typeNames[node.type] ?? node.type}</span></p>
         <p className="dim">{strings.bind.help}</p>
+        <div className="bind-rows">
         {BINDABLE.map((prop) => {
           const b = bindings.find((x) => x.prop === prop)
           const value = b ? `${b.source}:${b.name}` : ''
@@ -61,6 +62,7 @@ export function DataBindingPanel() {
             </div>
           )
         })}
+        </div>
       </div>
     </Panel>
   )

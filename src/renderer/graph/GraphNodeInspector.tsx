@@ -1,10 +1,11 @@
-import { nodeIndex } from '@nicklaj/knotwork'
+import { incoming, nodeIndex } from '@nicklaj/knotwork'
 import { useMemo } from 'react'
 import { useStore } from 'zustand'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf, useDockRows } from '../hooks/useProject'
 import { fieldRows, layerOptions, nodePins } from '../model/graphModel'
+import { pinName } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { FieldEditor } from './FieldEditors'
@@ -25,7 +26,7 @@ export function GraphNodeInspector() {
   const def = defs.get(node.data.kind)
   const mine = rows.filter((r) => r.swfName === swf.name && r.graphId === activeId && r.graphNodeId === node.id)
   const pins = def ? nodePins(defs, node, variables) : undefined
-  const wired = new Set(store.getState().edges.filter((e) => e.target === node.id).map((e) => (e.targetHandle ?? '').replace(/-in$/, '')))
+  const wired = new Set(incoming(store.getState().edges, node.id).map((e) => pinName(e.targetHandle)))
   const list = def && pins ? fieldRows(def, node, pins, wired) : []
   const ctx = { setField: (k: string, v: unknown) => store.getState().setField(node.id, k, v), layers, variables }
   return (
@@ -33,7 +34,7 @@ export function GraphNodeInspector() {
       <header className="insp-head">
         <div>
           <h3 className="insp-name">{def?.title ?? strings.graph.unknownNode}</h3>
-          <span className="dim mono">{strings.insp.nodeId(node.id)}</span>
+          <span className="dim mono">{strings.insp.gnId(node.id)}</span>
         </div>
         <span className="chip">{def?.category ?? '?'}</span>
       </header>

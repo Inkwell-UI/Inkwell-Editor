@@ -172,6 +172,12 @@ function Canvas({ swf, overlay, store, defs, focusNode }: Parameters<typeof Grap
     void rf.fitView({ nodes: [{ id: focusNode.id }], duration: 250, maxZoom: 1.2, padding: 0.4 })
   }, [focusNode, rf, store])
 
+  // fit once the nodes have been measured (the first fit runs before their inline fields have their final size)
+  useEffect(() => {
+    const t = setTimeout(() => void rf.fitView({ padding: 0.15, maxZoom: 1 }), 250)
+    return () => clearTimeout(t)
+  }, [rf])
+
   useWheelNavigation(wrap)
   const hasNodes = nodes.length > 0
 
@@ -195,12 +201,13 @@ function Canvas({ swf, overlay, store, defs, focusNode }: Parameters<typeof Grap
           onSelectionChange={onSelectionChange}
           onMoveStart={space.cancel}
           fitView
+          fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
           colorMode="dark"
           proOptions={{ hideAttribution: true }}
         >
           <Background gap={20} />
           <Controls showInteractive={false} />
-          <MiniMap pannable zoomable className="graph-minimap" nodeColor="var(--line-strong)" maskColor="var(--backdrop)" />
+          <MiniMap pannable zoomable style={{ width: 140, height: 90 }} className="graph-minimap" nodeColor="var(--line-strong)" maskColor="var(--backdrop)" />
         </ReactFlow>
         {!hasNodes && <div className="graph-hint"><p className="empty">{strings.graph.emptyCanvas}</p></div>}
         <div className="graph-keys dim">{strings.graph.keys}</div>

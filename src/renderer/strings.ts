@@ -217,6 +217,7 @@ export const strings = {
     none: 'Nothing selected. Select a layer in the Navigator, on the stage (Inspect mode) or in the Lint dock.',
     graphNode: (id?: string) => `Graph node ${id ?? ''}`,
     gnKind: 'Kind',
+    gnId: (id: string) => `Graph node ID: ${id}`,
     gnIssues: (n: number) => `ISSUES (${n})`,
     gnFields: 'FIELDS',
     gnNone: 'The graph node is not in the open graph.',

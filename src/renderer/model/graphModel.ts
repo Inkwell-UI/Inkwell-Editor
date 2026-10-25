@@ -138,7 +138,7 @@ export function spawnFor(o: { defs: Defs; spawn: SpawnDef[]; nodes: FlowNode[]; 
   const fromNode = o.from && o.nodes.find((n) => n.id === o.from!.nodeId)
   const fromPin = o.from && fromNode && nodePins(o.defs, fromNode, o.vars)?.[o.from.type === 'source' ? 'outputs' : 'inputs'].find((p) => p.name === pinName(o.from!.handle))
   if (o.from && !fromPin) return []
-  return spawnOptions({
+  const options = spawnOptions({
     defs: o.spawn,
     order: CATEGORY_ORDER,
     from: o.from && fromPin ? { nodeId: o.from.nodeId, handleId: `${fromPin.type}-${o.from.type === 'source' ? 'out' : 'in'}`, handleType: o.from.type } : null,
@@ -150,6 +150,13 @@ export function spawnFor(o: { defs: Defs; spawn: SpawnDef[]; nodes: FlowNode[]; 
       const extra = { id: SPAWN_NEW, type: 'inkwell', position: { x: 0, y: 0 }, data: { id: SPAWN_NEW, kind: def.kind, fields: {}, pos: { x: 0, y: 0 } } } as FlowNode
       return rule(o.nodes, o.edges, link, extra)
     }
+  })
+  // `Branch · In` only where the node has several pins of that type; otherwise the plain title
+  const same = new Map(o.spawn.map((d) => [d.kind, d.pins]))
+  return options.map((x) => {
+    const pins = same.get(x.def.kind) ?? []
+    const mine = pins.find((p) => p.id === x.pin)
+    return mine && pins.filter((p) => p.side === mine.side && p.id.split(':')[0] === mine.id.split(':')[0]).length === 1 ? { ...x, label: x.def.title } : x
   })
 }
 
