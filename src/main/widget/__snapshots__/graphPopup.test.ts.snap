@@ -101,11 +101,27 @@ Function Nodes(Bool abFail)
 	EndIf
 EndFunction
 
+; each press of the debug hotkey runs the next step: Show('Inkwell test', 'Text 2, shown by the InkwellGraphPopup_Hud test', 4.0), Hide(), Nodes(False), Nodes(True), then again
+Int _debugStep = 0
+
 ; SKSE key event; only while playing (not in the console or a menu)
 Event OnKeyDown(Int aiKeyCode)
 	If DebugHotkey > 0 && aiKeyCode == DebugHotkey && !Utility.IsInMenuMode()
-		Debug.Trace("[Inkwell] InkwellGraphPopup_Hud debug hotkey: Show")
-		Show("Inkwell test", "Text 2, shown by the InkwellGraphPopup_Hud test", 4.0)
+		Int s = _debugStep
+		_debugStep = (s + 1) % 4
+		If s == 0
+			Debug.Trace("[Inkwell] InkwellGraphPopup_Hud debug hotkey: Show('Inkwell test', 'Text 2, shown by the InkwellGraphPopup_Hud test', 4.0)")
+			Show("Inkwell test", "Text 2, shown by the InkwellGraphPopup_Hud test", 4.0)
+		ElseIf s == 1
+			Debug.Trace("[Inkwell] InkwellGraphPopup_Hud debug hotkey: Hide()")
+			Hide()
+		ElseIf s == 2
+			Debug.Trace("[Inkwell] InkwellGraphPopup_Hud debug hotkey: Nodes(False)")
+			Nodes(False)
+		ElseIf s == 3
+			Debug.Trace("[Inkwell] InkwellGraphPopup_Hud debug hotkey: Nodes(True)")
+			Nodes(True)
+		EndIf
 	EndIf
 EndEvent
 

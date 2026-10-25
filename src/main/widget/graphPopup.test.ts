@@ -61,6 +61,7 @@ describe('samples/hud-graph-popup', () => {
     expect(src).toContain('_pendingCall = "Show"')
     expect(src).toContain('If c == "Show"')
     expect(src).toContain('ElseIf c == "Nodes"')
+    expect(src).toContain('ElseIf s == 3') // the hotkey cycles Show, Hide, Nodes(False), Nodes(True)
     expect(src).toContain('w.Show("Inkwell test", "Text 2, shown by the InkwellGraphPopup_Hud test", 4.0)')
     expect(src).toMatchSnapshot()
   })

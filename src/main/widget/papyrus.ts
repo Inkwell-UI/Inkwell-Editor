@@ -180,6 +180,32 @@ ${calls.map((c, k) => `		${k ? 'ElseIf' : 'If'} c == "${c.name}"
 	EndIf
 `
 
+/** One entry: the hotkey calls it. Several: each press runs the next step (an entry with a Bool parameter gets two steps, False then True), so one key tests every entry. */
+function hotkeyEvent(name: string, calls: readonly WidgetCall[], first: WidgetCall, sample: (c: WidgetCall, flag?: boolean) => string): string {
+  const steps = calls.flatMap((c) => (c.params.some((p) => p.type === 'Bool') ? [{ c, flag: false }, { c, flag: true }] : [{ c, flag: true }]))
+  const head = `; SKSE key event; only while playing (not in the console or a menu)
+Event OnKeyDown(Int aiKeyCode)
+	If DebugHotkey > 0 && aiKeyCode == DebugHotkey && !Utility.IsInMenuMode()
+`
+  if (steps.length === 1) return `${head}		Debug.Trace("[Inkwell] ${name} debug hotkey: ${first.name}")
+		${first.name}(${sample(first)})
+	EndIf
+EndEvent
+`
+  return `; each press of the debug hotkey runs the next step: ${steps.map((x) => `${x.c.name}(${sample(x.c, x.flag)})`.replace(/"/g, "'")).join(', ')}, then again
+Int _debugStep = 0
+
+${head}		Int s = _debugStep
+		_debugStep = (s + 1) % ${steps.length}
+${steps.map((x, k) => `		${k ? 'ElseIf' : 'If'} s == ${k}
+			Debug.Trace("[Inkwell] ${name} debug hotkey: ${x.c.name}(${sample(x.c, x.flag).replace(/"/g, "'")})")
+			${x.c.name}(${sample(x.c, x.flag)})`).join('\n')}
+		EndIf
+	EndIf
+EndEvent
+`
+}
+
 const PREFIX = { String: 'as', Number: 'af', Bool: 'ab' } as const
 const PTYPE = { String: 'String', Number: 'Float', Bool: 'Bool' } as const
 const pname = (type: keyof typeof PREFIX, n: string): string => `${PREFIX[type]}${n.charAt(0).toUpperCase()}${n.slice(1)}`
@@ -191,7 +217,7 @@ const pname = (type: keyof typeof PREFIX, n: string): string => `${PREFIX[type]}
  */
 function graphApi(name: string, modId: string, calls: readonly WidgetCall[], hotkey: number): string {
   if (!Number.isInteger(hotkey) || hotkey < 0 || hotkey > 255) throw new Error(`The debug hotkey ${hotkey} is not a scan code (1..255, 0 = off).`)
-  const sample = (c: WidgetCall): string => c.params.map((p, i) => (p.type === 'String' ? (i === 0 ? '"Inkwell test"' : `"Text ${i + 1}, shown by the ${name} test"`) : p.type === 'Number' ? '4.0' : 'True')).join(', ')
+  const sample = (c: WidgetCall, flag = true): string => c.params.map((p, i) => (p.type === 'String' ? (i === 0 ? '"Inkwell test"' : `"Text ${i + 1}, shown by the ${name} test"`) : p.type === 'Number' ? '4.0' : flag ? 'True' : 'False')).join(', ')
   const fns = calls.map((c) => {
     const params = c.params.map((p) => `${PTYPE[p.type]} ${pname(p.type, p.name)}`).join(', ')
     const fills = c.params.map((p, i) => {
@@ -229,14 +255,7 @@ Int Property DebugHotkey = ${hotkey} Auto
 String _pendingCall = ""
 String[] _pendingArgs
 ${fns.join('')}
-; SKSE key event; only while playing (not in the console or a menu)
-Event OnKeyDown(Int aiKeyCode)
-	If DebugHotkey > 0 && aiKeyCode == DebugHotkey && !Utility.IsInMenuMode()
-		Debug.Trace("[Inkwell] ${name} debug hotkey: ${first.name}")
-		${first.name}(${sample(first)})
-	EndIf
-EndEvent
-
+${hotkeyEvent(name, calls, first, sample)}
 ; test helper for other scripts: ${name}.Test()
 Function Test() global
 	; ${QUEST_FORM_ID & 0xffffff} = local form id 0x${(QUEST_FORM_ID & 0xffffff).toString(16)} of the quest in the ESL-flagged plugin

@@ -85,11 +85,24 @@ Function Hide()
 	EndIf
 EndFunction
 
+; each press of the debug hotkey runs the next step: Popup('Inkwell test', 4.0, False), Popup('Inkwell test', 4.0, True), Hide(), then again
+Int _debugStep = 0
+
 ; SKSE key event; only while playing (not in the console or a menu)
 Event OnKeyDown(Int aiKeyCode)
 	If DebugHotkey > 0 && aiKeyCode == DebugHotkey && !Utility.IsInMenuMode()
-		Debug.Trace("[Inkwell] M_Hud debug hotkey: Popup")
-		Popup("Inkwell test", 4.0, True)
+		Int s = _debugStep
+		_debugStep = (s + 1) % 3
+		If s == 0
+			Debug.Trace("[Inkwell] M_Hud debug hotkey: Popup('Inkwell test', 4.0, False)")
+			Popup("Inkwell test", 4.0, False)
+		ElseIf s == 1
+			Debug.Trace("[Inkwell] M_Hud debug hotkey: Popup('Inkwell test', 4.0, True)")
+			Popup("Inkwell test", 4.0, True)
+		ElseIf s == 2
+			Debug.Trace("[Inkwell] M_Hud debug hotkey: Hide()")
+			Hide()
+		EndIf
 	EndIf
 EndEvent
 
