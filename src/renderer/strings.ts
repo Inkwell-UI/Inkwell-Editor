@@ -300,9 +300,9 @@ export const strings = {
     noTarget: 'No target',
     targetLabel: (kind?: string) => `Target: ${kind ?? 'none'}. Opens the Config Ownership dialog`,
     kindNames: { hudWidget: 'hudWidget', customMenu: 'customMenu', menuReplacement: 'menuReplacement' } as Record<string, string>,
-    workspaces: 'Workspace',
-    workspaceNames: { wire: 'Wire', verify: 'Verify', debug: 'Debug' } as Record<string, string>,
-    workspaceTip: (id: string, n: number) => `${id.charAt(0).toUpperCase()}${id.slice(1)} workspace (Ctrl+${n})`,
+    workspaces: 'Mode',
+    workspaceNames: { layout: 'Layout', behaviour: 'Behaviour', localization: 'Localization' } as Record<string, string>,
+    workspaceTip: (id: string, n: number) => `${id.charAt(0).toUpperCase()}${id.slice(1)} mode (Ctrl+${n})`,
     figma: 'Figma',
     game: 'Game',
     figmaDetails: 'Figma connection',
@@ -334,10 +334,7 @@ export const strings = {
     buildNoFfdec: 'FFDec or Java was not found',
     buildNoSwfs: 'No SWF to build yet',
     deploy: 'Deploy',
-    package: 'Package Mod',
-    setup: 'Setup',
-    planned: 'Planned',
-    setupTip: 'Open the settings'
+    planned: 'Planned'
   },
 
   status: {
@@ -558,11 +555,7 @@ export const strings = {
       package: 'Saves a zip you choose the place of; install it with MO2 (Install a new mod from archive) or Vortex',
       vortex: 'Vortex has no folder Inkwell may write into: this saves the zip, then install it in Vortex (Mods > Install From File)'
     } as Record<string, string>,
-    packageMenuLabel: 'Package Mod',
-    packageTitle: 'Package Mod',
-    packageBody: 'One zip with the mod files at its root (Interface, Scripts, Source, plugin; textures in dds mode), built and gated like a deploy. MO2 and Vortex install it as it is.',
     packageSave: 'Save zip...',
-    packageScope: (all: boolean, name?: string) => (all ? 'All SWFs of the project (scope from the Deploy menu)' : `Only the active SWF${name ? ` (${name})` : ''} (scope from the Deploy menu)`),
     packageRunning: 'Packaging...',
     saveTitle: 'Save mod package',
     zipFilter: 'Zip archive',

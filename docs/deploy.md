@@ -1,6 +1,6 @@
 # Deploy and Package Mod (`src/main/deploy`, `src/renderer/shell/DeployMenu.tsx`)
 
-UX spec 4.1. The top bar `Deploy` dropdown lists targets with their exact folder (MO2 mod folder, MO2 overwrite, Vortex); `Build All` stays separate. `Package Mod` (its own top bar dropdown) saves the same files as one zip; the Vortex target does the same (see Package and Vortex below).
+UX spec 4.1. The top bar `Deploy` dropdown lists targets with their exact folder (MO2 mod folder, MO2 overwrite, Vortex, Package Mod); `Build All` stays separate. The Package Mod and Vortex rows save the same files as one zip (see Package and Vortex below).
 
 ## Targets (`plan.ts` `resolveTarget`)
 
@@ -42,7 +42,7 @@ Without a Papyrus compiler (setting or `INKWELL_PAPYRUS`) a widget is deployed a
 - **Zip writer** (`zip.ts`, `node:zlib`, no dependency): deflate when smaller, else stored; CRC-32 (`zlib.crc32`); UTF-8 names (flag bit 11); entries sorted by name, fixed DOS timestamp 1980-01-01, no extra fields, no directory entries, no zip64 (refuses > 4 GB or > 65535 files). Two packages of the same input are byte-identical (the `.pex` compile timestamp aside, as for deploy).
 - **Vortex:** Vortex keeps its staging folder as its own state (it hardlinks or moves files and tracks them), and a write into the game's `Data` folder is never allowed, so Inkwell writes nowhere inside Vortex. The `Vortex` row in the Deploy menu saves the same zip and the toast says how to install it (Mods > Install From File, then enable and deploy in Vortex). The `vortex` preset in `project.json` has no other effect.
 - **Result:** a toast with the zip path, the file count, the gate warnings and an `Open folder` button (`revealPackage` IPC: main shows the last zip it wrote with `shell.showItemInFolder`; the renderer never passes a path). Progress and timing in the status bar like a deploy.
-- Debug: `INKWELL_SHOTS_PACKAGE_DIR=<dir>` answers the save dialog with `<dir>\<Name>-<version>.zip` (screenshot runs; the setup driver then shoots `t-package-menu`, `u-package-done` or `u-package-blocked`, `v-vortex-menu`, `v-vortex-done`).
+- Debug: `INKWELL_SHOTS_PACKAGE_DIR=<dir>` answers the save dialog with `<dir>\<Name>-<version>.zip` (screenshot runs; the setup driver then shoots `t-package-menu` (the Deploy menu with its Package Mod row), `u-package-done` or `u-package-blocked`, `v-vortex-menu`, `v-vortex-done`).
 
 ## Tests
 

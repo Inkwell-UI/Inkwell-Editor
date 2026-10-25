@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { FolderOpen, FolderPlus, PenLine, Sparkles, Stethoscope } from 'lucide-react'
+import { FolderOpen, FolderPlus, PenLine, Sparkles } from 'lucide-react'
 import { PRODUCT_NAME } from '../../shared/product'
 import type { OpenResult, RecentProject } from '../../shared/projectState'
 import { inkwell } from '../hooks/api'
-import { useDialogStore } from '../state/dialogStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 
@@ -22,7 +21,6 @@ export function StartScreen() {
     setBusy(false)
     if (r && !r.ok && !('cancelled' in r)) setError(r.error)
   }
-  const show = useDialogStore((s) => s.show)
   const noApi = inkwell ? undefined : strings.start.noElectron
   return (
     <main className="start" aria-labelledby="start-title">
@@ -33,7 +31,6 @@ export function StartScreen() {
           <Btn icon={FolderPlus} variant="primary" reason={noApi ?? (busy ? strings.start.busy : undefined)} onClick={() => void run(() => inkwell?.newProject(strings.start.newDialog))} testId="start-new">{strings.start.newProject}</Btn>
           <Btn icon={FolderOpen} reason={noApi ?? (busy ? strings.start.busy : undefined)} onClick={() => void run(() => inkwell?.openProject(undefined, strings.start.openDialog))} testId="start-open">{strings.start.openProject}</Btn>
           <Btn icon={Sparkles} reason={noApi ?? (busy ? strings.start.busy : undefined)} onClick={() => void run(() => inkwell?.openExample(strings.start.exampleDialog))} testId="start-example">{strings.start.example}</Btn>
-          <Btn icon={Stethoscope} variant="quiet" reason={noApi} onClick={() => show('settings')} label={strings.top.setupTip} testId="start-setup">{strings.top.setup}</Btn>
         </div>
         <p className="dim">{strings.start.exampleNote}</p>
         {error && <p role="alert" className="tone-error">{error}</p>}

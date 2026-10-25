@@ -27,7 +27,7 @@ import { Btn } from '../ui/Btn'
 import { Panel } from './Panel'
 
 const idle = { status: 'idle' as const }
-const COMPACT_BELOW = 300 // px of panel height: the Wire workspace's strip
+const COMPACT_BELOW = 300 // px of panel height: the Behaviour mode's strip
 
 /**
  * Zone 3, the preview stage (UX 4.3): stage toolbar, the simulated screen with the stage fitted inside, safe zones, the Inspect overlay,

@@ -5,7 +5,7 @@ Implements phases 1 and 2 of the UI/UX architecture spec (phase 2: the Settings 
 ## Zones
 
 ```
-Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, workspace switcher, Setup (opens the Doctor), connection dots, Build All, Deploy (shell/DeployMenu.tsx: MO2 folders, Vortex = zip), Package Mod (same file: saves the zip; docs/deploy.md)
+Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, mode switcher, connection dots, Build All, Deploy (shell/DeployMenu.tsx: MO2 folders, Vortex and Package Mod = zip; docs/deploy.md)
 Zone 2  left tabs         navigator | contracts | assets
 Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, Inspect overlay, banners (build failed; Figma not connected: snapshot / no snapshot), GFx note, last good build
 Zone 4  graph             GraphPanel             empty state, AS2 split placeholder
@@ -16,9 +16,9 @@ Zone 6B StatusBar         shell/StatusBar.tsx    spec, last build + history, FFD
 
 Zones 2 to 6A are layout panels; Zones 1 and 6B are shell chrome around the layout (they are never moved or resized).
 
-## Workspaces (`workspace/workspaces.ts`)
+## Modes (`workspace/workspaces.ts`)
 
-Wire (default), Verify, Debug: three layouts as data with the same panels and different shares and open dock tab. Switch with the top bar or `Ctrl+1/2/3`. Each remembers its own split sizes and chosen tabs (`state/workspaceStore.ts`, localStorage behind `state/safeStorage.ts`; nothing in the project). A splitter drag is stored under the split's key; double-click resets it.
+Layout (default), Behaviour, Localization: three layouts as data, Blender-style one job per mode, so each shows only the panels it needs (Layout: Navigator, Assets, preview, Inspector, Lint; Behaviour: Navigator, Contracts, preview strip, Graph, Inspector, Trace, Mock Data, Lint; Localization: Navigator, preview, Inspector, Localization, Lint). Together they cover every panel. Switch with the top bar or `Ctrl+1/2/3`. Each remembers its own split sizes and chosen tabs (`state/workspaceStore.ts`, localStorage behind `state/safeStorage.ts`; nothing in the project). A splitter drag is stored under the split's key; double-click resets it.
 
 **Pop out preview.** The stage toolbar's pop-out button asks main to open a second window with the same renderer (`?panel=preview`, only the preview panel with its toolbar and a SWF picker). Main broadcasts sync state, project, preview builds and the Figma selection to every window; selection and the active SWF cross between windows as `UiEvent`s (relayed by main, `origin: 'remote'` so they do not echo). While detached, the main window removes the preview from the layout (`removePanel`), so the graph takes the center. Closing the detached window (or its Dock button) re-docks. The preview's Ruffle time is reported by whichever window shows the stage.
 
@@ -72,7 +72,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 ## Adding a tab, panel, workspace
 
 - **Panel / tab:** see `docs/ui-panels.md` ("Adding or moving a panel"). A tab's label and disabled state come from the registry's optional `useTabInfo`.
-- **Workspace:** add an id to `WorkspaceId`/`WORKSPACE_IDS` and an entry to `WORKSPACES` in `workspace/workspaces.ts` (call `make(id, shares)` or write the layout by hand), add its name to `strings.top.workspaceNames`, and extend the `Ctrl+N` handler in `shell/AppShell.tsx`. `panelRegistry.test.ts` checks it shows every panel once.
+- **Workspace:** add an id to `WorkspaceId`/`WORKSPACE_IDS` and an entry to `WORKSPACES` in `workspace/workspaces.ts` (use the `frame`/`tabs` helpers or write the layout by hand), add its name to `strings.top.workspaceNames`, and extend the `Ctrl+N` handler in `shell/AppShell.tsx`. `panelRegistry.test.ts` checks every panel still appears in at least one mode.
 - **Dialog:** add an id to `DialogId`, copy to `strings.dialogs`, a branch in `shell/Dialogs.tsx`. `setupDoctor` shows the real `SetupDoctorPanel` (wide dialog); it is reachable from the top bar, the start screen and the status bar link `FFDec: not found`, and opens by itself on the first launch where a check fails. Dialogs and the toast stack also render on the start screen.
 - **Popover:** `ui/Popover.tsx` flips to the other side when the panel would leave the window.
 - **Deploy:** the dropdown shows each target folder exactly, the last builds' error/warning counts and whether Strict Mode is on; the first deploy to a folder opens a confirmation dialog (path and file list). A deploy the export gate blocks always opens it as `Deploy blocked` with the blocking issues (each links to its layer) and Deploy disabled with the reason; warnings are listed either way. See `docs/deploy.md`.

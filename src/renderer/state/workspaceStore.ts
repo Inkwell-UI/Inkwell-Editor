@@ -25,11 +25,11 @@ export interface WorkspaceStore {
 
 type Persisted = Pick<WorkspaceStore, 'active' | 'sizes' | 'tabs'>
 
-const empty = <T>(): Record<WorkspaceId, Record<string, T>> => ({ wire: {}, verify: {}, debug: {} })
+const empty = <T>(): Record<WorkspaceId, Record<string, T>> => ({ layout: {}, behaviour: {}, localization: {} })
 
 /** Defensive read of whatever localStorage held: wrong shapes and unknown ids are dropped, never thrown on. */
 export function sanitizePersisted(raw: unknown): Persisted {
-  const out: Persisted = { active: 'wire', sizes: empty(), tabs: empty() }
+  const out: Persisted = { active: 'layout', sizes: empty(), tabs: empty() }
   if (!raw || typeof raw !== 'object') return out
   const r = raw as Record<string, unknown>
   if (isWorkspaceId(r['active'])) out.active = r['active']
@@ -65,7 +65,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
         set((s) => (ws ? { sizes: { ...s.sizes, [ws]: {} }, tabs: { ...s.tabs, [ws]: {} } } : { sizes: empty(), tabs: empty() }))
     }),
     {
-      name: 'inkwell.workspaces.v1',
+      name: 'inkwell.workspaces.v2',
       storage: createJSONStorage(() => safeStorage),
       partialize: (s): Persisted => ({ active: s.active, sizes: s.sizes, tabs: s.tabs }),
       merge: (persisted, current) => ({ ...current, ...sanitizePersisted(persisted) })

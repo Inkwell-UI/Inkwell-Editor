@@ -14,7 +14,7 @@ import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
 import { WORKSPACE_IDS } from '../workspace/workspaces'
-import { DeployMenu, PackageMenu } from './DeployMenu'
+import { DeployMenu } from './DeployMenu'
 
 function Dot({ tone }: { tone: DotTone }) {
   return <span className={`dot dot-${tone}`} aria-hidden="true" />
@@ -160,7 +160,7 @@ export function GameDot() {
   )
 }
 
-/** Zone 1 (UX 4.1): project, SWF switcher, target pill, workspace switcher, Setup, connection dots, Build All, Deploy and Package Mod. */
+/** Zone 1 (UX 4.1): project, SWF switcher, target pill, workspace switcher, Setup, connection dots, Build All and Deploy (which also packages). */
 export function TopBar() {
   const project = useProject()
   const swf = useActiveSwf()
@@ -184,7 +184,6 @@ export function TopBar() {
       <span className="spacer" />
       <Btn icon={Hammer} variant="primary" onClick={() => void inkwell?.buildAll()} reason={buildReason} testId="build-all">{compiling ? strings.top.building : strings.top.buildAll}</Btn>
       <DeployMenu />
-      <PackageMenu />
     </header>
   )
 }

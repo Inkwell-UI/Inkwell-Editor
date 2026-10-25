@@ -1,6 +1,6 @@
 # UI panels, layout and the preview (`src/renderer`)
 
-The editor window is a **workspace**: a layout (plain data) places **panels** (self-contained components). Three workspaces (Wire, Verify, Debug) are three layouts over the same panels; see `docs/ui-shell.md` for the zones, workspaces, stores and the selection model. This file is the panel and layout reference.
+The editor window is a **workspace**: a layout (plain data) places **panels** (self-contained components). Three modes (Layout, Behaviour, Localization) are three layouts over the same panels, each showing only what its job needs; see `docs/ui-shell.md` for the zones, workspaces, stores and the selection model. This file is the panel and layout reference.
 
 ## Rules for panels
 
@@ -42,7 +42,7 @@ The top bar (Zone 1) and the status bar (Zone 6B) are shell chrome in `src/rende
 
 1. Write `panels/FooPanel.tsx`: `export function FooPanel() { ...; return <Panel title={...}>...</Panel> }`. A new data source gets a hook or store (and an IPC method in `shared/ipc.ts` + preload + main if it comes from main).
 2. Register it in `workspace/panelRegistry.ts`: `foo: { title, component, defaultSize, minSize }`; add `useTabInfo` (label with counts, or `disabledReason`) if it lives in a tab group.
-3. Place its id in **every** workspace in `workspace/workspaces.ts`. The registry test requires each workspace to show every registered panel exactly once.
+3. Place its id in the mode(s) that need it in `workspace/workspaces.ts`. The registry test requires every registered panel to appear in at least one mode and none twice in one mode.
 4. **Moving** a panel is editing the layout data only.
 
 ## Layouts

@@ -15,24 +15,23 @@ describe('panel registry', () => {
     }
   })
 
-  it('the three workspaces are valid and each shows every registered panel exactly once (only sizes and open tabs differ)', () => {
-    expect(WORKSPACE_IDS).toEqual(['wire', 'verify', 'debug'])
+  it('the three modes are valid and together show every registered panel', () => {
+    expect(WORKSPACE_IDS).toEqual(['layout', 'behaviour', 'localization'])
+    const seen = new Set<string>()
     for (const id of WORKSPACE_IDS) {
-      const layout = WORKSPACES[id].layout
-      expect(validateLayout(layout, panelIds), id).toEqual([])
-      expect(layoutPanelIds(layout).sort(), id).toEqual([...panelIds].sort())
+      const ids = layoutPanelIds(WORKSPACES[id].layout)
+      expect(validateLayout(WORKSPACES[id].layout, panelIds), id).toEqual([])
+      expect(new Set(ids).size, id).toBe(ids.length)
+      ids.forEach((p) => seen.add(p))
     }
+    expect([...seen].sort()).toEqual([...panelIds].sort())
   })
 
-  it('the workspaces differ in emphasis as UX 2.3 says', () => {
-    const share = (id: 'wire' | 'verify' | 'debug', panel: string): number => {
-      const find = (n: ReturnType<typeof JSON.parse>): number | undefined => (n.kind === 'panel' ? (n.panel === panel ? (n.size ?? 1) : undefined) : n.kind === 'tabs' ? undefined : n.children.map(find).find((x: number | undefined) => x !== undefined))
-      return find(WORKSPACES[id].layout)!
-    }
-    expect(share('verify', 'preview')).toBeGreaterThan(share('verify', 'graph'))
-    expect(share('wire', 'graph')).toBeGreaterThan(share('wire', 'preview'))
-    expect(share('debug', 'graph')).toBeGreaterThan(share('debug', 'preview'))
-    expect(share('verify', 'preview')).toBeGreaterThan(share('wire', 'preview'))
+  it('each mode shows what its job needs: the graph only in Behaviour, the string table only in Localization', () => {
+    const has = (id: (typeof WORKSPACE_IDS)[number], p: string): boolean => layoutPanelIds(WORKSPACES[id].layout).includes(p)
+    expect(WORKSPACE_IDS.filter((i) => has(i, 'graph'))).toEqual(['behaviour'])
+    expect(WORKSPACE_IDS.filter((i) => has(i, 'localization'))).toEqual(['localization'])
+    expect(WORKSPACE_IDS.every((i) => has(i, 'preview') && has(i, 'inspector') && has(i, 'lintBudget'))).toBe(true)
   })
 
   it('panels are independent: no panel imports another panel or the workspace layer (only the Panel chrome, hooks, stores, models, preview pieces, ui, strings, shared)', () => {

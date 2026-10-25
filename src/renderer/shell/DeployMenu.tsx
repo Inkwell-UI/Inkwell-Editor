@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, FileArchive, FolderCog, Package, Rocket } from 'lucide-react'
+import { ChevronDown, FolderCog, Rocket } from 'lucide-react'
 import { isPackageTarget, type DeployLintItem, type DeployTargetInfo } from '../../shared/deploy'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
@@ -30,7 +30,7 @@ function Targets({ close }: { close(): void }) {
     <div className="details deploy-menu">
       <h3>{strings.deploy.targetsTitle}</h3>
       <ul className="menu" role="menu" aria-label={strings.deploy.menuLabel}>
-        {targets?.filter((t) => t.id !== 'package').map((t) => {
+        {targets?.map((t) => {
           const off = t.disabledReason
           return (
             <li key={t.id} role="none">
@@ -77,40 +77,7 @@ const useDeployReason = (): string | undefined => {
   return !project ? strings.deploy.noProject : !project.swfs.some((s) => !s.orphaned) ? strings.deploy.noSwfs : sync?.ffdec?.status === 'notFound' ? strings.deploy.noFfdec : undefined
 }
 
-/** Top bar `Package Mod` dropdown: what the zip holds and one action; the scope is the Deploy menu's. The blocked dialog is the Deploy one. */
-export function PackageMenu() {
-  const reason = useDeployReason()
-  const busy = useDeployStore((s) => s.busy)
-  const scope = useDeployStore((s) => s.scope)
-  const start = useDeployStore((s) => s.start)
-  const swf = useActiveSwf()
-  if (reason)
-    return <Btn icon={Package} reason={reason} label={strings.top.package} testId="package">{strings.top.package}<ChevronDown size={12} aria-hidden="true" /></Btn>
-  return (
-    <Popover
-      label={strings.deploy.packageMenuLabel}
-      align="end"
-      trigger={(p, open) => (
-        <button type="button" className="btn" {...p} data-testid="package" title={strings.top.package} aria-label={strings.top.package}>
-          <Package size={14} aria-hidden="true" /> {busy ? strings.deploy.running : strings.top.package} <ChevronDown size={12} aria-hidden="true" className={open ? 'flip' : undefined} />
-        </button>
-      )}
-    >
-      {(close) => (
-        <div className="details deploy-menu">
-          <h3>{strings.deploy.packageTitle}</h3>
-          <p>{strings.deploy.packageBody}</p>
-          <p className="dim">{strings.deploy.packageScope(scope === 'all', swf?.name)}</p>
-          <div className="row-actions">
-            <Btn icon={FileArchive} variant="primary" testId="package-save" onClick={() => { close(); void start('package', swf?.name) }}>{strings.deploy.packageSave}</Btn>
-          </div>
-        </div>
-      )}
-    </Popover>
-  )
-}
-
-/** Top bar Deploy dropdown (UX 4.1): exact target paths (MO2 folders; Vortex saves a zip), scope, and the first-deploy confirmation dialog. Build All stays separate. */
+/** Top bar Deploy dropdown (UX 4.1): exact target paths (MO2 folders; Vortex and Package Mod save a zip), scope, and the first-deploy confirmation dialog. Build All stays separate. */
 export function DeployMenu() {
   const busy = useDeployStore((s) => s.busy)
   const reason = useDeployReason()

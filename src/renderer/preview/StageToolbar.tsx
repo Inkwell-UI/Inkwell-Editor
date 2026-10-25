@@ -21,7 +21,7 @@ export interface StageToolbarProps {
   zoom: number
   onZoom(dir: 1 | -1): void
   onZoomReset(): void
-  /** Few pixels of height (the Wire workspace's strip): only the essentials show, the rest behind "More". */
+  /** Few pixels of height (the Behaviour mode's strip): only the essentials show, the rest behind "More". */
   compact: boolean
   /** SWF picker (the detached window has no top bar). */
   swfPicker?: ReactNode
