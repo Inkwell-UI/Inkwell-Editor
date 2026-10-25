@@ -454,6 +454,7 @@ export function createSession(deps: SessionDeps) {
       if (!projectDir || !m) return { ok: false, error: 'No such swf in the open project' }
       const parsed = Graph.safeParse(doc)
       if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid graph' }
+      if (JSON.stringify(m.get(parsed.data.id)) === JSON.stringify(parsed.data)) return { ok: true } // unchanged: no write, no rebuild
       const r = await writeGraph(projectDir, swf, parsed.data)
       if (r.ok) {
         m.set(parsed.data.id, parsed.data)

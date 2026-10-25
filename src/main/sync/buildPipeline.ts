@@ -102,7 +102,8 @@ export function createBuildPipeline(cfg: PipelineConfig) {
         instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : [])))
         // The editor never edits the visual IR: this stores exactly what Figma sent.
         p.swfs[name] = { ir: ir as unknown as Record<string, unknown>, overlay }
-        await saveProject(dir, p)
+        // graphs are saved by the editor (graphFiles); the cached copy here may be stale, so a build never writes them back
+        await saveProject(dir, { ...p, swfs: Object.fromEntries(Object.entries(p.swfs).map(([n, { graphs: _g, ...rest }]) => [n, rest])) })
         // figma/snapshot.json follows ir.json in the same lock; a failure is reported, the build goes on (ir.json is already saved)
         try {
           const irs = Object.fromEntries(Object.entries(p.swfs).map(([n, s]) => [n, s.ir as unknown as Parameters<typeof compileSwf>[0]]))

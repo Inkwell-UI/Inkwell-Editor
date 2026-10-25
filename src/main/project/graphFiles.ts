@@ -47,21 +47,22 @@ export async function readGraphs(project: string, swf: string): Promise<{ graphs
   return { graphs, problems }
 }
 
+/** The unlocked write; only for callers already inside `exclusive` (the lock is not re-entrant: a nested `exclusive` never resolves). */
+export async function writeGraphLocked(project: string, swf: string, g: Graph): Promise<GraphResult> {
+  try {
+    await mkdir(dirOf(project, swf), { recursive: true })
+    await writeFile(fileOf(project, swf, g.id), graphText(g))
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
 /** Validates (schema, id) and writes one graph. Same lock as the overlay writes. */
 export function writeGraph(project: string, swf: string, doc: unknown): Promise<GraphResult> {
   const parsed = Graph.safeParse(doc)
   if (!parsed.success) return Promise.resolve({ ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid graph' })
-  const g = parsed.data
-  return exclusive(async (): Promise<GraphResult> => {
-    try {
-      const file = fileOf(project, swf, g.id)
-      await mkdir(dirOf(project, swf), { recursive: true })
-      await writeFile(file, graphText(g))
-      return { ok: true }
-    } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : String(e) }
-    }
-  })
+  return exclusive(() => writeGraphLocked(project, swf, parsed.data))
 }
 
 export function deleteGraph(project: string, swf: string, id: string): Promise<GraphResult> {

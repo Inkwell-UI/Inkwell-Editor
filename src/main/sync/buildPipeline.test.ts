@@ -1,4 +1,4 @@
-import { copyFile, cp, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { copyFile, cp, mkdir, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -87,6 +87,25 @@ describe('build pipeline: overlay written by the editor UI', () => {
     const after = JSON.parse(await readFile(file, 'utf8'))
     expect(after.nodes.t).toEqual({ future: 1, instanceName: 'DamageVal_Txt' }) // not overwritten by the cached, older overlay
   })
+})
+
+describe('build pipeline: projects with graphs', () => {
+  it('building a SWF never hangs on the graphs of another SWF (saveProject inside the lock) and never writes back a stale graph', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'inkwell-pipe-graphs-'))
+    await cp(resolve(__dirname, '../../../samples/hud-graph-popup'), dir, { recursive: true, filter: (p) => !/[\/]build([\/]|$)/.test(p) })
+    await mkdir(join(dir, 'swfs/other'))
+    await writeFile(join(dir, 'swfs/other/overlay.json'), '{}')
+    await writeFile(join(dir, 'swfs/other/ir.json'), JSON.stringify({ ...JSON.parse(await readFile(join(dir, 'swfs/hud/ir.json'), 'utf8')), id: 'other', name: 'other' }))
+    const ffdec = { build: async (job: FfdecJob) => (await copyFile(job.base, job.out), { ok: true, ms: 0, wallMs: 0 }) }
+    const p = createBuildPipeline({ ...base, projectDir: dir, buildDir: join(dir, 'build'), ffdec })
+    const other = Swf.parse(JSON.parse(await readFile(join(dir, 'swfs/other/ir.json'), 'utf8')))
+    const done = (): Promise<unknown> => Promise.race([p.onChange('other', other, 'other'), new Promise((_r, rej) => setTimeout(() => rej(new Error('build never finished')), 5000))])
+    await done() // before the fix: the nested lock in saveProject (graphs of "hud") never resolved
+    const file = join(dir, 'swfs/hud/graphs/main.json')
+    await writeFile(file, (await readFile(file, 'utf8')).replace('"name": "Popup",', '"name": "Renamed by the editor",'))
+    await done()
+    expect(await readFile(file, 'utf8')).toContain('Renamed by the editor') // the cached project must not overwrite it
+  }, 15000)
 })
 
 describe('build pipeline: images', () => {

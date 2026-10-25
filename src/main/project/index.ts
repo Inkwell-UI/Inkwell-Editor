@@ -2,7 +2,7 @@ import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { migrate, SPEC_VERSION, type Graph } from '@inkwell-ui/spec'
 import { z } from 'zod'
-import { readGraphs, writeGraph } from './graphFiles'
+import { readGraphs, writeGraphLocked } from './graphFiles'
 
 // project.json is editor-owned. Unknown keys are kept (looseObject) so they survive load -> save.
 export const ProjectMetaSchema = z.looseObject({
@@ -76,9 +76,9 @@ export async function saveProject(dir: string, project: Project): Promise<void> 
     await mkdir(d, { recursive: true })
     await writeFile(join(d, 'ir.json'), stableStringify(swf.ir))
     await writeFile(join(d, 'overlay.json'), stableStringify(swf.overlay))
-    // graph files are written, never deleted here: a graph the editor could not read must survive
+    // graph files are written, never deleted here: a graph the editor could not read must survive. Unlocked: the build pipeline calls this inside `exclusive`.
     for (const g of Object.values(swf.graphs ?? {})) {
-      const r = await writeGraph(dir, name, g)
+      const r = await writeGraphLocked(dir, name, g)
       if (!r.ok) throw new Error(r.error)
     }
   }
