@@ -67,6 +67,8 @@ export interface StoredSettings extends Partial<Record<SettingKey, string>> {
   deployConfirmed?: Record<string, string[]>
   /** The first-launch Setup Doctor has been shown (or was not needed). */
   doctorSeen?: boolean
+  /** SHA-256 (64 hex) of every Figma plugin secret the user approved. Never the secrets; never in a project. */
+  figmaPlugins?: string[]
 }
 
 export type SettingSource = 'env' | 'settings' | 'default'

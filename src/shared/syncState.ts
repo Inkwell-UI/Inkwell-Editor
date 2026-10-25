@@ -6,7 +6,6 @@ export interface SyncUiState {
   server: 'starting' | 'listening' | 'error'
   error?: string
   port?: number
-  token?: string
   connections: number
   build: 'idle' | 'compiling' | 'synced' | 'error'
   /** Message of the first issue when build is 'error'. */
@@ -36,6 +35,8 @@ export interface SyncUiState {
   looseLayers?: LayerRef[]
   /** Nodes inside a SWF that no root reaches (`unreachable-node` in the SWF's build status). */
   unreachableNodes?: (LayerRef & { swfName: string })[]
+  /** A Figma plugin with an unknown secret is waiting for Allow / Deny (protocol 4). The window shows the prompt; the Figma dot reads "Waiting for approval". */
+  approval?: { id: number; pluginVersion: string; fileName: string; origin: string }
   /** Why the last plugin connection attempt failed (cleared by the next successful hello). */
   connectionIssue?: { kind: 'version' | 'auth'; message: string }
 }

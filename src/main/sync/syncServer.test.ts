@@ -6,6 +6,7 @@ import { createAssetStore } from '../images/assets'
 import { syntheticPng } from '../images/synthetic'
 import { frame, rectShape, swf } from '../swf/ir.testutil'
 import { treeHash } from '../project/snapshot'
+import { createTrust, hashSecret } from './figmaTrust'
 import { sanitizeName, startSyncServer, unreachableNodes, type SyncServerOptions } from './syncServer'
 
 type Server = Awaited<ReturnType<typeof startSyncServer>>
@@ -16,14 +17,17 @@ afterEach(async () => {
   await Promise.all(open.splice(0).map((s) => s.close()))
 })
 
-const start = async (o: Partial<SyncServerOptions> = {}): Promise<Server> => {
-  const s = await startSyncServer({ editorVersion: '0.0.1', ports: [0], debounceMs: 20, ...o })
+const SECRET = 'ab'.repeat(32)
+/** A trust that already knows SECRET (the common case: an approved plugin). */
+const knownTrust = () => createTrust({ store: { hashes: () => [hashSecret(SECRET)], add: async () => {} }, ask: async () => false })
+const start = async (o: Partial<Omit<SyncServerOptions, 'trust'>> & { trust?: SyncServerOptions['trust'] } = {}): Promise<Server> => {
+  const s = await startSyncServer({ editorVersion: '0.0.1', ports: [0], debounceMs: 20, trust: knownTrust(), ...o })
   open.push(s)
   return s
 }
-const connect = (s: Server, o: { token?: string; origin?: string } = {}) =>
+const connect = (s: Server, o: { origin?: string } = {}) =>
   new Promise<{ ws: WebSocket; next: () => Promise<any> }>((resolve, reject) => {
-    const ws = new WebSocket(`ws://127.0.0.1:${s.port}/?token=${o.token ?? s.token}`, { headers: o.origin ? { Origin: o.origin } : {} })
+    const ws = new WebSocket(`ws://127.0.0.1:${s.port}/`, { headers: o.origin ? { Origin: o.origin } : {} })
     clients.push(ws)
     const msgs: any[] = []
     const waiters: ((m: any) => void)[] = []
@@ -38,7 +42,7 @@ const connect = (s: Server, o: { token?: string; origin?: string } = {}) =>
     ws.on('unexpected-response', (_q, res) => reject(new Error(`HTTP ${res.statusCode}`)))
     ws.on('error', () => {})
   })
-const hello = (over: object = {}) => ({ type: 'hello', pluginVersion: '0.0.1', protocolVersion: PROTOCOL_VERSION, specVersion: SPEC_VERSION, ...over })
+const hello = (over: object = {}) => ({ type: 'hello', pluginVersion: '0.0.1', protocolVersion: PROTOCOL_VERSION, specVersion: SPEC_VERSION, pluginSecret: SECRET, fileName: 'Hud.fig', ...over })
 const ready = async (s: Server) => {
   const c = await connect(s)
   c.ws.send(JSON.stringify(hello()))
@@ -50,13 +54,12 @@ const patchUpsert = (node: unknown, swfId = 'hud', swf?: unknown) => ({ type: 'p
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 describe('syncServer', () => {
-  it('rejects a bad token (401) and a bad origin (403); accepts the null origin', async () => {
+  it('rejects a web origin (403); accepts the null origin and no origin; no token is needed', async () => {
     const s = await start()
-    await expect(connect(s, { token: 'x'.repeat(48) })).rejects.toThrow('401')
-    await expect(connect(s, { token: '' })).rejects.toThrow('401')
     await expect(connect(s, { origin: 'https://evil.example' })).rejects.toThrow('403')
     await connect(s, { origin: 'null' })
-    expect(s.token).toMatch(/^[0-9a-f]{48}$/)
+    await connect(s)
+    expect('token' in s).toBe(false)
   })
 
   it('binds to loopback only', async () => {
@@ -268,15 +271,15 @@ describe('syncServer', () => {
     expect(onChange).toHaveBeenCalledTimes(2)
   })
 
-  it('tells the UI why a connection failed: version mismatch (handshakeFailed) and bad token (rejected)', async () => {
+  it('tells the UI why a connection failed: version mismatch (handshakeFailed) and bad origin (rejected)', async () => {
     const s = await start()
     const version = new Promise<string>((r) => s.events.once('handshakeFailed', r))
     const bad = await connect(s)
     bad.ws.send(JSON.stringify(hello({ protocolVersion: PROTOCOL_VERSION + 1 })))
     expect(await version).toMatch(/Protocol mismatch/)
     const rejected = new Promise<string>((r) => s.events.once('rejected', r))
-    await expect(connect(s, { token: 'x'.repeat(48) })).rejects.toThrow('401')
-    expect(await rejected).toBe('token')
+    await expect(connect(s, { origin: 'https://evil.example' })).rejects.toThrow('403')
+    expect(await rejected).toBe('origin')
   })
 })
 

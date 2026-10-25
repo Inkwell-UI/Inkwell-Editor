@@ -8,7 +8,10 @@ import WebSocket from 'ws'
 import { PROTOCOL_VERSION, SPEC_VERSION, Swf } from '@inkwell-ui/spec'
 import { loadProject } from '../project'
 import { createBuildPipeline, envConfig } from './buildPipeline'
+import { createTrust, hashSecret } from './figmaTrust'
 import { startSyncServer } from './syncServer'
+
+const SECRET = 'cd'.repeat(32)
 
 const cfg = envConfig()
 const jarPath = resolve(__dirname, '../../../tools/ffdec-wrapper/build/ffdec-wrapper.jar')
@@ -39,13 +42,14 @@ describe('build pipeline', () => {
     const buildDir = mkdtempSync(join(tmpdir(), 'inkwell-sync-'))
     const pipeline = createBuildPipeline({ ...cfg, jarPath, buildDir })
     stops.push(() => pipeline.stop())
-    const server = await startSyncServer({ editorVersion: 't', ports: [0], debounceMs: 20, initial: { hud: ir }, onChange: pipeline.onChange })
+    const server = await startSyncServer({ editorVersion: 't', ports: [0], debounceMs: 20, initial: { hud: ir }, onChange: pipeline.onChange, trust: createTrust({ store: { hashes: () => [hashSecret(SECRET)], add: async () => {} }, ask: async () => false }) })
     stops.push(() => server.close())
-    const ws = new WebSocket(`ws://127.0.0.1:${server.port}/?token=${server.token}`)
+    const ws = new WebSocket(`ws://127.0.0.1:${server.port}/`)
     const msgs: any[] = []
     ws.on('message', (d) => msgs.push(JSON.parse(d.toString())))
     await new Promise((r) => ws.on('open', r))
-    ws.send(JSON.stringify({ type: 'hello', pluginVersion: 't', protocolVersion: PROTOCOL_VERSION, specVersion: SPEC_VERSION }))
+    ws.send(JSON.stringify({ type: 'hello', pluginVersion: 't', protocolVersion: PROTOCOL_VERSION, specVersion: SPEC_VERSION, pluginSecret: SECRET, fileName: 't.fig' }))
+    while (!msgs.some((m) => m.type === 'helloAck')) await new Promise((r) => setTimeout(r, 10)) // the plugin waits for the ack before sending patches
     const node = Object.values(ir.nodes).find((n) => n.type === 'shape')!
     ws.send(JSON.stringify({ type: 'patch', seq: 1, swfId: ir.id, patch: { ops: [{ op: 'upsert', node: { ...node, opacity: 0.9 } }] } }))
     const deadline = Date.now() + 30_000

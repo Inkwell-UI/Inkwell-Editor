@@ -41,6 +41,9 @@ export const IPC = {
   doctorBenchmark: 'doctor:benchmark',
   doctorBuildCache: 'doctor:buildCache',
   doctorFirstLaunch: 'doctor:firstLaunch',
+  figmaApproval: 'figma:approval',
+  figmaForget: 'figma:forget',
+  figmaPluginCount: 'figma:pluginCount',
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
   settingsBrowse: 'settings:browse',
@@ -108,6 +111,13 @@ export interface InkwellApi {
   onFigmaSelection(cb: (ids: string[]) => void): () => void
   /** Edit > Settings in the application menu. */
   onOpenSettings(cb: () => void): () => void
+
+  /** Answers the pending Figma plugin prompt (`SyncUiState.approval.id`). */
+  answerFigmaApproval(id: number, allow: boolean): Promise<void>
+  /** How many Figma plugins the user approved (Settings). */
+  figmaPluginCount(): Promise<number>
+  /** Settings > Forget all Figma plugins: removes every approved credential and disconnects the plugins. Returns the reason on failure. */
+  forgetFigmaPlugins(): Promise<{ ok: true } | { ok: false; error: string }>
 
   /** Setup Doctor (UX 5.3): every check (or only `only`), in parallel; never rejects. */
   runDoctor(only?: CheckId[]): Promise<CheckResult[]>

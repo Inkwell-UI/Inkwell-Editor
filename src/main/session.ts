@@ -20,6 +20,7 @@ import { createFontTool } from './fonts'
 import { sandboxFontSystem, windowsFontSystem } from './fonts/install'
 import { createDeployService } from './deploy/service'
 import { createAssetStore, type AssetStore } from './images/assets'
+import { createTrust } from './sync/figmaTrust'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { corePackDir, loadPacks } from './packs'
@@ -92,6 +93,32 @@ export function createSession(deps: SessionDeps) {
   let stored: StoredSettings = {}
   const settingsReady = loadSettings(settingsFile).then((s) => void (stored = s))
   const resolved = (): ResolvedSettings => resolveSettings(stored)
+  // Figma bridge trust (protocol 4): lives for the whole editor session, so a denial and the prompt rate limit survive opening another project
+  let approval: { id: number; resolve(allow: boolean): void } | undefined
+  let approvalSeq = 0
+  const trust = createTrust({
+    store: {
+      hashes: () => stored.figmaPlugins ?? [],
+      add: async (h) => {
+        await settingsReady
+        stored = { ...stored, figmaPlugins: [...(stored.figmaPlugins ?? []), h] }
+        await saveSettings(settingsFile, stored)
+      }
+    },
+    ask: (req, signal) =>
+      new Promise<boolean>((resolve) => {
+        const id = ++approvalSeq
+        const done = (allow: boolean): void => {
+          if (approval?.id !== id) return
+          approval = undefined
+          update({ approval: undefined })
+          resolve(allow)
+        }
+        approval = { id, resolve: done }
+        signal.addEventListener('abort', () => done(false), { once: true })
+        update({ approval: { id, ...req } })
+      })
+  })
   const cfg = {
     get javaPath(): string { return resolved().javaPath },
     get ffdecDir(): string { return resolved().ffdecDir }
@@ -175,7 +202,7 @@ export function createSession(deps: SessionDeps) {
     pipeline = undefined
   }
 
-  async function start(dir: string | undefined, keep?: { port: number; token: string }): Promise<void> {
+  async function start(dir: string | undefined, keep?: { port: number }): Promise<void> {
     const initial: Record<string, Swf> = {}
     overlays.clear()
     graphs.clear()
@@ -226,6 +253,7 @@ export function createSession(deps: SessionDeps) {
     const pl = pipeline
     const opts = {
       editorVersion: deps.editorVersion,
+      trust,
       initial,
       strict: () => strict,
       assets,
@@ -234,13 +262,13 @@ export function createSession(deps: SessionDeps) {
         return pl.onChange(id, ir, name)
       }
     }
-    // same port and token as before, so the Figma plugin only has to reconnect; if the port is taken, the first free default
-    const srv = await (keep ? startSyncServer({ ...opts, token: keep.token, ports: [keep.port] }).catch(() => startSyncServer(opts)) : startSyncServer(opts))
+    // same port as before, so the Figma plugin only has to reconnect; if the port is taken, the first free default
+    const srv = await (keep ? startSyncServer({ ...opts, ports: [keep.port] }).catch(() => startSyncServer(opts)) : startSyncServer(opts))
     server = srv
     srv.events.on('connections', (connections: number) => update({ connections, ...(connections > 0 ? { connectionIssue: undefined } : {}) }))
     srv.events.on('handshakeFailed', (message: string) => update({ connectionIssue: { kind: 'version', message } }))
-    srv.events.on('rejected', (reason: string) =>
-      update({ connectionIssue: { kind: 'auth', message: reason === 'token' ? 'The plugin used a wrong session token.' : 'Connection from a disallowed origin was refused.' } })
+    srv.events.on('rejected', () =>
+      update({ connectionIssue: { kind: 'auth', message: 'Connection from a disallowed origin was refused.' } })
     )
     srv.events.on('selection', (ids: string[]) => deps.broadcast(IPC.figmaSelection, ids))
     srv.events.on('hello', (h: SnapshotSource) => void (snapshotSource = h))
@@ -269,7 +297,7 @@ export function createSession(deps: SessionDeps) {
       void refreshGraphLint().catch(() => undefined)
       pushProject()
     })
-    update({ swfCount: srv.swfs().length, server: 'listening', error: undefined, port: srv.port, token: srv.token, looseLayers: [] })
+    update({ swfCount: srv.swfs().length, server: 'listening', error: undefined, port: srv.port, looseLayers: [] })
     refreshFfdec()
     await refreshGraphLint().catch(() => undefined)
   }
@@ -277,7 +305,7 @@ export function createSession(deps: SessionDeps) {
   /** Switch to `dir` (or to no project). Everything of the previous project is dropped. */
   async function open(dir: string | undefined): Promise<OpenResult> {
     await settingsReady
-    const keep = server ? { port: server.port, token: server.token } : undefined
+    const keep = server ? { port: server.port } : undefined
     try {
       await stopServer()
       reports.clear()
@@ -366,6 +394,25 @@ export function createSession(deps: SessionDeps) {
   return {
     open,
     getSync: (): SyncUiState => state,
+    answerFigmaApproval: (id: number, allow: boolean): void => {
+      if (approval?.id === id) approval.resolve(allow)
+    },
+    figmaPluginCount: async (): Promise<number> => (await settingsReady, stored.figmaPlugins?.length ?? 0),
+    /** Revokes every approved plugin and drops the open connections (they must ask again). */
+    async forgetFigmaPlugins(): Promise<{ ok: true } | { ok: false; error: string }> {
+      await settingsReady
+      const prev = stored
+      const { figmaPlugins: _gone, ...rest } = stored
+      stored = rest
+      try {
+        await saveSettings(settingsFile, stored)
+      } catch (e) {
+        stored = prev
+        return { ok: false, error: `The settings could not be saved to ${settingsFile}: ${e instanceof Error ? e.message : String(e)}` }
+      }
+      server?.dropAll()
+      return { ok: true }
+    },
     getSettings: viewSettings,
     /**
      * Stores one setting and returns the settings as used (with `problems`), or the reason it could not be stored: never a bare rejection.

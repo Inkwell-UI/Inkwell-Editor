@@ -33,6 +33,10 @@ export function validateSettings(raw: unknown): StoredSettings {
     if (n) out[k] = n
   }
   if (r['doctorSeen'] === true) out.doctorSeen = true
+  if (Array.isArray(r['figmaPlugins'])) {
+    const hs = [...new Set(r['figmaPlugins'].filter((x): x is string => typeof x === 'string' && /^[0-9a-f]{64}$/.test(x)))].slice(0, 256)
+    if (hs.length) out.figmaPlugins = hs
+  }
   const dc = r['deployConfirmed']
   if (dc && typeof dc === 'object' && !Array.isArray(dc)) {
     const m: Record<string, string[]> = {}

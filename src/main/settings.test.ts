@@ -109,3 +109,11 @@ describe('settings edge cases (Setup Doctor bug)', () => {
     expect(await settingProblems(resolveSettings({}, {}))).toEqual({})
   })
 })
+
+describe('figmaPlugins setting', () => {
+  it('keeps only distinct 64-hex digests', () => {
+    const h = 'a'.repeat(64)
+    expect(validateSettings({ figmaPlugins: [h, h, 'short', 5, 'A'.repeat(64)] })).toEqual({ figmaPlugins: [h] })
+    expect(validateSettings({ figmaPlugins: [] })).toEqual({})
+  })
+})
