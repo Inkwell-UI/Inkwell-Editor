@@ -66,6 +66,8 @@ export interface NodeOverlayPatch {
   debugHotkey?: number | null
   /** Graph ids attached to this node (`swfs/<name>/graphs/<id>.json`). */
   scripts?: string[] | null
+  /** Data bindings as one string (`graphBinding.ts`); the Spec's `dataBinding` is a string. */
+  dataBinding?: string | null
 }
 
 /** Immutable edit of one node's overlay entry. Unknown keys of the entry and of the document survive; an entry left empty is removed. */

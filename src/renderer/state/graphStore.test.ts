@@ -162,3 +162,30 @@ describe('live validation (Knotwork createValidation)', () => {
     stop()
   })
 })
+
+describe('canvas actions', () => {
+  it('a spawned node with its wire, and a selection delete, are one undo entry each', () => {
+    const s = getGraphStore('swf', 'Hud', base())
+    tick()
+    s.getState().addNode({ id: 'b', kind: 'core/Log@1', pos: { x: 5, y: 6 } }, { from: { node: 'a', pin: 'then' }, to: { node: 'b', pin: 'in' } })
+    expect(past(s)).toBe(1)
+    expect(s.getState().nodes.map((n) => n.type)).toEqual(['inkwell', 'inkwell']) // one React Flow type; the kind is in data
+    expect(s.getState().edges.map((e) => e.id)).toEqual(['a.then->b.in'])
+    tick()
+    s.getState().deleteSelection(['b'], [])
+    expect(toGraph(s.getState())).toMatchObject({ edges: [] })
+    expect(past(s)).toBe(2)
+    s.temporal.getState().undo()
+    expect(s.getState().edges).toHaveLength(1)
+    tick()
+    s.getState().deleteSelection([], ['a.then->b.in'])
+    expect(s.getState().nodes).toHaveLength(2)
+    expect(s.getState().edges).toHaveLength(0)
+  })
+
+  it('clearing a field removes the key from the file', () => {
+    const s = getGraphStore('swf', 'Hud', base())
+    s.getState().setField('a', 'message', undefined)
+    expect(toGraph(s.getState()).nodes[0]!.fields).toEqual({})
+  })
+})

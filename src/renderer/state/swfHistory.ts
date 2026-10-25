@@ -40,7 +40,17 @@ export function registerHistory(swfId: string, key: string, temporal: unknown): 
   publish(swfId)
 }
 
-const step = (swfId: string, from: 'undo' | 'redo'): void => {
+/** Removes a store (a deleted graph) and its entries from the order lists. */
+export function unregisterHistory(swfId: string, key: string): void {
+  const h = hists.get(swfId)
+  if (!h) return
+  h.stores.delete(key)
+  h.undo = h.undo.filter((k) => k !== key)
+  h.redo = h.redo.filter((k) => k !== key)
+  publish(swfId)
+}
+
+const step =(swfId: string, from: 'undo' | 'redo'): void => {
   const h = hists.get(swfId)
   if (!h) return
   const to = from === 'undo' ? 'redo' : 'undo'

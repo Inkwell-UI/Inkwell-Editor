@@ -1,6 +1,9 @@
 import { inkwell } from '../hooks/api'
 import { useProjectStore } from './projectStore'
-import { setOverlaySaver } from './overlayStore'
+import { graphForComponent } from '../model/graphNav'
+import { setActiveGraph, useGraphDocs } from './graphDocs'
+import { setGraphSaver } from './graphStore'
+import { getOverlayDoc, setOverlaySaver } from './overlayStore'
 import { useSelectionStore } from './selectionStore'
 import { useTimingStore } from './timingStore'
 import { useSyncStore } from './syncStore'
@@ -42,6 +45,18 @@ export function startBridge(): () => void {
   )
 
   setOverlaySaver((name, doc) => void api.saveOverlay(name, doc))
+  setGraphSaver((name, graph) => void api.saveGraph(name, graph))
+
+  // one selection model: selecting a component opens its graph
+  offs.push(
+    useSelectionStore.subscribe((s, prev) => {
+      const swfId = useProjectStore.getState().activeSwfId
+      if (!s.component || s.component === prev.component || !swfId) return
+      const docs = useGraphDocs.getState()
+      const id = graphForComponent(getOverlayDoc(swfId), s.component, docs.ids[swfId] ?? [], docs.active[swfId])
+      if (id) setActiveGraph(swfId, id)
+    })
+  )
 
   // local -> other window
   offs.push(

@@ -54,3 +54,13 @@ export function editNode(swfId: string, nodeId: string, patch: NodeOverlayPatch)
 /** Undo/redo follow the SWF's one history, which also holds its graphs' edits (swfHistory.ts). */
 export { undoSwf, redoSwf }
 export const resetOverlays = (): void => (stores.clear(), resetSwfHistory())
+
+/** An edit of the overlay document as a whole (mock data), one history entry like `editNode`. */
+export function editOverlay(swfId: string, fn: (doc: OverlayDoc) => OverlayDoc): void {
+  const e = stores.get(swfId)
+  if (!e) throw new Error(`No overlay store for swf ${swfId}`)
+  e.store.getState().setDoc(fn(e.store.getState().doc))
+}
+
+/** The current overlay document of a SWF without subscribing (undefined before its store exists). */
+export const getOverlayDoc = (swfId: string): OverlayDoc | undefined => stores.get(swfId)?.store.getState().doc

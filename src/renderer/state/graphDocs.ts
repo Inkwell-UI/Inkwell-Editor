@@ -1,0 +1,108 @@
+import type { Graph } from '@inkwell-ui/spec'
+import { create } from 'zustand'
+import type { InkwellApi } from '../../shared/ipc'
+import { scriptsOf } from '../../shared/graphs'
+import type { OverlayDoc } from '../../shared/overlay'
+import { dropGraphStore, findGraphStore, getGraphStore, resetGraphs, toGraph } from './graphStore'
+import { editNode } from './overlayStore'
+
+/**
+ * Which graphs each SWF has and which one the Graph panel shows. The graph files are loaded once per SWF (IPC `listGraphs` + `loadGraph`) into
+ * `graphStore`s; this store keeps the ids (in file order) and the active graph. Creating or deleting a graph also edits the overlay `scripts`
+ * of the layer it is attached to (`editNode`, next to the IPC call, as docs/graphs.md requires); main never edits overlays.
+ * Create/delete go to disk at once and are not undoable (a graph's edits are, in the SWF's one history).
+ */
+interface DocsState {
+  ids: Record<string, string[]>
+  active: Record<string, string | undefined>
+  loaded: Record<string, true>
+  error: string | undefined
+}
+export const useGraphDocs = create<DocsState>(() => ({ ids: {}, active: {}, loaded: {}, error: undefined }))
+type Api = Pick<InkwellApi, 'listGraphs' | 'loadGraph' | 'createGraph' | 'deleteGraph'>
+interface SwfRef {
+  id: string
+  name: string
+}
+
+const loading = new Map<string, Promise<void>>()
+/** Loads the SWF's graphs once (later calls return the same promise). */
+export function loadSwfGraphs(swf: SwfRef, api: Api): Promise<void> {
+  if (useGraphDocs.getState().loaded[swf.id]) return Promise.resolve()
+  const hit = loading.get(swf.id)
+  if (hit) return hit
+  const run = (async () => {
+    const list = await api.listGraphs(swf.name)
+    if (!list.ok) return void useGraphDocs.setState({ error: list.error })
+    const graphs: Graph[] = []
+    for (const g of list.graphs) {
+      const r = await api.loadGraph(swf.name, g.id)
+      if (r.ok) graphs.push(r.graph)
+    }
+    for (const g of graphs) getGraphStore(swf.id, swf.name, g)
+    useGraphDocs.setState((s) => ({
+      ids: { ...s.ids, [swf.id]: graphs.map((g) => g.id) },
+      active: { ...s.active, [swf.id]: s.active[swf.id] ?? graphs.find((g) => g.scope === 'menu')?.id ?? graphs[0]?.id },
+      loaded: { ...s.loaded, [swf.id]: true },
+      error: undefined
+    }))
+  })().finally(() => loading.delete(swf.id))
+  loading.set(swf.id, run)
+  return run
+}
+
+export const setActiveGraph = (swfId: string, graphId: string | undefined): void => useGraphDocs.setState((s) => ({ active: { ...s.active, [swfId]: graphId } }))
+
+/** The menu-scope graph of a SWF, if it has one (at most one exists). */
+export const menuGraphId = (swfId: string): string | undefined =>
+  (useGraphDocs.getState().ids[swfId] ?? []).find((id) => findGraphStore(swfId, id)?.getState().meta.scope === 'menu')
+
+const scriptsPatch = (list: string[]): { scripts: string[] | null } => ({ scripts: list.length ? list : null })
+
+/**
+ * `[+ Graph]` (UX 4.2): the SWF's menu graph when it has none, otherwise a component graph. The new id is attached to the overlay `scripts` of the
+ * frame (menu graph) or of `component` (component graph; the frame when nothing is selected).
+ */
+export async function addGraph(o: { swf: SwfRef & { root: string }; overlay: OverlayDoc | undefined; component: string | undefined; name: (scope: Graph['scope']) => string }, api: Api): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const scope: Graph['scope'] = menuGraphId(o.swf.id) ? 'component' : 'menu'
+  const attachTo = scope === 'menu' ? o.swf.root : (o.component ?? o.swf.root)
+  const r = await api.createGraph(o.swf.name, o.name(scope), scope)
+  if (!r.ok) return r
+  getGraphStore(o.swf.id, o.swf.name, r.graph)
+  editNode(o.swf.id, attachTo, scriptsPatch([...scriptsOf(o.overlay?.nodes?.[attachTo]), r.graph.id]))
+  useGraphDocs.setState((s) => ({ ids: { ...s.ids, [o.swf.id]: [...(s.ids[o.swf.id] ?? []), r.graph.id] }, active: { ...s.active, [o.swf.id]: r.graph.id } }))
+  return { ok: true, id: r.graph.id }
+}
+
+/** Deletes the graph file and detaches its id from every layer that lists it (`scripts`). */
+export async function removeGraph(o: { swf: SwfRef; overlay: OverlayDoc | undefined; graphId: string }, api: Api): Promise<{ ok: true } | { ok: false; error: string }> {
+  const r = await api.deleteGraph(o.swf.name, o.graphId)
+  if (!r.ok) return r
+  dropGraphStore(o.swf.id, o.graphId)
+  for (const [nodeId, entry] of Object.entries(o.overlay?.nodes ?? {})) {
+    const list = scriptsOf(entry)
+    if (list.includes(o.graphId)) editNode(o.swf.id, nodeId, scriptsPatch(list.filter((id) => id !== o.graphId)))
+  }
+  useGraphDocs.setState((s) => {
+    const ids = (s.ids[o.swf.id] ?? []).filter((id) => id !== o.graphId)
+    return { ids: { ...s.ids, [o.swf.id]: ids }, active: s.active[o.swf.id] === o.graphId ? { ...s.active, [o.swf.id]: ids[0] } : s.active }
+  })
+  return { ok: true }
+}
+
+/** Renames a graph (an undoable edit that is saved like any other). */
+export const renameGraph = (swfId: string, graphId: string, name: string): void => findGraphStore(swfId, graphId)?.getState().rename(name)
+
+/** Plain graph documents of a SWF's open graphs (siblings for validation, variables for the panels). */
+export const openGraphs = (swfId: string): Graph[] =>
+  (useGraphDocs.getState().ids[swfId] ?? []).flatMap((id) => {
+    const s = findGraphStore(swfId, id)
+    return s ? [toGraph(s.getState())] : []
+  })
+
+/** Another project was opened. */
+export function resetGraphDocs(): void {
+  resetGraphs()
+  loading.clear()
+  useGraphDocs.setState({ ids: {}, active: {}, loaded: {}, error: undefined })
+}

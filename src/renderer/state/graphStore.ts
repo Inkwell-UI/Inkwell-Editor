@@ -3,7 +3,7 @@ import type { Edge, Node } from '@xyflow/react'
 import { temporal } from 'zundo'
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import type { Graph, GraphNode } from '@inkwell-ui/spec'
-import { registerHistory } from './swfHistory'
+import { registerHistory, unregisterHistory } from './swfHistory'
 
 /**
  * Graph state per graph, in React Flow's shape (nodes, edges) so Knotwork's history, rules and indexes apply unchanged. A graph file keeps unknown
@@ -21,10 +21,24 @@ export type FlowNode = Node<GraphNodeData>
 export type FlowEdge = Edge<GraphEdgeData>
 type Variable = Graph['variables'][number]
 
+/** The one React Flow node type: the kind lives in `data.kind`, so unknown pack kinds render through the same component. */
+export const NODE_TYPE = 'inkwell'
 export const inHandle = (pin: string): string => `${pin}-in`
 export const outHandle = (pin: string): string => `${pin}-out`
 const pinOf = (h: string | null | undefined): string => (h ?? '').replace(/-(in|out)$/, '')
 const edgeId = (from: { node: string; pin: string }, to: { node: string; pin: string }): string => `${from.node}.${from.pin}->${to.node}.${to.pin}`
+
+/** A wire in React Flow shape (also the clipboard's wire factory). */
+export const newEdge = (from: { node: string; pin: string }, to: { node: string; pin: string }): FlowEdge => ({
+  id: edgeId(from, to), source: from.node, target: to.node, sourceHandle: outHandle(from.pin), targetHandle: inHandle(to.pin), data: { from, to } as GraphEdgeData
+})
+/** The pin name of a handle id (`then-out` -> `then`). */
+export const pinName = pinOf
+
+const withField = (fields: Record<string, unknown>, field: string, value: unknown): Record<string, unknown> => {
+  const { [field]: _old, ...rest } = fields
+  return value === undefined ? rest : { ...rest, [field]: value }
+}
 
 interface Doc {
   name: string
@@ -38,9 +52,12 @@ export interface GraphState extends Doc {
   /** specVersion, id, scope and every unknown top-level key of the file. */
   meta: Omit<Graph, keyof Doc | 'nodes' | 'edges'>
   rename(name: string): void
-  addNode(n: { id: string; kind: string; pos: { x: number; y: number }; fields?: Record<string, unknown> }): void
+  /** `wire` connects the new node in the same update (one history entry), as a dropped wire does. */
+  addNode(n: { id: string; kind: string; pos: { x: number; y: number }; fields?: Record<string, unknown> }, wire?: { from: { node: string; pin: string }; to: { node: string; pin: string } }): void
+  /** Deletes nodes (with their wires) and wires in one history entry. */
+  deleteSelection(nodeIds: string[], edgeIds: string[]): void
   removeNodes(ids: string[]): void
-  /** Sets one field; typing in the same field joins the current word's history entry. */
+  /** Sets one field (`undefined` removes it); typing in the same field joins the current word's history entry. */
   setField(nodeId: string, field: string, value: unknown): void
   moveNodes(positions: Record<string, { x: number; y: number }>): void
   connect(from: { node: string; pin: string }, to: { node: string; pin: string }): void
@@ -63,7 +80,7 @@ export function toFlow(g: Graph): Doc & { meta: GraphState['meta'] } {
     variables,
     comments,
     groups,
-    nodes: nodes.map((n) => ({ id: n.id, type: n.kind, position: { x: n.pos.x, y: n.pos.y }, data: n as GraphNodeData })),
+    nodes: nodes.map((n) => ({ id: n.id, type: NODE_TYPE, position: { x: n.pos.x, y: n.pos.y }, data: n as GraphNodeData })),
     edges: edges.map((e) => ({ id: edgeId(e.from, e.to), source: e.from.node, target: e.to.node, sourceHandle: outHandle(e.from.pin), targetHandle: inHandle(e.to.pin), data: e as GraphEdgeData }))
   }
 }
@@ -119,7 +136,20 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
       (set, get) => ({
         ...toFlow(initial),
         rename: (name) => history.edit('name', name, get, () => set({ name })),
-        addNode: (n) => set((s) => ({ nodes: [...s.nodes, { id: n.id, type: n.kind, position: n.pos, data: { id: n.id, kind: n.kind, fields: n.fields ?? {}, pos: { ...n.pos } } as GraphNodeData }] })),
+        addNode: (n, wire) =>
+          set((s) => ({
+            nodes: [...s.nodes, { id: n.id, type: NODE_TYPE, position: n.pos, data: { id: n.id, kind: n.kind, fields: n.fields ?? {}, pos: { ...n.pos } } as GraphNodeData }],
+            ...(wire ? { edges: [...s.edges, newEdge(wire.from, wire.to)] } : {})
+          })),
+        deleteSelection: (nodeIds, edgeIds) => {
+          const gone = new Set(nodeIds)
+          const cut = new Set(edgeIds)
+          set((s) => ({
+            nodes: s.nodes.filter((n) => !gone.has(n.id)),
+            edges: s.edges.filter((e) => !cut.has(e.id) && !gone.has(e.source) && !gone.has(e.target)),
+            groups: s.groups.map((g) => (g.nodes.some((id) => gone.has(id)) ? { ...g, nodes: g.nodes.filter((id) => !gone.has(id)) } : g))
+          }))
+        },
         removeNodes: (ids) => {
           const gone = new Set(ids)
           set((s) => ({
@@ -130,13 +160,13 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
         },
         setField: (nodeId, field, value) =>
           history.edit(`${nodeId}:${field}`, value, get, () =>
-            set((s) => ({ nodes: s.nodes.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, fields: { ...n.data.fields, [field]: value } } } : n)) }))
+            set((s) => ({ nodes: s.nodes.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, fields: withField(n.data.fields, field, value) } } : n)) }))
           ),
         moveNodes: (pos) => set((s) => ({ nodes: s.nodes.map((n) => (pos[n.id] ? { ...n, position: pos[n.id]! } : n)) })),
         connect: (from, to) =>
           set((s) => {
             const id = edgeId(from, to)
-            return s.edges.some((e) => e.id === id) ? s : { edges: [...s.edges, { id, source: from.node, target: to.node, sourceHandle: outHandle(from.pin), targetHandle: inHandle(to.pin), data: { from, to } as GraphEdgeData }] }
+            return s.edges.some((e) => e.id === id) ? s : { edges: [...s.edges, newEdge(from, to)] }
           }),
         disconnect: (id) => set((s) => ({ edges: s.edges.filter((e) => e.id !== id) })),
         setSelection: (ids) => {
@@ -162,6 +192,17 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
     entry.timer = setTimeout(() => save(entry), SAVE_DELAY)
   })
   return store
+}
+
+/** The open store of a graph, if it was loaded. */
+export const findGraphStore = (swfId: string, graphId: string): GraphStore | undefined => stores.get(`${swfId}/${graphId}`)?.store
+
+/** Forgets a deleted graph: no more saves (a late one would bring the file back) and no more undo entries for it. */
+export function dropGraphStore(swfId: string, graphId: string): void {
+  const key = `${swfId}/${graphId}`
+  clearTimeout(stores.get(key)?.timer)
+  stores.delete(key)
+  unregisterHistory(swfId, `graph:${graphId}`)
 }
 
 /** Drops every graph store (another project opened); pending saves are dropped with them, so flush first if they matter. */
