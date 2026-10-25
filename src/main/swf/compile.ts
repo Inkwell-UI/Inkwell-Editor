@@ -28,6 +28,9 @@ export interface CompileResult {
   ddsImages: number
   /** Widget only: settable text fields (see Generated). */
   settableTexts: Generated['settableTexts']
+  /** Graph classes with source maps (also written to `<buildDir>/<swf id>/graph-<id>.map.json`) and the On Widget Call signatures. */
+  graphClasses: Generated['graphClasses']
+  graphCalls: Generated['graphCalls']
   timings: BuildTiming
 }
 
@@ -54,6 +57,7 @@ export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<Compile
     await mkdir(dirname(join(dir, 'as2', f.path)), { recursive: true })
     await writeFile(join(dir, 'as2', f.path), f.source)
   }
+  for (const c of g.graphClasses) await writeFile(join(dir, `graph-${c.graphId.replace(/[^A-Za-z0-9._-]/g, '_')}.map.json`), JSON.stringify(c.map, null, 2) + '\n')
   await mkdir(dirname(swfPath), { recursive: true })
   timer.end('swf')
 
@@ -80,5 +84,5 @@ export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<Compile
     await copyFile(base, swfPath) // nothing for FFDec to fill in
   }
   const lint = g.lint.map((l) => ({ ...l, nodeName: ir.nodes[l.nodeId]?.name }))
-  return { swfPath, lint, fonts: g.fonts.map((f) => ({ ...f, swfId: ir.id })), gfxTextExtensions: g.gfxTextExtensions, ddsImages: g.ddsImages, settableTexts: g.settableTexts, timings: timer.finishBuild() }
+  return { swfPath, lint, fonts: g.fonts.map((f) => ({ ...f, swfId: ir.id })), gfxTextExtensions: g.gfxTextExtensions, ddsImages: g.ddsImages, settableTexts: g.settableTexts, graphClasses: g.graphClasses, graphCalls: g.graphCalls, timings: timer.finishBuild() }
 }

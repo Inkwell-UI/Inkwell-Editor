@@ -1,0 +1,826 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden AS2 per node kind > core/And@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((false && false)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Arithmetic@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(0 + 0) ? (0 + 0) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Branch@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/Branch@1
+                if (false) {
+                    // [l_true] core/Log@1
+                    trace("[Inkwell] info l_true: " + "");
+                } else {
+                    // [l_false] core/Log@1
+                    trace("[Inkwell] info l_false: " + "");
+                }
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Clamp@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String(Math.min(Math.max(0, 0), 1)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Compare@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((0 == 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Concat@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + (String("") + String("")));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Delay@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/Delay@1
+                var n1_iv = setInterval(function() {
+                    clearInterval(n1_iv);
+                    try {
+                        // [l_then] core/Log@1
+                        trace("[Inkwell] info l_then: " + "");
+                    } catch (e) {
+                        __g.fail("e", e);
+                    }
+                }, 1 * 1000);
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/DoOnce@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/DoOnce@1
+                if (!__g.s_n1) {
+                    __g.s_n1 = true;
+                    // [l_then] core/Log@1
+                    trace("[Inkwell] info l_then: " + "");
+                }
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/FocusComponent@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/FocusComponent@1
+                Selection.setFocus(__g.base.title);
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/ForEach@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/ForEach@1
+                var n1_arr = [];
+                var n1_body = function(n1_item, n1_index) {
+                    // [l_body] core/Log@1
+                    trace("[Inkwell] info l_body: " + "");
+                };
+                for (var n1_i = 0; n1_i < n1_arr.length; n1_i++) {
+                    n1_body(n1_arr[n1_i], n1_i);
+                }
+                // [l_completed] core/Log@1
+                trace("[Inkwell] info l_completed: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Format@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + ("".split("{0}").join("").split("{1}").join("").split("{2}").join("").split("{3}").join("")));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/FormatNumber@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String(Math.round(0 * Math.pow(10, 0)) / Math.pow(10, 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/GetText@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + (__g.base.title.text == undefined ? "" : String(__g.base.title.text)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/GetVariable@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String(__g.v_count));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Lerp@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((0 + (1 - 0) * 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Log@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/Log@1
+                trace("[Inkwell] info n1: " + "");
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Not@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((!false)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/OnBlur@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnBlur@1
+        __g.base.title.onKillFocus = function() {
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/OnClick@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnClick@1
+        __g.base.title.onRelease = function() {
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/OnClose@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnClose@1
+        __g.onClose = function() {
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/OnFocus@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnFocus@1
+        __g.base.title.onSetFocus = function() {
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/OnInput@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnInput@1
+        __g.addInputHandler("Accept", function() {
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        });"
+`;
+
+exports[`golden AS2 per node kind > core/OnItemSelected@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnItemSelected@1
+        __g.h_n1 = function(e) {
+            var n1_index = Number(e.index) || 0;
+            var n1_item = e.data || {};
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        };
+        __g.base.title.addEventListener("itemClick", __g, "h_n1");"
+`;
+
+exports[`golden AS2 per node kind > core/OnLoad@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnLoad@1
+        __g.onLoad = function() {
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/OnOpen@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnOpen@1
+        __g.onOpen = function() {
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/OnTimer@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnTimer@1
+        __g.t_n1 = setInterval(function() {
+            if (!true) {
+                clearInterval(__g.t_n1);
+            }
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        }, 1 * 1000);"
+`;
+
+exports[`golden AS2 per node kind > core/OnValueChanged@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnValueChanged@1
+        __g.h_n1 = function(e) {
+            var n1_value = Number(e.target.value) || 0;
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        };
+        __g.base.title.addEventListener("change", __g, "h_n1");"
+`;
+
+exports[`golden AS2 per node kind > core/OnWidgetCall@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnWidgetCall@1
+        __g.Show = function(n1_title:String, n1_hold:Number) {
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        };
+        __g.base.Show = function(a) {
+            __g.Show((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Or@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((false || false)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/ProgressSetValue@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/ProgressSetValue@1
+                __g.base.title.gotoAndStop(1 + Math.round(Math.min(Math.max(0, 0), 1) * (100 - 1)));
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Sequence@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/Sequence@1
+                // [l_then0] core/Log@1
+                trace("[Inkwell] info l_then0: " + "");
+                // [l_then1] core/Log@1
+                trace("[Inkwell] info l_then1: " + "");
+                // [l_then2] core/Log@1
+                trace("[Inkwell] info l_then2: " + "");
+                // [l_then3] core/Log@1
+                trace("[Inkwell] info l_then3: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetAlpha@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetAlpha@1
+                __g.base.title._alpha = 100;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetEnabled@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetEnabled@1
+                __g.base.title.enabled = true;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetImage@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetImage@1
+                __g.base.title.loadMovie("");
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetPosition@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetPosition@1
+                __g.base.title._x = 0;
+                __g.base.title._y = 0;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetScale@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetScale@1
+                __g.base.title._xscale = 100;
+                __g.base.title._yscale = 100;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetState@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetState@1
+                __g.base.title.gotoAndStop("");
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetText@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetText@1
+                __g.base.title.text = "";
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetTint@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetTint@1
+                new Color(__g.base.title).setRGB(16777215);
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetVariable@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetVariable@1
+                __g.v_count = 0;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetVisible@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetVisible@1
+                __g.base.title._visible = true;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Switch@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/Switch@1
+                switch ("") {
+                case "":
+                    // [l_case0] core/Log@1
+                    trace("[Inkwell] info l_case0: " + "");
+                    break;
+                case "":
+                    // [l_case1] core/Log@1
+                    trace("[Inkwell] info l_case1: " + "");
+                    break;
+                case "":
+                    // [l_case2] core/Log@1
+                    trace("[Inkwell] info l_case2: " + "");
+                    break;
+                case "":
+                    // [l_case3] core/Log@1
+                    trace("[Inkwell] info l_case3: " + "");
+                    break;
+                default:
+                    // [l_default] core/Log@1
+                    trace("[Inkwell] info l_default: " + "");
+                }
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/ToNumber@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((Number("") || 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/ToString@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String(0));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Translate@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run();
+        };"
+`;

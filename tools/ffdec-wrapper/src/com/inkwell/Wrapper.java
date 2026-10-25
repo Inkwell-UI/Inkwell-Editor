@@ -118,6 +118,20 @@ public class Wrapper {
         }
     }
 
+    /** FFDec logs a script it cannot parse (SEVERE) and carries on, leaving the class empty; a build with such a script must fail. */
+    static void importScripts(String dir, SWF swf) throws Exception {
+        final java.util.List<String> errors = new java.util.ArrayList<String>();
+        java.util.logging.Handler h = new java.util.logging.Handler() {
+            public void publish(java.util.logging.LogRecord r) { if (r.getLevel().intValue() >= java.util.logging.Level.SEVERE.intValue()) errors.add(String.valueOf(r.getMessage())); }
+            public void flush() {}
+            public void close() {}
+        };
+        java.util.logging.Logger root = java.util.logging.Logger.getLogger("");
+        root.addHandler(h);
+        try { new AS2ScriptImporter().importScripts(dir, swf.getASMs(true)); } finally { root.removeHandler(h); }
+        if (!errors.isEmpty()) throw new IOException("AS2 script error: " + errors.get(0));
+    }
+
     static void build(Map<String, String> job) throws Exception {
         String base = job.get("base"), outPath = job.get("out");
         if (base == null || outPath == null) throw new IllegalArgumentException("job needs base and out");
@@ -139,7 +153,7 @@ public class Wrapper {
         String fonts = job.get("fonts");
         if (fonts != null) importFonts(swf, new File(fonts));
         String scripts = job.get("scripts");
-        if (scripts != null) new AS2ScriptImporter().importScripts(scripts, swf.getASMs(true));
+        if (scripts != null) importScripts(scripts, swf);
         Path o = Paths.get(outPath), tmp = Paths.get(outPath + ".tmp"); // never leave a half-written output
         try (OutputStream os = new FileOutputStream(tmp.toFile())) { swf.saveTo(os); }
         Files.move(tmp, o, StandardCopyOption.REPLACE_EXISTING);
