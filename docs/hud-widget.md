@@ -50,7 +50,7 @@ A text layer whose overlay `role` is `text` is settable from Papyrus (`compileWi
 
 ## Unverified
 
-- The whole popup path (setTexts, the fade, shrink on a previously auto-height field, the SKSE key registration and `IsInMenuMode` filter, the global `Test` and `GetFormFromFile` with an ESL local id, calls before `Ready`) is generated and compiles (FFDec, russo), but has not run in game yet.
+- The whole popup path (setTexts, the fade, shrink on a previously auto-height field, the SKSE key registration and `IsInMenuMode` filter, the global `Test` and `GetFormFromFile` with an ESL local id, calls before `Ready`) is generated and compiles (FFDec, russo), and the hardcoded popup ran in game (SPIKES 15). The graph-driven version (On Widget Call) ran in game on 2026-10-25: Show and the Nodes widget worked; the tint binding, the fade-out, Hide and `fail=true` were not individually confirmed (see STATUS-0.2.md).
 - `Ready` is assumed to stay false until the new SWF has loaded after a game load; a call in that window could be lost.
 
 - The corrected lerp follows SkyUI's own `WidgetBase`; the fix has not been seen in game yet. The safe-rect inset (about 16.5 x 17 HUD px) is inferred from one screenshot. Ultrawide or custom HUD metrics are untested.
