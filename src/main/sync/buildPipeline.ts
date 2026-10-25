@@ -124,7 +124,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
       if (gs.length) graphs = { graphs: gs, packs: (await (codegenPacks ??= loadCodegenPacks(cfg.packDirs))).packs }
     }
     const images = cfg.assets ? (h: string) => cfg.assets!.get(h) : undefined
-    const r = await compileSwf(ir, { modId, instanceNames, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}) })
+    const r = await compileSwf(ir, { modId, instanceNames, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
     // Preview SWF: same content with device-font text, built after the game SWF. Its failure is reported to the preview panel only.
     const pt = createStageTimer()
     pt.start('preview-build')

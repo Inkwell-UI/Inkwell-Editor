@@ -5,13 +5,15 @@ import { ident } from '../../shared/overlay'
 import { issue, type LintIssue } from './lint'
 import { shapeToSvg } from './svg'
 import * as T from './tags'
-import { mapText, previewDeviceFont, type FontInfo, type TextScript } from './text'
+import { mapText, previewDeviceFont, type FontInfo, type GlyphLookup, type TextScript } from './text'
 import { HUD_SCALE, widgetFrame } from '../widget/frame'
 import { widgetContractClass } from '../widget/widgetAs2'
 import { generateGraphClasses, type GraphClass, type WidgetCall } from '../codegen/codegen'
 import type { CodegenPacks } from '../codegen/packs'
 
 export interface GenerateOptions {
+  /** Characters the font behind an alias can draw (lint `font-missing-glyph`); omitted or undefined for an alias: not checked. */
+  glyphs?: GlyphLookup
   /** Visual-scripting graphs of this SWF compiled to AS2 classes (docs/codegen.md). Absent or empty: nothing is added, the output is unchanged. */
   graphs?: { graphs: readonly Graph[]; packs: CodegenPacks }
   /** Overlay `dataBinding` strings by Figma layer id; applied by the graph classes (docs/codegen.md, Data binding). Without graphs nothing is bound. */
@@ -385,7 +387,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
         defs.push(T.defineShapePlaceholder(id, n.transform.width, n.transform.height))
         out.push(T.placeObject2({ ...base, charId: id }))
       } else {
-        const m = mapText(n)
+        const m = mapText(n, opts.glyphs)
         lint.push(...m.lint)
         if (m.font) fontRows.push({ ...m.font, nodeId: cid, nodeName: n.name })
         if (!m.text) continue

@@ -1,4 +1,5 @@
 import type { Node } from '@inkwell-ui/spec'
+import { FIGMA_FACES } from '../../shared/fonts'
 import { issue, type LintIssue } from './lint'
 import type { EditTextSpec } from './tags'
 
@@ -12,19 +13,23 @@ export const NATURAL_LINE_HEIGHT = 1.2
 /** Aliases that exist in vanilla's fontconfig.txt (names only; nothing from the file is shipped). */
 export const KNOWN_ALIASES: ReadonlySet<string> = new Set([
   '$ConsoleFont', '$StartMenuFont', '$DialogueFont', '$EverywhereFont', '$EverywhereBoldFont', '$EverywhereMediumFont', '$DragonFont',
-  '$HandwrittenFont', '$FalmerFont', '$DwemerFont', '$DaedricFont', '$MageScriptFont', '$SkyrimSymbolsFont', '$SkyrimBooks'
+  '$HandwrittenFont', '$FalmerFont', '$DwemerFont', '$DaedricFont', '$MageScriptFont', '$SkyrimSymbolsFont', '$SkyrimBooks',
+  '$SkyrimBooks_UnreadableFont', '$CClub_Font', '$CClub_Font_Bold', 'ControllerButtons', 'ControllerButtonsInverted'
 ])
 
 /**
  * `Everywhere / Medium / 18` -> `$EverywhereMediumFont` (a trailing numeric segment is the size preset and is dropped).
- * A raw `$EverywhereMediumFont` is accepted. Anything not in KNOWN_ALIASES is unmapped. `SkyrimBooks` is the one alias without the `Font` suffix.
+ * A raw `$EverywhereMediumFont` is accepted. Anything not in KNOWN_ALIASES is unmapped. `SkyrimBooks` has no `Font` suffix and the controller-button aliases
+ * no `$`; an installed family/style (FIGMA_FACES, e.g. `CreationClub/Bold`) maps to its first alias whatever its spelling.
  */
 export function fontAlias(name: string): string | undefined {
   const t = name.trim()
   if (t.startsWith('$')) return KNOWN_ALIASES.has(t) ? t : undefined
   const words = t.split('/').map((s) => s.trim().replace(/\s+/g, '')).filter(Boolean)
   if (words.length && /^\d+(\.\d+)?$/.test(words.at(-1)!)) words.pop()
-  const known = (w: string[]): string | undefined => [`$${w.join('')}Font`, `$${w.join('')}`].find((a) => w.length && KNOWN_ALIASES.has(a))
+  const known = (w: string[]): string | undefined => [`$${w.join('')}Font`, `$${w.join('')}`, w.join('')].find((a) => w.length && KNOWN_ALIASES.has(a))
+  const face = words.length === 2 ? FIGMA_FACES.find((f) => f.family.toLowerCase() === words[0]!.toLowerCase() && f.style.toLowerCase() === words[1]!.toLowerCase()) : undefined
+  if (face) return face.aliases[0]
   // the fonts extracted from the game are named Everywhere/Light and <Face>/Regular: Light is $EverywhereFont, Regular is the face's only style
   return known(words) ?? (words.length > 1 && /^(light|regular)$/i.test(words.at(-1)!) ? known(words.slice(0, -1)) : undefined)
 }
@@ -107,7 +112,10 @@ export interface FontInfo {
   via: 'text style' | 'family/style' | 'fallback' | 'unmapped'
 }
 
-export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[]; font?: FontInfo } {
+/** Code points the font behind an alias can draw; undefined when unknown (the `font-missing-glyph` check is skipped). */
+export type GlyphLookup = (alias: string) => ReadonlySet<number> | undefined
+
+export function mapText(node: TextNode, glyphs?: GlyphLookup): { text?: MappedText; lint: LintIssue[]; font?: FontInfo } {
   const lint: LintIssue[] = []
   const run = node.runs[0]
   if (!run) {
@@ -135,6 +143,12 @@ export function mapText(node: TextNode): { text?: MappedText; lint: LintIssue[];
     }
     font = { ...info, alias, via: 'fallback' }
     lint.push(issue('warning', 'font-fallback', node.id, `${figma} is not a Skyrim font alias; using the nearest, ${alias}. Name a Figma text style like "Everywhere / Medium / 18" to choose.`))
+  }
+  const have = glyphs?.(alias)
+  if (have) {
+    const lacking = [...new Set([...node.content].filter((c) => !/\s/.test(c) && !have.has(c.codePointAt(0)!)))]
+    if (lacking.length)
+      lint.push(issue('warning', 'font-missing-glyph', node.id, `${figma} resolves to ${alias}, which has no glyph for ${lacking.slice(0, 8).map((c) => `"${c}"`).join(' ')}${lacking.length > 8 ? ` and ${lacking.length - 8} more` : ''}; the game draws nothing there.`))
   }
   if (node.truncate) lint.push(issue('warning', 'text-truncate-unsupported', node.id, 'Truncation needs the runtime helper, which is not generated yet.'))
 

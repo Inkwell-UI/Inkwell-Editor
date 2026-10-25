@@ -3,10 +3,10 @@ import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { FIGMA_FACES, type FontToolErrorCode, type FontToolProgress, type FontToolResult, type FontToolStatus } from '../../shared/fonts'
+import { FIGMA_FACES, missingFaces, type FigmaFace, type FontToolErrorCode, type FontToolProgress, type FontToolResult, type FontToolStatus } from '../../shared/fonts'
 import { extractEntry, openBsa } from '../vanilla/bsa'
 import { convertFont, FSTYPE_FORBIDS_INSTALL, fsTypeLabel, matchFace, type ConvertedFont } from './convert'
-import { fontStatus, FontToolError, installFonts, uninstallFonts, type FontSystem } from './install'
+import { fontStatus, FontToolError, readManifest, installFonts, uninstallFonts, type FontSystem } from './install'
 
 // "Install Skyrim fonts for Figma": BSA -> fonts_en.swf -> FFDec TTF export -> rename (convert.ts) -> per-user install (install.ts). Never automatic.
 
@@ -39,7 +39,7 @@ export const ffdecExport = (javaPath: string, ffdecDir: string) => (swf: string,
   )
 
 /** The fonts in the archive's Interface/fonts_en.swf, converted. Works in a temp folder that is always removed. */
-export async function extractFonts(bsaPath: string, exportFonts: (swf: string, outDir: string) => Promise<void>, onProgress?: (p: FontToolProgress) => void): Promise<{ fonts: ConvertedFont[]; warnings: string[] }> {
+export async function extractFonts(bsaPath: string, exportFonts: (swf: string, outDir: string) => Promise<void>, onProgress?: (p: FontToolProgress) => void, want: readonly FigmaFace[] = FIGMA_FACES): Promise<{ fonts: ConvertedFont[]; warnings: string[] }> {
   const bsa = openBsa(bsaPath)
   const e = bsa.entries.find((x) => `${x.folder}/${x.name}`.toLowerCase() === 'interface/fonts_en.swf')
   if (!e) throw new Refused('export-failed', `interface/fonts_en.swf is not in ${bsaPath}.`)
@@ -56,10 +56,10 @@ export async function extractFonts(bsaPath: string, exportFonts: (swf: string, o
     for (const f of (await readdir(raw)).filter((n) => n.toLowerCase().endsWith('.ttf')).sort()) {
       const bytes = await readFile(join(raw, f))
       const face = matchFace(bytes)
-      if (face && !fonts.some((x) => x.face === face)) fonts.push(convertFont(bytes, face))
+      if (face && want.includes(face) && !fonts.some((x) => x.face === face)) fonts.push(convertFont(bytes, face))
     }
     fonts.sort((a, b) => FIGMA_FACES.indexOf(a.face) - FIGMA_FACES.indexOf(b.face))
-    const missing = FIGMA_FACES.filter((f) => !fonts.some((x) => x.face === f)).map((f) => `${f.family}/${f.style}`)
+    const missing = want.filter((f) => !fonts.some((x) => x.face === f)).map((f) => `${f.family}/${f.style}`)
     if (missing.some((m) => m.startsWith('Everywhere/'))) throw new Refused('faces-missing', `FFDec's export lacks ${missing.join(', ')}; this game version's fonts_en.swf is not the one Inkwell knows.`)
     return { fonts, warnings: missing.length ? [`Not found in fonts_en.swf, so not installed: ${missing.join(', ')}.`] : [] }
   } finally {
@@ -78,7 +78,7 @@ export function createFontTool(deps: FontToolDeps) {
   const status = (): Promise<FontToolStatus> => fontStatus(deps.sys, deps.platformOk)
   const fail = async (e: unknown): Promise<FontToolResult> => {
     const code: FontToolErrorCode = e instanceof Refused || e instanceof FontToolError ? e.code : 'failed'
-    const st = await status().catch(() => ({ platformOk: deps.platformOk, installed: false, faces: [], fontsDir: deps.sys.fontsDir, manifestPath: deps.sys.manifestPath }))
+    const st = await status().catch(() => ({ platformOk: deps.platformOk, installed: false, faces: [], missing: missingFaces([]), fontsDir: deps.sys.fontsDir, manifestPath: deps.sys.manifestPath }))
     return { ok: false, code, error: e instanceof Error ? e.message : String(e), status: st }
   }
   const job = async (fn: () => Promise<string[]>): Promise<FontToolResult> => {
@@ -98,13 +98,16 @@ export function createFontTool(deps: FontToolDeps) {
     install: (): Promise<FontToolResult> =>
       job(async () => {
         if (!deps.platformOk) throw new Refused('not-windows', 'Per-user font install needs Windows 10 (1809) or newer.')
-        if ((await status()).installed) throw new Refused('already-installed', `The fonts are already installed (manifest ${deps.sys.manifestPath}). Remove them first.`)
+        // a manifest that lists fonts means "install missing": only faces it lacks are extracted and appended (install.ts never touches the listed ones)
+        const have = (await readManifest(deps.sys.manifestPath))?.fonts ?? []
+        const want = FIGMA_FACES.filter((f) => !have.some((e) => e.family === f.family && e.style === f.style))
+        if (!want.length) throw new Refused('already-installed', `All faces are already installed (manifest ${deps.sys.manifestPath}).`)
         deps.onProgress?.({ step: 'game' })
         const bsa = await deps.findBsa()
         if (!bsa) throw new Refused('game-not-found', 'Skyrim - Interface.bsa was not found. Fix the Skyrim install check below first.')
         const { javaPath, ffdecDir } = deps.ffdec()
         if (!deps.exportFonts && !existsSync(ffdecJar(ffdecDir))) throw new Refused('ffdec-missing', `ffdec-cli.jar was not found in ${ffdecDir}. Fix the FFDec check below first.`)
-        const { fonts, warnings } = await extractFonts(bsa, deps.exportFonts ?? ffdecExport(javaPath, ffdecDir), deps.onProgress)
+        const { fonts, warnings } = await extractFonts(bsa, deps.exportFonts ?? ffdecExport(javaPath, ffdecDir), deps.onProgress, want)
         fsTypeGate(fonts)
         await installFonts(fonts, deps.sys, (done, total) => deps.onProgress?.({ step: 'install', done, total }))
         return warnings

@@ -3,9 +3,10 @@ import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rename, rm, unlink, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { installedFileName, registryName, type FontToolStatus } from '../../shared/fonts'
+import { installedFileName, missingFaces, registryName, type FontToolStatus, type InstalledFace } from '../../shared/fonts'
 import { parseRegValue } from '../doctor/skyrim'
 import type { ConvertedFont } from './convert'
+import { cmapCodePoints } from './sfnt'
 
 /** Where fonts go and how the registry is reached. The real one is per user (HKCU + %LOCALAPPDATA%); tests and the sandbox inject their own. */
 export interface FontSystem {
@@ -95,10 +96,23 @@ async function writeManifest(path: string, m: Manifest): Promise<void> {
 
 export async function fontStatus(sys: FontSystem, platformOk = true): Promise<FontToolStatus> {
   const m = await readManifest(sys.manifestPath)
+  const faces: InstalledFace[] = []
+  for (const f of m?.fonts ?? []) {
+    const bytes = await readFile(f.file).catch(() => undefined)
+    const cps = bytes && cmapCodePoints(bytes)
+    faces.push({
+      family: f.family,
+      style: f.style,
+      file: f.file,
+      present: !!bytes,
+      ...(cps ? { glyphs: cps.size, ...(cps.size <= 64 ? { chars: [...cps].sort((a, b) => a - b).map((c) => String.fromCodePoint(c)).join('') } : {}) } : {})
+    })
+  }
   return {
     platformOk,
     installed: !!m?.fonts.length,
-    faces: (m?.fonts ?? []).map((f) => ({ family: f.family, style: f.style, file: f.file, present: existsSync(f.file) })),
+    faces,
+    missing: missingFaces(m?.fonts ?? []),
     fontsDir: sys.fontsDir,
     manifestPath: sys.manifestPath
   }
@@ -116,8 +130,11 @@ export class FontToolError extends Error {
  * On a failure midway it reverses what it did, so nothing half-installed is left behind.
  */
 export async function installFonts(fonts: ConvertedFont[], sys: FontSystem, onStep?: (done: number, total: number) => void): Promise<void> {
-  if ((await readManifest(sys.manifestPath))?.fonts.length) throw new FontToolError('already-installed', `The fonts are already installed (manifest ${sys.manifestPath}). Remove them first.`)
-  const plan = fonts.map((f) => ({ f, file: join(sys.fontsDir, installedFileName(f.face)), regName: registryName(f.face) }))
+  const prev = await readManifest(sys.manifestPath)
+  // faces the manifest already lists are left as they are: a second run installs only what is missing and appends
+  const todo = fonts.filter((f) => !prev?.fonts.some((e) => e.family === f.face.family && e.style === f.face.style))
+  if (!todo.length) throw new FontToolError('already-installed', `All faces are already installed (manifest ${sys.manifestPath}).`)
+  const plan = todo.map((f) => ({ f, file: join(sys.fontsDir, installedFileName(f.face)), regName: registryName(f.face) }))
   const clashes: string[] = []
   for (const p of plan) {
     if (existsSync(p.file)) clashes.push(p.file)
@@ -125,7 +142,7 @@ export async function installFonts(fonts: ConvertedFont[], sys: FontSystem, onSt
     if (v !== undefined) clashes.push(`registry value "${p.regName}" (${v})`)
   }
   if (clashes.length) throw new FontToolError('foreign', `Refusing to overwrite fonts Inkwell did not install: ${clashes.join('; ')}.`)
-  const m: Manifest = { version: 1, installedAt: new Date().toISOString(), fonts: [] }
+  const m: Manifest = prev ? { ...prev, fonts: [...prev.fonts] } : { version: 1, installedAt: new Date().toISOString(), fonts: [] }
   await mkdir(sys.fontsDir, { recursive: true })
   try {
     for (const [i, p] of plan.entries()) {
@@ -137,21 +154,27 @@ export async function installFonts(fonts: ConvertedFont[], sys: FontSystem, onSt
       onStep?.(i + 1, plan.length)
     }
   } catch (e) {
-    const left = await uninstallFonts(sys).catch((u: unknown) => [`rollback failed: ${u instanceof Error ? u.message : String(u)}`])
+    // reverse only what this run added; an earlier install stays
+    const left = await uninstallFonts(sys, undefined, new Set(plan.map((p) => p.regName))).catch((u: unknown) => [`rollback failed: ${u instanceof Error ? u.message : String(u)}`])
     throw new FontToolError('failed', `Install failed: ${e instanceof Error ? e.message : String(e)}${left.length ? `. ${left.join(' ')}` : '. Everything it had done was reversed.'}`)
   }
 }
 
 /**
  * Reverses exactly what the manifest lists: a registry value only while it still points at the file Inkwell wrote, a file only while it still has
- * the bytes Inkwell wrote. Entries that could not be removed (a locked file) stay in the manifest for the next try. Returns warnings.
+ * the bytes Inkwell wrote. Entries that could not be removed (a locked file) stay in the manifest for the next try. `only` (registry names) limits it
+ * to those entries (rollback of an append). Returns warnings.
  */
-export async function uninstallFonts(sys: FontSystem, onStep?: (done: number, total: number) => void): Promise<string[]> {
+export async function uninstallFonts(sys: FontSystem, onStep?: (done: number, total: number) => void, only?: ReadonlySet<string>): Promise<string[]> {
   const m = await readManifest(sys.manifestPath)
   if (!m) return []
   const warnings: string[] = []
   const keep: ManifestEntry[] = []
   for (const [i, f] of m.fonts.entries()) {
+    if (only && !only.has(f.regName)) {
+      keep.push(f)
+      continue
+    }
     const cur = await sys.regGet(f.regName)
     if (cur !== undefined && cur.toLowerCase() === f.file.toLowerCase()) await sys.regDelete(f.regName)
     else if (cur !== undefined) warnings.push(`Registry value "${f.regName}" now points to ${cur}; left alone.`)

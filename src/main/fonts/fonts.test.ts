@@ -5,12 +5,13 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { FIGMA_FACES, installedFileName, registryName, type FigmaFace, type FontToolProgress } from '../../shared/fonts'
 import { ttfFullName } from '../previewFonts'
-import { fontAlias } from '../swf/text'
+import { fontAlias, KNOWN_ALIASES } from '../swf/text'
 import { buildBsa } from '../vanilla/bsa.testutil'
 import { convertFont, fsTypeOf, matchFace, NAME_NOTE, type ConvertedFont } from './convert'
 import { createFontTool } from './index'
 import { fontStatus, installFonts, readManifest, uninstallFonts, type FontSystem } from './install'
-import { buildNameTable, nameString, readSfnt, writeSfnt } from './sfnt'
+import { buildNameTable, cmapCodePoints, nameString, readSfnt, writeSfnt } from './sfnt'
+import { cmapFormat12, cmapFormat4, ttfWithCmap } from './sfnt.testutil'
 
 /** A tiny synthetic TrueType file shaped like FFDec's raw export (head padded to 56 bytes, OS/2 v2, hdmx, FFDec-style names). No real font data. */
 function rawFont(o: { name: string; bold?: boolean; fsType?: number }): Buffer {
@@ -74,7 +75,10 @@ describe('naming', () => {
     expect(matchFace(rawFont({ name: 'Futura Condensed' }))).toBe(face('Everywhere', 'Medium'))
     expect(matchFace(rawFont({ name: 'Futura Condensed', bold: true }))).toBe(face('Everywhere', 'Bold'))
     expect(matchFace(rawFont({ name: 'Futura CondensedLight' }))).toBe(face('Everywhere', 'Light'))
-    expect(matchFace(rawFont({ name: 'Eurostile LT Cyr Std' }))).toBeUndefined()
+    expect(matchFace(rawFont({ name: 'Consolas' }))).toBeUndefined()
+    expect(matchFace(rawFont({ name: 'Eurostile LT Cyr Std' }))).toBe(face('CreationClub', 'Regular'))
+    expect(matchFace(rawFont({ name: 'Eurostile Cyr Std', bold: true }))).toBe(face('CreationClub', 'Bold'))
+    expect(matchFace(rawFont({ name: 'Controller  Buttons inverted' }))).toBe(face('ControllerButtonsInverted', 'Regular'))
   })
 
   it('every face maps to its alias through font-resolution rule 2 (family/style), with no fallback', () => {
@@ -153,10 +157,59 @@ describe('install and uninstall (temp folder, in-memory registry)', () => {
     expect(sys.values.size).toBe(1)
   })
 
-  it('refuses a second install while the manifest lists fonts', async () => {
+  it('refuses a second install while every face is listed', async () => {
     const sys = sysWith()
     await installFonts(converted(), sys)
     await expect(installFonts(converted(), sys)).rejects.toMatchObject({ code: 'already-installed' })
+  })
+
+  describe('install missing (append to the manifest)', () => {
+    const old = (): ConvertedFont[] => converted().slice(0, 6)
+    it('adds only the faces the manifest lacks and leaves the installed files and entries alone', async () => {
+      const sys = sysWith()
+      await installFonts(old(), sys)
+      const before = await readManifest(sys.manifestPath)
+      const first = before!.fonts[0]!
+      const steps: string[] = []
+      await installFonts(converted(), sys, (d, t) => steps.push(`${d}/${t}`))
+      const m = await readManifest(sys.manifestPath)
+      expect(m!.installedAt).toBe(before!.installedAt)
+      expect(m!.fonts.map((f) => `${f.family}/${f.style}`)).toEqual(FIGMA_FACES.map((f) => `${f.family}/${f.style}`))
+      expect(m!.fonts[0]).toEqual(first)
+      expect(steps).toEqual(FIGMA_FACES.slice(6).map((_, i) => `${i + 1}/${FIGMA_FACES.length - 6}`))
+      expect(sys.values.size).toBe(FIGMA_FACES.length)
+      expect((await fontStatus(sys)).missing).toEqual([])
+    })
+    it('a new face whose file or registry value belongs to someone else refuses the append and changes nothing', async () => {
+      const sys = sysWith()
+      await installFonts(old(), sys)
+      const m0 = await readFile(sys.manifestPath, 'utf8')
+      sys.values.set(registryName(FIGMA_FACES[8]!), 'C:\elsewhere.ttf')
+      await expect(installFonts(converted(), sys)).rejects.toMatchObject({ code: 'foreign' })
+      expect(await readFile(sys.manifestPath, 'utf8')).toBe(m0)
+      expect(existsSync(join(sys.fontsDir, installedFileName(FIGMA_FACES[6]!)))).toBe(false)
+    })
+    it('a failure midway reverses only the appended faces; the earlier install stays', async () => {
+      const reg = memRegistry()
+      const sys = sysWith(reg)
+      await installFonts(old(), sys)
+      let sets = 0
+      const failing: FontSystem = { ...sys, regSet: async (n, v) => { if (++sets === 3) throw new Error('access denied (injected)'); return sys.regSet(n, v) } }
+      await expect(installFonts(converted(), failing)).rejects.toThrow(/Install failed: access denied.*reversed/)
+      const m = await readManifest(sys.manifestPath)
+      expect(m!.fonts.map((f) => f.family + '/' + f.style)).toEqual(old().map((f) => f.face.family + '/' + f.face.style))
+      expect(sys.values.size).toBe(6)
+      expect(FIGMA_FACES.slice(6).some((f) => existsSync(join(sys.fontsDir, installedFileName(f))))).toBe(false)
+      expect(old().every((f) => existsSync(join(sys.fontsDir, installedFileName(f.face))))).toBe(true)
+    })
+    it('Remove reverses the old and the appended faces', async () => {
+      const sys = sysWith()
+      await installFonts(old(), sys)
+      await installFonts(converted(), sys)
+      expect(await uninstallFonts(sys)).toEqual([])
+      expect(sys.values.size).toBe(0)
+      expect(existsSync(sys.manifestPath)).toBe(false)
+    })
   })
 
   it('rolls back everything when a step fails midway', async () => {
@@ -216,7 +269,7 @@ describe('font tool (synthetic archive, injected FFDec)', () => {
       ffdec: () => ({ javaPath: 'java', ffdecDir: join(dir, 'no-ffdec') }),
       exportFonts: async (swf, out) => {
         exported.push((await readFile(swf, 'latin1')))
-        await writeFile(join(out, '3_Eurostile.ttf'), rawFont({ name: 'Eurostile LT Cyr Std' }))
+        await writeFile(join(out, '3_Consolas.ttf'), rawFont({ name: 'Consolas' })) // never installed
         for (const [i, f] of (o.faces ?? FIGMA_FACES).entries()) await writeFile(join(out, `${i}_${f.raw.name}.ttf`), rawFor(f, o.fsType ?? 0))
       },
       onProgress: (p) => progress.push(p)
@@ -263,5 +316,63 @@ describe('font tool (synthetic archive, injected FFDec)', () => {
     expect(await mac.install()).toMatchObject({ ok: false, code: 'not-windows' })
     const some = await setup({ faces: FIGMA_FACES.filter((f) => f.family !== 'Dragon') })
     expect(await some.tool.install()).toMatchObject({ ok: true, warnings: [expect.stringMatching(/Dragon\/Regular/)] })
+  })
+
+  it('the tool extracts only the missing faces and reports them as install steps', async () => {
+    const { tool, sys, progress } = await setup()
+    await installFonts(converted().slice(0, 6), sys)
+    const r = await tool.install()
+    expect(r).toMatchObject({ ok: true, warnings: [], status: { missing: [] } })
+    expect(progress.filter((p) => p.step === 'install')).toHaveLength(FIGMA_FACES.length - 6)
+    expect(r.status.faces).toHaveLength(FIGMA_FACES.length)
+    expect(await tool.install()).toMatchObject({ ok: false, code: 'already-installed' })
+  })
+  it('the tool does not demand the Everywhere faces when only others are missing', async () => {
+    const { tool, sys } = await setup({ faces: FIGMA_FACES.slice(3) })
+    await installFonts(FIGMA_FACES.slice(0, 3).map((f) => convertFont(rawFor(f), f)), sys)
+    expect(await tool.install()).toMatchObject({ ok: true, status: { missing: [] } })
+  })
+})
+
+describe('glyph coverage and the face table', () => {
+  it('reads format 4 and 12 cmaps and rejects what it cannot read', () => {
+    expect([...cmapCodePoints(ttfWithCmap('A', cmapFormat4('R0,.9'))) ?? []].sort((a, b) => a - b)).toEqual([...'R0,.9'].map((c) => c.charCodeAt(0)).sort((a, b) => a - b))
+    expect(cmapCodePoints(ttfWithCmap('A', cmapFormat12(0x41, 0x44)))?.size).toBe(4)
+    expect(cmapCodePoints(writeSfnt(new Map([['name', buildNameTable({ 1: 'x' })]])))).toBeUndefined()
+    expect(cmapCodePoints(Buffer.from('not a font'))).toBeUndefined()
+  })
+
+  it('status reports the glyph count of each installed font and lists a sparse one', async () => {
+    const sys = sysWith()
+    await mkdir(sys.fontsDir, { recursive: true })
+    const sparse = join(sys.fontsDir, 'Inkwell-SkyrimSymbols-Regular.ttf')
+    const wide = join(sys.fontsDir, 'Inkwell-Everywhere-Light.ttf')
+    await writeFile(sparse, ttfWithCmap('S', cmapFormat4('0123456789.,R')))
+    await writeFile(wide, ttfWithCmap('E', cmapFormat12(0x20, 0x20 + 199)))
+    const entry = (family: string, style: string, file: string) => ({ family, style, file, regName: family })
+    await mkdir(join(dir, 'Inkwell'), { recursive: true })
+    await writeFile(sys.manifestPath, JSON.stringify({ version: 1, installedAt: 'x', fonts: [entry('Everywhere', 'Light', wide), entry('SkyrimSymbols', 'Regular', sparse), entry('Gone', 'Regular', join(dir, 'gone.ttf'))] }))
+    const st = await fontStatus(sys)
+    expect(st.faces.map((f) => [f.family, f.present, f.glyphs])).toEqual([['Everywhere', true, 200], ['SkyrimSymbols', true, 13], ['Gone', false, undefined]])
+    expect(st.faces[1]!.chars).toBe(',.0123456789R')
+    expect(st.faces[0]!.chars).toBeUndefined()
+    expect(st.missing.some((f) => f.family === 'Everywhere' && f.style === 'Light')).toBe(false)
+    expect(st.missing.some((f) => f.family === 'Everywhere' && f.style === 'Bold')).toBe(true)
+  })
+
+  it('FIGMA_FACES: unique names, files and registry values; the first alias is one the compiler knows; family/style maps to the first alias', () => {
+    const key = (f: FigmaFace): string => f.family + '/' + f.style
+    expect(new Set(FIGMA_FACES.map(key)).size).toBe(FIGMA_FACES.length)
+    expect(new Set(FIGMA_FACES.map(registryName)).size).toBe(FIGMA_FACES.length)
+    expect(new Set(FIGMA_FACES.map((f) => f.raw.name + f.raw.bold)).size).toBe(FIGMA_FACES.length)
+    const aliases = FIGMA_FACES.flatMap((f) => f.aliases)
+    expect(new Set(aliases).size).toBe(aliases.length)
+    for (const f of FIGMA_FACES) expect(KNOWN_ALIASES.has(f.aliases[0]!), f.aliases[0]).toBe(true) // $HandwrittenBold is the game's second name, not a compiler alias
+    for (const f of FIGMA_FACES) expect(fontAlias(key(f) + '/18'), key(f)).toBe(f.aliases[0])
+    expect(fontAlias('ControllerButtons')).toBe('ControllerButtons')
+    expect(fontAlias('ControllerButtonsInverted / Regular')).toBe('ControllerButtonsInverted')
+    expect(fontAlias('CreationClub / Bold')).toBe('$CClub_Font_Bold')
+    expect(fontAlias('$SkyrimBooks_UnreadableFont')).toBe('$SkyrimBooks_UnreadableFont')
+    expect(fontAlias('Consolas / Regular')).toBeUndefined() // Windows has it; not a Skyrim family name
   })
 })

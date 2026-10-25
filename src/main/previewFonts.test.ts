@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { FACES, modeFromEnv, resolvePreviewFonts, ttfFullName } from './previewFonts'
 import { KNOWN_ALIASES } from './swf/text'
+import { cmapFormat4, ttfWithCmap } from './fonts/sfnt.testutil'
+import { FIGMA_FACES, installedFileName } from '../shared/fonts'
 
 /** Minimal TTF with only a `name` table holding a full name (ID 4, Windows, UTF-16BE). */
 const ttf = (full: string): Buffer => {
@@ -71,5 +73,33 @@ describe('preview font selection', () => {
 
   it('INKWELL_PREVIEW_FONTS parsing', () => {
     expect(['bundled', 'installed', 'auto', 'x', undefined].map(modeFromEnv)).toEqual(['bundled', 'installed', 'auto', 'auto', 'auto'])
+  })
+})
+
+describe('glyphsFor (lint font-missing-glyph)', () => {
+  const sym = ttfWithCmap('Skyrim Symbols', cmapFormat4('0123456789.,R'))
+  const read = (raw: string): Buffer | undefined => {
+    const p = raw.split(String.fromCharCode(92)).join("/")
+    return p === "i/Inkwell-SkyrimSymbols-Regular.ttf" ? sym : p.startsWith("b/") ? ttfWithCmap(`Bundled ${p}`, cmapFormat4("ABC")) : undefined
+  }
+
+  it('installed face: its cmap; generic bundled stand-in or unknown alias: unknown', () => {
+    const s = resolvePreviewFonts({ bundledDir: 'b', installedDir: 'i', read })
+    expect(s.glyphsFor('$SkyrimSymbolsFont')?.has(0x52)).toBe(true)
+    expect(s.glyphsFor('$SkyrimSymbolsFont')?.has(0x48)).toBe(false)
+    expect(s.glyphsFor('$DragonFont')).toBeUndefined() // Barlow stands in; its letters say nothing about Dragon
+    expect(s.glyphsFor('$ConsoleFont')).toBeUndefined()
+    expect(s.glyphsFor('$Nope')).toBeUndefined()
+  })
+  it('a real lookalike (Everywhere) counts as known', () => {
+    expect(resolvePreviewFonts({ bundledDir: 'b', read }).glyphsFor('$EverywhereFont')?.size).toBe(3)
+  })
+  it('a font without a readable cmap is unknown, not empty', () => {
+    expect(resolvePreviewFonts({ bundledDir: 'b', read: (p) => (p.includes('Light') ? ttf('NoCmap') : undefined) }).glyphsFor('$EverywhereFont')).toBeUndefined()
+  })
+  it('the new faces exist with the installed names the tool writes', () => {
+    const names = FACES.flatMap((f) => (f.installed ? [f.installed] : []))
+    for (const n of ['Inkwell-ControllerButtons-Regular.ttf', 'Inkwell-ControllerButtonsInverted-Regular.ttf', 'Inkwell-CreationClub-Regular.ttf', 'Inkwell-CreationClub-Bold.ttf', 'Inkwell-SkyrimBooksUnreadable-Regular.ttf']) expect(names).toContain(n)
+    for (const f of FIGMA_FACES) expect(names, f.family).toContain(installedFileName(f))
   })
 })

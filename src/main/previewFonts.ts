@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { cmapCodePoints } from './fonts/sfnt'
 
 /** Where the preview text gets its font from. `auto` = installed Skyrim fonts when present, else a bundled lookalike, per face. */
 export type PreviewFontMode = 'auto' | 'installed' | 'bundled'
@@ -31,6 +32,11 @@ export const FACES: readonly FontFace[] = [
   { aliases: ['$MageScriptFont'], label: 'MageScript', installed: 'Inkwell-MageScript-Regular.ttf', bundled: SANS, generic: true },
   { aliases: ['$SkyrimSymbolsFont'], label: 'Skyrim Symbols', installed: 'Inkwell-SkyrimSymbols-Regular.ttf', bundled: SANS, generic: true },
   { aliases: ['$SkyrimBooks'], label: 'Skyrim Books', installed: 'Inkwell-SkyrimBooks-Regular.ttf', bundled: SANS, generic: true },
+  { aliases: ['$SkyrimBooks_UnreadableFont'], label: 'Skyrim Books Unreadable', installed: 'Inkwell-SkyrimBooksUnreadable-Regular.ttf', bundled: SANS, generic: true },
+  { aliases: ['$CClub_Font'], label: 'Creation Club', installed: 'Inkwell-CreationClub-Regular.ttf', bundled: SANS, generic: true },
+  { aliases: ['$CClub_Font_Bold'], label: 'Creation Club Bold', installed: 'Inkwell-CreationClub-Bold.ttf', bundled: 'BarlowCondensed-Bold.ttf', generic: true },
+  { aliases: ['ControllerButtons'], label: 'Controller Buttons', installed: 'Inkwell-ControllerButtons-Regular.ttf', bundled: SANS, generic: true },
+  { aliases: ['ControllerButtonsInverted'], label: 'Controller Buttons Inverted', installed: 'Inkwell-ControllerButtonsInverted-Regular.ttf', bundled: SANS, generic: true },
   { aliases: ['$ConsoleFont'], label: 'Console', bundled: 'ShareTechMono-Regular.ttf', generic: true }
 ]
 
@@ -49,6 +55,11 @@ export interface PreviewFontSet {
   nameFor(alias: string): string
   /** TTF bytes of a font name returned by `nameFor` (preview glyph embedding); undefined for device fonts. */
   bytesFor(fontName: string): Buffer | undefined
+  /**
+   * Code points the font behind an alias can draw (its cmap), for the lint `font-missing-glyph`. Undefined when unknown: no font, or a generic
+   * bundled stand-in whose characters say nothing about the game's font.
+   */
+  glyphsFor(alias: string): ReadonlySet<number> | undefined
   /** Badge labels of the faces used by `aliases` that are not the real Skyrim font. */
   approximated(aliases: Iterable<string>): string[]
 }
@@ -121,7 +132,14 @@ export function resolvePreviewFonts(o: ResolveOptions): PreviewFontSet {
     const f = inst ?? load(o.bundledDir, face.bundled, face, 'bundled')
     if (f) for (const a of face.aliases) byAlias.set(a, f)
   }
+  const cmaps = new Map<Buffer, ReadonlySet<number> | undefined>()
   return {
+    glyphsFor: (alias) => {
+      const f = byAlias.get(alias)
+      if (!f || (f.source === 'bundled' && f.face.generic)) return undefined
+      if (!cmaps.has(f.bytes)) cmaps.set(f.bytes, cmapCodePoints(f.bytes))
+      return cmaps.get(f.bytes)
+    },
     fonts: [...new Map([...byAlias.values()].map((f) => [f.family, f])).values()],
     nameFor: (alias) => byAlias.get(alias)?.family ?? '_sans',
     bytesFor: (name) => [...byAlias.values()].find((f) => f.family === name)?.bytes,

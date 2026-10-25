@@ -8,7 +8,7 @@ import { Dialog } from '../ui/Dialog'
 
 const s = strings.fonts
 /** Everything the section shows, lowercased, for the Settings search. */
-export const FONTS_TEXT = [s.title, s.intro, s.notice, s.install, s.remove, 'figma fonts everywhere futura', ...FIGMA_FACES.map((f) => `${f.family} ${f.style}`)].join(' ').toLowerCase()
+export const FONTS_TEXT = [s.title, s.intro, s.notice, s.install, s.installMissing, s.remove, 'figma fonts everywhere futura', ...FIGMA_FACES.map((f) => `${f.family} ${f.style}`)].join(' ').toLowerCase()
 
 const stepText = (p: FontToolProgress): string => (p.step === 'install' || p.step === 'remove' ? s.steps[p.step](p.done, p.total) : s.steps[p.step])
 
@@ -44,6 +44,9 @@ export function FontsForFigma() {
       })
   }
   const installed = !!status?.installed
+  const missing = status?.missing ?? FIGMA_FACES
+  const complete = installed && missing.length === 0
+  const toInstall = installed ? missing : FIGMA_FACES
   const notWin = status && !status.platformOk ? s.notWindows : undefined
   const r = result?.r
   return (
@@ -53,15 +56,26 @@ export function FontsForFigma() {
       <p className="banner banner-info fonts-notice" data-testid="fonts-notice"><span>{s.notice}</span></p>
       <p className="dim">{s.quality}</p>
       <div role="status" aria-label={s.statusLabel} data-testid="fonts-status">
-        {status && <p><strong>{installed ? s.statusInstalled(status.faces.length) : s.statusNone}</strong></p>}
+        {status && <p><strong>{installed ? s.statusInstalled(status.faces.length, status.faces.length + status.missing.length) : s.statusNone}</strong></p>}
         {installed && (
           <ul className="plain fonts-faces">
             {status!.faces.map((f) => (
               <li key={f.file}>
-                {f.family} / {f.style} {!f.present && <span className="tone-warn">({s.missingFile})</span>}
+                {f.family} / {f.style} {!f.present ? <span className="tone-warn">({s.missingFile})</span> : f.glyphs !== undefined && <span className="dim" data-testid="fonts-glyphs">{s.glyphs(f.glyphs)}</span>}
+                {f.chars && <span className="dim mono"> {f.chars}</span>}
               </li>
             ))}
           </ul>
+        )}
+        {installed && status!.missing.length > 0 && (
+          <>
+            <p className="tone-warn" data-testid="fonts-missing">{s.statusMissing(status!.missing.length)}</p>
+            <ul className="plain fonts-faces">
+              {status!.missing.map((f) => (
+                <li key={`${f.family}/${f.style}`}>{f.family} / {f.style}</li>
+              ))}
+            </ul>
+          </>
         )}
         {status && <p className="dim mono fonts-where">{s.location(status.fontsDir, status.manifestPath)}</p>}
         {busy && (
@@ -81,16 +95,16 @@ export function FontsForFigma() {
         <ul className="plain tone-warn" aria-label={s.warnings}>{r.warnings.map((w) => <li key={w}>{w}</li>)}</ul>
       )}
       <div className="row-actions">
-        <Btn icon={Download} variant="primary" haspopup="dialog" onClick={() => setConfirm(true)} reason={busy ? s.working : notWin ?? (installed ? s.alreadyInstalled : undefined)} testId="fonts-install">{s.install}</Btn>
+        <Btn icon={Download} variant="primary" haspopup="dialog" onClick={() => setConfirm(true)} reason={busy ? s.working : notWin ?? (complete ? s.alreadyInstalled : undefined)} testId="fonts-install">{installed ? s.installMissing : s.install}</Btn>
         <Btn icon={Trash2} onClick={() => run('remove')} reason={busy ? s.working : !installed ? s.nothingInstalled : undefined} testId="fonts-remove">{s.remove}</Btn>
       </div>
       {confirm && (
-        <Dialog title={s.confirmTitle} onClose={() => setConfirm(false)}>
+        <Dialog title={installed ? s.confirmTitleMissing : s.confirmTitle} onClose={() => setConfirm(false)}>
           <div data-testid="fonts-confirm">
             <p className="banner banner-info"><span>{s.notice}</span></p>
-            <p>{s.confirmFaces(FIGMA_FACES.length)}</p>
+            <p>{s.confirmFaces(toInstall.length)}</p>
             <ul className="plain fonts-faces" data-testid="fonts-confirm-faces">
-              {FIGMA_FACES.map((f) => (
+              {toInstall.map((f) => (
                 <li key={`${f.family}/${f.style}`}>
                   {f.family} / {f.style} <span className="dim mono">{f.aliases.join(', ')}</span>
                 </li>

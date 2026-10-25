@@ -10,14 +10,18 @@ Cost, warm wrapper, 8 text fields: preview compile 33 ms with device fonts vs ab
 
 ## Source per face (priority)
 
-1. **Installed Skyrim fonts**, read-only, from `%LOCALAPPDATA%\Microsoft\Windows\Fonts` (`Inkwell-Everywhere-Light|Medium|Bold.ttf`, `Inkwell-<Face>-Regular.ttf` for Handwritten, Dragon, Falmer, Dwemer, Daedric, MageScript, SkyrimSymbols, SkyrimBooks), as put there by the opt-in font tool (`docs/font-install.md`; restart Inkwell after installing). Never copied, written or committed.
-2. **Bundled OFL lookalikes** in `resources/preview-fonts/` (licences and README there): Barlow Condensed Light/Regular/Bold for the Everywhere faces, Barlow Condensed Regular for the faces with no lookalike (Handwritten, SkyrimBooks, Dragon, cipher fonts, symbols), Share Tech Mono for `$ConsoleFont`.
+1. **Installed Skyrim fonts**, read-only, from `%LOCALAPPDATA%\Microsoft\Windows\Fonts` (`Inkwell-Everywhere-Light|Medium|Bold.ttf`, `Inkwell-<Face>-Regular.ttf` for Handwritten, Dragon, Falmer, Dwemer, Daedric, MageScript, SkyrimSymbols, SkyrimBooks, SkyrimBooksUnreadable, ControllerButtons, ControllerButtonsInverted, `Inkwell-CreationClub-Regular|Bold.ttf`), as put there by the opt-in font tool (`docs/font-install.md`; restart Inkwell after installing). Never copied, written or committed.
+2. **Bundled OFL lookalikes** in `resources/preview-fonts/` (licences and README there): Barlow Condensed Light/Regular/Bold for the Everywhere faces, Barlow Condensed Regular for the faces with no lookalike (Handwritten, SkyrimBooks, Dragon, cipher fonts, symbols, controller buttons, unreadable books, Creation Club; Bold for Creation Club Bold), Share Tech Mono for `$ConsoleFont`.
 
 `INKWELL_PREVIEW_FONTS=auto|installed|bundled` (default `auto`) forces the source; `installed` still falls back per face when a file is missing. The alias-to-face table is `FACES` in `src/main/previewFonts.ts` (`$StartMenuFont` uses Everywhere Medium; `$DialogueFont` uses Everywhere Light, as in vanilla `fontconfig.txt`).
 
 ## Flow
 
 `resolvePreviewFonts` (main, once) reads the files and the full name (name ID 4) of each. The pipeline passes `nameFor(alias)` and `bytesFor(name)` to the compiler (`previewFont`, `previewFontBytes` options), so the preview SWF embeds that font's glyphs and names it. The renderer fetches the bytes once through IPC `getPreviewFonts` (ArrayBuffer), makes Blob URLs and gives them to Ruffle as `fontSources`; the page CSP allows `connect-src blob:`. Font bytes appear nowhere else (not in `PreviewBuild`, not in the SWF); only the name and the badge labels travel with a build. A changed font source needs a restart.
+
+## Glyph coverage (lint `font-missing-glyph`)
+
+`PreviewFontSet.glyphsFor(alias)` returns the cmap (formats 0, 4, 12; `cmapCodePoints` in `src/main/fonts/sfnt.ts`) of the font resolved for an alias: the installed file when present, else the bundled lookalike when it is a real match (Everywhere Light/Medium/Bold). Generic stand-ins (`generic: true`: Barlow standing in for Dragon, the controller buttons, Console...) return undefined, because their characters say nothing about the game font, and the compiler skips the check. The compiler warns once per text layer that uses characters outside the set (`mapText`, `docs/swf-compiler.md`). Tests use synthetic cmaps.
 
 ## Badge
 

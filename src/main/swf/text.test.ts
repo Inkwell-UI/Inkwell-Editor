@@ -157,3 +157,25 @@ describe('describeTextMapping (shared with the Inspector)', () => {
     expect(m.script).toMatchObject({ verticalAlign: 'center', textAutoSize: 'shrink' })
   })
 })
+
+describe('lint font-missing-glyph', () => {
+  const symbols = new Set([...'0123456789.,R'].map((c) => c.charCodeAt(0)))
+  const withGlyphs = (content: string, font: string, lookup: (a: string) => ReadonlySet<number> | undefined) => mapText(textNode('t', { content }, font) as TextNode, lookup)
+
+  it('warns once per character the resolved face lacks, naming the layer font and alias; the text still compiles', () => {
+    const r = withGlyphs('R 12 Hello Hé', 'SkyrimSymbols/Regular', (a) => (a === '$SkyrimSymbolsFont' ? symbols : undefined))
+    expect(r.text?.alias).toBe('$SkyrimSymbolsFont')
+    expect(r.lint).toMatchObject([{ severity: 'warning', code: 'font-missing-glyph' }])
+    expect(r.lint[0]!.message).toContain('"H" "e" "l" "o" "é"')
+    expect(r.lint[0]!.message).toContain('$SkyrimSymbolsFont')
+  })
+  it('no warning when covered, for whitespace and line breaks, or when the face cmap is unknown', () => {
+    expect(withGlyphs('1.5 R\n22,0', 'SkyrimSymbols/Regular', () => symbols).lint).toEqual([])
+    expect(withGlyphs('Zzz ünï', 'SkyrimSymbols/Regular', () => undefined).lint).toEqual([])
+    expect(map().lint).toEqual([]) // no lookup at all
+  })
+  it('long lists are cut', () => {
+    const r = withGlyphs('abcdefghijkl', 'Dragon/Regular', () => new Set())
+    expect(r.lint[0]!.message).toContain('and 4 more')
+  })
+})

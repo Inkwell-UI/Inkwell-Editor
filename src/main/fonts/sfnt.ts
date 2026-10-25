@@ -97,3 +97,52 @@ export function buildNameTable(records: Record<number, string>): Buffer {
   })
   return Buffer.concat([head, ...data])
 }
+
+/**
+ * Characters a TrueType font maps (cmap formats 0, 4, 12; Unicode subtables only), or undefined when it has none we can read.
+ * Takes the raw file; cheap (reads only the table directory and the cmap).
+ */
+export function cmapCodePoints(b: Buffer): Set<number> | undefined {
+  try {
+    const cmap = readSfnt(b).get('cmap')
+    if (!cmap || cmap.length < 4) return undefined
+    const subs: { pl: number; en: number; off: number }[] = []
+    for (let i = 0, n = cmap.readUInt16BE(2); i < n; i++) subs.push({ pl: cmap.readUInt16BE(4 + i * 8), en: cmap.readUInt16BE(6 + i * 8), off: cmap.readUInt32BE(8 + i * 8) })
+    const rank = (s: { pl: number; en: number }): number => (s.pl === 3 && s.en === 10 ? 3 : s.pl === 3 && s.en === 1 ? 2 : s.pl === 0 ? 1 : 0)
+    const sub = subs.filter((s) => rank(s)).sort((a, c) => rank(c) - rank(a))[0]
+    if (!sub) return undefined
+    const o = sub.off
+    const out = new Set<number>()
+    const fmt = cmap.readUInt16BE(o)
+    if (fmt === 4) {
+      const segs = cmap.readUInt16BE(o + 6) / 2
+      const end = o + 14
+      const start = end + segs * 2 + 2
+      const delta = start + segs * 2
+      const range = delta + segs * 2
+      for (let s = 0; s < segs; s++) {
+        const [e, st, rOff] = [cmap.readUInt16BE(end + s * 2), cmap.readUInt16BE(start + s * 2), cmap.readUInt16BE(range + s * 2)]
+        for (let c = st; c <= e && c < 0xffff; c++) {
+          if (rOff === 0) {
+            if (((c + cmap.readInt16BE(delta + s * 2)) & 0xffff) !== 0) out.add(c)
+          } else {
+            const g = cmap.readUInt16BE(range + s * 2 + rOff + (c - st) * 2)
+            if (g !== 0) out.add(c)
+          }
+        }
+      }
+    } else if (fmt === 12) {
+      for (let g = 0, n = cmap.readUInt32BE(o + 12); g < n; g++) {
+        const q = o + 16 + g * 12
+        const [st, e, gid] = [cmap.readUInt32BE(q), cmap.readUInt32BE(q + 4), cmap.readUInt32BE(q + 8)]
+        if (e - st > 0x20000) return undefined
+        for (let c = st; c <= e; c++) if (gid + (c - st) !== 0) out.add(c)
+      }
+    } else if (fmt === 0) {
+      for (let c = 0; c < 256; c++) if (cmap.readUInt8(o + 6 + c) !== 0) out.add(c)
+    } else return undefined
+    return out
+  } catch {
+    return undefined // truncated or malformed: coverage unknown
+  }
+}

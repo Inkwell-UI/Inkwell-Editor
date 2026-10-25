@@ -51,6 +51,7 @@ describe('build pipeline: preview', () => {
     const secret = Buffer.from('SECRET-TTF-BYTES')
     const fonts: PreviewFontSet = {
       fonts: [],
+      glyphsFor: () => undefined,
       nameFor: (a) => (a === '$EverywhereMediumFont' ? 'Test Face' : '_sans'),
       bytesFor: () => undefined,
       approximated: () => ['Everywhere Medium']
