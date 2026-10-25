@@ -1,5 +1,8 @@
 import { Check } from 'lucide-react'
-import { useDockRows } from '../hooks/useProject'
+import { useDockRows, useProject } from '../hooks/useProject'
+import type { SnapshotInfo } from '../../shared/projectState'
+import { figmaConnection, type DotTone } from '../model/connection'
+import { useSettingsStore } from '../state/settingsStore'
 import { useUndo } from '../hooks/useUndo'
 import { countSeverities } from '../model/lintRows'
 import { useSyncState } from '../hooks/useSyncState'
@@ -10,7 +13,81 @@ import { useWorkspaceStore } from '../state/workspaceStore'
 import { formatMs } from '../model/statusBar'
 import { strings } from '../strings'
 import { Popover } from '../ui/Popover'
-import { FigmaDot, GameDot } from './TopBar'
+
+function Dot({ tone }: { tone: DotTone }) {
+  return <span className={`dot dot-${tone}`} aria-hidden="true" />
+}
+
+/** Connection dots live in the status bar (Zone 6B), so their popovers open upward. */
+export function FigmaDot() {
+  const sync = useSyncState()
+  const project = useProject()
+  const snap = project?.snapshot
+  const c = figmaConnection(sync, snap)
+  const mirror = useSettingsStore((s) => s.mirrorFigma)
+  const setMirror = useSettingsStore((s) => s.setMirrorFigma)
+  const label = strings.top.figmaStatus[c.status]
+  return (
+    <Popover
+      label={strings.top.figmaDetails}
+      align="end"
+      up
+      trigger={(p) => (
+        <button type="button" className="item item-fixed item-button" {...p} title={`${strings.top.figma}: ${label}`} aria-label={`${strings.top.figma}: ${label}`} data-testid="dot-figma" data-tone={c.tone}>
+          <Dot tone={c.tone} /> {strings.top.figma}
+        </button>
+      )}
+    >
+      <div className="details">
+        <p><strong>{label}</strong></p>
+        {sync?.connectionIssue && <p className={c.tone === 'error' ? 'tone-error' : 'tone-warn'}>{sync.connectionIssue.message}</p>}
+        {sync?.server === 'error' && <p className="tone-error">{strings.top.serverError(sync.error)}</p>}
+        {project && <SnapshotFacts snap={snap} />}
+        <dl className="facts">
+          <dt>{strings.syncPort}</dt><dd className="mono">{sync?.port ?? '-'}</dd>
+        </dl>
+        <p className="dim">{strings.top.approvalNote}</p>
+        <label className="check">
+          <input type="checkbox" checked={mirror} onChange={(e) => setMirror(e.target.checked)} data-testid="mirror-setting" /> {strings.top.mirror}
+        </label>
+        <p className="dim">{strings.top.mirrorNote}</p>
+      </div>
+    </Popover>
+  )
+}
+
+function SnapshotFacts({ snap }: { snap: SnapshotInfo | undefined }) {
+  return (
+    <div data-testid="snapshot-facts">
+      <h3>{strings.top.snapshotTitle}</h3>
+      {!snap ? <p className="dim">{strings.top.snapshotNone}</p>
+        : snap.error ? <p className="tone-warn">{strings.top.snapshotBroken(snap.error)}</p>
+          : (
+            <>
+              <p className="dim">{strings.top.snapshotSaved(new Date(snap.updatedAt).toLocaleString(), snap.swfs)}. {strings.top.snapshotFrom(snap.pluginVersion, snap.fileKey)}</p>
+              {snap.stale.length > 0 && <p className="tone-warn">{strings.top.snapshotStale(snap.stale)}</p>}
+            </>
+          )}
+    </div>
+  )
+}
+
+export function GameDot() {
+  return (
+    <Popover
+      label={strings.top.gameDetails}
+      align="end"
+      up
+      trigger={(p) => (
+        <button type="button" className="item item-fixed item-button" {...p} title={`${strings.top.game}: ${strings.top.gameStatus}`} aria-label={`${strings.top.game}: ${strings.top.gameStatus}`} data-testid="dot-game" data-tone="off">
+          <Dot tone="off" /> {strings.top.game}
+        </button>
+      )}
+    >
+      <div className="details"><p><strong>{strings.top.gameStatus}</strong></p></div>
+    </Popover>
+  )
+}
 
 /** Deploy progress and the last result with its stage timings (compile, vanilla check, write). */
 function DeployItem() {
@@ -93,7 +170,7 @@ export function StatusBar() {
       <span className="spacer" />
       <FigmaDot />
       <GameDot />
-      <span className="item" title={strings.status.undoTip(undo.swfName)} data-testid="undo-scope">{strings.status.undo}</span>
+      <span className="item item-fixed" title={strings.status.undoTip(undo.swfName)} data-testid="undo-scope">{strings.status.undo}</span>
     </footer>
   )
 }

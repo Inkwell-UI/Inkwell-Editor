@@ -39,6 +39,7 @@ const api: InkwellApi = {
   onOpenSettings: (cb) => on(IPC.menuSettings, cb),
   answerFigmaApproval: (id, allow) => ipcRenderer.invoke(IPC.figmaApproval, id, allow),
   figmaPluginCount: () => ipcRenderer.invoke(IPC.figmaPluginCount),
+  selectInFigma: (nodeId, focus) => ipcRenderer.invoke(IPC.figmaSelect, nodeId, focus),
   forgetFigmaPlugins: () => ipcRenderer.invoke(IPC.figmaForget),
   runDoctor: (only) => ipcRenderer.invoke(IPC.doctorRun, only),
   runBenchmark: () => ipcRenderer.invoke(IPC.doctorBenchmark),

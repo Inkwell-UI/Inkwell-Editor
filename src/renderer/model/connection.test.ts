@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SyncUiState } from '../../shared/syncState'
 import { strings } from '../strings'
-import { figmaConnection } from './connection'
+import { figmaConnection, figmaSelectReason } from './connection'
 
 const s = (o: Partial<SyncUiState>): SyncUiState => ({ server: 'listening', connections: 0, build: 'idle', lintCount: 0, swfCount: 0, orphanedCount: 0, ...o })
 
@@ -32,5 +32,15 @@ describe('figma connection dot', () => {
   it('a dead server is red; before the first answer it is grey', () => {
     expect(figmaConnection(s({ server: 'error' })).tone).toBe('error')
     expect(figmaConnection(undefined).status).toBe('starting')
+  })
+})
+
+describe('Select / Focus in Figma availability', () => {
+  const r = { notConnected: 'not connected', pending: 'pending' }
+  it('enabled only with an approved connected plugin; otherwise the reason', () => {
+    expect(figmaSelectReason(s({ connections: 1 }), r)).toBeUndefined()
+    expect(figmaSelectReason(s({}), r)).toBe('not connected')
+    expect(figmaSelectReason(undefined, r)).toBe('not connected')
+    expect(figmaSelectReason(s({ approval: { id: 1, pluginVersion: '1', fileName: 'f', origin: 'null' } }), r)).toBe('pending')
   })
 })

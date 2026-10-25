@@ -43,6 +43,7 @@ export const IPC = {
   doctorFirstLaunch: 'doctor:firstLaunch',
   figmaApproval: 'figma:approval',
   figmaForget: 'figma:forget',
+  figmaSelect: 'figma:select',
   figmaPluginCount: 'figma:pluginCount',
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
@@ -116,6 +117,8 @@ export interface InkwellApi {
   answerFigmaApproval(id: number, allow: boolean): Promise<void>
   /** How many Figma plugins the user approved (Settings). */
   figmaPluginCount(): Promise<number>
+  /** Select (`focus` false) or select and zoom to (`focus` true) a layer in Figma, through the approved connected plugin (protocol 5). */
+  selectInFigma(nodeId: string, focus: boolean): Promise<{ ok: true } | { ok: false; error: string }>
   /** Settings > Forget all Figma plugins: removes every approved credential and disconnects the plugins. Returns the reason on failure. */
   forgetFigmaPlugins(): Promise<{ ok: true } | { ok: false; error: string }>
 

@@ -11,6 +11,7 @@ import {
   PatchError,
   PluginMessage,
   PROTOCOL_VERSION,
+  SelectNode,
   SPEC_VERSION,
   type EditorMessage,
   type Swf,
@@ -323,6 +324,13 @@ export async function startSyncServer(opts: SyncServerOptions) {
     ir: (swfId: string): Swf | undefined => store.get(swfId)?.ir,
     selection: (): readonly string[] => selection,
     connections: (): number => ready.size,
+    /** Protocol 5: asks every approved, connected plugin to select (and with `focus` zoom to) a layer. Returns how many plugins were asked (0 = none connected). */
+    selectNode: (nodeId: string, focus: boolean): number => {
+      const m = nodeId ? SelectNode.safeParse({ type: 'selectNode', nodeId, focus }) : undefined
+      if (!m?.success) return 0
+      for (const ws of ready) send(ws, m.data)
+      return ready.size
+    },
     /** Queues a build of one swf (debounced like a patch), e.g. after its overlay changed. */
     rebuild: (swfId: string): void => schedule(swfId),
     /** Queues every swf that still has a Figma frame; returns how many. */

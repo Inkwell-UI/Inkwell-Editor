@@ -11,6 +11,7 @@ A `ws` server in the Electron main process, started on app ready and closed on q
   - A protocol or spec mismatch is refused before any prompt (`helloAck {ok:false}`, closed); an older plugin whose `hello` lacks the secret still gets the "Update the plugin" message.
   - Settings > "Forget all Figma plugins" (with a confirmation) removes every stored hash and drops the open connections (`dropAll`).
   - The plugin must wait for `helloAck` before sending anything else.
+- **Select / Focus in Figma (protocol 5):** `selectNode(nodeId, focus)` sends `{type:'selectNode', nodeId, focus}` to every approved (post-`helloAck`) socket and returns how many; 0 = nobody connected (the window has the buttons disabled then). A protocol 4 plugin is refused by `ackHello` ("Update the plugin"). The plugin answers nothing.
 - Invalid JSON, unknown or invalid messages get an `error` message; the socket stays open. A `PatchError` becomes `error {code, message, nodeId}` and the store is unchanged.
 - `hello` -> `pending`? -> `helloAck` (`ackHello`) or `denied {reason}`; a protocol or spec mismatch sends the error and closes.
 - **Images (protocol 3):** after a patch or hash tree the server sends `needAssets` for image hashes the project lacks (once per hash per connection) and stores each `asset` reply in `assets/<hash>.png`, then rebuilds the SWFs that use it. See `docs/images.md`.
@@ -67,7 +68,7 @@ Check:
 - Version mismatch: connect a plugin built against another spec version; the plugin shows the "Protocol mismatch" / "Spec mismatch" message and does not retry.
 - Deny: the plugin shows Denied and stays refused until the editor restarts. Ignore the prompt for 60 s: the plugin shows a timeout. Close the app: the plugin shows disconnected.
 - Reconnect after restarting the app: the plugin reconnects by itself and is not asked again (its secret is known). Settings > Forget all Figma plugins makes it ask again.
-- Screenshots of the prompt, the waiting dot and the Settings action without Figma: `INKWELL_SHOTS_FIGMA=1 INKWELL_SHOTS_DIR=<dir> INKWELL_SHOTS_PROJECT=<scratch copy of samples/hud-minimal>` with a separate `--user-data-dir` (`src/main/screenshotFigma.ts`, a fake plugin; `q1`..`q5`; it prints OK/FAILED per check and writes only that user-data dir's `settings.json`).
+- Screenshots of the prompt, the waiting dot and the Settings action without Figma: `INKWELL_SHOTS_FIGMA=1 INKWELL_SHOTS_DIR=<dir> INKWELL_SHOTS_PROJECT=<scratch copy of samples/hud-minimal>` with a separate `--user-data-dir` (`src/main/screenshotFigma.ts`, a fake plugin; `q1`..`q5`, `q2n-narrow` (960 px, long build line: the dots must stay visible), `q2s-select-in-figma` (Select / Focus in Figma reach the fake plugin as `selectNode`); it prints OK/FAILED per check and writes only that user-data dir's `settings.json`).
 - Resend after restart: with `INKWELL_PROJECT` set, restart, reconnect, and the plugin's hash tree only resends nodes that differ from the saved IR; without a project, everything is resent.
 - Delete a top-level frame: the window shows it as orphaned; its `swfs/<name>/` folder stays on disk.
 - Selecting a layer in Figma updates the selection held by the server; main forwards it to the windows and the Navigator/Inspector mirror it (setting in the Figma dot popover, see `docs/ui-shell.md`).

@@ -36,7 +36,7 @@ function Meter({ label, value, limit, placeholder }: { label: string; value: num
 /**
  * Zone 6A, tab 1 (UX 4.6): the single lint source (compiler rows + unreachable layers + a failed build), severity filter, current-SWF-only,
  * Strict Mode (stored in project.json through main), and the HUD budget meter with placeholder limits. A row click selects the component
- * through the selection model (source `lint`); Figma is not told (no protocol message yet).
+ * through the selection model (source `lint`); Figma is not told (only the `Select in Figma` buttons do).
  */
 export function LintBudgetPanel() {
   const all = useDockRows()

@@ -19,9 +19,10 @@ export const strings = {
   splitterTitle: 'Drag or use the arrow keys to resize. Double-click to reset.',
 
   selectInFigma: 'Select in Figma',
-  selectInFigmaReason: 'needs a protocol message (planned)',
+  selectInFigmaReason: 'Figma is not connected: start the Inkwell plugin in Figma and allow it here',
+  selectInFigmaPending: 'Waiting for approval: allow the Figma plugin first',
+  selectInFigmaFailed: (why: string) => `Could not reach Figma: ${why}`,
   focusInFigma: 'Focus in Figma',
-  focusInFigmaReason: 'needs a protocol message (planned)',
 
   // preview pieces (kept from the first preview panel)
   previewNone: 'No build yet. Change something in Figma.',

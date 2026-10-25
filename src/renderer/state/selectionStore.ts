@@ -19,7 +19,7 @@ import { useSettingsStore } from './settingsStore'
  *   Returns the resolved SWF/node (the caller activates the SWF) or undefined.
  * - `clear()`, `prune(exists)`.
  * `origin` is `'local'` when this window made the change and `'remote'` when it came from another window (not re-broadcast).
- * Inkwell -> Figma selection does not exist yet (no protocol message): nothing here tells Figma anything.
+ * Selecting here never tells Figma anything by itself; `Select in Figma` / `Focus in Figma` are explicit buttons (`ui/FigmaSelectBtn.tsx`, protocol 5).
  */
 export interface SelectionStore extends SelectionState {
   origin: 'local' | 'remote'

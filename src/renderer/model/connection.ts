@@ -18,3 +18,9 @@ export function figmaConnection(s: SyncUiState | undefined, snapshot?: SnapshotI
   if (s.connectionIssue?.kind === 'version') return { status: 'mismatch', tone: 'warn' }
   return { status: usableSnapshot(snapshot) ? 'snapshot' : 'disconnected', tone: 'off' }
 }
+
+/** Why "Select in Figma" / "Focus in Figma" cannot work now (UX 2.2: disabled with a reason); undefined when an approved plugin is connected. */
+export function figmaSelectReason(s: SyncUiState | undefined, reasons: { notConnected: string; pending: string }): string | undefined {
+  if (s && s.connections > 0) return undefined
+  return s?.approval ? reasons.pending : reasons.notConnected
+}

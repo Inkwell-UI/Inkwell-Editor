@@ -8,6 +8,7 @@ import { computeOrphans } from '../model/orphans'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { FigmaSelectBtn } from '../ui/FigmaSelectBtn'
 import { Panel } from './Panel'
 
 const TYPE_ICON: Record<string, LucideIcon> = { frame: Frame, text: Type, shape: Shapes, image: ImageIcon, component: Component, instance: Workflow }
@@ -144,7 +145,7 @@ export function NavigatorPanel() {
                 <span className="dim mono">{u.id}</span>
               </div>
               <p className="dim">{u.note}</p>
-              <div className="row-actions"><Btn reason={strings.selectInFigmaReason}>{strings.selectInFigma}</Btn></div>
+              <div className="row-actions"><FigmaSelectBtn nodeId={u.id} /></div>
             </div>
           ))}
         </section>

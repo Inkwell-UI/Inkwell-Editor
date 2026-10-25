@@ -64,6 +64,24 @@ export async function runFigmaShots(o: { outDir: string; userData: string; proje
   await until('dot', async () => (await dot()).includes('Synced'))
   check('Figma dot reads Synced (connected)', true)
   await snap('q2-connected')
+  main().setContentSize(960, 700) // the minimum window width: the status bar keeps both dots visible
+  await js(`(() => { const t = document.querySelector('[data-testid="timing"]'); t.textContent = 'Last build: 1234 ms [sync 12 ms · codegen 340 ms · swf 220 ms · ffdec 410 ms · preview 252 ms] over the 1000 ms target'; })()`) // worst case: a long timing line
+  await wait(400)
+  check('status bar dots fit at the minimum width', await js<boolean>(`(() => { const r = document.querySelector('[data-testid="dot-game"]').getBoundingClientRect(); return r.right <= window.innerWidth && r.left >= 0 })()`))
+  await snap('q2n-narrow')
+  main().setContentSize(1440, 860)
+  // Inkwell -> Figma (protocol 5): with the plugin approved and connected, Select / Focus in Figma are enabled and reach it
+  await click('.layer-main')
+  await until('inspector', () => has('[data-testid="select-in-figma"]'))
+  check('Select in Figma is enabled while the plugin is connected', await js<boolean>(`document.querySelector('[data-testid="select-in-figma"]').getAttribute('aria-disabled') === null`))
+  await click('[data-testid="select-in-figma"]')
+  await until('selectNode', () => msgs.some((m) => m.type === 'selectNode'))
+  check('plugin got selectNode {nodeId} without focus', msgs.some((m) => m.type === 'selectNode' && typeof m.nodeId === 'string' && m.focus === false))
+  await js(`document.querySelector('[data-testid="figma-source"]').open = true`)
+  await click('[data-testid="focus-in-figma"]')
+  await until('focus', () => msgs.some((m) => m.type === 'selectNode' && m.focus === true))
+  check('plugin got selectNode with focus', true)
+  await snap('q2s-select-in-figma')
   const file = await readFile(join(o.userData, 'settings.json'), 'utf8')
   check('settings.json holds a 64-hex hash and not the secret', !file.includes(secret) && /"figmaPlugins": \[\s*"[0-9a-f]{64}"/.test(file))
 

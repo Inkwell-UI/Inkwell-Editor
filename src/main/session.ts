@@ -413,6 +413,10 @@ export function createSession(deps: SessionDeps) {
       server?.dropAll()
       return { ok: true }
     },
+    /** Select (or focus) a layer in Figma through the approved connected plugin; the reason when no plugin got the request. */
+    selectInFigma(nodeId: string, focus: boolean): { ok: true } | { ok: false; error: string } {
+      return (server?.selectNode(nodeId, focus === true) ?? 0) > 0 ? { ok: true } : { ok: false, error: 'No approved Figma plugin is connected.' }
+    },
     getSettings: viewSettings,
     /**
      * Stores one setting and returns the settings as used (with `problems`), or the reason it could not be stored: never a bare rejection.

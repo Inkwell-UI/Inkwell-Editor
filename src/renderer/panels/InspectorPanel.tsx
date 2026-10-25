@@ -14,6 +14,7 @@ import { editNode } from '../state/overlayStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { FigmaSelectBtn } from '../ui/FigmaSelectBtn'
 import { Panel } from './Panel'
 
 const RULE: Record<FontRow['via'], 1 | 2 | 3 | 4> = { 'text style': 1, 'family/style': 2, fallback: 3, unmapped: 4 }
@@ -72,7 +73,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         </div>
         <span className="chip">{strings.nav.typeNames[node.type] ?? node.type}</span>
       </header>
-      <div className="row-actions"><Btn reason={strings.selectInFigmaReason}>{strings.selectInFigma}</Btn></div>
+      <div className="row-actions"><FigmaSelectBtn nodeId={node.id} /></div>
 
       <section aria-labelledby="insp-issues">
         <h4 id="insp-issues">{strings.insp.issues(rows.length)}</h4>
@@ -142,7 +143,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
           <dt>{strings.insp.srcVisible}</dt><dd>{node.visible ? strings.yes : strings.no}</dd>
           <dt>{strings.insp.srcOpacity}</dt><dd className="mono">{node.opacity}</dd>
         </dl>
-        <Btn icon={Lock} reason={strings.focusInFigmaReason}>{strings.focusInFigma}</Btn>
+        <FigmaSelectBtn nodeId={node.id} focus icon={Lock} />
       </details>
     </div>
   )

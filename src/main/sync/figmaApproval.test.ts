@@ -213,6 +213,17 @@ describe('Figma approval (protocol 4)', () => {
     expect(ask).not.toHaveBeenCalled()
   })
 
+  it('a protocol 4 plugin (before selectNode) is refused with the update message, even with a known secret, and no prompt', async () => {
+    const ask = vi.fn(async () => true)
+    const s = await start(createTrust({ store: memStore([hashSecret(SECRET)]), ask }))
+    const c = await connect(s)
+    c.ws.send(JSON.stringify({ type: 'hello', pluginVersion: '0.2', protocolVersion: 4, specVersion: SPEC_VERSION, pluginSecret: SECRET, fileName: 'x.fig' }))
+    await c.closed
+    expect(c.msgs[0]).toMatchObject({ type: 'helloAck', ok: false, protocolVersion: 5 })
+    expect(c.msgs[0].error).toMatch(/Update the plugin/)
+    expect(ask).not.toHaveBeenCalled()
+  })
+
   it('dropAll disconnects approved plugins (Forget all)', async () => {
     const s = await start(createTrust({ store: memStore([hashSecret(SECRET)]), ask: async () => false }))
     const c = await connect(s)

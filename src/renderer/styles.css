@@ -264,6 +264,13 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .statusbar .item { white-space: nowrap; }
 .statusbar .item-button { min-width: 0; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
 .statusbar .item-button .mono { font-size: 11px; }
+/* Narrow windows: the connection dots and the undo scope never shrink or leave the bar; the long build line gives way first. */
+.statusbar { overflow: hidden; min-width: 0; }
+.statusbar .item { flex: none; }
+.statusbar .popover-root { display: flex; flex: none; }
+.statusbar .popover-root:has(> [data-testid="timing"]) { flex: 0 1 auto; min-width: 0; }
+.statusbar .item[data-testid="timing"] { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; } /* the long build line gives way first */
+.statusbar .item-fixed { flex: none; }
 .preview-panel.is-compact .stage-toolbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; padding-bottom: 2px; }
 .preview-panel.is-compact .stage-toolbar > * { flex: none; }
 .preview-panel.is-compact { gap: 3px; }

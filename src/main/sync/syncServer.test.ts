@@ -54,6 +54,19 @@ const patchUpsert = (node: unknown, swfId = 'hud', swf?: unknown) => ({ type: 'p
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 describe('syncServer', () => {
+  it('selectNode (protocol 5) goes to approved plugins only; with none connected it reaches nobody', async () => {
+    const s = await start()
+    expect(s.selectNode('1:2', false)).toBe(0)
+    const waiting = await connect(s) // no hello yet: not approved, not connected
+    const c = await ready(s)
+    expect(s.selectNode('1:2', true)).toBe(1)
+    expect(await c.next()).toEqual({ type: 'selectNode', nodeId: '1:2', focus: true })
+    expect(s.selectNode('1:3', false)).toBe(1)
+    expect(await c.next()).toEqual({ type: 'selectNode', nodeId: '1:3', focus: false })
+    expect(s.selectNode('', false)).toBe(0) // invalid id: nothing sent
+    waiting.ws.close()
+  })
+
   it('rejects a web origin (403); accepts the null origin and no origin; no token is needed', async () => {
     const s = await start()
     await expect(connect(s, { origin: 'https://evil.example' })).rejects.toThrow('403')

@@ -5,13 +5,13 @@ Implements phases 1 and 2 of the UI/UX architecture spec (phase 2: the Settings 
 ## Zones
 
 ```
-Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, mode switcher, connection dots, Build All, Deploy (shell/DeployMenu.tsx: MO2 folders, Vortex and Package Mod = zip; docs/deploy.md)
+Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, mode switcher, Build All, Deploy (shell/DeployMenu.tsx: MO2 folders, Vortex and Package Mod = zip; docs/deploy.md)
 Zone 2  left tabs         navigator | contracts | assets
 Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, Inspect overlay, banners (build failed; Figma not connected: snapshot / no snapshot), GFx note, last good build
 Zone 4  graph             GraphPanel             breadcrumb, event jump list, Knotwork canvas (docs/graphs.md, Graph UI), AS2 split view (docs/debugging.md)
 Zone 5  inspector         InspectorPanel
 Zone 6A bottom dock tabs  lintBudget | localization | play | trace | mockData
-Zone 6B StatusBar         shell/StatusBar.tsx    spec, last build + history, FFDec, lint counts (`Lint: N Err, M Warn`, strict applied; opens the Lint dock), Deploy (progress, result, stage timings), packs, undo scope
+Zone 6B StatusBar         shell/StatusBar.tsx    connection dots (Figma, Game: popovers open upward; they and the undo scope never shrink, the long build line gives way first at narrow widths), spec, last build + history, FFDec, lint counts (`Lint: N Err, M Warn`, strict applied; opens the Lint dock), Deploy (progress, result, stage timings), packs, undo scope
 ```
 
 Zones 2 to 6A are layout panels; Zones 1 and 6B are shell chrome around the layout (they are never moved or resized).
@@ -48,14 +48,14 @@ One selected component (a Figma layer, by node id) and one selected graph node.
 
 | Source | Component | Graph node | Inspector shows | Figma |
 | --- | --- | --- | --- | --- |
-| Navigator row (`selectComponent(id, 'navigator')`) | set | keep | component | would select the layer (planned) |
-| Stage click in Inspect mode (`'stage'`) | set | keep | component | would select the layer (planned) |
+| Navigator row (`selectComponent(id, 'navigator')`) | set | keep | component | `Select in Figma` button (not automatic) |
+| Stage click in Inspect mode (`'stage'`) | set | keep | component | `Select in Figma` button (not automatic) |
 | Graph node (`selectGraphNode(node, target?)`) | its target, else keep | set | graph node | unchanged |
-| Lint row (`selectFromLint({key, nodeId, graphNode?, graph?})`) | the issue's | the issue's, else keep | component, issue highlighted; the graph node when the issue has one (the graph opens and centres it: `state/graphReveal.ts`) | would select the layer (planned) |
+| Lint row (`selectFromLint({key, nodeId, graphNode?, graph?})`) | the issue's | the issue's, else keep | component, issue highlighted; the graph node when the issue has one (the graph opens and centres it: `state/graphReveal.ts`) | `Select in Figma` button (not automatic) |
 | Trace line, AS2 line (`revealGraphNode(graph, node)`) | keep | set | graph node | unchanged |
 | Layer selected in Figma (`applyFigmaSelection(ids, swfs, activeSwfId)`) | set (may switch the active SWF) | keep | component | origin |
 
-Figma -> Inkwell: the plugin's `selection` message reaches the server, main forwards it (`onFigmaSelection`), the bridge resolves it against the project's IR. The "Mirror Figma selection" checkbox in the Figma dot popover turns it off. The popover shows the state and port; there is no token and no Copy button any more (the Figma bridge uses approve-on-connect, `docs/sync-server.md`). While a plugin waits for approval the dot is amber and reads `Waiting for approval`, and `Dialogs.tsx` shows the modal "A Figma plugin wants to connect: Allow?" (plugin version, Figma file, origin; Allow / Deny, Escape = Deny) from `SyncUiState.approval`; after Allow the dot reads `Synced`. Settings has a `Figma plugins` section: how many are approved and `Forget all Figma plugins` (confirmation dialog). **Inkwell -> Figma does not exist**: the protocol has no message for it, so `Select in Figma` and `Focus in Figma` are disabled with `needs a protocol message (planned)`. A selected component opens its graph (the first of its overlay `scripts` that exists; `model/graphNav.ts`, applied in `state/bridge.ts`), and a clicked graph node selects the component its first component pin targets (`graph/GraphNodeInspector.tsx` is its Inspector view).
+Figma -> Inkwell: the plugin's `selection` message reaches the server, main forwards it (`onFigmaSelection`), the bridge resolves it against the project's IR. The "Mirror Figma selection" checkbox in the Figma dot popover turns it off. The popover shows the state and port; there is no token and no Copy button any more (the Figma bridge uses approve-on-connect, `docs/sync-server.md`). While a plugin waits for approval the dot is amber and reads `Waiting for approval`, and `Dialogs.tsx` shows the modal "A Figma plugin wants to connect: Allow?" (plugin version, Figma file, origin; Allow / Deny, Escape = Deny) from `SyncUiState.approval`; after Allow the dot reads `Synced`. Settings has a `Figma plugins` section: how many are approved and `Forget all Figma plugins` (confirmation dialog). **Inkwell -> Figma (protocol 5 `selectNode {nodeId, focus}`):** the Inspector's `Select in Figma` and `Focus in Figma` (Figma Source card) and the Navigator's unreachable-layer `Select in Figma` (`ui/FigmaSelectBtn.tsx`) go over IPC `selectInFigma` -> `session.selectInFigma` -> `server.selectNode`, which sends the message only to approved, connected plugins (the `ready` sockets; 0 reached = toast `Could not reach Figma`). Without one the buttons are disabled with a reason (`figmaSelectReason`: `Figma is not connected...`, or `Waiting for approval...` while the prompt is open). The plugin selects the node only if it is on its current page (`focus` also scrolls and zooms) and otherwise only shows a Figma notice; a protocol 4 plugin is refused at the handshake. There is no layer context menu yet, so the Inspector and Navigator buttons are the only entry points. A selected component opens its graph (the first of its overlay `scripts` that exists; `model/graphNav.ts`, applied in `state/bridge.ts`), and a clicked graph node selects the component its first component pin targets (`graph/GraphNodeInspector.tsx` is its Inspector view).
 
 ## Data flow
 
@@ -77,7 +77,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 
 - **Panel / tab:** see `docs/ui-panels.md` ("Adding or moving a panel"). A tab's label and disabled state come from the registry's optional `useTabInfo`.
 - **Workspace:** add an id to `WorkspaceId`/`WORKSPACE_IDS` and an entry to `WORKSPACES` in `workspace/workspaces.ts` (use the `frame`/`tabs` helpers or write the layout by hand), add its name to `strings.top.workspaceNames`, and extend the `Ctrl+N` handler in `shell/AppShell.tsx`. `panelRegistry.test.ts` checks every panel still appears in at least one mode.
-- **Dialog:** add an id to `DialogId`, copy to `strings.dialogs`, a branch in `shell/Dialogs.tsx`. `setupDoctor` shows the real `SetupDoctorPanel` (wide dialog); it is reachable from the top bar, the start screen and the status bar link `FFDec: not found`, and opens by itself on the first launch where a check fails. Dialogs and the toast stack also render on the start screen.
+- **Dialog:** add an id to `DialogId`, copy to `strings.dialogs`, a branch in `shell/Dialogs.tsx`. `setupDoctor` shows the real `SetupDoctorPanel` (wide dialog); it is reachable from the start screen, the Settings view and the status bar link `FFDec: not found`, and opens by itself on the first launch where a check fails. Dialogs and the toast stack also render on the start screen.
 - **Popover:** `ui/Popover.tsx` flips to the other side when the panel would leave the window.
 - **Deploy:** the dropdown shows each target folder exactly, the last builds' error/warning counts and whether Strict Mode is on; the first deploy to a folder opens a confirmation dialog (path and file list). A deploy the export gate blocks always opens it as `Deploy blocked` with the blocking issues (each links to its layer) and Deploy disabled with the reason; warnings are listed either way. See `docs/deploy.md`.
 
@@ -91,7 +91,6 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 | Anchor override, loc keys, focus controls (disabled in the Inspector) | anchoring codegen, 0.4, 0.5 |
 | Localization table, Theme, Locale, Pseudo-Loc, Prompts, Focus Graph, Occupied HUD | 0.4, 0.4, 0.4, 0.5, 0.5, 0.6+ |
 | Relink / Discard orphans | needs the overlay store's relink operation |
-| Select in Figma, Focus in Figma | a protocol message in `inkwell-spec` |
 | In-game trace, live variable watch, game dot, hot reload (the Ruffle preview trace exists: `docs/debugging.md`) | Inkwell Runtime (0.3) |
 | Custom menu JSON in Deploy, target pill's Config Ownership dialog | runtime config formats (0.3) |
 | Figma plugin screenshot guide in the Settings view, setup guide link | later |
