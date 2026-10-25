@@ -56,3 +56,7 @@ A text layer whose overlay `role` is `text` is settable from Papyrus (`compileWi
 - The corrected lerp follows SkyUI's own `WidgetBase`; the fix has not been seen in game yet. The safe-rect inset (about 16.5 x 17 HUD px) is inferred from one screenshot. Ultrawide or custom HUD metrics are untested.
 - Alpha: `setAlpha` sets the clip's `_alpha`; the Papyrus `Alpha` is the frame opacity times 100.
 - Output compiled by russo matches the official compiler by reading only (see the spec's 0.0 notes).
+
+## Graph-driven widgets (0.2)
+
+If the SWF has a graph with On Widget Call entries, the widget's behaviour comes from the graph: the AS2 widget class loses the hardcoded popup API (`setTexts`/`show`/`hide`, fade) and the Papyrus script gets one typed function per entry (`Function Show(String asTitle, Float afHold)`); `Test()` and the debug hotkey call the first entry with sample arguments. Arguments travel as one `String[]` through `UI.InvokeStringA` and the generated clip method converts them back. Without such a graph nothing changes. Details: `docs/codegen.md`; sample: `samples/hud-graph`.
