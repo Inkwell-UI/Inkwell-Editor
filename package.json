@@ -18,7 +18,9 @@
   },
   "dependencies": {
     "@inkwell-ui/spec": "link:../Inkwell-Spec",
+    "@nicklaj/knotwork": "github:xNicklaj/Knotwork-Graph-Kit#v0.2.1",
     "@ruffle-rs/ruffle": "0.7.1",
+    "@xyflow/react": "^12.12.0",
     "lucide-react": "1.54.0",
     "lz4js": "0.2.0",
     "react": "^19.3.1",
