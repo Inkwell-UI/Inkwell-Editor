@@ -1,0 +1,59 @@
+{
+  "kind": "Fade",
+  "major": 1,
+  "title": "Fade",
+  "category": "Components",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    },
+    {
+      "name": "from",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "to",
+      "type": "Number",
+      "default": 100
+    },
+    {
+      "name": "seconds",
+      "type": "Number",
+      "default": 0.3
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "done",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/Fade.as2"
+}

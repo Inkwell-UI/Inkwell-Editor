@@ -51,6 +51,6 @@ describe.skipIf(!can)('every core template compiles with FFDec', () => {
       ffdec.stop()
     }
     expect(failures).toEqual([])
-    expect(compiled).toBe(45)
+    expect(compiled).toBe(47)
   }, 300_000)
 })

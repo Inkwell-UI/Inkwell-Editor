@@ -1,0 +1,17 @@
+// [{{node.id}}] core/Fade@1
+clearInterval(__g.t_{{node.uid}});
+var {{node.uid}}_from = {{in.from}};
+var {{node.uid}}_to = {{in.to}};
+var {{node.uid}}_ms = {{in.seconds}} * 1000;
+var {{node.uid}}_t0 = getTimer();
+{{in.target}}._alpha = {{node.uid}}_from;
+__g.t_{{node.uid}} = setInterval(function() {
+    var k = ({{node.uid}}_ms > 0) ? (getTimer() - {{node.uid}}_t0) / {{node.uid}}_ms : 1;
+    if (!(k < 1)) k = 1;
+    {{in.target}}._alpha = {{node.uid}}_from + ({{node.uid}}_to - {{node.uid}}_from) * k;
+    if (k == 1) {
+        clearInterval(__g.t_{{node.uid}});
+        {{guarded.done}}
+    }
+}, 33);
+{{next.then}}

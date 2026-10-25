@@ -154,6 +154,44 @@ exports[`golden AS2 per node kind > core/DoOnce@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/Fade@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/Fade@1
+                clearInterval(__g.t_n1);
+                var n1_from = 0;
+                var n1_to = 100;
+                var n1_ms = 0.3 * 1000;
+                var n1_t0 = getTimer();
+                __g.base.title._alpha = n1_from;
+                __g.t_n1 = setInterval(function() {
+                    var k = (n1_ms > 0) ? (getTimer() - n1_t0) / n1_ms : 1;
+                    if (!(k < 1)) k = 1;
+                    __g.base.title._alpha = n1_from + (n1_to - n1_from) * k;
+                    if (k == 1) {
+                        clearInterval(__g.t_n1);
+                        try {
+                            // [l_done] core/Log@1
+                            trace("[Inkwell] info l_done: " + "");
+                        } catch (e) {
+                            __g.fail("e", e);
+                        }
+                    }
+                }, 33);
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/FocusComponent@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -418,7 +456,8 @@ exports[`golden AS2 per node kind > core/OnLoad@1 1`] = `
             } catch (e) {
                 __g.fail("n1", e);
             }
-        };"
+        };
+        if (__g.onLoad != undefined) __g.onLoad();"
 `;
 
 exports[`golden AS2 per node kind > core/OnOpen@1 1`] = `
@@ -765,6 +804,25 @@ exports[`golden AS2 per node kind > core/Switch@1 1`] = `
                     // [l_default] core/Log@1
                     trace("[Inkwell] info l_default: " + "");
                 }
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Throw@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/Throw@1
+                throw { node: "n1", message: "deliberate error" };
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
             } catch (e) {
                 __g.fail("e", e);
             }

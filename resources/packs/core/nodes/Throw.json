@@ -1,0 +1,27 @@
+{
+  "kind": "Throw",
+  "major": 1,
+  "title": "Throw",
+  "category": "Debug",
+  "milestone": "0.2",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "message",
+      "type": "String",
+      "default": "deliberate error"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Throw.as2"
+}

@@ -1,0 +1,3 @@
+// [{{node.id}}] core/Throw@1
+throw { node: "{{node.id}}", message: {{in.message}} };
+{{next.then}}

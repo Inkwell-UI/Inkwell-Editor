@@ -35,11 +35,25 @@ Event OnWidgetReset()
 		RegisterForKey(DebugHotkey)
 		Debug.Trace("[Inkwell] M_Hud debug hotkey " + DebugHotkey)
 	EndIf
+	If _pendingCall != ""
+		String c = _pendingCall
+		_pendingCall = ""
+		Debug.Trace("[Inkwell] M_Hud replaying the call made before the widget was ready: " + c)
+		If c == "Popup"
+			UI.InvokeStringA("HUD Menu", WidgetRoot + ".Popup", _pendingArgs)
+		ElseIf c == "Hide"
+			UI.InvokeBool("HUD Menu", WidgetRoot + ".Hide", True)
+		EndIf
+	EndIf
 EndEvent
 
 ; ---- widget API: the On Widget Call entries of the project's graphs ----
 ; Int Property DebugHotkey: a DirectInput scan code (65 = F7), 0 = off. Set per project in the Inkwell overlay (debugHotkey); keep 0 for a release.
 Int Property DebugHotkey = 0 Auto
+
+; the last call made before the widget was ready, replayed once in OnWidgetReset
+String _pendingCall = ""
+String[] _pendingArgs
 
 ; generated from the graph's On Widget Call "Popup"
 Function Popup(String asTitle, Float afHold, Bool abSticky)
@@ -55,7 +69,9 @@ Function Popup(String asTitle, Float afHold, Bool abSticky)
 		EndIf
 		UI.InvokeStringA("HUD Menu", WidgetRoot + ".Popup", a)
 	Else
-		Debug.Trace("[Inkwell] M_Hud.Popup: the widget is not ready; call ignored")
+		_pendingCall = "Popup"
+		_pendingArgs = a
+		Debug.Trace("[Inkwell] M_Hud.Popup: the widget is not ready; remembered, replayed on reset")
 	EndIf
 EndFunction
 
@@ -64,7 +80,8 @@ Function Hide()
 	If Ready
 		UI.InvokeBool("HUD Menu", WidgetRoot + ".Hide", True)
 	Else
-		Debug.Trace("[Inkwell] M_Hud.Hide: the widget is not ready; call ignored")
+		_pendingCall = "Hide"
+		Debug.Trace("[Inkwell] M_Hud.Hide: the widget is not ready; remembered, replayed on reset")
 	EndIf
 EndFunction
 
@@ -72,7 +89,7 @@ EndFunction
 Event OnKeyDown(Int aiKeyCode)
 	If DebugHotkey > 0 && aiKeyCode == DebugHotkey && !Utility.IsInMenuMode()
 		Debug.Trace("[Inkwell] M_Hud debug hotkey: Popup")
-		Popup("Inkwell test", 1.0, True)
+		Popup("Inkwell test", 4.0, True)
 	EndIf
 EndEvent
 
@@ -82,7 +99,7 @@ Function Test() global
 	M_Hud w = Game.GetFormFromFile(2048, "M.esp") as M_Hud
 	If w
 		Debug.Trace("[Inkwell] M_Hud.Test: Popup")
-		w.Popup("Inkwell test", 1.0, True)
+		w.Popup("Inkwell test", 4.0, True)
 	Else
 		Debug.Trace("[Inkwell] M_Hud.Test: quest not found in M.esp")
 	EndIf
@@ -125,11 +142,23 @@ Event OnWidgetReset()
 		RegisterForKey(DebugHotkey)
 		Debug.Trace("[Inkwell] InkwellGraphTest_Hud debug hotkey " + DebugHotkey)
 	EndIf
+	If _pendingCall != ""
+		String c = _pendingCall
+		_pendingCall = ""
+		Debug.Trace("[Inkwell] InkwellGraphTest_Hud replaying the call made before the widget was ready: " + c)
+		If c == "Show"
+			UI.InvokeStringA("HUD Menu", WidgetRoot + ".Show", _pendingArgs)
+		EndIf
+	EndIf
 EndEvent
 
 ; ---- widget API: the On Widget Call entries of the project's graphs ----
 ; Int Property DebugHotkey: a DirectInput scan code (65 = F7), 0 = off. Set per project in the Inkwell overlay (debugHotkey); keep 0 for a release.
 Int Property DebugHotkey = 65 Auto
+
+; the last call made before the widget was ready, replayed once in OnWidgetReset
+String _pendingCall = ""
+String[] _pendingArgs
 
 ; generated from the graph's On Widget Call "Show"
 Function Show(String asTitle)
@@ -139,7 +168,9 @@ Function Show(String asTitle)
 		a[0] = asTitle
 		UI.InvokeStringA("HUD Menu", WidgetRoot + ".Show", a)
 	Else
-		Debug.Trace("[Inkwell] InkwellGraphTest_Hud.Show: the widget is not ready; call ignored")
+		_pendingCall = "Show"
+		_pendingArgs = a
+		Debug.Trace("[Inkwell] InkwellGraphTest_Hud.Show: the widget is not ready; remembered, replayed on reset")
 	EndIf
 EndFunction
 
