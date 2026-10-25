@@ -49,6 +49,10 @@ Placeholders are the ones in `templates.md`. Rules the renderer adds:
 
 `GraphClass.map = {version: 1, graph, file, lines: {"<1-based line>": "<graph node id>"}}`; scaffolding lines have no entry. Temps map to the node that needed them, the `try/catch` lines to the node whose continuation they wrap. Written as `graph-<id>.map.json` in the SWF's build folder and returned by `compileSwf` (`graphClasses`) for the split view and for traces (Phase 6).
 
+## Data bindings and the preview build (Phase 6)
+
+`CodegenInput.bindings` (overlay `dataBinding` strings by layer id) become per-variable bind functions called on init and after every Set Variable; `CodegenInput.preview` (the Ruffle preview SWF only) adds pin value traces (`__g.pv`) and mock data hooks. Details, formats and limits: `docs/debugging.md`. The game build is unchanged by `preview` (test).
+
 ## Pipeline
 
 - **`generate` / `compileSwf`** (`graphs` option): classes are added like the layout class (exported as `__Packages.mods.<mod>.<cls>`). Codegen issues become lint errors `graph-codegen` on the root frame (message names the graph and node). Without graphs, or with an empty list, the output is byte-identical to before (test).
