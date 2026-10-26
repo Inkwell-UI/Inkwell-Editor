@@ -141,7 +141,7 @@ export function menuClassSource(i: MenuGlueInput): string {
           '        }',
           '    }'
         ]
-      : ['    // only a dev build reports its variables (S6)', '    function dumpVariables() {', '    }']),
+      : ['    // dev builds report every variable through bridge.watch (S6, Phase 6); nothing to report yet', '    function dumpVariables() {', '    }']),
     '}',
     ''
   ]

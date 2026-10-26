@@ -18,6 +18,10 @@ UX spec 4.1. The top bar `Deploy` dropdown lists targets with their exact folder
 
 Without a Papyrus compiler (setting or `INKWELL_PAPYRUS`) a widget is deployed as SWF plus `.psc` sources, with warning `papyrus-compiler-missing`. Only one `.esp` is generated per mod (a second widget warns `widget-esp-shared`).
 
+## Dev deploy (0.3, Phase 6b; `docs/dev-mode.md`)
+
+The Deploy menu has a **Dev deploy** checkbox (per project, user settings, off by default). On, a deploy to the **MO2 mod folder or overwrite folder** ships the custom menus' dev SWF (`build/<swf>.dev.swf`, the pin/watch hooks), writes `SKSE/Plugins/Inkwell/Inkwell.ini` with `[Dev] DevMode=1`, the project's token and the port (merged into an existing file, `devIni`/untracked: written when it differs, not in the manifest, never retired, listed in the dialog without the token) and afterwards sends `reload` to the connected game; the ack with its time appears in the status bar deploy item (`DeployState.hotReload`) and the toast. **Package Mod and the Vortex zip never contain dev mode, the token or the dev SWF** (`deploy/devDeploy.test.ts`). `DeployInput.dev` / `DeployDeps.dev()` carry it; `planDeploy({dev})` adds the INI only next to a custom menu.
+
 ## Rules
 
 - **Never into the game's `Data` folder**: refused when the target is inside `<Skyrim>\Data` for any detected install, or matches `\Skyrim*\Data` by name (tested both ways). Nothing is compiled first.

@@ -11,7 +11,7 @@ Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, In
 Zone 4  graph             GraphPanel             breadcrumb, event jump list, Knotwork canvas (docs/graphs.md, Graph UI), AS2 split view (docs/debugging.md)
 Zone 5  inspector         InspectorPanel
 Zone 6A bottom dock tabs  lintBudget | localization | play | trace | mockData
-Zone 6B StatusBar         shell/StatusBar.tsx    connection dots (Figma, Game: popovers open upward; they and the undo scope never shrink, the long build line gives way first at narrow widths), spec, last build + history, FFDec, lint counts (`Lint: N Err, M Warn`, strict applied; opens the Lint dock), Deploy (progress, result, stage timings), packs, undo scope
+Zone 6B StatusBar         shell/StatusBar.tsx    connection dots (Figma; Game = `GameDot.tsx`, states and popover in `docs/dev-mode.md`; popovers open upward and are no longer clipped by the bar; they and the undo scope never shrink, the long build line gives way first at narrow widths), spec, last build + history, FFDec, lint counts (`Lint: N Err, M Warn`, strict applied; opens the Lint dock), Deploy (progress, result, stage timings), packs, undo scope
 ```
 
 Zones 2 to 6A are layout panels; Zones 1 and 6B are shell chrome around the layout (they are never moved or resized).
@@ -32,6 +32,7 @@ Layout (default), Behaviour, Localization: three layouts as data, Blender-style 
 | `settingsStore` | `mirrorFigma` (Figma -> Inkwell selection mirroring) | localStorage |
 | `selectionStore` | selected component, selected graph node and its graph, what the Inspector shows, highlighted issue, graph `reveal` requests | no |
 | `traceStore` | the Ruffle preview's trace lines and last pin values (`docs/debugging.md`) | no |
+| `devStore` | the game dev connection state, the game's trace lines, variable watch and last pin values, the Trace & Watch source (`docs/dev-mode.md`); fed by the bridge from `IPC.devState` / `IPC.devEvents` | no |
 | `projectStore` | open project (IR + overlays), active SWF | no (main owns it) |
 | `overlayStore` | one zundo-backed overlay store per SWF; saves every change to `swfs/<name>/overlay.json` through main | disk, via IPC |
 | `graphDocs` | per SWF: graph ids and the open graph (`[+ Graph]`, delete, rename attach/detach the id in the overlay `scripts`) | no (the files are) |
@@ -93,7 +94,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 | Anchor override, loc keys, focus controls (disabled in the Inspector) | anchoring codegen, 0.4, 0.5 |
 | Localization table, Theme, Locale, Pseudo-Loc, Prompts, Focus Graph, Occupied HUD | 0.4, 0.4, 0.4, 0.5, 0.5, 0.6+ |
 | Relink / Discard orphans | needs the overlay store's relink operation |
-| In-game trace, live variable watch, game dot, hot reload (the Ruffle preview trace exists: `docs/debugging.md`) | Inkwell Runtime (0.3) |
+| In-game trace, live variable watch, game dot, hot reload | built in 0.3 Phase 6b (`docs/dev-mode.md`); unverified against the real game |
 | Custom menu JSON in Deploy, target pill's Config Ownership dialog | runtime config formats (0.3) |
 | Figma plugin screenshot guide in the Settings view, setup guide link | later |
 | Play-mode virtual gamepad | later |

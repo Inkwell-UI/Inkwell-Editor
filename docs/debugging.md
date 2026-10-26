@@ -1,6 +1,6 @@
 # Debugging graphs: AS2 split view, Play mode, trace (Phase 6 of 0.2)
 
-Everything here runs in the **Ruffle preview, not the game**. In-game trace logs and live inspection need the Inkwell Runtime (0.3); the UI says so (Runtime Trace panel notice, Play panel note). Graph format and codegen: `docs/graphs.md`, `docs/codegen.md`; panel reference: `docs/ui-panels.md`.
+Everything here runs in the **Ruffle preview, not the game**. In-game trace logs and live inspection come from the Inkwell Runtime's dev connection (`docs/dev-mode.md`: the Trace & Watch source switch `Game (Dev Mode)`, game pin badges, hot reload); the Ruffle source says it is not the game. Graph format and codegen: `docs/graphs.md`, `docs/codegen.md`; panel reference: `docs/ui-panels.md`.
 
 ## What a graph edit does
 
@@ -52,7 +52,7 @@ The overlay `dataBinding` string (`shared/graphBinding.ts`: `text=var:score;alph
 
 Line formats (`model/traceParse.ts`, from codegen): `[Inkwell] <info|warn|error> <nodeId>: <message>` (Log node, handler failure) and `[Inkwell] pin <nodeId>.<pin> = <value>` (preview only). Other trace lines show as plain `TRACE`.
 
-**Runtime Trace panel** (`panels/TracePanel.tsx`, `state/traceStore.ts`): time (`[HH:MM:SS.mmm]`, when the editor received the line), level, the node's title and id, message; colours for warn/error; "Warnings and errors only"; **Clear Trace**; the last 500 lines. Clicking a line whose node id is in one of the active SWF's graphs opens that graph and selects the node (`state/graphReveal.ts` `openGraphNode`). Notice shown: "Ruffle preview, not the game; in-game traces need the Runtime (0.3)". Trigger Hot Reload and the variable watch stay greyed (runtime).
+**Runtime Trace panel** (`panels/TracePanel.tsx`, `state/traceStore.ts`): time (`[HH:MM:SS.mmm]`, when the editor received the line), level, the node's title and id, message; colours for warn/error; "Warnings and errors only"; **Clear Trace**; the last 500 lines. Clicking a line whose node id is in one of the active SWF's graphs opens that graph and selects the node (`state/graphReveal.ts` `openGraphNode`). Notice shown: "Ruffle preview, not the game. Switch the source to Game (Dev Mode) ...". The panel's other source is the game (`docs/dev-mode.md`); the variable watch is empty for the Ruffle source (the preview has no watch stream). The pin badge store is shared: the badge shows the preview's value on the Ruffle source and the game's (green, `data-source="game"`) on the Game source.
 
 **Live pin values.** In the **preview build** (`preview: true` in codegen) every pure node's first output is wrapped as `__g.pv("<node>", "<pin>", <expr>)` and an On Widget Call traces its parameters at the start of the handler. `pv` traces the value (strings quoted, newlines escaped) and returns it, so behaviour is unchanged. The trace store keeps the last value per `node.pin` (cleared when a new build loads) and the node shows it as a small badge on the output pin (`gn-pin-val`, tooltip "Last value in the Ruffle preview"). **Not traced:** outputs of other exec nodes (a For Each `item`, a Delay) because their locals are only in scope inside their own continuation; Log shows in the trace panel instead. The game build has none of this code (test: `codegen.debug.test.ts`).
 
