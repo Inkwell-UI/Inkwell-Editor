@@ -185,6 +185,22 @@ describe('syncServer', () => {
     expect(s.ir('hud')).toBeUndefined()
   })
 
+  it('swf metadata themes land in the IR, an empty list clears them and a patch without them keeps them', async () => {
+    const s = await start({ initial: { hud: sample() }, onChange: vi.fn() })
+    const c = await ready(s)
+    const meta = (themes?: unknown[]) => ({ id: 'hud', name: 'hud', stage: { width: 1280, height: 720 }, ...(themes ? { themes } : {}) })
+    const t = { name: 'Colors', modes: ['A', 'B'], variables: {} }
+    c.ws.send(JSON.stringify({ type: 'patch', seq: 3, swfId: 'hud', swf: meta([t]), patch: { ops: [] } }))
+    await sleep(80)
+    expect(s.ir('hud')!.themes).toEqual([t])
+    c.ws.send(JSON.stringify({ type: 'patch', seq: 4, swfId: 'hud', swf: meta(), patch: { ops: [] } }))
+    await sleep(80)
+    expect(s.ir('hud')!.themes).toEqual([t])
+    c.ws.send(JSON.stringify({ type: 'patch', seq: 5, swfId: 'hud', swf: meta([]), patch: { ops: [] } }))
+    await sleep(80)
+    expect(s.ir('hud')!.themes).toEqual([])
+  })
+
   it('setTarget changes the swf target and a later patch keeps it', async () => {
     const onChange = vi.fn()
     const s = await start({ initial: { hud: sample() }, onChange })

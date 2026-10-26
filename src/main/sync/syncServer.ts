@@ -279,7 +279,7 @@ export async function startSyncServer(opts: SyncServerOptions) {
         let name = old?.name ?? nameFor(m.swfId, m.swf?.name ?? m.swfId)
         if (m.swf) {
           name = nameFor(m.swfId, m.swf.name, old?.name)
-          ir = { ...ir, name, stage: m.swf.stage, ...(m.swf.target ? { target: m.swf.target } : {}) }
+          ir = { ...ir, name, stage: m.swf.stage, ...(m.swf.target ? { target: m.swf.target } : {}), ...(m.swf.themes ? { themes: m.swf.themes } : {}) }
         }
         const next = applyPatch(ir, m.patch)
         if (!next.nodes[next.root] && old?.ir.nodes[old.ir.root]) {
