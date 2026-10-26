@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Graph } from '@inkwell-ui/spec'
 import { emptyGraph } from '../../shared/graphs'
 import { graphForComponent, ownersOfGraph } from './graphNav'
-import { bindableVariables, bindingTypeOk, defaultFor, mockValue, newVariableId, variableTarget } from './variables'
+import { bindableVariables, bindingTypeOk, defaultFor, droppedVariable, mockValue, newVariableId, variableDragData, variableTarget } from './variables'
 
 const g = (id: string, scope: Graph['scope'], variables: Graph['variables'] = []): Graph => ({ ...emptyGraph(id, id, scope), variables })
 const v = (id: string, scope: 'menu' | 'component', type: 'Bool' | 'Number' | 'String' = 'Number') => ({ id, name: id, type, scope }) as Graph['variables'][number]
@@ -51,5 +51,17 @@ describe('selecting a component selects its graph', () => {
   it('finds the layers a graph is attached to', () => {
     expect(ownersOfGraph(overlay, 'g1')).toEqual(['a'])
     expect(ownersOfGraph(overlay, 'nope')).toEqual([])
+  })
+})
+
+describe('droppedVariable', () => {
+  const visible = [v('hp', 'menu'), v('tmp', 'component')]
+  it('accepts a visible variable of the same SWF', () => {
+    expect(droppedVariable(variableDragData('swf', 'hp'), 'swf', visible)?.id).toBe('hp')
+  })
+  it('ignores another SWF, an invisible variable and junk', () => {
+    expect(droppedVariable(variableDragData('other', 'hp'), 'swf', visible)).toBeUndefined()
+    expect(droppedVariable(variableDragData('swf', 'gone'), 'swf', visible)).toBeUndefined()
+    expect(droppedVariable('not json', 'swf', visible)).toBeUndefined()
   })
 })

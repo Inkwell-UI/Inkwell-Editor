@@ -10,12 +10,13 @@ import type { NodeDef as KwDef } from '@nicklaj/knotwork'
 import '@nicklaj/knotwork/knotwork.css'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from 'zustand'
-import type { NodeDef } from '@inkwell-ui/spec'
+import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import type { SwfDoc } from '../../shared/projectState'
 import { categoriesOf, categoryVar, connectionRule, layerOptions, nodePins, nodeTarget, PIN_STYLE, spawnDefs, spawnFor, spawnWire, type SpawnFromPin } from '../model/graphModel'
-import { newEdge, NODE_TYPE, pinName, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
+import { findGraphStore, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
 import { createGraphValidation } from '../state/graphValidation'
-import { openGraphs } from '../state/graphDocs'
+import { droppedVariable, VARIABLE_DRAG } from '../model/variables'
+import { menuGraphId, openGraphs } from '../state/graphDocs'
 import { graphEditorBlurred } from '../state/hotReload'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
@@ -59,6 +60,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   const rf = useReactFlow()
   const [menu, setMenu] = useState<MenuState | null>(null)
   const [find, setFind] = useState(false)
+  const [varDrop, setVarDrop] = useState<{ x: number; y: number; id: string; name: string } | null>(null)
   const layers = useMemo(() => layerOptions(swf.ir, overlay), [swf.ir, overlay])
   const rule = useMemo(() => connectionRule(defs, () => store.getState().variables), [defs, store])
   const sdefs = useMemo(() => spawnDefs(defs), [defs])
@@ -140,6 +142,34 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     setMenu(null)
   }
 
+  // a variable dragged from the Variables panel: ask Get or Set, then spawn that node at the drop point
+  const onVarDragOver = (e: React.DragEvent): void => {
+    if (e.dataTransfer.types.includes(VARIABLE_DRAG)) (e.preventDefault(), (e.dataTransfer.dropEffect = 'link'))
+  }
+  const onVarDrop = (e: React.DragEvent): void => {
+    const raw = e.dataTransfer.getData(VARIABLE_DRAG)
+    if (!raw) return
+    e.preventDefault()
+    const s = store.getState()
+    const menuId = menuGraphId(swf.id)
+    const menuGraph = menuId ? findGraphStore(swf.id, menuId)?.getState() : undefined
+    const v = droppedVariable(raw, swf.id, visibleVariables({ variables: s.variables, scope: s.meta.scope as Graph['scope'] }, menuGraph))
+    if (!v) return
+    // dropped on an existing Get/Set Variable node: set its variable instead of asking for a new node
+    const hit = (e.target as HTMLElement).closest('.react-flow__node')?.getAttribute('data-id')
+    const hitKind = hit ? defs.get(s.nodes.find((n) => n.id === hit)?.data.kind ?? '')?.kind : undefined
+    if (hit && (hitKind === 'GetVariable' || hitKind === 'SetVariable')) return s.setField(hit, 'variable', v.id)
+    setVarDrop({ x: e.clientX, y: e.clientY, id: v.id, name: v.name })
+  }
+  const spawnVariable = (kind: 'GetVariable' | 'SetVariable'): void => {
+    const full = [...defs].find(([k, d]) => k.startsWith('core/') && d.kind === kind)?.[0] // the pack-qualified id, e.g. core/GetVariable@1
+    if (!varDrop || !full) return
+    const id = crypto.randomUUID()
+    store.getState().addNode({ id, kind: full, pos: rf.screenToFlowPosition({ x: varDrop.x, y: varDrop.y }), fields: { variable: varDrop.id } })
+    store.getState().setSelection([id])
+    setVarDrop(null)
+  }
+
   const onKeyDown = (e: React.KeyboardEvent): void => {
     const native = e.nativeEvent
     if (isTyping(native)) return
@@ -212,9 +242,10 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
 
   return (
     <GraphContext.Provider value={ctx}>
-      <div className="graph-flow" ref={wrap} tabIndex={0} onKeyDown={onKeyDown} onPointerDownCapture={focusCanvas} onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && graphEditorBlurred()} data-testid="graph-canvas">
+      <div className="graph-flow" ref={wrap} tabIndex={0} onKeyDown={onKeyDown} onPointerDownCapture={focusCanvas} onDragOver={onVarDragOver} onDrop={onVarDrop} onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && graphEditorBlurred()} data-testid="graph-canvas">
         <ReactFlow<FlowNode, FlowEdge>
           {...NAVIGATION_PROPS}
+          deleteKeyCode="Delete"
           nodes={nodes}
           edges={styledEdges}
           nodeTypes={nodeTypes}
@@ -255,6 +286,15 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
             onPick={(id) => store.getState().setSelection([id])}
             onClose={() => (setFind(false), wrap.current?.focus())}
           />
+        )}
+        {varDrop && (
+          <>
+            <div className="var-drop-backdrop" onPointerDown={() => setVarDrop(null)} />
+            <div className="var-drop" style={{ left: varDrop.x, top: varDrop.y }} role="menu" data-testid="var-drop" onKeyDown={(e) => e.key === 'Escape' && setVarDrop(null)}>
+              <button type="button" className="btn btn-default" role="menuitem" autoFocus onClick={() => spawnVariable('GetVariable')} data-testid="var-drop-get">{strings.graph.varGet(varDrop.name)}</button>
+              <button type="button" className="btn btn-default" role="menuitem" onClick={() => spawnVariable('SetVariable')} data-testid="var-drop-set">{strings.graph.varSet(varDrop.name)}</button>
+            </div>
+          </>
         )}
         {menu && (
           <SpawnMenu<KwDef>

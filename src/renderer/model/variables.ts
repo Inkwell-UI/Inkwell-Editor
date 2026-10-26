@@ -43,3 +43,17 @@ export function mockValue(type: 'String' | 'Number' | 'Bool', text: string): str
   if (type === 'Bool') return text === 'true'
   return text
 }
+
+/** Drag payload of a variable row (Variables panel) dropped on a graph canvas: `{swfId, varId}` as JSON. */
+export const VARIABLE_DRAG = 'application/x-inkwell-variable'
+export const variableDragData = (swfId: string, varId: string): string => JSON.stringify({ swfId, varId })
+
+/** The variable a drop carries when it belongs to this SWF and is visible to the graph it landed on; undefined otherwise (a component variable of another graph, another SWF, junk). */
+export function droppedVariable(raw: string, swfId: string, visible: readonly Variable[]): Variable | undefined {
+  try {
+    const d = JSON.parse(raw) as { swfId?: unknown; varId?: unknown }
+    return d.swfId === swfId ? visible.find((v) => v.id === d.varId) : undefined
+  } catch {
+    return undefined
+  }
+}

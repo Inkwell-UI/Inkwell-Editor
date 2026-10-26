@@ -207,6 +207,8 @@ export const strings = {
     loading: 'Loading graphs...',
     empty: 'No graph for this SWF yet. + Graph creates its menu graph.',
     emptyCanvas: 'Empty graph. Press Space to add a node, or drag a wire out of a pin.',
+    varGet: (name: string) => `Get ${name}`,
+    varSet: (name: string) => `Set ${name}`,
     /** Contextual key hints above the minimap: what applies to nothing, one node or several selected nodes (only keys the canvas or shell handles). */
     keyGroups: (selected: number, wires: number): [string, string][][] => {
       const nav: [string, string][] = [['Zoom to all', 'F'], ['Find nodes', 'Ctrl F']]
@@ -242,6 +244,7 @@ export const strings = {
   vars: {
     title: 'Variables',
     name: 'Variable name',
+    drag: 'Drag onto the graph to get or set this variable',
     type: 'Variable type',
     scope: 'Variable scope',
     scopeMenu: 'menu',

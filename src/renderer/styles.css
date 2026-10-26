@@ -374,8 +374,17 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .vars-add { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 4px; align-items: center; }
 .vars-add > :first-child { grid-column: 1 / -1; }
 .vars-graph h4 { margin: 8px 0 4px; }
-.var-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 4px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line); }
-.var-row > :first-child { grid-column: 1 / 3; }
+.var-row { display: flex; flex-direction: column; gap: 4px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.var-name { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.var-name .gn-input { flex: 1; min-width: 0; }
+.var-meta { display: flex; align-items: center; gap: 6px; min-width: 0; padding-left: 20px; }
+.var-meta select.gn-input { flex: 0 0 auto; width: auto; }
+.var-meta input.gn-input { flex: 1; min-width: 0; }
+.var-meta .chip { margin-left: auto; }
+.var-grip { cursor: grab; color: var(--fg-faint); display: flex; padding: 2px; }
+.var-grip:hover { color: var(--fg); }
+.var-drop { position: fixed; z-index: 30; display: flex; gap: 4px; padding: 6px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 6px; }
+.var-drop-backdrop { position: fixed; inset: 0; z-index: 29; }
 .bind-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 16px; }
 .bind-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
 .bind-head { margin: 0; }
