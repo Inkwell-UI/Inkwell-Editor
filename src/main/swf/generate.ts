@@ -8,7 +8,9 @@ import * as T from './tags'
 import { mapText, previewDeviceFont, type FontInfo, type GlyphLookup, type TextScript } from './text'
 import { HUD_SCALE, widgetFrame } from '../widget/frame'
 import { widgetContractClass } from '../widget/widgetAs2'
+import { packVersion, FIRST_RUNTIME_VERSION } from '@inkwell-ui/spec'
 import { generateGraphClasses, type GraphClass, type WidgetCall } from '../codegen/codegen'
+import { menuClassName, menuClassSource, menuFrameCode } from '../codegen/menuGlue'
 import type { CodegenPacks } from '../codegen/packs'
 
 export interface GenerateOptions {
@@ -18,6 +20,8 @@ export interface GenerateOptions {
   graphs?: { graphs: readonly Graph[]; packs: CodegenPacks }
   /** Overlay `dataBinding` strings by Figma layer id; applied by the graph classes (docs/codegen.md, Data binding). Without graphs nothing is bound. */
   bindings?: Record<string, string>
+  /** Overlay `role` by Figma layer id. A customMenu SWF makes its `button` and `list` layers focusable, and the preview's Play panel can click the `button` ones. */
+  roles?: Record<string, string>
   /** Mod id: AS2 classes live under `mods.<modId>.*`. */
   modId: string
   /** Overlay instance names by node id; the default is the sanitized layer name. */
@@ -115,6 +119,41 @@ const PREVIEW_BRIDGE = [
   '    });',
   '} catch (e) {',
   '    trace("[Inkwell] preview bridge unavailable: " + e);',
+  '}'
+]
+
+/**
+ * Preview only, customMenu SWFs: stands in for the Inkwell Runtime (SPEC-CHANGES S4.2). `_root.inkwell` has every member of the Spec's BRIDGE_MEMBERS table; `log` prints the
+ * trace line the Trace panel parses; `glueReady` plays the runtime's next step (the menu opens). Callbacks for the Play panel: `inkwellMenuOpen` / `inkwellMenuClose` call
+ * the menu class like the runtime does, `inkwellClick(nodeId)` fires `onRelease` of a role-`button` layer (`_global.Inkwell.paths`). Never part of the game SWF.
+ */
+const previewMenuBridge = (menuName: string, paths: Record<string, string>): string[] => [
+  `_root.inkwell = {`,
+  `    ready: true, version: ${packVersion(FIRST_RUNTIME_VERSION)}, menu: ${JSON.stringify(menuName)}, uiScale: 1, offsetX: 0, offsetY: 0, theme: "", saved: {},`,
+  '    log: function(level, nodeId, text) { trace("[Inkwell] " + level + " " + nodeId + ": " + text); },',
+  '    glueReady: function() { _root.inkwellMenu.onOpen(); },',
+  '    openMenu: function(name) { return true; }, closeMenu: function(name) { return true; }, sendModEvent: function(e, s, n) { }, callRuntime: function(name, arg) { return ""; },',
+  '    playSound: function(id) { return false; }, getSetting: function(section, key, d) { return d; }, getInputDevice: function() { return "keyboardMouse"; },',
+  '    getSaved: function(name, d) { var v = _root.inkwell.saved[name]; return v == undefined ? d : v; }, setSaved: function(name, v) { _root.inkwell.saved[name] = v; },',
+  '    watch: function(g, n, sc, v) { }, pin: function(n, p, v) { }',
+  '};',
+  '_global.Inkwell.paths = {};',
+  ...Object.entries(paths).map(([id, p]) => `_global.Inkwell.paths[${JSON.stringify(id)}] = ${JSON.stringify(p)};`), // FFDec's AS2 parser rejects quoted keys in an object literal
+  'try {',
+  '    flash.external.ExternalInterface.addCallback("inkwellMenuOpen", null, function() { _root.inkwellMenu.onOpen(); return true; });',
+  '    flash.external.ExternalInterface.addCallback("inkwellMenuClose", null, function() { _root.inkwellMenu.onClose(); return true; });',
+  '    flash.external.ExternalInterface.addCallback("inkwellClick", null, function(nodeId) {',
+  '        var p = _global.Inkwell.paths[nodeId];',
+  '        if (p == undefined) return false;',
+  '        var o = _root;',
+  '        var a = p.split(".");',
+  '        for (var k = 0; k < a.length; k++) o = o[a[k]];',
+  '        if (typeof (o.onRelease) != "function") return false;',
+  '        o.onRelease();',
+  '        return true;',
+  '    });',
+  '} catch (e) {',
+  '    trace("[Inkwell] preview menu bridge unavailable: " + e);',
   '}'
 ]
 
@@ -463,11 +502,12 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     as2.push({ path: `__Packages/mods/${mod}/${cls}.as`, source })
   }
   // graphs: the widget's behaviour comes from On Widget Call (no hardcoded popup API); a graph is a class instantiated on the base clip
+  const menu = ir.target.kind === 'customMenu' && !opts.widget // S7: a custom menu gets the glue class; `widget` is the HUD flavour and wins if both are asked for
   const baseExpr = widget && wf ? 'widget' : 'this'
   const basePrefix = widget && wf ? 'root.widget.' : 'root.'
   const gen = opts.graphs?.graphs.length
     ? generateGraphClasses({
-        modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}),
+        modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}), ...(menu ? { menu: true } : {}),
         layerPath: (id) => (id === (widget && wf ? wf.frame.id : ir.root) ? '' : layerPaths.get(id)?.startsWith(basePrefix) ? layerPaths.get(id)!.slice(basePrefix.length) : undefined)
       })
     : undefined
@@ -496,8 +536,19 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     )
   gen?.classes.forEach((c, k) => {
     addClass(c.cls, c.source)
-    frameCode.push(`${baseExpr}.inkwellGraph${k} = new mods.${mod}.${c.cls}(${baseExpr});`, `${baseExpr}.inkwellGraph${k}.init();`)
+    if (!menu) frameCode.push(`${baseExpr}.inkwellGraph${k} = new mods.${mod}.${c.cls}(${baseExpr});`, `${baseExpr}.inkwellGraph${k}.init();`)
   })
+  if (menu) {
+    // the menu class creates and init()s the graphs once the runtime bridge is ready (S7); the runtime waits for its glueReady()
+    const pathOf = (id: string): string | undefined => (layerPaths.get(id)?.startsWith('root.') ? layerPaths.get(id)!.slice('root.'.length) : undefined)
+    const byRole = (...r: string[]): string[] => Object.entries(opts.roles ?? {}).filter(([, role]) => r.includes(role)).flatMap(([id]) => pathOf(id) ?? [])
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort() }))
+    if (opts.preview) {
+      const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
+      frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, paths))
+    }
+    frameCode.push(...menuFrameCode(mod, swfCls))
+  }
   if (frameCode.length) as2.push({ path: 'frame_1/DoAction.as', source: ['// Generated by Inkwell: runs once the clips exist.', ...frameCode, ''].join('\n') })
 
   const tags = [

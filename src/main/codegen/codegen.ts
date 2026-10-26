@@ -53,6 +53,12 @@ export interface CodegenInput {
    * `mock:` bindings and variables named like a mock key follow the mock data Ruffle Play mode delivers. Never set for the game SWF.
    */
   preview?: boolean
+  /**
+   * Custom menu served by the Inkwell Runtime (S7, docs/menus.md): the graph class also gets the `bridge` member the menu class sets, `log` (Log nodes and `fail` go to
+   * `bridge.log`, so the runtime's log and trace see the node id), and the message/mod-event registries `handleMessage` / `handleModEvent` the runtime-event nodes use.
+   * Without it the output is exactly what a HUD widget gets.
+   */
+  menu?: boolean
 }
 
 interface Line {
@@ -127,6 +133,15 @@ interface Val {
   expr: string
   /** Reads mutable state, directly or through its inputs: never cached. */
   volatile: boolean
+}
+
+/**
+ * Menu flavour of the Log node: `trace("[Inkwell] <level> <id>: " + msg);` becomes `__g.log("<level>", "<id>", msg);` so the line reaches the runtime's log with the node id.
+ * Done on the filled template line so the Core-Pack template stays as it is (Ruffle's mock bridge prints the same trace line the panel parses).
+ */
+export function toBridgeLog(line: string): string {
+  const m = /^(\s*)trace\("\[Inkwell\] (\w+) ((?:[^"\\]|\\.)*): " \+ (.*)\);$/.exec(line)
+  return m ? `${m[1]}__g.log("${m[2]}", "${m[3]}", ${m[4]});` : line
 }
 
 const key = (node: string, pin: string): string => `${node}\u0000${pin}`
@@ -362,7 +377,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
             )
         } else {
           if (/\{\{(next|guarded)\./.test(raw)) throw new Skip('a continuation placeholder must be alone on its line.')
-          out.push({ t: fill(raw, n, d, args, outs), n: n.id })
+          out.push({ t: i.menu ? toBridgeLog(fill(raw, n, d, args, outs)) : fill(raw, n, d, args, outs), n: n.id })
         }
       }
       return out
@@ -425,9 +440,11 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     { t: `class mods.${ident(i.modId)}.${cls} {` },
     { t: '    var base;' },
     { t: '    var inputHandlers;' },
+    ...(i.menu ? [{ t: '    var bridge;' }, { t: '    var messageHandlers;' }, { t: '    var modEventHandlers;' }] : []),
     { t: `    function ${cls}(base) {` },
     { t: '        this.base = base;' },
     { t: '        this.inputHandlers = {};' },
+    ...(i.menu ? [{ t: '        this.messageHandlers = [];' }, { t: '        this.modEventHandlers = [];' }] : []),
     { t: '    }' },
     { t: '    // logs the failing node id; e is a string or a plain object {node, message} (GFx has no Error class)' },
     { t: '    function fail(nodeId, e) {' },
@@ -438,13 +455,28 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     { t: '        } else {' },
     { t: '            msg = String(e);' },
     { t: '        }' },
-    { t: '        var line = "[Inkwell] error " + nodeId + ": " + msg;' },
-    { t: '        trace(line);' },
-    { t: '        try {' },
-    { t: '            if (typeof (_global.skse) == "object" && _global.skse.Log != undefined) _global.skse.Log(line);' },
-    { t: '        } catch (x) {' },
-    { t: '        }' },
-    { t: '    }' },
+    ...(i.menu
+      ? [
+          { t: '        this.log("error", nodeId, msg);' },
+          { t: '    }' },
+          // S4.2: the runtime's bridge writes the line (spdlog, dev stream) with the node id; the stub bridge of a missing runtime is not ready, so the trace is the fallback
+          { t: '    function log(level, nodeId, text) {' },
+          { t: '        if (this.bridge.ready == true) {' },
+          { t: '            this.bridge.log(level, nodeId, String(text));' },
+          { t: '        } else {' },
+          { t: '            trace("[Inkwell] " + level + " " + nodeId + ": " + text);' },
+          { t: '        }' },
+          { t: '    }' }
+        ]
+      : [
+          { t: '        var line = "[Inkwell] error " + nodeId + ": " + msg;' },
+          { t: '        trace(line);' },
+          { t: '        try {' },
+          { t: '            if (typeof (_global.skse) == "object" && _global.skse.Log != undefined) _global.skse.Log(line);' },
+          { t: '        } catch (x) {' },
+          { t: '        }' },
+          { t: '    }' }
+        ]),
     ...(i.preview
       ? [
           { t: '    // preview only: live pin values for the editor (traced as "[Inkwell] pin <node>.<pin> = <value>"); passes the value through' },
@@ -455,7 +487,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '    }' }
         ]
       : []),
-    { t: '    // On Input glue: the host calls handleInput("<action>"); 0.2 has no input source yet (the runtime comes in 0.3)' },
+    { t: i.menu ? '    // glue: the menu class (docs/menus.md) calls handleInput / handleMessage / handleModEvent; the runtime forwards the engine events to it' : '    // On Input glue: the host calls handleInput("<action>"); 0.2 has no input source yet (the runtime comes in 0.3)' },
     { t: '    function addInputHandler(action, fn) {' },
     { t: '        if (this.inputHandlers[action] == undefined) this.inputHandlers[action] = [];' },
     { t: '        this.inputHandlers[action].push(fn);' },
@@ -464,6 +496,30 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     { t: '        var list = this.inputHandlers[action];' },
     { t: '        for (var k = 0; k < list.length; k++) list[k]();' },
     { t: '    }' },
+    ...(i.menu
+      ? [
+          { t: '    // On Runtime Message (S7): name = Inkwell_API.Set* key; a handler registered under "" takes any name' },
+          { t: '    function addMessageHandler(name, fn) {' },
+          { t: '        this.messageHandlers.push({ name: name, fn: fn });' },
+          { t: '    }' },
+          { t: '    function handleMessage(name, text, number, flag) {' },
+          { t: '        for (var k = 0; k < this.messageHandlers.length; k++) {' },
+          { t: '            var h = this.messageHandlers[k];' },
+          { t: '            if (h.name == "" || h.name == name) h.fn(name, text, number, flag);' },
+          { t: '        }' },
+          { t: '    }' },
+          { t: '    // On Mod Event (S7): fires only while the menu is open (the runtime drops events while it is closed)' },
+          { t: '    function addModEventHandler(name, fn) {' },
+          { t: '        this.modEventHandlers.push({ name: name, fn: fn });' },
+          { t: '    }' },
+          { t: '    function handleModEvent(name, strArg, numArg) {' },
+          { t: '        for (var k = 0; k < this.modEventHandlers.length; k++) {' },
+          { t: '            var h = this.modEventHandlers[k];' },
+          { t: '            if (h.name == name) h.fn(strArg, numArg);' },
+          { t: '        }' },
+          { t: '    }' }
+        ]
+      : []),
     { t: '    function init() {' }
   ]
   const all = [...head, ...ind(init, '        '), { t: '    }' }, { t: '}' }]
