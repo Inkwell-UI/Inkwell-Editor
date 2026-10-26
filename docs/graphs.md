@@ -58,7 +58,7 @@ React Flow with Knotwork's `NAVIGATION_PROPS` (`onlyRenderVisibleElements`: off-
 - **Issues**: `createGraphValidation` (the shared `validateGraph`) feeds a badge (icon plus message tooltip, border colour) on each node and a wavy underline on the pin with the issue; the Lint dock shows the saved graph's issues from main. An unknown pack node shows a striped header "Unknown Pack Node (Data Preserved)", its kind, and handles for the pins its wires use; its fields stay untouched.
 - **Header**: breadcrumb `GRAPH: <swf> > <graph> > <layer it hangs on> > <selected node>` (the SWF and the layer are links) and the event jump list (every entry node; selects and centres it).
 - **AS2 split, live pin values**: Phase 6, `docs/debugging.md`. A selected node highlights its lines in the AS2 view; an output pin shows the last value the Ruffle preview traced (small badge).
-- **Not built**: Tidy Layout (button disabled), node collapse. Variables used by a component graph's Get/Set Variable nodes must be the graph's own (validation and codegen resolve `g.variables` only; `visibleVariables` also lists the menu graph's for the Variables panel).
+- **Tidy Layout** (`model/graphLayout.ts`, header button): layers by longest path along the wires, rows ordered by their sources' average row, anchored at the top-left of the old bounds; one undo entry, then the view fits. **Not built**: node collapse. Variables used by a component graph's Get/Set Variable nodes must be the graph's own (validation and codegen resolve `g.variables` only; `visibleVariables` also lists the menu graph's for the Variables panel).
 
 ### Variables (`VariablesPanel`)
 

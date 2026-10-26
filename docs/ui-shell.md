@@ -88,7 +88,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 
 | Item | Arrives with |
 | --- | --- |
-| Drag-to-graph, Tidy Layout | later |
+| Drag-to-graph | later |
 | Imported AS2, node packs (Assets) | 0.2 / 0.5 |
 | Contract validation, Contracts tab content | 0.5 |
 | Anchor override, loc keys, focus controls (disabled in the Inspector) | anchoring codegen, 0.4, 0.5 |
