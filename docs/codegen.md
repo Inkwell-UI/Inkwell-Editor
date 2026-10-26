@@ -21,8 +21,12 @@ Graphs (`swfs/<swf>/graphs/<id>.json`) compile to AS2 classes inside the SWF. Te
 
 - **Not `dynamic`.** FFDec's AS2 compiler does not parse the keyword (the build fails to parse the class). Sealing is a compile-time check only and FFDec does not run it, so adding members works the same.
 - `fail` accepts a string or a plain object `{node, message}`, traces `[Inkwell] error <node id>: <message>` and also calls `skse.Log` when it exists. There is no `Error` class anywhere.
-- `addInputHandler` only stores the handler. Nothing calls `handleInput` in 0.2 (no input source before the runtime, 0.3).
-- `onLoad`, `onOpen`, `onClose` events register `__g.onLoad` etc. Only **On Load is called**, at the end of `init()` (`if (__g.onLoad != undefined) __g.onLoad();`, emitted only when the graph has an On Load node): the graph is created after every clip is placed, so a HUD widget uses it to start hidden (`samples/hud-graph-popup`). On Open and On Close wait for the runtime (0.3).
+- `addInputHandler` only stores the handler. Nothing calls `handleInput` in a HUD widget (no input source); in a custom menu the menu class does (below).
+- `onLoad`, `onOpen`, `onClose` events register `__g.onLoad` etc. **On Load is called** at the end of `init()` (`if (__g.onLoad != undefined) __g.onLoad();`, emitted only when the graph has an On Load node): the graph is created after every clip is placed, so a HUD widget uses it to start hidden (`samples/hud-graph-popup`). **On Open and On Close are called by the menu class** of a custom menu (`docs/menus.md`); a HUD widget never calls them (lint `runtime-required`).
+
+## Custom menus: the menu flavour and the glue class
+
+For `ir.target.kind === 'customMenu'` `swf/generate.ts` passes `menu: true` to codegen and adds the class `mods.<modId>.<Swf>Menu` (`codegen/menuGlue.ts`), whose `start()` creates and `init()`s the graph classes after the runtime bridge is ready, instead of the frame code. The menu flavour of a graph class adds `var bridge`, `log`, `addMessageHandler`/`handleMessage`, `addModEventHandler`/`handleModEvent`, routes `fail` and the Log node through `__g.log` (`toBridgeLog` rewrites the filled Log line; the Core-Pack template is unchanged) and leaves everything else as is. Component events (On Click, On Focus, On Blur, On Value Changed, On Item Selected) still register themselves in `init()`; the glue does not wire them a second time. Everything about it: `docs/menus.md`.
 
 ## How a node becomes code
 
@@ -73,7 +77,7 @@ Codegen has no per-node code except the Set Variable / Toggle rule below; everyt
 
 ## Tests
 
-`codegen.test.ts` (golden AS2 per node kind in `__snapshots__`, caching, errors, source map), `codegen.nodes.test.ts` (Random and Counter caching, Toggle bindings, Delay retrigger / Cancel Delay / Stop Timer, Tween registry, Array Get coercion), `templates.integration.test.ts` (every core template compiled by the real FFDec; skipped with a warning without Java/FFDec/wrapper jar), `widget/graphWidget*.test.ts` (samples/hud-graph slice, Papyrus, preview path), `sync/buildPipeline.test.ts`, `deploy/run.test.ts`.
+`codegen.test.ts` (golden AS2 per node kind in `__snapshots__`, caching, errors, source map), `codegen.nodes.test.ts` (Random and Counter caching, Toggle bindings, Delay retrigger / Cancel Delay / Stop Timer, Tween registry, Array Get coercion), `templates.integration.test.ts` (every core template compiled by the real FFDec; skipped with a warning without Java/FFDec/wrapper jar), `widget/graphWidget*.test.ts` (samples/hud-graph slice, Papyrus, preview path), `sync/buildPipeline.test.ts`, `deploy/run.test.ts`; the custom-menu glue: `menuGlue.test.ts` (golden AS2) and `menuGlue.integration.test.ts` (real FFDec), `docs/menus.md`.
 
 A passing FFDec compile means the AS2 **parses** and the class is in the SWF. FFDec's compiler does no type checking, and nothing here was run in Ruffle or the game.
 

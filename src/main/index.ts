@@ -16,6 +16,7 @@ import { runFontShots } from './screenshotFonts'
 import { runShots } from './screenshotDriver'
 import { runDebugShots, runGraphShots } from './screenshotGraph'
 import { runPopupShots } from './screenshotPopup'
+import { runMenuShots } from './screenshotMenu'
 import { runSetupShots } from './screenshotSetup'
 import { createSession } from './session'
 
@@ -121,6 +122,7 @@ ipcMain.handle(IPC.projectExample, (_e, title: string) =>
   })
 )
 ipcMain.handle(IPC.overlaySave, (_e, swfName: string, doc: OverlayDoc) => session.saveOverlay(swfName, doc))
+ipcMain.handle(IPC.menuSave, (_e, swfName: string, doc: unknown) => session.saveMenuSettings(swfName, doc))
 ipcMain.handle(IPC.graphsList, (_e, swf: string) => session.listGraphs(swf))
 ipcMain.handle(IPC.graphsLoad, (_e, swf: string, id: string) => session.loadGraph(swf, id))
 ipcMain.handle(IPC.graphsSave, (_e, swf: string, g: unknown) => session.saveGraph(swf, g))
@@ -217,6 +219,8 @@ void app.whenReady().then(async () => {
     void runFigmaShots({ outDir: shotsDir, userData: app.getPath('userData'), projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] figma screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_FONTS'])
     void runFontShots({ outDir: shotsDir, win: () => win }).then(() => app.exit(0), (e: unknown) => { console.error('[inkwell] font screenshots failed:', e); app.exit(1) })
+  else if (shotsDir && process.env['INKWELL_SHOTS_MENU'])
+    void runMenuShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] menu screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_GRAPH'] === 'popup')
     void runPopupShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] popup screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_GRAPH'] === 'debug')

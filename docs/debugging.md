@@ -26,6 +26,10 @@ Mechanism (**ExternalInterface**, preview SWF only): `swf/generate.ts` `PREVIEW_
 | `inkwellMockReset()`, `inkwellMock(key, value)`, `inkwellMockDone()` | replace `_global.Inkwell.mock`, then let the graph classes re-read it |
 | `inkwellGet("Hud.title.text")` | reads a value from the movie by path from `_root` (debugging and test aid; the screenshot driver uses it) |
 
+### Custom menu: the mock runtime
+
+For a `customMenu` the preview SWF also carries a mock `_root.inkwell` (the Inkwell Runtime's bridge) and three callbacks: `inkwellMenuOpen`, `inkwellMenuClose` and `inkwellClick(nodeId)`. The Play tab then shows Open, Close and Click (a role-Button layer): Open and Close call the menu class's `onOpen` / `onClose` as the runtime does, Click calls the layer's `onRelease`. `Log` nodes trace through the bridge, so the Trace panel shows them with their node id. A real mouse click in Play mode (not Inspect) works too. Mechanism, members and what the preview does not do: `docs/menus.md`.
+
 ### Mock data
 
 The Mock Data panel's key/value list (overlay `mockData`) is delivered by `preview/mockDelivery.ts` after every load of the movie (a rebuild restarts it) and whenever the data changes (`PreviewPanel`). The graph classes of the **preview build** read it:
