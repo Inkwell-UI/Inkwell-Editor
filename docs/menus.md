@@ -4,7 +4,7 @@ The `customMenu` target: a SWF that the Inkwell Runtime opens in game (hotkey, P
 
 ## The target
 
-The target is per SWF (`ir.target.kind`: `hudWidget`, `customMenu`, `menuReplacement`), not a project kind: a project may hold both. Figma sets it (the IR is never edited here); the Target pill in the top bar shows it and, for a `customMenu`, opens the Menu settings in a dialog. Menu-only controls on another target are disabled with a reason ("Menu settings are for custom menus").
+The target is per SWF (`ir.target.kind`: `hudWidget`, `customMenu`, `menuReplacement`), not a project kind: a project may hold both. Figma never sends it (a new frame starts as `hudWidget`); the author sets it in the editor: the Target pill in the top bar opens a dialog with a **Target of this SWF** select (`hudWidget` or `customMenu`; `menuReplacement` is shown but not changeable). The choice is written to `ir.json` by the next build and a later Figma sync keeps it (`syncServer.setTarget`). For a `customMenu` the dialog also holds the Menu settings. Menu-only controls on another target are disabled with a reason ("Menu settings are for custom menus").
 
 ## `swfs/<name>/menu.json` (Menu settings panel)
 

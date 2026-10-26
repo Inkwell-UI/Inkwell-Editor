@@ -531,6 +531,14 @@ export const strings = {
     orphanedTag: '(orphaned)',
     noTarget: 'No target',
     targetLabel: (kind?: string) => `Target: ${kind ?? 'none'}. Opens the Config Ownership dialog`,
+    targetField: {
+      label: 'Target of this SWF',
+      hudWidget: 'HUD widget (SkyUI loads it)',
+      customMenu: 'Custom menu (Inkwell Runtime opens it)',
+      help: 'Figma does not set this. A HUD widget has no runtime: no translations, saved variables or open triggers. Changing it rebuilds the SWF; check the graphs afterwards.',
+      menuReplacement: 'This SWF targets a menu replacement, which cannot be changed here.',
+      error: (e: string) => `Could not change the target: ${e}`
+    },
     kindNames: { hudWidget: 'hudWidget', customMenu: 'customMenu', menuReplacement: 'menuReplacement' } as Record<string, string>,
     workspaces: 'Mode',
     workspaceNames: { layout: 'Layout', behaviour: 'Behaviour', localization: 'Localization' } as Record<string, string>,

@@ -650,6 +650,12 @@ export function createSession(deps: SessionDeps) {
       }
       return r
     },
+    /** Target of one swf (Target dialog); the build rewrites ir.json. */
+    async setTarget(swfName: string, kind: 'hudWidget' | 'customMenu'): Promise<{ ok: true } | { ok: false; error: string }> {
+      const info = server?.swfs().find((i) => i.name === swfName)
+      if (!info || !server?.setTarget(info.id, kind)) return { ok: false, error: 'No such swf in the open project' }
+      return { ok: true }
+    },
     /** menu.json of a custom menu (Menu settings panel). Refused while an unreadable file sits there. */
     async saveMenuSettings(swfName: string, doc: unknown): Promise<SaveOverlayResult> {
       if (!projectDir || !server?.swfs().some((i) => i.name === swfName)) return { ok: false, error: 'No such swf in the open project' }

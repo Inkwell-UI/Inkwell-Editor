@@ -339,6 +339,17 @@ export async function startSyncServer(opts: SyncServerOptions) {
       projectStatus()
       return true
     },
+    /** Editor-side target of one swf: Figma never sends one, a new frame starts as hudWidget. The next patch keeps it (only a plugin-sent target replaces it). */
+    setTarget: (swfId: string, kind: 'hudWidget' | 'customMenu'): boolean => {
+      const e = store.get(swfId)
+      if (!e) return false
+      if (e.ir.target.kind !== kind) {
+        e.ir = { ...e.ir, target: { ...e.ir.target, kind } }
+        swfsChanged()
+        schedule(swfId)
+      }
+      return true
+    },
     /** Queues a build of one swf (debounced like a patch), e.g. after its overlay changed. */
     rebuild: (swfId: string): void => schedule(swfId),
     /** Queues every swf that still has a Figma frame; returns how many. */

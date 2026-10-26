@@ -185,6 +185,19 @@ describe('syncServer', () => {
     expect(s.ir('hud')).toBeUndefined()
   })
 
+  it('setTarget changes the swf target and a later patch keeps it', async () => {
+    const onChange = vi.fn()
+    const s = await start({ initial: { hud: sample() }, onChange })
+    expect(s.setTarget('nope', 'customMenu')).toBe(false)
+    expect(s.setTarget('hud', 'customMenu')).toBe(true)
+    expect(s.ir('hud')!.target.kind).toBe('customMenu')
+    const c = await ready(s)
+    c.ws.send(JSON.stringify({ type: 'patch', seq: 3, swfId: 'hud', patch: { ops: [] } }))
+    await sleep(80)
+    expect(s.ir('hud')!.target.kind).toBe('customMenu')
+    expect(onChange).toHaveBeenCalled()
+  })
+
   it('a node no root reaches gets an unreachable-node warning on that swf', async () => {
     const s = await start({ initial: { hud: sample() }, onChange: () => ({ issues: [] }) })
     const c = await ready(s)

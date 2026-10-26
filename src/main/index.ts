@@ -127,6 +127,7 @@ ipcMain.handle(IPC.projectExample, (_e, title: string) =>
   })
 )
 ipcMain.handle(IPC.overlaySave, (_e, swfName: string, doc: OverlayDoc) => session.saveOverlay(swfName, doc))
+ipcMain.handle(IPC.swfTarget, (_e, swfName: string, kind: 'hudWidget' | 'customMenu') => session.setTarget(swfName, kind))
 ipcMain.handle(IPC.menuSave, (_e, swfName: string, doc: unknown) => session.saveMenuSettings(swfName, doc))
 ipcMain.handle(IPC.projectFonts, () => session.getProjectFonts())
 ipcMain.handle(IPC.projectFontSave, (_e, hash: string, settings: { charsets: string[]; extraChars: string }) => session.saveProjectFontSettings(hash, settings))

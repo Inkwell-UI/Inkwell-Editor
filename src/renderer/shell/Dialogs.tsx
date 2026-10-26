@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { inkwell } from '../hooks/api'
 import { useSyncState } from '../hooks/useSyncState'
 import { useDialogStore } from '../state/dialogStore'
@@ -32,6 +33,31 @@ function FigmaApproval() {
   )
 }
 
+/** The target of the active SWF (hudWidget or customMenu): editor-side, Figma never sends one. */
+function TargetField() {
+  const swf = useActiveSwf()
+  const [err, setErr] = useState<string>()
+  const t = strings.top.targetField
+  if (!swf) return null
+  const kind = swf.ir.target.kind
+  return (
+    <div className="field">
+      <label className="field-label" htmlFor="swf-target">{t.label}</label>
+      {kind === 'menuReplacement' ? <p className="dim">{t.menuReplacement}</p> : (
+        <select
+          id="swf-target" value={kind} data-testid="swf-target"
+          onChange={(e) => void inkwell?.setSwfTarget(swf.name, e.target.value as 'hudWidget' | 'customMenu').then((r) => setErr(r.ok ? undefined : t.error(r.error)))}
+        >
+          <option value="hudWidget">{t.hudWidget}</option>
+          <option value="customMenu">{t.customMenu}</option>
+        </select>
+      )}
+      <p className="dim">{t.help}</p>
+      {err && <p className="tone-error">{err}</p>}
+    </div>
+  )
+}
+
 function StubDialog() {
   const open = useDialogStore((s) => s.open)
   const close = useDialogStore((s) => s.close)
@@ -39,12 +65,14 @@ function StubDialog() {
   if (open === 'configOwnership' && kind === 'customMenu')
     return (
       <Dialog title={strings.dialogs.config.title} onClose={close} wide>
+        <TargetField />
         <MenuSettingsForm />
       </Dialog>
     )
   if (open === 'configOwnership')
     return (
       <Dialog title={strings.dialogs.config.title} onClose={close}>
+        <TargetField />
         <p>{strings.dialogs.config.body}</p>
         <div className="two-col">
           <section><h3>{strings.dialogs.config.author}</h3><p className="dim">{strings.dialogs.config.authorNote}</p></section>
