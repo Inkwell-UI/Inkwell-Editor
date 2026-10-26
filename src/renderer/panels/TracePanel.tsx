@@ -8,6 +8,7 @@ import { clockTime, type TraceLevel } from '../model/traceParse'
 import { sortedWatch, useDevStore, type TraceSource } from '../state/devStore'
 import { findGraphStore } from '../state/graphStore'
 import { graphOfNode, openGraphNode } from '../state/graphReveal'
+import { hotReload, hotReloadDeploys } from '../state/hotReload'
 import { useDeployStore } from '../state/deployStore'
 import { useTraceStore } from '../state/traceStore'
 import { strings } from '../strings'
@@ -63,11 +64,11 @@ export function TracePanel() {
   const deployAndReload = dev.devDeploy && !!menuName
   const deploying = useDeployStore((s) => s.busy)
   const triggerReload = async (): Promise<void> => {
-    if (deployAndReload) return void useDeployStore.getState().start('mo2Mod', swf?.name, 'active')
-    if (!inkwell || reload.busy) return
+    if (reload.busy) return
+    if (hotReloadDeploys()) return void (await hotReload())
     setReload({ busy: true, text: strings.dev.reloading })
-    const r: DevReloadResult = await inkwell.devReload(menuName)
-    setReload({ busy: false, text: reloadSummary(r), bad: !r.ok })
+    const r = await hotReload()
+    setReload(r ? { busy: false, text: reloadSummary(r), bad: !r.ok } : { busy: false })
   }
   const reloadReason = deployAndReload ? (deploying ? strings.deploy.running : undefined) : !connected ? strings.dev.reloadNeedsGame : reload.busy ? strings.dev.reloading : undefined
   const clear = (): void => (game ? clearGame() : clearRuffle())
@@ -88,7 +89,7 @@ export function TracePanel() {
         )}
         <label><input type="checkbox" checked={errorsOnly} onChange={(e) => setErrorsOnly(e.target.checked)} /> {strings.trace.errorsOnly}</label>
         <span className="push-right row-actions">
-          <Btn onClick={() => void triggerReload()} reason={reloadReason} testId="trace-reload">{deployAndReload ? strings.trace.deployReload : strings.trace.hotReload}</Btn>
+          <Btn onClick={() => void triggerReload()} reason={reloadReason} testId="trace-reload">{strings.trace.hotReload}</Btn>
           <Btn onClick={clear} testId="trace-clear" reason={lines.length ? undefined : strings.trace.nothingToClear}>{strings.trace.clear}</Btn>
         </span>
       </div>

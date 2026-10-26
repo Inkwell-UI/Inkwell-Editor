@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { devTone, type DevState } from '../../shared/devLink'
 import { inkwell } from '../hooks/api'
 import { useDevStore } from '../state/devStore'
+import { hotReload } from '../state/hotReload'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
@@ -62,7 +63,7 @@ export function GameDetails() {
         {dev.phase === 'off' || dev.phase === 'noToken' || dev.phase === 'waiting' || dev.phase === 'unauthorized' || dev.phase === 'protocolMismatch' || dev.phase === 'refused' || dev.phase === 'busy'
           ? <Btn variant="primary" onClick={() => void inkwell?.devConnect()} testId="game-connect">{strings.dev.connect}</Btn> : null}
         {dev.phase !== 'off' && <Btn onClick={() => void inkwell?.devDisconnect()} testId="game-disconnect">{strings.dev.disconnect}</Btn>}
-        <Btn onClick={() => void inkwell?.devReload()} reason={connected ? undefined : strings.dev.reloadNeedsGame} testId="game-reload">{strings.dev.hotReload}</Btn>
+        <Btn onClick={() => void hotReload()} reason={connected || dev.devDeploy ? undefined : strings.dev.reloadNeedsGame} testId="game-reload">{strings.dev.hotReload}</Btn>
       </div>
       <h4>{strings.dev.pasteTitle}</h4>
       <p className="dim">{strings.dev.pasteHint}</p>

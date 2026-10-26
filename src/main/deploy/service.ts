@@ -26,8 +26,8 @@ export interface DeployDeps {
   chooseZip?(defaultPath: string): Promise<string | undefined>
   /** The project's Dev deploy toggle with its token and port (docs/dev-mode.md); undefined = off. Asked for folder targets only: a package or Vortex zip never gets dev mode. */
   dev?(): { token: string; port: number } | undefined
-  /** Makes sure the dev builds of the custom menus (`build/<name>.dev.swf`) exist and are current. */
-  ensureDevBuilds?(): Promise<void>
+  /** Builds the custom menus that have no finished build yet (for a Dev deploy: no current `build/<name>.dev.swf`), so a deploy never stops at "not built". */
+  ensureBuilds?(dev: boolean): Promise<void>
 }
 
 /** Deploy in two steps so the UI can ask before anything is written: `prepare` compiles and checks everything, `commit` writes. One prepared deploy is pending at a time. */
@@ -53,7 +53,7 @@ export function createDeployService(d: DeployDeps) {
     const dev = pkg ? undefined : d.dev?.()
     d.report({ state: 'preparing', message: pkg ? 'Compiling for the package...' : dev ? 'Compiling for Dev deploy...' : 'Compiling for deploy...' })
     try {
-      if (dev) await d.ensureDevBuilds?.()
+      await d.ensureBuilds?.(!!dev)
       const gameDirs = (await findSkyrim({ ...(resolved.skyrimPath ? { manual: resolved.skyrimPath } : {}) })).map((c) => c.path)
       const input: DeployInput = {
         modId: p.modId, modName: p.name, swfs: p.swfs, root: t.root, gameDirs, ...(p.imageMode ? { imageMode: p.imageMode } : {}), ...(p.assets ? { assets: p.assets } : {}), ...(scope === 'active' && activeName ? { only: activeName } : {}),

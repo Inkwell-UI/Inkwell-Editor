@@ -385,10 +385,21 @@ export function createSession(deps: SessionDeps) {
   })
   /** The dev SWFs (`<name>.dev.swf`) that are current; cleared when the toggle changes or a project opens, because only a build with the toggle on makes them. */
   const devFresh = new Set<string>()
-  const ensureDevBuilds = async (): Promise<void> => {
+  /** A deploy never fails with "not built": a custom menu without a finished build (or, for a Dev deploy, without a current dev build) is built first. */
+  const ensureBuilds = async (dev: boolean): Promise<void> => {
+    // a rebuild the last edit started (a saved graph) finishes first, so the deploy ships it
+    for (let n = 0; n < 600 && [...buildBySwf.values()].includes('compiling'); n++) await new Promise((r) => setTimeout(r, 100))
     for (const i of server?.swfs() ?? []) {
       const ir = i.orphaned ? undefined : server?.ir(i.id)
-      if (ir?.target.kind === 'customMenu' && !devFresh.has(i.name)) await pipeline!.onChange(i.id, ir, i.name)
+      if (ir?.target.kind !== 'customMenu' || (buildBySwf.get(i.id) === 'done' && (!dev || devFresh.has(i.name)))) continue
+      buildBySwf.set(i.id, 'compiling')
+      try {
+        await pipeline!.onChange(i.id, ir, i.name)
+        buildBySwf.set(i.id, 'done')
+      } catch (e) {
+        buildBySwf.set(i.id, 'failed')
+        throw e
+      }
     }
   }
   /** Hot reload after a Dev deploy (S6: the editor deploys first, then sends `reload`): one request per deployed menu. */
@@ -438,7 +449,7 @@ export function createSession(deps: SessionDeps) {
       const l = link()
       return l.deploy && l.token ? { token: l.token, port: l.port ?? DEFAULT_PORT } : undefined
     },
-    ensureDevBuilds,
+    ensureBuilds,
     ...(deps.chooseZip ? { chooseZip: deps.chooseZip } : {})
   })
   let lastZip: string | undefined // the only path "Open folder" may reveal: never a path from the renderer

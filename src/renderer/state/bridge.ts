@@ -2,7 +2,8 @@ import { inkwell } from '../hooks/api'
 import { useProjectStore } from './projectStore'
 import { graphForComponent } from '../model/graphNav'
 import { setActiveGraph, useGraphDocs } from './graphDocs'
-import { setGraphSaver } from './graphStore'
+import { setGraphEditListener, setGraphSaver } from './graphStore'
+import { graphEdited } from './hotReload'
 import { getOverlayDoc, setOverlaySaver } from './overlayStore'
 import { useSelectionStore } from './selectionStore'
 import { useTimingStore } from './timingStore'
@@ -50,6 +51,7 @@ export function startBridge(): () => void {
 
   setOverlaySaver((name, doc) => void api.saveOverlay(name, doc))
   setGraphSaver((name, graph) => void api.saveGraph(name, graph))
+  setGraphEditListener(graphEdited)
 
   // one selection model: selecting a component opens its graph
   offs.push(

@@ -36,7 +36,7 @@ function setup(initial: boolean) {
     report: () => undefined,
     chooseZip: async () => join(tmp, 'out.zip'),
     dev: () => (devOn ? { token: TOKEN, port: 8790 } : undefined),
-    ensureDevBuilds: async () => void ensured++
+    ensureBuilds: async (dev) => void (dev && ensured++)
   })
   return { svc, root: join(mods, 'Test'), tmp, ensured: () => ensured, setDev: (b: boolean) => void (devOn = b) }
 }

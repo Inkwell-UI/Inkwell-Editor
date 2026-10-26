@@ -109,6 +109,9 @@ interface Entry {
 const stores = new Map<string, Entry>() // `${swfId}/${graphId}`
 let saver: ((swfName: string, graph: Graph) => void) | undefined
 export const setGraphSaver = (fn: typeof saver): void => void (saver = fn)
+let onEdit: (() => void) | undefined
+/** Called after every real change of any graph (not selection or measuring). */
+export const setGraphEditListener = (fn: typeof onEdit): void => void (onEdit = fn)
 const SAVE_DELAY = 300
 
 function save(e: Entry): void {
@@ -188,6 +191,7 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
   registerHistory(swfId, `graph:${initial.id}`, store.temporal)
   store.subscribe((s, prev) => {
     if (docKey(s) === docKey(prev)) return // selection and measuring are not edits
+    onEdit?.()
     clearTimeout(entry.timer)
     entry.timer = setTimeout(() => save(entry), SAVE_DELAY)
   })

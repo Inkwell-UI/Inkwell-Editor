@@ -18,7 +18,7 @@ export interface DeployStore {
   confirm: { target: DeployTargetId; prepared: Prepared } | null
   setScope(s: DeployScope): void
   /** `scope` overrides the Deploy menu's choice for this one deploy (Deploy & reload deploys only the active SWF). */
-  start(target: DeployTargetId, activeSwf?: string, scope?: DeployScope): Promise<void>
+  start(target: DeployTargetId, activeSwf?: string, scope?: DeployScope, quiet?: boolean): Promise<void>
   accept(): Promise<void>
   cancel(): void
 }
@@ -26,7 +26,7 @@ export interface DeployStore {
 const toast = useToastStore.getState
 
 export const useDeployStore = create<DeployStore>()((set, get) => {
-  const commit = async (target: DeployTargetId, p: Prepared): Promise<void> => {
+  const commit = async (target: DeployTargetId, p: Prepared, quiet = false): Promise<void> => {
     const r = await inkwell!.commitDeploy(p.token)
     if (r.cancelled) return
     if (isPackageTarget(target)) {
@@ -41,6 +41,7 @@ export const useDeployStore = create<DeployStore>()((set, get) => {
       }, 15000)
     }
     if (r.ok) {
+      if (quiet) return // the automatic Hot Reload: the status bar says what happened
       const lint = [...p.gate.warnings, ...p.lint.filter((l) => l.severity !== 'info')]
       toast().push({
         tone: lint.length ? 'info' : 'ok',
@@ -54,15 +55,18 @@ export const useDeployStore = create<DeployStore>()((set, get) => {
     scope: 'all',
     confirm: null,
     setScope: (scope) => set({ scope }),
-    async start(target, activeSwf, scopeOverride) {
+    async start(target, activeSwf, scopeOverride, quiet) {
       if (!inkwell || get().busy) return
       set({ busy: true })
       try {
         const scope = scopeOverride ?? get().scope
         const p = await inkwell.prepareDeploy(target, scope, scope === 'active' ? activeSwf : undefined)
+        if (!p.ok && quiet) return
         if (!p.ok) toast().push({ tone: 'error', title: isPackageTarget(target) ? strings.deploy.toastPackageFailed : strings.deploy.toastFailed, text: p.error })
-        else if (p.needsConfirm) set({ confirm: { target, prepared: p } })
-        else await commit(target, p)
+        else if (p.needsConfirm) {
+          if (quiet) void inkwell.cancelDeploy() // never open a dialog nobody asked for
+          else set({ confirm: { target, prepared: p } })
+        } else await commit(target, p, quiet)
       } finally {
         set({ busy: false })
       }

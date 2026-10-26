@@ -193,7 +193,7 @@ export const strings = {
     tidy: 'Tidy Layout',
     as2Split: 'AS2 Split',
     as2Title: 'Generated AS2 (read-only)',
-    pinValueTip: (v: string) => `Last value in the Ruffle preview: ${v}`,
+    pinValueTip: (v: string) => `Last value in the preview: ${v}`,
     as2Loading: 'Generating AS2...',
     as2Hint: 'Select a node to highlight its lines. Click a line to select its node.',
     as2Selected: (id: string, lines: number) => `Node ${id}: ${lines} line${lines === 1 ? '' : 's'}`,
@@ -380,16 +380,15 @@ export const strings = {
   trace: {
     title: 'Runtime Trace & Watch',
     game: 'Game: not connected',
-    hotReload: 'Trigger Hot Reload',
-    deployReload: 'Deploy & reload',
+    hotReload: 'Hot Reload',
     clear: 'Clear Trace',
     later: `${BY} Inkwell Runtime (0.3)`,
     live: 'LIVE TRACE',
     watch: 'LIVE VARIABLE WATCH',
     watchCols: ['Scope', 'Name', 'Value'],
     start: 'Start Skyrim with Dev Mode enabled',
-    source: 'Source: Ruffle preview',
-    notice: 'Ruffle preview, not the game. Switch the source to Game (Dev Mode) for the runtime in Skyrim.',
+    source: 'Source: Preview',
+    notice: 'Preview, not the game. Switch the source to Game (Dev Mode) for the runtime in Skyrim.',
     errorsOnly: 'Warnings and errors only',
     nothingToClear: 'no trace lines',
     empty: 'No trace output yet. Fire an entry from the Play tab, or run the preview.',
@@ -432,7 +431,7 @@ export const strings = {
     noPreview: 'the preview is not running in this window',
     called: (name: string, args: readonly string[], at: string) => `${at}  Called ${name}(${args.map((a) => JSON.stringify(a)).join(', ')})`,
     failed: (name: string) => `Could not call ${name}: the preview has no such method (rebuild pending, or the graph did not compile).`,
-    notice: 'Ruffle preview, not the game: arguments go in as strings, like Papyrus. Mock data is delivered from the Mock Data tab.'
+    notice: 'Preview, not the game: arguments go in as strings, like Papyrus. Mock data is delivered from the Mock Data tab.'
   },
 
   mock: {
@@ -809,11 +808,11 @@ export const strings = {
     noTokenHelp: 'Paste the token from Inkwell.ini or run a Dev deploy.',
     devDeployOn: 'Dev deploy is on for this project (Deploy menu).',
     devDeployOff: 'Dev deploy is off: turn it on in the Deploy menu, then deploy.',
-    hotReload: 'Trigger Hot Reload',
+    hotReload: 'Hot Reload',
     reloadNeedsGame: 'The game is not connected',
     // Trace & Watch
     sourceLabel: 'Source',
-    sourceRuffle: 'Ruffle preview',
+    sourceRuffle: 'Preview',
     sourceGame: 'Game (Dev Mode)',
     sourceGameShort: 'Game',
     gameNotice: 'Game (Dev Mode): trace lines, variables and pin values streamed by the Inkwell Runtime. Pin and variable values come from a Dev deploy build.',

@@ -16,6 +16,7 @@ import { categoriesOf, categoryVar, connectionRule, layerOptions, nodePins, node
 import { newEdge, NODE_TYPE, pinName, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
 import { createGraphValidation } from '../state/graphValidation'
 import { openGraphs } from '../state/graphDocs'
+import { graphEditorBlurred } from '../state/hotReload'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { GraphContext, InkwellNode, type GraphCtx } from './NodeView'
@@ -191,7 +192,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
 
   return (
     <GraphContext.Provider value={ctx}>
-      <div className="graph-flow" ref={wrap} tabIndex={0} onKeyDown={onKeyDown} onPointerDownCapture={focusCanvas} data-testid="graph-canvas">
+      <div className="graph-flow" ref={wrap} tabIndex={0} onKeyDown={onKeyDown} onPointerDownCapture={focusCanvas} onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && graphEditorBlurred()} data-testid="graph-canvas">
         <ReactFlow<FlowNode, FlowEdge>
           {...NAVIGATION_PROPS}
           nodes={nodes}
