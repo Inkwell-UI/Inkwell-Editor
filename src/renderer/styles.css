@@ -420,3 +420,5 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .menu-form .btn { white-space: normal; text-align: left; height: auto; }
 .menu-form .check { margin-top: 2px; }
 .menu-form .issue { display: flex; gap: 6px; align-items: flex-start; overflow-wrap: anywhere; }
+
+.play-menu .toolbar .gn-input { width: 190px; }

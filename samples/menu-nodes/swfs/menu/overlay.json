@@ -1,0 +1,39 @@
+{
+  "bindings": [],
+  "nodes": {
+    "2:11": {
+      "instanceName": "btnSound",
+      "role": "button",
+      "scripts": [
+        "main"
+      ]
+    },
+    "2:3": {
+      "instanceName": "list",
+      "list": {
+        "itemTemplate": "3:1",
+        "spacing": 4
+      },
+      "role": "list",
+      "scripts": [
+        "main"
+      ]
+    },
+    "2:5": {
+      "instanceName": "btnEvent",
+      "role": "button",
+      "scripts": [
+        "main"
+      ]
+    },
+    "2:6": {
+      "instanceName": "btnCount",
+      "role": "button",
+      "scripts": [
+        "main"
+      ]
+    }
+  },
+  "specVersion": 6,
+  "version": 1
+}

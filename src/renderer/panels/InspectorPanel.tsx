@@ -119,6 +119,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         </div>
         <p className="dim">{strings.insp.overlayNote}</p>
         <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
+        {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
         <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
         {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
         {isWidgetFrame && <DebugHotkeyField swfId={swfId} nodeId={node.id} value={debugHotkeyOf(entry)} />}
@@ -163,6 +164,31 @@ function TextMapping({ node }: { node: Extract<Node, { type: 'text' }> }) {
       {f.letterSpacingPx !== undefined && <><dt>{strings.insp.spacing}</dt><dd>{f.letterSpacingPx} px <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> letterSpacing</dd></>}
       {f.truncate && <><dt>{strings.insp.truncate}</dt><dd className="tone-warn">{strings.insp.truncateNote}</dd></>}
     </dl>
+  )
+}
+
+/** Item template (default: the first child) and row spacing of a list (SPEC-CHANGES S8). */
+function ListField({ swfId, nodeId, value, children }: { swfId: string; nodeId: string; value: { itemTemplate?: string; spacing?: number } | undefined; children: { id: string; name: string }[] }) {
+  const set = (patch: { itemTemplate?: string; spacing?: number }): void => {
+    const next = { ...value, ...patch }
+    if (next.itemTemplate === undefined || next.itemTemplate === '') delete next.itemTemplate
+    if (next.spacing === undefined || !(next.spacing > 0)) delete next.spacing
+    editNode(swfId, nodeId, { list: Object.keys(next).length ? next : null })
+  }
+  return (
+    <>
+      <label className="field">
+        <span className="field-label">{strings.insp.listTemplate}</span>
+        <select value={value?.itemTemplate ?? ''} onChange={(e) => set({ itemTemplate: e.target.value })} data-testid="list-template">
+          <option value="">{strings.insp.listTemplateFirst}</option>
+          {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      </label>
+      <label className="field">
+        <span className="field-label">{strings.insp.listSpacing}</span>
+        <input className="gn-input" type="number" min={0} value={value?.spacing ?? 0} onChange={(e) => set({ spacing: Number(e.target.value) })} data-testid="list-spacing" />
+      </label>
+    </>
   )
 }
 

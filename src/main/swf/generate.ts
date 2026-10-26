@@ -132,7 +132,7 @@ const PREVIEW_BRIDGE = [
  */
 const previewMenuBridge = (menuName: string, menuClass: string, paths: Record<string, string>, attach: readonly string[]): string[] => [
   `_root.inkwell = {`,
-  `    ready: true, version: ${packVersion(FIRST_RUNTIME_VERSION)}, menu: ${JSON.stringify(menuName)}, uiScale: 1, offsetX: 0, offsetY: 0, theme: "", saved: {}, depth: 0,`,
+  `    ready: true, version: ${packVersion(FIRST_RUNTIME_VERSION)}, menu: ${JSON.stringify(menuName)}, uiScale: 1, offsetX: 0, offsetY: 0, theme: "", saved: {}, depth: 0, reopens: 0,`,
   '    log: function(level, nodeId, text) { trace("[Inkwell] " + level + " " + nodeId + ": " + text); },',
   '    glueReady: function() { _root.inkwellMenu.onOpen(); },',
   // mock: nothing leaves the movie. A mod event sent by the menu comes back to it (the real runtime does this only if it also sinks the event: unverified)
@@ -166,6 +166,7 @@ const previewMenuBridge = (menuName: string, menuClass: string, paths: Record<st
   // what the engine does at every open: a fresh movie, so a new menu class and fresh graphs (menu variables restart); saved values stay in the bridge. Clip texts are not reset (Reload does that)
   '    flash.external.ExternalInterface.addCallback("inkwellMenuReopen", null, function() {',
   '        _root.inkwellMenu.onClose();',
+  '        _root.inkwell.reopens++;',
   ...attach.map((l) => `        ${l}`),
   `        _root.inkwellMenu = new ${menuClass}(_root);`,
   '        _root.inkwellMenu.start();',

@@ -68,6 +68,10 @@ Codegen has no per-node code except the Set Variable / Toggle rule below; everyt
 
 `CodegenInput.bindings` (overlay `dataBinding` strings by layer id) become per-variable bind functions called on init and after every Set Variable; `CodegenInput.preview` (the Ruffle preview SWF only) adds pin value traces (`__g.pv`) and mock data hooks. Details, formats and limits: `docs/debugging.md`. The game build is unchanged by `preview` (test).
 
+## Saved variables and runtime nodes (Phase 5)
+
+In the menu flavour (`menu: true`) a variable with scope `saved` is read in `init()` through `__g.bridge.getSaved` with a `typeof` check against the variable type (default plus a `warn` log on mismatch), and every node whose definition has `extra.writesVariable` (the field naming the variable; a pack copy without it falls back to the Set Variable / Toggle kinds) is followed by `__g.bridge.setSaved("<name>", __g.v_<name>);` before the binding refresh and the continuation. Outside the menu flavour the variable is a plain menu variable. The 12 runtime nodes of core pack 0.3.0 have golden AS2 in `codegen.test.ts` (generated for every kind); the saved goldens are in `menuNodes.test.ts`. Details and the list component: `docs/menus.md`.
+
 ## Pipeline
 
 - **`generate` / `compileSwf`** (`graphs` option): classes are added like the layout class (exported as `__Packages.mods.<mod>.<cls>`). Codegen issues become lint errors `graph-codegen` on the root frame (message names the graph and node). Without graphs, or with an empty list, the output is byte-identical to before (test).
@@ -77,7 +81,7 @@ Codegen has no per-node code except the Set Variable / Toggle rule below; everyt
 
 ## Tests
 
-`codegen.test.ts` (golden AS2 per node kind in `__snapshots__`, caching, errors, source map), `codegen.nodes.test.ts` (Random and Counter caching, Toggle bindings, Delay retrigger / Cancel Delay / Stop Timer, Tween registry, Array Get coercion), `templates.integration.test.ts` (every core template compiled by the real FFDec; skipped with a warning without Java/FFDec/wrapper jar), `widget/graphWidget*.test.ts` (samples/hud-graph slice, Papyrus, preview path), `sync/buildPipeline.test.ts`, `deploy/run.test.ts`; the custom-menu glue: `menuGlue.test.ts` (golden AS2) and `menuGlue.integration.test.ts` (real FFDec), `docs/menus.md`.
+`codegen.test.ts` (golden AS2 per node kind in `__snapshots__`, caching, errors, source map), `codegen.nodes.test.ts` (Random and Counter caching, Toggle bindings, Delay retrigger / Cancel Delay / Stop Timer, Tween registry, Array Get coercion), `templates.integration.test.ts` (every core template compiled by the real FFDec: 97 of the 100 nodes of the bundled pack, the 3 others are editor-only; skipped with a warning without Java/FFDec/wrapper jar), `widget/graphWidget*.test.ts` (samples/hud-graph slice, Papyrus, preview path), `sync/buildPipeline.test.ts`, `deploy/run.test.ts`; the custom-menu glue: `menuGlue.test.ts` (golden AS2) and `menuGlue.integration.test.ts` (real FFDec), `docs/menus.md`.
 
 A passing FFDec compile means the AS2 **parses** and the class is in the SWF. FFDec's compiler does no type checking, and nothing here was run in Ruffle or the game.
 

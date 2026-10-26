@@ -17,6 +17,7 @@ import { runShots } from './screenshotDriver'
 import { runDebugShots, runGraphShots } from './screenshotGraph'
 import { runPopupShots } from './screenshotPopup'
 import { runMenuShots } from './screenshotMenu'
+import { runMenuNodesShots } from './screenshotMenuNodes'
 import { runSetupShots } from './screenshotSetup'
 import { createSession } from './session'
 
@@ -219,6 +220,8 @@ void app.whenReady().then(async () => {
     void runFigmaShots({ outDir: shotsDir, userData: app.getPath('userData'), projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] figma screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_FONTS'])
     void runFontShots({ outDir: shotsDir, win: () => win }).then(() => app.exit(0), (e: unknown) => { console.error('[inkwell] font screenshots failed:', e); app.exit(1) })
+  else if (shotsDir && process.env['INKWELL_SHOTS_MENU'] === 'nodes')
+    void runMenuNodesShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] menu nodes screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_MENU'])
     void runMenuShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] menu screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_GRAPH'] === 'popup')

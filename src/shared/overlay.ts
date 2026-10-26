@@ -68,6 +68,8 @@ export interface NodeOverlayPatch {
   scripts?: string[] | null
   /** Data bindings as one string (`graphBinding.ts`); the Spec's `dataBinding` is a string. */
   dataBinding?: string | null
+  /** `list` settings of a role-`list` frame (S8): item template layer and row spacing. */
+  list?: { itemTemplate?: string; spacing?: number } | null
 }
 
 /** Immutable edit of one node's overlay entry. Unknown keys of the entry and of the document survive; an entry left empty is removed. */

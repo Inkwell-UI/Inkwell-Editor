@@ -1,0 +1,632 @@
+{
+  "comments": [],
+  "edges": [
+    {
+      "from": {
+        "node": "load",
+        "pin": "then"
+      },
+      "to": {
+        "node": "items",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "split",
+        "pin": "value"
+      },
+      "to": {
+        "node": "items",
+        "pin": "items"
+      }
+    },
+    {
+      "from": {
+        "node": "open",
+        "pin": "then"
+      },
+      "to": {
+        "node": "setc",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "getc",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmtc",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "fmtc",
+        "pin": "value"
+      },
+      "to": {
+        "node": "setc",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "setc",
+        "pin": "then"
+      },
+      "to": {
+        "node": "sets",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "gset",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmts",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "fmts",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sets",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "sets",
+        "pin": "then"
+      },
+      "to": {
+        "node": "dev",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "dev",
+        "pin": "then"
+      },
+      "to": {
+        "node": "setd",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "dev",
+        "pin": "device"
+      },
+      "to": {
+        "node": "fmtd",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "fmtd",
+        "pin": "value"
+      },
+      "to": {
+        "node": "setd",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "sel",
+        "pin": "then"
+      },
+      "to": {
+        "node": "setsel",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sel",
+        "pin": "index"
+      },
+      "to": {
+        "node": "fmtsel",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "fmtsel",
+        "pin": "value"
+      },
+      "to": {
+        "node": "setsel",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "clickev",
+        "pin": "then"
+      },
+      "to": {
+        "node": "send",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "modev",
+        "pin": "then"
+      },
+      "to": {
+        "node": "sete",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "gtxt",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmte",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "modev",
+        "pin": "strArg"
+      },
+      "to": {
+        "node": "fmte",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "fmte",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sete",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "clickc",
+        "pin": "then"
+      },
+      "to": {
+        "node": "setv",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "getc2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "add",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "add",
+        "pin": "value"
+      },
+      "to": {
+        "node": "setv",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "setv",
+        "pin": "then"
+      },
+      "to": {
+        "node": "setc2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "getc3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmtc2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "fmtc2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "setc2",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "clicks",
+        "pin": "then"
+      },
+      "to": {
+        "node": "snd",
+        "pin": "in"
+      }
+    }
+  ],
+  "groups": [],
+  "id": "main",
+  "name": "Main",
+  "nodes": [
+    {
+      "fields": {},
+      "id": "load",
+      "kind": "core/OnLoad@1",
+      "pos": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "target": "2:3"
+      },
+      "id": "items",
+      "kind": "core/SetItems@1",
+      "pos": {
+        "x": 260,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "separator": ",",
+        "text": "Alpha,Beta,Gamma"
+      },
+      "id": "split",
+      "kind": "core/Split@1",
+      "pos": {
+        "x": 0,
+        "y": 120
+      }
+    },
+    {
+      "fields": {},
+      "id": "open",
+      "kind": "core/OnOpen@1",
+      "pos": {
+        "x": 0,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "pattern": "Clicks: {0}"
+      },
+      "id": "fmtc",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 260,
+        "y": 400
+      }
+    },
+    {
+      "fields": {
+        "variable": "clicks"
+      },
+      "id": "getc",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 0,
+        "y": 450
+      }
+    },
+    {
+      "fields": {
+        "target": "2:8"
+      },
+      "id": "setc",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 520,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "default": "default (key absent)",
+        "key": "Greeting",
+        "section": "Display"
+      },
+      "id": "gset",
+      "kind": "core/GetSetting@1",
+      "pos": {
+        "x": 0,
+        "y": 560
+      }
+    },
+    {
+      "fields": {
+        "pattern": "Setting: {0}"
+      },
+      "id": "fmts",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 260,
+        "y": 560
+      }
+    },
+    {
+      "fields": {
+        "target": "2:9"
+      },
+      "id": "sets",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 780,
+        "y": 300
+      }
+    },
+    {
+      "fields": {},
+      "id": "dev",
+      "kind": "core/GetInputDevice@1",
+      "pos": {
+        "x": 1040,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "pattern": "Device: {0}"
+      },
+      "id": "fmtd",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 780,
+        "y": 450
+      }
+    },
+    {
+      "fields": {
+        "target": "2:10"
+      },
+      "id": "setd",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 1300,
+        "y": 300
+      }
+    },
+    {
+      "fields": {
+        "target": "2:3"
+      },
+      "id": "sel",
+      "kind": "core/OnItemSelected@1",
+      "pos": {
+        "x": 0,
+        "y": 700
+      }
+    },
+    {
+      "fields": {
+        "pattern": "Selected: {0}"
+      },
+      "id": "fmtsel",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 260,
+        "y": 800
+      }
+    },
+    {
+      "fields": {
+        "target": "2:4"
+      },
+      "id": "setsel",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 520,
+        "y": 700
+      }
+    },
+    {
+      "fields": {
+        "target": "2:5"
+      },
+      "id": "clickev",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": 0,
+        "y": 950
+      }
+    },
+    {
+      "fields": {
+        "event": "InkwellMenuNodes_Ping",
+        "numArg": 7,
+        "strArg": "ping"
+      },
+      "id": "send",
+      "kind": "core/SendModEvent@1",
+      "pos": {
+        "x": 260,
+        "y": 950
+      }
+    },
+    {
+      "fields": {
+        "name": "InkwellMenuNodes_Ping"
+      },
+      "id": "modev",
+      "kind": "core/OnModEvent@1",
+      "pos": {
+        "x": 0,
+        "y": 1150
+      }
+    },
+    {
+      "fields": {
+        "target": "2:7"
+      },
+      "id": "gtxt",
+      "kind": "core/GetText@1",
+      "pos": {
+        "x": 0,
+        "y": 1280
+      }
+    },
+    {
+      "fields": {
+        "pattern": "{0} {1}"
+      },
+      "id": "fmte",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 260,
+        "y": 1280
+      }
+    },
+    {
+      "fields": {
+        "target": "2:7"
+      },
+      "id": "sete",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 520,
+        "y": 1150
+      }
+    },
+    {
+      "fields": {
+        "target": "2:6"
+      },
+      "id": "clickc",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": 0,
+        "y": 1450
+      }
+    },
+    {
+      "fields": {
+        "b": 1,
+        "op": "+"
+      },
+      "id": "add",
+      "kind": "core/Arithmetic@1",
+      "pos": {
+        "x": 260,
+        "y": 1550
+      }
+    },
+    {
+      "fields": {
+        "variable": "clicks"
+      },
+      "id": "getc2",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 0,
+        "y": 1550
+      }
+    },
+    {
+      "fields": {
+        "variable": "clicks"
+      },
+      "id": "setv",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 520,
+        "y": 1450
+      }
+    },
+    {
+      "fields": {
+        "pattern": "Clicks: {0}"
+      },
+      "id": "fmtc2",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 520,
+        "y": 1600
+      }
+    },
+    {
+      "fields": {
+        "variable": "clicks"
+      },
+      "id": "getc3",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 260,
+        "y": 1650
+      }
+    },
+    {
+      "fields": {
+        "target": "2:8"
+      },
+      "id": "setc2",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 780,
+        "y": 1450
+      }
+    },
+    {
+      "fields": {
+        "target": "2:11"
+      },
+      "id": "clicks",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": 0,
+        "y": 1800
+      }
+    },
+    {
+      "fields": {
+        "sound": "UIMenuOK"
+      },
+      "id": "snd",
+      "kind": "core/PlaySound@1",
+      "pos": {
+        "x": 260,
+        "y": 1800
+      }
+    }
+  ],
+  "scope": "menu",
+  "specVersion": 6,
+  "variables": [
+    {
+      "default": 0,
+      "id": "clicks",
+      "name": "clicks",
+      "scope": "saved",
+      "type": "Number"
+    }
+  ]
+}
