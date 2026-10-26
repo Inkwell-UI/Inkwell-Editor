@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react'
 import { useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
+import { usePackList } from '../hooks/usePacks'
 import { usePreviewBuilds } from '../hooks/usePreviewBuilds'
 import type { SnapshotInfo } from '../../shared/projectState'
 import { figmaConnection, type DotTone } from '../model/connection'
@@ -100,6 +101,7 @@ export function StatusBar() {
   const ffdec = sync?.ffdec
   const undo = useUndo()
   const show = useDialogStore((s) => s.show)
+  const packs = usePackList()
   const lint = countSeverities(useDockRows())
   const swf = useActiveSwf()
   const entries = usePreviewBuilds()
@@ -158,7 +160,7 @@ export function StatusBar() {
         {strings.status.lint(lint.errors, lint.warnings)}
       </button>
       {sync?.deploy && <DeployItem />}
-      <span className="item">{strings.status.packs}</span>
+      <span className="item">{strings.status.packs(packs)}</span>
       <span className="spacer" />
       <FigmaDot />
       <GameDot />

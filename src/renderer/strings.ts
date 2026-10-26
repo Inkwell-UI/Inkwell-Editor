@@ -190,9 +190,9 @@ export const strings = {
     title: 'Assets',
     sections: [
       { id: 'as2', title: 'IMPORTED AS2 CLASSES', action: '+ Import', reason: 'AS2 import is not scheduled yet', empty: 'No imported AS2 classes. Importing .as files is planned but not scheduled.' },
-      { id: 'packs', title: 'NODE PACKS', action: 'Check Updates', reason: `${BY} node packs (0.5)`, empty: 'No node packs. Node packs arrive in 0.2 (core pack) and 0.5 (community packs).' }
+      { id: 'packs', title: 'NODE PACKS', action: 'Check Updates', reason: `${BY} node packs (0.5)`, empty: 'No node packs loaded. Community packs arrive in 0.5.' }
     ],
-    packsNone: 'Packs: none'
+    packNodes: (n: number) => `${n} nodes`
   },
 
   graph: {
@@ -533,7 +533,7 @@ export const strings = {
     ffdec: (s?: string) => (s === 'warm' ? 'FFDec: warm' : s === 'cold' ? 'FFDec: cold' : 'FFDec: checking'),
     ffdecNotFound: 'FFDec: not found',
     openDoctor: 'Open the settings',
-    packs: 'Packs: none',
+    packs: (list: readonly { id: string; version: string }[]) => (list.length ? `Packs: ${list.map((p) => `${p.id} ${p.version}`).join(', ')}` : 'Packs: none'),
     deploy: 'Deploy',
     deployTip: 'Last deploy. Stages: compile, vanilla check, write.',
     lint: (e: number, w: number) => `Lint: ${e} Err, ${w} Warn`,
