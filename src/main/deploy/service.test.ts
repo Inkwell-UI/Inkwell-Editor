@@ -40,7 +40,9 @@ describe('deploy service export gate', () => {
     if (!p.ok) throw new Error(p.error)
     expect(p.gate).toMatchObject({ ok: true, blocking: [], warnings: [{ code: 'font-fallback', swf: 'wheel', nodeId: '1:2' }] })
     expect((await svc.commit(p.token)).ok).toBe(true)
-    expect(existsSync(join(root, 'Interface', 'wheel.swf'))).toBe(true)
+    expect(existsSync(join(root, 'Interface', 'Inkwell', 'T', 'Wheel.swf'))).toBe(true)
+    expect(existsSync(join(root, 'SKSE', 'Plugins', 'Inkwell', 'menus', 'T_Wheel.json'))).toBe(true)
+    expect(existsSync(join(root, 'SKSE', 'Plugins', 'Inkwell', 'T.ini'))).toBe(true)
   })
 
   it('an error blocks: the dialog is forced, the commit is refused and nothing is written', async () => {
@@ -80,10 +82,13 @@ describe('Package Mod (and the Vortex target): the deploy files as one zip', () 
     expect(p.files).toEqual(d.files)
     expect(p).toMatchObject({ needsConfirm: false, removed: [], root: join(dir, 'dist'), gate: { ok: true } })
     const r = await svc.commit(p.token)
-    expect(r).toMatchObject({ ok: true, zipPath: join(tmp, 'out', 'pick.zip'), written: 1 })
+    expect(r).toMatchObject({ ok: true, zipPath: join(tmp, 'out', 'pick.zip'), written: 3 })
     expect(asked).toEqual([join(dir, 'dist', 'Test-1.2.0.zip')])
     const zip = readFileSync(r.zipPath!)
-    expect(readZipEntry(zip, 'Interface/wheel.swf')?.toString()).toBe('FWS-mine')
+    expect(readZipEntry(zip, 'Interface/Inkwell/T/Wheel.swf')?.toString()).toBe('FWS-mine')
+    expect(JSON.parse(readZipEntry(zip, 'SKSE/Plugins/Inkwell/menus/T_Wheel.json')!.toString())).toMatchObject({ name: 'T_Wheel', swf: 'Interface/Inkwell/T/Wheel.swf' })
+    expect(readZipEntry(zip, 'SKSE/Plugins/Inkwell/T.ini')?.toString()).toContain('[Menu.T_Wheel]') // the package carries the INI too (a fresh install has none)
+    expect(readZipEntry(zip, 'Inkwell.ini')).toBeUndefined()
     expect(existsSync(root)).toBe(false) // the MO2 folder is not touched
     expect(existsSync(`${r.zipPath}.inkwell-tmp`)).toBe(false)
     // byte-identical on a second package of the same input

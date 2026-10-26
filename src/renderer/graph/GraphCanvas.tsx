@@ -64,7 +64,8 @@ function Canvas({ swf, overlay, store, defs, focusNode }: Parameters<typeof Grap
       createGraphValidation(store, () => ({
         defs,
         layers: new Set(Object.keys(swf.ir.nodes)),
-        siblings: openGraphs(swf.id)
+        siblings: openGraphs(swf.id),
+        target: swf.ir.target.kind
       })),
     [store, defs, swf.ir, swf.id]
   )

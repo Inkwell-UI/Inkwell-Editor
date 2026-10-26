@@ -21,6 +21,8 @@ export interface DeployFileInfo {
   rel: string
   size: number
   swf: string
+  /** Written only when the file does not exist yet (the commented default INI): a later deploy never overwrites it. */
+  keepExisting?: boolean
 }
 export interface DeployLintItem {
   severity: 'error' | 'warning' | 'info'
@@ -56,6 +58,8 @@ export interface DeployResult {
   removed?: string[]
   /** Previously deployed files that were left alone because they changed since. */
   kept?: string[]
+  /** Files that exist already and were left alone (`keepExisting`). */
+  preserved?: string[]
   timing?: BuildTiming
   /** Package targets: the zip that was written. */
   zipPath?: string

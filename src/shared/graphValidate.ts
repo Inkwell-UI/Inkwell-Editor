@@ -1,4 +1,4 @@
-import { pinCompat, PinType, type Graph, type GraphNode, type NodeDef } from '@inkwell-ui/spec'
+import { GAME_BRIDGE_NODES, pinCompat, PinType, RUNTIME_ONLY_EVENTS, type Graph, type GraphNode, type NodeDef } from '@inkwell-ui/spec'
 import type { Issue } from '@nicklaj/knotwork'
 
 /** Codes of graph issues; the Lint dock, the export gate and Strict Mode show them like compiler lint. */
@@ -11,6 +11,8 @@ export type GraphCode =
   | 'graph-unknown-node'
   | 'graph-duplicate-handler'
   | 'graph-bad-wire'
+  | 'runtime-required'
+  | 'saved-variable-invalid'
 
 /** A Knotwork Issue pinned to a graph node id, plus where it lives. `targetId` is the Figma node id for `graph-target-missing`. */
 export type GraphIssue = Issue<{ code: GraphCode; graphId: string; targetId?: string; pin?: string }>
@@ -29,7 +31,12 @@ export interface ValidateCtx {
   layers?: ReadonlySet<string>
   /** The other graphs of the same SWF, for the duplicate event handler check. */
   siblings?: readonly Graph[]
+  /** The SWF's target kind (S7, S9): a HUD widget runs without the Inkwell Runtime (lint `runtime-required`), `saved` variables belong to a custom menu. Absent = those checks are skipped. */
+  target?: 'hudWidget' | 'customMenu' | 'menuReplacement'
 }
+
+/** S7/S8: the node only works in a custom menu served by the Inkwell Runtime (its definition says `requiresRuntime`; the 0.2 pack copy predates the flag, so the Spec's title lists count too). */
+export const needsRuntime = (d: NodeDef): boolean => d.requiresRuntime === true || (RUNTIME_ONLY_EVENTS as readonly string[]).includes(d.title) || (GAME_BRIDGE_NODES as readonly string[]).includes(d.title)
 
 const isPinType = (v: unknown): v is PinType => PinType.safeParse(v).success
 const isEntry = (d: NodeDef): boolean => (d.extra as { entry?: unknown } | undefined)?.entry === true
@@ -112,6 +119,24 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
       execIn.add(b.id)
     } else if (pinCompat(pa.type, pb.type) === 'none') {
       add(b.id, 'graph-type-mismatch', 'error', `${pa.type} cannot be wired to ${pb.type} (use a To String / To Number node).`, { pin: e.to.pin })
+    }
+  }
+  // S5/S7: runtime-only nodes in a HUD widget, and the rules of `saved` variables
+  if (ctx.target === 'hudWidget')
+    for (const n of g.nodes) {
+      const d = defOf.get(n.id)
+      if (d && needsRuntime(d)) add(n.id, 'runtime-required', 'warning', `${d.title} needs the Inkwell Runtime and does nothing in a HUD widget (only a custom menu is served by the runtime).`)
+    }
+  const saved = g.variables.filter((v) => v.scope === 'saved')
+  if (saved.length && g.nodes.length) {
+    const at = (v: Graph['variables'][number]): string => (g.nodes.find((n) => n.fields['variable'] === v.id) ?? g.nodes[0]!).id
+    const others = new Set((ctx.siblings ?? []).filter((s) => s.id !== g.id).flatMap((s) => s.variables.filter((v) => v.scope === 'saved').map((v) => v.name)))
+    const mine = new Set<string>()
+    for (const v of saved) {
+      if (ctx.target === 'hudWidget') add(at(v), 'runtime-required', 'warning', `The saved variable "${v.name}" needs the Inkwell Runtime; a HUD widget does not keep it.`)
+      else if (g.scope !== 'menu' || (ctx.target !== undefined && ctx.target !== 'customMenu')) add(at(v), 'saved-variable-invalid', 'error', `The saved variable "${v.name}" is only allowed in the menu graph of a custom menu.`)
+      if (mine.has(v.name) || others.has(v.name)) add(at(v), 'saved-variable-invalid', 'error', `The saved variable name "${v.name}" is used twice in this SWF.`)
+      mine.add(v.name)
     }
   }
   const handlers = new Map<string, string>() // handler key -> name of the graph that has it first

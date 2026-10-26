@@ -1,4 +1,6 @@
 import { isAbsolute, join, resolve, sep } from 'node:path'
+import { FIRST_RUNTIME_VERSION, MENU_NAME, type MenuSettings } from '@inkwell-ui/spec'
+import { defaultMenuSettings, menuJsonPath, modIniPath, resolveMenuNames } from '../../shared/menu'
 import type { ResolvedSettings, StoredSettings } from '../../shared/doctor'
 import type { DeployLintItem, DeployTargetId, DeployTargetInfo } from '../../shared/deploy'
 import { isPapyrusName } from '../widget/papyrus'
@@ -34,6 +36,8 @@ export interface SwfLike {
   name: string
   orphaned: boolean
   kind: 'hudWidget' | 'customMenu' | 'menuReplacement'
+  /** customMenu: `swfs/<name>/menu.json` (absent = the defaults). */
+  menu?: MenuSettings
 }
 
 /** Folder a target writes to, or the reason it has none. A leaf name (mod name) may not contain separators. */
@@ -82,12 +86,17 @@ export interface DeployPlan {
   widgets: Record<string, string>
 }
 
+/** The deploy dialog's line for menu mods (UX 5.1, S3 rule 6). */
+export const RUNTIME_NOTE = 'Requires Inkwell Runtime'
+export const RUNTIME_NOTE_TEXT = `${RUNTIME_NOTE} ${FIRST_RUNTIME_VERSION} or newer; not included in this deploy.`
+
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
 
 /**
  * project + settings -> the files a deploy writes. Layout (design spec "Menus, contracts and SkyUI"):
  * hudWidget -> Interface/exported/widgets/<modId>/<Widget>.swf, Scripts/*.pex (only with a Papyrus compiler), Source/Scripts/*.psc, <modId>.esp (once);
- * customMenu -> Interface/<name>.swf only (the runtime menu JSON is not defined in inkwell-spec yet); menuReplacement is not deployed.
+ * customMenu -> Interface/Inkwell/<modId>/<Swf>.swf (O2, `menuSwfPath`), SKSE/Plugins/Inkwell/menus/<menu>.json, and once per mod the commented default
+ * SKSE/Plugins/Inkwell/<modId>.ini (created if absent, never overwritten; docs/menus.md); menuReplacement is not deployed.
  */
 export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; gameDirs: string[]; hasPapyrus: boolean; only?: string }): DeployPlan {
   const plan: DeployPlan = { root: o.root, files: [], lint: [], notes: [], errors: [], widgets: {} }
@@ -97,6 +106,7 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
   const swfs = o.swfs.filter((s) => !s.orphaned && (!o.only || s.name === o.only))
   if (swfs.length === 0) plan.errors.push(o.only ? `The SWF "${o.only}" cannot be deployed (missing or orphaned).` : 'The project has no SWF to deploy.')
   let espDone = false
+  let iniDone = false
   for (const s of swfs) {
     const add = (rel: string): void => void plan.files.push({ rel, swf: s.name })
     if (s.kind === 'hudWidget') {
@@ -118,8 +128,12 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
         espDone = true
       } else if (espDone) plan.lint.push({ severity: 'warning', code: 'widget-esp-shared', message: `"${s.name}" shares ${o.modId}.esp with the first widget; only one plugin quest is generated per mod today.` })
     } else if (s.kind === 'customMenu') {
-      add(`Interface/${s.name}.swf`)
-      plan.notes.push(`"${s.name}": only the SWF is written. The runtime menu JSON format is not defined in inkwell-spec yet, so the menu will not open in game by itself.`)
+      const m = resolveMenuNames(o.modId, { swf: s.name, settings: s.menu ?? defaultMenuSettings() })
+      add(m.swf)
+      // an invalid or duplicate menu name is the export gate's `menu-name-invalid` / `menu-name-duplicate`, not a path clash
+      if (MENU_NAME.test(m.name) && !plan.files.some((f) => f.rel.toLowerCase() === menuJsonPath(m.name).toLowerCase())) add(menuJsonPath(m.name))
+      if (!iniDone) add(modIniPath(o.modId)), (iniDone = true)
+      if (!plan.notes.some((n) => n.startsWith(RUNTIME_NOTE))) plan.notes.push(RUNTIME_NOTE_TEXT)
     } else plan.lint.push({ severity: 'warning', code: 'menu-replacement-skipped', message: `"${s.name}" is a menu replacement; replacements are not deployed yet.` })
   }
   for (const f of plan.files) {

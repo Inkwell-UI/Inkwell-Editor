@@ -50,7 +50,7 @@ export function createDeployService(d: DeployDeps) {
     try {
       const gameDirs = (await findSkyrim({ ...(resolved.skyrimPath ? { manual: resolved.skyrimPath } : {}) })).map((c) => c.path)
       const input: DeployInput = {
-        modId: p.modId, swfs: p.swfs, root: t.root, gameDirs, ...(p.imageMode ? { imageMode: p.imageMode } : {}), ...(p.assets ? { assets: p.assets } : {}), ...(scope === 'active' && activeName ? { only: activeName } : {}),
+        modId: p.modId, modName: p.name, swfs: p.swfs, root: t.root, gameDirs, ...(p.imageMode ? { imageMode: p.imageMode } : {}), ...(p.assets ? { assets: p.assets } : {}), ...(scope === 'active' && activeName ? { only: activeName } : {}),
         buildDir: join(p.dir, 'build'), ffdec: d.ffdec(), ...(resolved.papyrusExe ? { papyrusExe: resolved.papyrusExe } : {}),
         stubsDir: join(d.appPath, 'resources/papyrus-stubs'), packs: (await loadCodegenPacks([corePackDir(d.appPath)])).packs, vanillaHashes: await loadVanillaHashes(vanillaCacheRoot(d.userData))
       }

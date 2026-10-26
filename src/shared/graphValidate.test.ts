@@ -88,3 +88,33 @@ describe('graph validation', () => {
     expect(exportGate([item('graph-dangling-exec', 'warning')], true).ok).toBe(false)
   })
 })
+
+describe('runtime-required and saved variables (S5, S7)', () => {
+  const click = graph([node('OnClick', { target: 'B' }, 'e'), node('Log', {}, 'l')], [wire('e', 'then', 'l', 'in')])
+  const sv = (name: string, scope: 'saved' | 'menu' = 'saved') => ({ id: name, name, type: 'Number' as const, scope, default: 0 })
+
+  it('a runtime-only node in a HUD widget is a warning pinned to the node; a custom menu and an unknown target are clean', () => {
+    const issues = validateGraph(click, { defs, target: 'hudWidget' })
+    expect(issues).toMatchObject([{ code: 'runtime-required', level: 'warning', nodeId: 'e' }])
+    expect(issues[0]!.message).toContain('On Click')
+    expect(codes(click, { target: 'customMenu' })).toEqual([])
+    expect(codes(click)).toEqual([])
+    expect(exportGate(issues.map((i) => ({ severity: i.level, code: i.code, message: i.message })), false).ok).toBe(true) // a warning passes the gate
+  })
+
+  it('a node that works everywhere (Log) is not flagged in a HUD widget', () => {
+    expect(codes(graph([node('OnWidgetCall', { name: 'Show', params: [] }, 'e'), node('Log', {}, 'l')], [wire('e', 'then', 'l', 'in')]), { target: 'hudWidget' })).toEqual([])
+  })
+
+  it('saved variables: fine in the menu graph of a custom menu; a warning in a HUD widget; an error in a component graph or a menu replacement; duplicates are an error', () => {
+    const ok = graph([node('OnWidgetCall', { name: 'Go', params: [] }, 'e')], [], { variables: [sv('score')] })
+    expect(codes(ok, { target: 'customMenu' })).toEqual([])
+    expect(codes(ok, { target: 'hudWidget' })).toEqual(['runtime-required'])
+    expect(codes(ok, { target: 'menuReplacement' })).toEqual(['saved-variable-invalid'])
+    expect(codes({ ...ok, scope: 'component' }, { target: 'customMenu' })).toEqual(['saved-variable-invalid'])
+    expect(codes(graph([node('OnWidgetCall', { name: 'Go', params: [] }, 'e')], [], { variables: [sv('a'), sv('a')] }), { target: 'customMenu' })).toEqual(['saved-variable-invalid'])
+    const other = { ...graph([node('OnWidgetCall', { name: 'Other', params: [] }, 'e2')], [], { variables: [sv('score')] }), id: 'h' }
+    expect(codes(ok, { target: 'customMenu', siblings: [ok, other] })).toEqual(['saved-variable-invalid'])
+    expect(codes(graph([node('OnWidgetCall', { name: 'Go', params: [] }, 'e')], [], { variables: [sv('menuOnly', 'menu')] }), { target: 'menuReplacement' })).toEqual([])
+  })
+})

@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { imageHashes, type Graph, type Swf } from '@inkwell-ui/spec'
+import { imageHashes, type Graph, type MenuSettings, type Swf } from '@inkwell-ui/spec'
+import { buildMenuDef, defaultMenuSettings, menuJsonPath, menuLint, modIniPath, modIniText, resolveMenuNames, type MenuSource } from '../../shared/menu'
+import { stableStringify } from '../project'
 import type { CodegenPacks } from '../codegen/packs'
 import type { DeployFileInfo, DeployLintItem, DeployResult } from '../../shared/deploy'
 import { createStageTimer } from '../../shared/timing'
@@ -25,10 +27,15 @@ export interface DeploySwf extends SwfLike {
   graphLint?: DeployLintItem[]
   /** The SWF's graphs; a hudWidget compiles them into its widget class and Papyrus API (needs `DeployInput.packs`). */
   graphs?: Graph[]
+  /** customMenu: the SWF's menu.json (absent = the defaults), and the error when the file exists but could not be read. */
+  menu?: MenuSettings
+  menuError?: string
 }
 
 export interface DeployInput {
   modId: string
+  /** The project's display name: the header of the generated INI. Default: the mod id. */
+  modName?: string
   swfs: DeploySwf[]
   root: string
   /** Game install folders known to the editor; their Data folder is never written. */
@@ -52,7 +59,7 @@ export interface DeployInput {
 /** Everything is compiled and checked before the first byte is written. */
 export interface Prepared {
   plan: DeployPlan
-  files: Map<string, { data: Buffer; swf: string }>
+  files: Map<string, { data: Buffer; swf: string; createOnly?: boolean }>
   info: DeployFileInfo[]
   removed: string[]
   /** Deploy-level notices from the plan (no SWF lint; never promoted by Strict Mode). */
@@ -77,8 +84,12 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
   const timer = createStageTimer()
   const lint: DeployLintItem[] = [...plan.lint]
   const issues: DeployLintItem[] = []
-  const files = new Map<string, { data: Buffer; swf: string }>()
+  const files = new Map<string, { data: Buffer; swf: string; createOnly?: boolean }>()
   const allowed = new Set(plan.files.map((f) => f.rel))
+  // custom menus (S9): the project's menus decide the slot lint and the INI; a scoped deploy still lints the whole project's count
+  const menuSources: MenuSource[] = i.swfs.filter((x) => !x.orphaned && x.kind === 'customMenu').map((x) => ({ swf: x.name, settings: x.menu ?? defaultMenuSettings() }))
+  const menuRows = menuLint(i.modId, menuSources)
+  if (i.swfs.some((x) => x.kind === 'customMenu' && !x.orphaned && (!i.only || x.name === i.only))) issues.push(...menuRows.filter((r) => !r.swf)) // project-level rows (menu-limit)
   timer.start('compile')
   try {
     for (const s of i.swfs.filter((x) => !x.orphaned && (!i.only || x.name === i.only))) {
@@ -107,8 +118,15 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
           continue
         }
         issues.push(...s.build!.lint.map((l) => ({ ...l, swf: s.name })))
+        issues.push(...menuRows.filter((r) => r.swf === s.name))
+        if (s.menuError) fail('menu-file-invalid', `${s.menuError}. Fix or delete swfs/${s.name}/menu.json.`)
         if (issues.slice(first).some((l) => l.severity === 'error')) continue
-        files.set(`Interface/${s.name}.swf`, { data, swf: s.name })
+        const src: MenuSource = { swf: s.name, settings: s.menu ?? defaultMenuSettings() }
+        files.set(resolveMenuNames(i.modId, src).swf, { data, swf: s.name })
+        files.set(menuJsonPath(resolveMenuNames(i.modId, src).name), { data: Buffer.from(stableStringify(buildMenuDef(i.modId, src).def)), swf: s.name })
+        // one commented default INI per mod (all its menus); created if absent, never overwritten or retired (docs/menus.md)
+        const ini = modIniPath(i.modId)
+        if (allowed.has(ini) && !files.has(ini)) files.set(ini, { data: Buffer.from(modIniText(i.modName ?? i.modId, i.modId, menuSources)), swf: s.name, createOnly: true })
       }
       // dds mode: the game SWF loads img://textures/Inkwell/<modId>/<hash>.dds, so ship one DDS per image (embedded mode adds nothing)
       if (i.imageMode === 'dds')
@@ -136,7 +154,7 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
   const t = timer.finishBuild()
   return {
     ok: true,
-    prepared: { plan, files, info: [...files].map(([rel, f]) => ({ rel, size: f.data.length, swf: f.swf })), removed, lint, issues, scope, stages: t.stages }
+    prepared: { plan, files, info: [...files].map(([rel, f]) => ({ rel, size: f.data.length, swf: f.swf, ...(f.createOnly ? { keepExisting: true } : {}) })), removed, lint, issues, scope, stages: t.stages }
   }
 }
 
@@ -148,7 +166,7 @@ export async function commitDeploy(i: Pick<DeployInput, 'root' | 'modId' | 'only
     const write = performance.now() - t0
     const stages = { ...p.stages, write }
     return {
-      ok: true, root: i.root, written: o.written.length, unchanged: o.unchanged.length, removed: o.removed, kept: o.kept,
+      ok: true, root: i.root, written: o.written.length, unchanged: o.unchanged.length, removed: o.removed, kept: o.kept, preserved: o.preserved,
       timing: { stages, total: Object.values(stages).reduce((a, b) => a + b, 0) }
     }
   } catch (e) {

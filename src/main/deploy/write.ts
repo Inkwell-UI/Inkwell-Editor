@@ -48,19 +48,29 @@ export interface WriteOutcome {
   removed: string[]
   /** Stale files kept because they were changed after Inkwell wrote them (or could not be removed). */
   kept: string[]
+  /** `createOnly` files that already existed: left alone, never in the manifest. */
+  preserved: string[]
 }
 
 /**
  * Writes `files` under `root` and retires what the previous manifest lists but this deploy no longer produces. Only files named in the old manifest are ever
  * deleted (and only if still byte-identical to what Inkwell wrote); every path goes through `safeJoin`; the new manifest is written last.
  */
-export async function writeDeploy(o: { root: string; modId: string; files: Map<string, { data: Buffer; swf: string }>; scope?: Set<string> }): Promise<WriteOutcome> {
-  const out: WriteOutcome = { written: [], unchanged: [], removed: [], kept: [] }
+export async function writeDeploy(o: { root: string; modId: string; files: Map<string, { data: Buffer; swf: string; createOnly?: boolean }>; scope?: Set<string> }): Promise<WriteOutcome> {
+  const out: WriteOutcome = { written: [], unchanged: [], removed: [], kept: [], preserved: [] }
   const old = await readManifest(o.root)
   for (const rel of o.files.keys()) safeJoin(o.root, rel) // validate everything before the first write
   const next: Manifest['files'] = {}
   for (const [rel, f] of o.files) {
     const p = safeJoin(o.root, rel)
+    if (f.createOnly) { // the user's file once it exists (a commented INI the user edited); not tracked, so it is never retired either
+      if (await readFile(p).then(() => true, () => false)) out.preserved.push(rel)
+      else {
+        await writeAtomic(p, f.data)
+        out.written.push(rel)
+      }
+      continue
+    }
     const hash = sha256(f.data)
     next[rel] = { sha256: hash, swf: f.swf }
     const cur = await readFile(p).then((b) => sha256(b), () => undefined)
