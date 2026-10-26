@@ -164,6 +164,7 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .insp section { padding: 8px 0; border-bottom: 1px solid var(--line); }
 .insp h4 { margin-bottom: 4px; }
 .insp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.issue-text { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
 .insp-name { font-size: 15px; word-break: break-word; }
 .issue { display: flex; gap: 6px; align-items: baseline; padding: 3px 4px; border-radius: 4px; }
 .issue.is-highlighted, tr.is-highlighted { background: var(--warn-bg); box-shadow: inset 2px 0 0 var(--warn); }
@@ -172,8 +173,8 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .field p { margin: 0; font-size: 12px; }
 .overlay-section { border-left: 2px solid var(--accent); padding-left: 8px !important; }
 .contract { margin: 4px 0; }
-.source { margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--sunken); color: var(--fg-dim); }
-.source summary { cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; }
+details.source { margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--sunken); color: var(--fg-dim); }
+details.source summary { cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; }
 .arrow { color: var(--accent); }
 
 /* graph */
@@ -435,7 +436,8 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .menu-col .field-row > select { flex: 1 1 110px; min-width: 0; }
 .menu-col input.menu-key-code { width: 72px; flex: none; }
 .menu-form .mono { overflow-wrap: anywhere; }
-.menu-form .facts { grid-template-columns: 1fr; gap: 0; }
+.menu-form .facts, [aria-labelledby="insp-gfx"] .facts { grid-template-columns: 1fr; gap: 0; }
+[aria-labelledby="insp-gfx"] .facts dd { margin-bottom: 4px; }
 .menu-form .facts dd { margin-bottom: 4px; }
 .menu-form .btn { white-space: normal; text-align: left; height: auto; }
 .menu-form .check { margin-top: 2px; }

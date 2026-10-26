@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { CircleX, Lock, Redo2, TriangleAlert, Undo2, Info } from 'lucide-react'
 import type { Node } from '@inkwell-ui/spec'
 import { describeTextMapping } from '../../main/swf/text'
@@ -82,8 +82,10 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
           {rows.map((r) => (
             <li key={r.key} className={`issue${highlight === r.key ? ' is-highlighted' : ''}`}>
               <SeverityIcon s={r.severity} />
-              <span className="mono">{r.code}</span>
-              <span>{r.message}</span>
+              <span className="issue-text">
+                <span className="mono">{r.code}</span>
+                <span>{r.message}</span>
+              </span>
             </li>
           ))}
         </ul>
@@ -91,7 +93,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
 
       <section aria-labelledby="insp-gfx">
         <h4 id="insp-gfx">{strings.insp.gfx}</h4>
-        {node.type === 'text' ? <TextMapping node={node} /> : <p className="empty">{strings.insp.gfxNone(strings.nav.typeNames[node.type] ?? node.type)}</p>}
+        {node.type === 'text' ? <TextMapping node={node} /> : node.type === 'frame' ? <FrameMapping node={node} isRoot={swf?.ir.root === node.id} /> : <p className="empty">{strings.insp.gfxNone(strings.nav.typeNames[node.type] ?? node.type)}</p>}
       </section>
 
       {node.type === 'text' && (
@@ -164,6 +166,27 @@ function TextMapping({ node }: { node: Extract<Node, { type: 'text' }> }) {
       {f.letterSpacingPx !== undefined && <><dt>{strings.insp.spacing}</dt><dd>{f.letterSpacingPx} px <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> letterSpacing</dd></>}
       {f.truncate && <><dt>{strings.insp.truncate}</dt><dd className="tone-warn">{strings.insp.truncateNote}</dd></>}
     </dl>
+  )
+}
+
+/** A nested frame is a MovieClip: fills become clips under its children, clipContent a clip layer (swf/generate.ts `background`). */
+function FrameMapping({ node, isRoot }: { node: Extract<Node, { type: 'frame' }>; isRoot: boolean }) {
+  let images = 0
+  let solids = 0
+  const fills = (node.fills ?? []).flatMap((f, i) => {
+    if (f.type !== 'image' && isRoot) return []
+    const name = f.type === 'image' ? (images++ ? `imageFill_${images}` : 'imageFill') : solids++ ? `fill_${solids}` : 'fill'
+    return [<Fragment key={i}><dt>{strings.insp.gfxFrameFill(f.type, i + 1)}</dt><dd>{f.type} <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {strings.insp.gfxFrameFillTo(f.type, name)}</dd></Fragment>]
+  })
+  return (
+    <>
+      {isRoot && <p className="dim">{strings.insp.gfxFrameRoot}</p>}
+      {!isRoot && fills.length === 0 && !node.clipContent && <p className="empty">{strings.insp.gfxFrameNone}</p>}
+      <dl className="facts">
+        {fills}
+        {node.clipContent && <><dt>{strings.insp.gfxFrameClip}</dt><dd><span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {strings.insp.gfxFrameClipTo}</dd></>}
+      </dl>
+    </>
   )
 }
 

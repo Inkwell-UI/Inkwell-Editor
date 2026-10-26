@@ -42,7 +42,7 @@ export function GraphNodeInspector() {
       <section aria-labelledby="gn-issues">
         <h4 id="gn-issues">{strings.insp.gnIssues(mine.length)}</h4>
         {mine.length === 0 && <p className="empty">{strings.insp.noIssues}</p>}
-        <ul className="plain">{mine.map((r, i) => <li key={i} className="issue">{r.message}</li>)}</ul>
+        <ul className="plain">{mine.map((r, i) => <li key={i} className="issue"><span className="issue-text"><span className="mono">{r.code}</span><span>{r.message}</span></span></li>)}</ul>
       </section>
       {list.length > 0 && (
         <section aria-labelledby="gn-fields">
