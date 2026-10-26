@@ -96,7 +96,10 @@ export interface TextScript {
 }
 
 export interface MappedText {
+  /** The Skyrim font alias; empty for an embedded custom font. */
   alias: string
+  /** The layer is drawn with an embedded custom font (V5), not an alias. */
+  embedded?: true
   field: Omit<EditTextSpec, 'id' | 'fontId'>
   /** Offset to add to the node position (gutter compensation, before rotation). */
   gutter: { x: number; y: number }
@@ -109,13 +112,22 @@ export interface FontInfo {
   figmaFont: string
   styleName?: string
   alias?: string
-  via: 'text style' | 'family/style' | 'fallback' | 'unmapped'
+  via: 'text style' | 'family/style' | 'fallback' | 'unmapped' | 'embedded'
+  /** via 'embedded': the family of the font embedded in the SWF (overlay `font`). */
+  embedded?: string
+}
+
+/** An embedded custom font chosen in the overlay (V5): the layer is drawn with it instead of a Skyrim alias. */
+export interface EmbeddedFace {
+  family: string
+  /** natural line height / em, for the leading formula (default NATURAL_LINE_HEIGHT). */
+  lineHeight?: number
 }
 
 /** Code points the font behind an alias can draw; undefined when unknown (the `font-missing-glyph` check is skipped). */
 export type GlyphLookup = (alias: string) => ReadonlySet<number> | undefined
 
-export function mapText(node: TextNode, glyphs?: GlyphLookup): { text?: MappedText; lint: LintIssue[]; font?: FontInfo } {
+export function mapText(node: TextNode, glyphs?: GlyphLookup, embedded?: EmbeddedFace): { text?: MappedText; lint: LintIssue[]; font?: FontInfo } {
   const lint: LintIssue[] = []
   const run = node.runs[0]
   if (!run) {
@@ -123,28 +135,36 @@ export function mapText(node: TextNode, glyphs?: GlyphLookup): { text?: MappedTe
     return { lint }
   }
   if (node.runs.length > 1) lint.push(issue('warning', 'text-mixed-styles', node.id, 'Mixed text styles are not supported in 0.1; the first run styles the whole text.'))
-  if (run.font.kind !== 'alias') {
-    lint.push(issue('error', 'font-unmapped', node.id, 'Embedded fonts are not supported yet.'))
+  if (run.font.kind !== 'alias' && !embedded) {
+    lint.push(issue('error', 'font-unmapped', node.id, 'This layer uses an embedded font from Figma; choose one in the Inspector (Embedded font).'))
     return { lint }
   }
   // Order: (a) text style name, (b) family/style, (c) fallback table + warning, (d) error. The Figma data stays in the message.
-  const { name, styleName } = run.font
-  const figma = `Font "${name}"${styleName ? ` (text style "${styleName}")` : ''}`
-  const info = { figmaFont: name, ...(styleName ? { styleName } : {}) }
-  const byStyle = styleName ? fontAlias(styleName) : undefined
-  let alias = byStyle ?? fontAlias(name)
-  let font: FontInfo = { ...info, ...(alias ? { alias } : {}), via: byStyle ? 'text style' : 'family/style' }
-  if (!alias) {
-    alias = fallbackAlias(name)
+  // An embedded font chosen in the overlay (V5.6) wins over all four rules: the layer is drawn with that font and no alias is looked up.
+  const figmaName = run.font.kind === 'alias' ? run.font.name : embedded?.family ?? ''
+  const styleName = run.font.kind === 'alias' ? run.font.styleName : undefined
+  const figma = `Font "${figmaName}"${styleName ? ` (text style "${styleName}")` : ''}`
+  const info = { figmaFont: figmaName, ...(styleName ? { styleName } : {}) }
+  let alias: string | undefined = ''
+  let font: FontInfo
+  if (embedded) font = { ...info, via: 'embedded', embedded: embedded.family }
+  else {
+    const name = figmaName
+    const byStyle = styleName ? fontAlias(styleName) : undefined
+    alias = byStyle ?? fontAlias(name)
+    font = { ...info, ...(alias ? { alias } : {}), via: byStyle ? 'text style' : 'family/style' }
     if (!alias) {
-      font = { ...info, via: 'unmapped' }
-      lint.push(issue('error', 'font-unmapped', node.id, `${figma} does not map to a Skyrim font alias (expected e.g. "Everywhere / Medium / 18").`))
-      return { lint, font }
+      alias = fallbackAlias(name)
+      if (!alias) {
+        font = { ...info, via: 'unmapped' }
+        lint.push(issue('error', 'font-unmapped', node.id, `${figma} does not map to a Skyrim font alias (expected e.g. "Everywhere / Medium / 18").`))
+        return { lint, font }
+      }
+      font = { ...info, alias, via: 'fallback' }
+      lint.push(issue('warning', 'font-fallback', node.id, `${figma} is not a Skyrim font alias; using the nearest, ${alias}. Name a Figma text style like "Everywhere / Medium / 18" to choose.`))
     }
-    font = { ...info, alias, via: 'fallback' }
-    lint.push(issue('warning', 'font-fallback', node.id, `${figma} is not a Skyrim font alias; using the nearest, ${alias}. Name a Figma text style like "Everywhere / Medium / 18" to choose.`))
   }
-  const have = glyphs?.(alias)
+  const have = embedded ? undefined : glyphs?.(alias)
   if (have) {
     const lacking = [...new Set([...node.content].filter((c) => !/\s/.test(c) && !have.has(c.codePointAt(0)!)))]
     if (lacking.length)
@@ -177,6 +197,7 @@ export function mapText(node: TextNode, glyphs?: GlyphLookup): { text?: MappedTe
     font,
     text: {
       alias,
+      ...(embedded ? { embedded: true as const } : {}),
       gutter: { x: -GUTTER, y: -GUTTER },
       script,
       field: {
@@ -188,7 +209,7 @@ export function mapText(node: TextNode, glyphs?: GlyphLookup): { text?: MappedTe
         // autoWidth: one line unless the content has breaks; autoHeight/fixed wrap at the box width
         ...sizingFlags(sizing, node.content.includes('\n')),
         align: ALIGN[node.align],
-        leadingPx: lineHeightPx === undefined ? 0 : lineHeightPx - run.size * NATURAL_LINE_HEIGHT
+        leadingPx: lineHeightPx === undefined ? 0 : lineHeightPx - run.size * (embedded?.lineHeight ?? NATURAL_LINE_HEIGHT)
       }
     }
   }

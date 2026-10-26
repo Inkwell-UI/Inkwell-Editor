@@ -1,7 +1,7 @@
 import type { DevEvent, DevReloadResult, DevState } from './devLink'
 import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, PrepareResult } from './deploy'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, PathSettingKey, ResolvedSettings, SetSettingResult, SettingKey } from './doctor'
-import type { FontToolProgress, FontToolResult, FontToolStatus } from './fonts'
+import type { FontToolProgress, FontToolResult, FontToolStatus, AddFontOutcome, ProjectFontsState } from './fonts'
 import type { Graph, Localization, MenuSettings } from '@inkwell-ui/spec'
 import type { GraphAs2, GraphResult, GraphSummary, PackSet } from './graphs'
 import type { OverlayDoc } from './overlay'
@@ -41,6 +41,9 @@ export const IPC = {
   menuSettings: 'menu:settings',
   menuSave: 'menu:save',
   locLoad: 'loc:load',
+  projectFonts: 'fonts:project',
+  projectFontAdd: 'fonts:projectAdd',
+  projectFontSave: 'fonts:projectSave',
   locSave: 'loc:save',
   locCsvExport: 'loc:csvExport',
   locCsvImport: 'loc:csvImport',
@@ -114,6 +117,10 @@ export interface InkwellApi {
   saveOverlay(swfName: string, overlay: OverlayDoc): Promise<SaveOverlayResult>
   /** Writes `swfs/<swfName>/menu.json` (the Spec's MenuSettings; validated, unknown keys kept as sent). The project state follows. */
   saveMenuSettings(swfName: string, settings: MenuSettings): Promise<SaveOverlayResult>
+  /** Embedded custom fonts of the project (`fonts.json`, `fonts/<hash>.ttf`): the list with licence verdicts, add a TrueType file (a file dialog), change charsets and extra characters (rebuilds). Never reject. */
+  getProjectFonts(): Promise<ProjectFontsState>
+  addProjectFont(): Promise<AddFontOutcome>
+  saveProjectFontSettings(hash: string, settings: { charsets: string[]; extraChars: string }): Promise<SaveOverlayResult>
   /** `localization.json` (Localization tab, Inspector key field). Never rejects. */
   getLocalization(): Promise<LocalizationState>
   saveLocalization(doc: Localization): Promise<SaveOverlayResult>

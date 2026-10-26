@@ -70,6 +70,8 @@ export interface NodeOverlayPatch {
   dataBinding?: string | null
   /** `list` settings of a role-`list` frame (S8): item template layer and row spacing. */
   list?: { itemTemplate?: string; spacing?: number } | null
+  /** Hash of an embedded custom font of the project (V5.6); wins over the alias rules. */
+  font?: string | null
   /** Translation key of a text layer (V2.1): `$` + letters, digits, `_`. */
   locKey?: string | null
 }
@@ -102,6 +104,8 @@ export function overlayProblems(doc: unknown): string[] {
       if (name !== undefined && (typeof name !== 'string' || instanceNameError(name))) out.push(`overlay.nodes.${id}.instanceName: not a valid identifier`)
       const role = (n as Record<string, unknown>)['role']
       if (role !== undefined && typeof role !== 'string') out.push(`overlay.nodes.${id}.role: not a string`)
+      const font = (n as Record<string, unknown>)['font']
+      if (font !== undefined && (typeof font !== 'string' || !/^[0-9a-f]{40}$/.test(font))) out.push(`overlay.nodes.${id}.font: not a font hash`)
       const locKey = (n as Record<string, unknown>)['locKey']
       if (locKey !== undefined && (typeof locKey !== 'string' || !/^\$[A-Za-z0-9_]{1,96}$/.test(locKey))) out.push(`overlay.nodes.${id}.locKey: must be $ followed by letters, digits or _ (at most 96)`)
       const scripts = (n as Record<string, unknown>)['scripts']

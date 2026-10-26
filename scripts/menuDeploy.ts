@@ -4,14 +4,14 @@
 // --dev = a Dev deploy (docs/dev-mode.md): the dev SWF, Inkwell.ini with DevMode=1, Token and Port; the token is also stored in the editor user settings (devLinks of this project, %APPDATA%/inkwell-editor/settings.json,
 // or INKWELL_USER_DATA/settings.json) so the editor finds it. The runtime check ESP is only built when INKWELL_PAPYRUS points at a compiler (unset it for a deploy without it).
 // The DLL is a deploy artefact of the MO2 folder only (not tracked by the manifest, never committed). Needs Java, FFDec, the wrapper jar and.
-import { copyFileSync, createReadStream, existsSync, mkdirSync, mkdtempSync } from 'node:fs'
+import { copyFileSync, createReadStream, cpSync, existsSync, mkdirSync, mkdtempSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 import { Swf } from '@inkwell-ui/spec'
 import { createFfdecWrapper } from '../src/main/build/ffdecWrapper'
 import { loadCodegenPacks } from '../src/main/codegen/packs'
-import { commitDeploy, prepareDeploy, type DeployInput } from '../src/main/deploy/run'
+import { commitDeploy, prepareDeploy, type DeployInput, type DeploySwf } from '../src/main/deploy/run'
 import { exportGate } from '../src/main/lint/gate'
 import { loadProject } from '../src/main/project'
 import { generateToken } from '../src/main/runtime/devIni'
@@ -19,7 +19,9 @@ import { withDevToken } from '../src/main/runtime/token'
 import { loadSettings, saveSettings } from '../src/main/settings'
 import { compileSwf } from '../src/main/swf/compile'
 import { defaultMenuSettings, flatMenuSettings } from '../src/shared/menu'
-import { listSettings } from '../src/shared/overlay'
+import { listSettings, locKeysOf } from '../src/shared/overlay'
+import { embeddedFontsFor } from '../src/main/fonts/embedBuild'
+import { readLocalization } from '../src/main/project/localizationFile'
 
 const root = resolve(__dirname, '..')
 const arg = (k: string): string | undefined => {
@@ -28,7 +30,15 @@ const arg = (k: string): string | undefined => {
 }
 const sha = (f: string): Promise<string> => new Promise((ok, no) => { const h = createHash('sha256'); createReadStream(f).on('data', (d) => h.update(d)).on('end', () => ok(h.digest('hex'))).on('error', no) })
 
-export async function runMenuDeploy(o: { sample: string; envVar: string; script: string }): Promise<void> {
+/** `prepare` edits a throw-away copy of the sample (adds a font, keys, translations) so nothing binary is committed to the sample; the deploy then reads that copy. */
+export interface MenuDeployOptions {
+  sample: string
+  envVar: string
+  script: string
+  prepare?: (projectDir: string) => Promise<void>
+}
+
+export async function runMenuDeploy(o: MenuDeployOptions): Promise<void> {
   try {
     await main(o)
   } catch (e: unknown) {
@@ -37,12 +47,18 @@ export async function runMenuDeploy(o: { sample: string; envVar: string; script:
   }
 }
 
-async function main(o: { sample: string; envVar: string; script: string }): Promise<void> {
+async function main(o: MenuDeployOptions): Promise<void> {
   const flat = process.argv.includes('--flat')
   const devDeploy = process.argv.includes('--dev')
   const dll = resolve(arg('--dll') ?? process.env['INKWELL_RUNTIME_DLL'] ?? 'D:/Mods/Inkwell/Inkwell-Runtime/build/Release/Inkwell.dll')
   if (!existsSync(dll)) throw new Error(`Runtime DLL not found: ${dll} (--dll or INKWELL_RUNTIME_DLL)`)
-  const projectDir = resolve(root, 'samples', o.sample)
+  let projectDir = resolve(root, 'samples', o.sample)
+  if (o.prepare) {
+    const copy = mkdtempSync(resolve(tmpdir(), `inkwell-${o.sample}-`))
+    cpSync(projectDir, copy, { recursive: true })
+    await o.prepare(copy)
+    projectDir = copy
+  }
   const project = await loadProject(projectDir)
   const dest = resolve(arg('--to') ?? process.env[o.envVar] ?? project.meta.deploy?.path ?? '')
   if (!/[\\/]mods[\\/][^\\/]+$/i.test(dest) || /[\\/]data([\\/]|$)/i.test(dest)) throw new Error(`Refusing to deploy to ${dest}: it must be one MO2 mod folder (...\\mods\\<name>), never a game Data folder.`)
@@ -57,16 +73,20 @@ async function main(o: { sample: string; envVar: string; script: string }): Prom
   })
   try {
     const { packs } = await loadCodegenPacks([resolve(root, 'resources/packs/core')])
+    const emb = await embeddedFontsFor(projectDir, 'menu', Swf.parse(s.ir), nodes as Record<string, Record<string, unknown>>)
+    const fontOpts = emb.option ? { embeddedFonts: emb.option, embeddedFontBytes: emb.bytes } : {}
+    const locKeys = locKeysOf(nodes as Record<string, { locKey?: unknown }>)
+    const localization = (await readLocalization(projectDir)).localization
     const buildDir = mkdtempSync(resolve(tmpdir(), 'inkwell-deploy-'))
     const ir = Swf.parse(s.ir)
     const built = await compileSwf(ir, {
-      modId, buildDir, outPath: resolve(buildDir, 'menu.swf'), ffdec,
+      modId, buildDir, outPath: resolve(buildDir, 'menu.swf'), ffdec, ...fontOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}),
       instanceNames: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : []))),
       roles: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.role ? [[id, o.role]] : []))),
       lists: listSettings(nodes),
       graphs: { graphs: Object.values(s.graphs ?? {}), packs }
     })
-    const common = { modId, instanceNames: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : []))), roles: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.role ? [[id, o.role]] : []))), lists: listSettings(nodes), graphs: { graphs: Object.values(s.graphs ?? {}), packs }, ffdec }
+    const common = { ...fontOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), modId, instanceNames: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : []))), roles: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.role ? [[id, o.role]] : []))), lists: listSettings(nodes), graphs: { graphs: Object.values(s.graphs ?? {}), packs }, ffdec }
     let dev: DeployInput['dev']
     if (devDeploy) {
       await compileSwf(ir, { ...common, buildDir: resolve(buildDir, 'dev'), outPath: resolve(buildDir, 'menu.dev.swf'), dev: true })
@@ -79,10 +99,10 @@ async function main(o: { sample: string; envVar: string; script: string }): Prom
     // the runtime check (message when Inkwell.dll is missing) needs the user's Papyrus compiler: INKWELL_PAPYRUS, else without it the deploy warns `runtime-check-missing`
     const papyrusExe = process.env['INKWELL_PAPYRUS']
     const input: DeployInput = {
-      ...(dev ? { dev } : {}), modId, modName: project.meta.name, root: dest, gameDirs: [], buildDir, ffdec, vanillaHashes: new Set(), packs,
+      ...(dev ? { dev } : {}), ...(localization ? { localization } : {}), modId, modName: project.meta.name, root: dest, gameDirs: [], buildDir, ffdec, vanillaHashes: new Set(), packs,
       ...(papyrusExe && existsSync(papyrusExe) ? { papyrusExe, stubsDir: resolve(root, 'resources/papyrus-stubs') } : {}),
       swfs: [{
-        name: 'menu', orphaned: false, kind: 'customMenu', ir, graphs: Object.values(s.graphs ?? {}), build: { state: 'done', lint: built.lint },
+        name: 'menu', orphaned: false, kind: 'customMenu', ir, graphs: Object.values(s.graphs ?? {}), overlay: nodes as DeploySwf['overlay'], build: { state: 'done', lint: [...built.lint, ...emb.issues] },
         menu: flat ? flatMenuSettings(modId, 'menu', base) : base
       }]
     }

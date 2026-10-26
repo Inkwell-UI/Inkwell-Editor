@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from 'react'
 import { CircleX, Lock, Redo2, TriangleAlert, Undo2, Info } from 'lucide-react'
 import { LOC_KEY, suggestKey, uniqueKey, type Node } from '@inkwell-ui/spec'
 import { describeTextMapping } from '../../main/swf/text'
+import { CHARSETS } from '../../main/fonts/embed'
 import { keyedTexts } from '../../main/lint/localization'
 import { widgetFrame } from '../../main/widget/frame'
 import { ensureKey, renameKey } from '../../shared/localizationOps'
@@ -12,6 +13,7 @@ import { useUndo } from '../hooks/useUndo'
 import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import type { DockRow } from '../model/lintRows'
+import { useFontStore } from '../state/fontStore'
 import { defaultTable, useLocalizationStore } from '../state/localizationStore'
 import { editNode, getOverlayDoc } from '../state/overlayStore'
 import { useSelectionStore } from '../state/selectionStore'
@@ -20,7 +22,7 @@ import { Btn } from '../ui/Btn'
 import { FigmaSelectBtn } from '../ui/FigmaSelectBtn'
 import { Panel } from './Panel'
 
-const RULE: Record<FontRow['via'], 1 | 2 | 3 | 4> = { 'text style': 1, 'family/style': 2, fallback: 3, unmapped: 4 }
+const RULE: Record<FontRow['via'], 1 | 2 | 3 | 4 | 5> = { 'text style': 1, 'family/style': 2, fallback: 3, unmapped: 4, embedded: 5 }
 
 const SeverityIcon = ({ s }: { s: DockRow['severity'] }) =>
   s === 'error' ? <CircleX size={14} className="tone-error" aria-hidden="true" /> : s === 'warning' ? <TriangleAlert size={14} className="tone-warn" aria-hidden="true" /> : <Info size={14} className="tone-info" aria-hidden="true" />
@@ -106,7 +108,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
             <dl className="facts">
               <dt>{strings.insp.fontStyle}</dt><dd>{font.styleName ?? strings.insp.fontNoStyle}</dd>
               <dt>{strings.insp.fontFamily}</dt><dd>{font.figmaFont}</dd>
-              <dt>{strings.insp.fontResolved}</dt><dd className="mono">{font.alias ?? strings.unmapped}</dd>
+              <dt>{strings.insp.fontResolved}</dt><dd className="mono">{font.embedded ? `embedded: ${font.embedded}` : font.alias ?? strings.unmapped}</dd>
               <dt>{strings.insp.fontRule}</dt>
               <dd className={RULE[font.via] === 4 ? 'tone-error' : RULE[font.via] === 3 ? 'tone-warn' : undefined}>{strings.insp.fontRules[RULE[font.via]]}</dd>
             </dl>
@@ -127,6 +129,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
         <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
         {node.type === 'text' && <LocKeyField swfId={swfId} node={node} value={(entry as { locKey?: string }).locKey} />}
+        {node.type === 'text' && <EmbeddedFontField swfId={swfId} nodeId={node.id} value={(entry as { font?: string }).font} />}
         {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
         {isWidgetFrame && <DebugHotkeyField swfId={swfId} nodeId={node.id} value={debugHotkeyOf(entry)} />}
         <p className="dim contract">{strings.insp.contractLine}</p>
@@ -287,6 +290,61 @@ function LocKeyField({ swfId, node, value }: { swfId: string; node: Extract<Node
         <Btn onClick={() => apply(null)} reason={value ? undefined : strings.loc.keyClear} testId="loc-key-clear">{strings.loc.keyClear}</Btn>
       </span>
       <p id="loc-key-help" className={err ? 'tone-error' : 'dim'}>{err ?? strings.loc.keyHelp}</p>
+    </div>
+  )
+}
+
+/** Overlay `font` of a text layer (V5.6): an embedded custom font of the project instead of a Skyrim alias. Settings (charsets, extra characters) belong to the font, not the layer. */
+function EmbeddedFontField({ swfId, nodeId, value }: { swfId: string; nodeId: string; value: string | undefined }) {
+  const project = useProject()
+  const { fonts, load, add, saveSettings } = useFontStore()
+  useEffect(() => void (project?.dir && load()), [project?.dir, load])
+  const chosen = fonts.find((f) => f.hash === value)
+  const [extra, setExtra] = useState<string | undefined>()
+  const pick = async (): Promise<void> => {
+    const h = await add()
+    if (h) editNode(swfId, nodeId, { font: h })
+  }
+  const t = strings.insp.embeddedFont
+  return (
+    <div className="field">
+      <label className="field-label" htmlFor="embedded-font">{t.label}</label>
+      <select id="embedded-font" value={value ?? ''} onChange={(e) => editNode(swfId, nodeId, { font: e.target.value || null })} data-testid="embedded-font">
+        <option value="">{t.none}</option>
+        {value && !chosen && <option value={value}>{t.missing(value.slice(0, 8))}</option>}
+        {fonts.map((f) => <option key={f.hash} value={f.hash}>{f.family}</option>)}
+      </select>
+      <span className="row-actions"><Btn onClick={() => void pick()} testId="embedded-font-add">{t.add}</Btn></span>
+      {chosen ? (
+        <>
+          <dl className="facts">
+            <dt>{t.licenseFlag}</dt>
+            <dd className={chosen.license.level === 'error' ? 'tone-error' : chosen.license.level === 'warning' ? 'tone-warn' : undefined}>
+              {chosen.fsTypeLabel}{chosen.license.text ? `: ${chosen.license.text}` : ''}
+            </dd>
+            <dt>{t.charsets}</dt>
+            <dd>
+              {Object.entries(CHARSETS).map(([id, c]) => (
+                <label key={id} className="inline">
+                  <input
+                    type="checkbox" checked={chosen.charsets.includes(id)}
+                    onChange={(e) => saveSettings(chosen.hash, { charsets: e.target.checked ? [...chosen.charsets, id] : chosen.charsets.filter((x) => x !== id), extraChars: chosen.extraChars })}
+                  /> {c.label}
+                </label>
+              ))}
+            </dd>
+          </dl>
+          <label className="field-label" htmlFor="embedded-extra">{t.extra}</label>
+          <input
+            id="embedded-extra" value={extra ?? chosen.extraChars} spellCheck={false} aria-describedby="embedded-extra-help"
+            onChange={(e) => setExtra(e.target.value)}
+            onBlur={() => { if (extra !== undefined && extra !== chosen.extraChars) saveSettings(chosen.hash, { charsets: chosen.charsets, extraChars: extra }); setExtra(undefined) }}
+            data-testid="embedded-extra"
+          />
+          <p id="embedded-extra-help" className="dim">{t.extraHelp}</p>
+          <p className="dim">{t.facts(chosen.glyphCount, Math.round(chosen.bytes / 1024))}</p>
+        </>
+      ) : <p className="dim">{t.help}</p>}
     </div>
   )
 }

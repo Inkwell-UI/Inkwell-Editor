@@ -59,7 +59,9 @@ export interface FontRow {
   figmaFont: string
   styleName?: string
   alias?: string
-  via: 'text style' | 'family/style' | 'fallback' | 'unmapped'
+  via: 'text style' | 'family/style' | 'fallback' | 'unmapped' | 'embedded'
+  /** via 'embedded': the family of the custom font. */
+  embedded?: string
 }
 export interface LintRow {
   swfName: string

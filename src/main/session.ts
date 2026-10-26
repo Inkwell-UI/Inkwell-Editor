@@ -1,8 +1,8 @@
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdir, rename } from 'node:fs/promises'
+import { mkdir, readFile, rename } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { Graph, Swf, type Localization, type MenuSettings } from '@inkwell-ui/spec'
 import { bindingsOf } from '../shared/graphBinding'
 import { defIndex, emptyGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type PackSet } from '../shared/graphs'
@@ -33,6 +33,10 @@ import { corePackDir, loadPacks } from './packs'
 import { loadProject, type ProjectMeta } from './project'
 import { writeMenuSettings } from './project/menuFile'
 import { readLocalization, writeLocalization } from './project/localizationFile'
+import { addFont, readFontBytes, readFonts, saveFontSettings, type ProjectFont } from './project/fontFiles'
+import { analyzeFont, isCharsetId, licenseVerdict } from './fonts/embed'
+import { fsTypeLabel } from './fonts/convert'
+import type { AddFontOutcome, ProjectFontInfo, ProjectFontsState } from '../shared/fonts'
 import { deleteGraph, readGraph, writeGraph } from './project/graphFiles'
 import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
@@ -417,6 +421,23 @@ export function createSession(deps: SessionDeps) {
     })
   }
 
+  /** What the Inspector shows about one project font: licence verdict (V5.3), size, glyphs. */
+  async function fontInfo(dir: string, f: ProjectFont): Promise<ProjectFontInfo> {
+    const base = { hash: f.hash, family: f.family, ...(f.source ? { source: f.source } : {}), charsets: f.charsets, extraChars: f.extraChars }
+    const bytes = await readFontBytes(dir, f.hash)
+    if (!bytes) return { ...base, fsType: 0, fsTypeLabel: '', license: { level: 'error', text: 'the font file is missing' }, glyphCount: 0, bytes: 0, error: `fonts/${f.hash}.ttf is missing` }
+    try {
+      const i = analyzeFont(bytes)
+      const v = licenseVerdict(i.fsType)
+      return {
+        ...base, family: i.family, fsType: i.fsType, fsTypeLabel: fsTypeLabel(i.fsType), glyphCount: i.glyphCount, bytes: i.bytes, ...(i.licenseText ? { licenseText: i.licenseText } : {}),
+        license: v.error ? { level: 'error', text: v.error.text } : v.warning ? { level: 'warning', text: v.warning.text } : { level: 'ok' }
+      }
+    } catch (e) {
+      return { ...base, fsType: 0, fsTypeLabel: '', license: { level: 'error', text: 'the file is not a usable TrueType font' }, glyphCount: 0, bytes: bytes.length, error: e instanceof Error ? e.message : String(e) }
+    }
+  }
+
   let deployState = 0
   const reportDeploy = (s: DeployState): void => update({ deploy: s, deploySeq: ++deployState })
   const deploy = createDeployService({
@@ -639,6 +660,27 @@ export function createSession(deps: SessionDeps) {
       menus.set(swfName, { settings: r.settings })
       pushProject()
       return { ok: true }
+    },
+    /** Embedded custom fonts of the project (Inspector, V5). */
+    async getProjectFonts(): Promise<ProjectFontsState> {
+      if (!projectDir) return { fonts: [] }
+      const r = await readFonts(projectDir)
+      return { fonts: await Promise.all(r.fonts.map((f) => fontInfo(projectDir!, f))), ...(r.error ? { error: r.error } : {}) }
+    },
+    async addProjectFontFile(path: string): Promise<AddFontOutcome> {
+      if (!projectDir) return { ok: false, error: 'No project is open' }
+      const bytes = await readFile(path).catch((e: unknown) => e instanceof Error ? e : new Error(String(e)))
+      if (bytes instanceof Error) return { ok: false, error: bytes.message }
+      const r = await addFont(projectDir, bytes, basename(path))
+      if (!r.ok) return r
+      server?.rebuildAll()
+      return { ok: true, font: await fontInfo(projectDir, r.font), existed: r.existed }
+    },
+    async saveProjectFontSettings(hash: string, settings: { charsets: string[]; extraChars: string }): Promise<SaveOverlayResult> {
+      if (!projectDir) return { ok: false, error: 'No project is open' }
+      const r = await saveFontSettings(projectDir, hash, { charsets: settings.charsets.filter(isCharsetId), extraChars: settings.extraChars })
+      if (r.ok) server?.rebuildAll() // the characters to embed changed
+      return r
     },
     /** localization.json (Localization tab): the table, or the reason it cannot be read. */
     getLocalization: (): { localization: Localization | null; error?: string; modId: string } => ({ localization: localization.localization ?? null, ...(localization.error ? { error: localization.error } : {}), modId: meta?.modId ?? '' }),

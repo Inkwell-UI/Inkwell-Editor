@@ -40,6 +40,28 @@ export const installedFileName = (f: { family: string; style: string }): string 
 /** HKCU Fonts value name. */
 export const registryName = (f: { family: string; style: string }): string => `${f.family} ${f.style} (TrueType)`
 
+/** An embedded custom font of the project (SPEC-CHANGES V5), as the Inspector shows it. */
+export interface ProjectFontInfo {
+  hash: string
+  family: string
+  /** The file name the author picked. */
+  source?: string
+  charsets: string[]
+  extraChars: string
+  /** OS/2 fsType and its verdict (V5.3). */
+  fsType: number
+  fsTypeLabel: string
+  license: { level: 'ok' | 'warning' | 'error'; text?: string }
+  /** The font's licence description (name ID 13), when it has one. */
+  licenseText?: string
+  glyphCount: number
+  bytes: number
+  /** The file is gone or unreadable. */
+  error?: string
+}
+export type ProjectFontsState = { fonts: ProjectFontInfo[]; error?: string }
+export type AddFontOutcome = { ok: true; font: ProjectFontInfo; existed: boolean } | { ok: false; error: string; cancelled?: boolean }
+
 export interface InstalledFace {
   family: string
   style: string

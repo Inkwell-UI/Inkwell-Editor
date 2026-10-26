@@ -11,6 +11,7 @@ import { loadCodegenPacks, type CodegenPacks } from '../codegen/packs'
 import { loadProject, saveProject, type Project } from '../project'
 import { bindingsOf } from '../../shared/graphBinding'
 import { listSettings, locKeysOf } from '../../shared/overlay'
+import { embeddedFontsFor } from '../fonts/embedBuild'
 import { readGraphs } from '../project/graphFiles'
 import { exclusive } from '../project/lock'
 import { snapshotContent, writeSnapshot, type FigmaSnapshot, type SnapshotSource } from '../project/snapshot'
@@ -60,7 +61,7 @@ export function toReport(swfId: string, name: string, r: Pick<Awaited<ReturnType
     name,
     fonts: r.fonts.map((f) => ({
       swfName: name, nodeId: f.nodeId, layerName: f.nodeName, figmaFont: f.figmaFont,
-      ...(f.styleName ? { styleName: f.styleName } : {}), ...(f.alias ? { alias: f.alias } : {}), via: f.via
+      ...(f.styleName ? { styleName: f.styleName } : {}), ...(f.alias ? { alias: f.alias } : {}), ...(f.embedded ? { embedded: f.embedded } : {}), via: f.via
     })),
     lint: r.lint.map((l) => ({ swfName: name, nodeId: l.nodeId, layerName: l.nodeName ?? l.nodeId, severity: l.severity, code: l.code, message: l.message }))
   }
@@ -89,6 +90,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     let roles: Record<string, string> = {}
     let lists: Record<string, { itemTemplate?: string; spacing?: number }> = {}
     let locKeys: Record<string, string> = {}
+    let overlayNodes: Record<string, Record<string, unknown>> = {}
     let modId = 'inkwell'
     let imageMode: ImageMode = 'embedded'
     let snapshotError: string | undefined
@@ -111,6 +113,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
         instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : [])))
         lists = listSettings(nodes)
         locKeys = locKeysOf(nodes)
+        overlayNodes = nodes as unknown as Record<string, Record<string, unknown>>
         // The editor never edits the visual IR: this stores exactly what Figma sent.
         p.swfs[name] = { ir: ir as unknown as Record<string, unknown>, overlay }
         // graphs and menu.json are saved by the editor; the cached copy here may be stale, so a build never writes them back
@@ -135,14 +138,18 @@ export function createBuildPipeline(cfg: PipelineConfig) {
       if (gs.length) graphs = { graphs: gs, packs: (await (codegenPacks ??= loadCodegenPacks(cfg.packDirs))).packs }
     }
     const images = cfg.assets ? (h: string) => cfg.assets!.get(h) : undefined
-    const r = await compileSwf(ir, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+    // embedded custom fonts (V5): the layers' fonts, the characters to embed and the licence/glyph/size findings
+    const emb = cfg.projectDir ? await embeddedFontsFor(cfg.projectDir, name, ir, overlayNodes) : undefined
+    const fontOpts = emb?.option ? { embeddedFonts: emb.option, embeddedFontBytes: emb.bytes } : {}
+    const r = await compileSwf(ir, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+    if (emb) r.lint.push(...emb.issues)
     // Dev SWF (Dev deploy only): the game SWF plus the hooks that stream pin and variable values to the editor. Never part of the normal build or Package Mod.
     const dt = createStageTimer()
     let devBuilt = false
     if (cfg.devBuild?.() && ir.target.kind === 'customMenu') {
       devBuilt = true
       dt.start('dev-build')
-      await compileSwf(ir, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+      await compileSwf(ir, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
       dt.end('dev-build')
       cfg.onDevBuild?.(name)
     }
@@ -152,7 +159,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     pt.start('preview-build')
     const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: ir.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
     try {
-      const pr = await compileSwf(ir, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
+      const pr = await compileSwf(ir, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
       const buf = await readFile(pr.swfPath)
       preview.bytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
       preview.notes = {

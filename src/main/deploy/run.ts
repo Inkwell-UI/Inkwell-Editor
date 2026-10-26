@@ -129,6 +129,10 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
       for (const id of unreachableNodes(s.ir)) issues.push({ severity: 'warning', code: 'unreachable-node', message: `"${s.ir.nodes[id]!.name}": ${UNREACHABLE_MESSAGE}.`, swf: s.name, nodeId: id, layerName: s.ir.nodes[id]!.name })
       if (s.graphLint) issues.push(...s.graphLint.map((l) => ({ ...l, swf: s.name })))
       if (s.kind === 'hudWidget') {
+        // embedded custom fonts are compiled for custom menus and the preview; the widget compiler does not carry them yet (V5), so such a layer ships with its Skyrim alias
+        for (const [id, o] of Object.entries(s.overlay ?? {}))
+          if (typeof (o as Record<string, unknown>)['font'] === 'string' && s.ir.nodes[id]?.type === 'text')
+            issues.push({ severity: 'warning', code: 'font-embedded-widget', message: `"${s.ir.nodes[id]!.name}": embedded fonts are used by custom menus; this HUD widget ships the layer with its Skyrim font alias.`, swf: s.name, nodeId: id, layerName: s.ir.nodes[id]!.name })
         const r = await compileWidget(s.ir, {
           modId: i.modId, widgetName: plan.widgets[s.name]!, ...(s.instanceNames ? { instanceNames: s.instanceNames } : {}), ...(s.overlay ? { overlay: s.overlay } : {}), ...(i.packs && s.graphs?.length ? { graphs: { graphs: s.graphs, packs: i.packs } } : {}), buildDir: join(i.buildDir, 'deploy', s.name), ffdec: i.ffdec,
           ...(i.imageMode ? { imageMode: i.imageMode } : {}), ...(i.assets ? { images: (h: string) => i.assets!.get(h) } : {}),

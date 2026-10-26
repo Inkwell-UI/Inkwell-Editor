@@ -9,6 +9,7 @@ import type { PreviewFontBlob, PreviewRendered } from '../shared/preview'
 import type { OpenResult, UiEvent } from '../shared/projectState'
 import { PRODUCT_NAME } from '../shared/product'
 import { strings } from '../renderer/strings'
+import type { AddFontOutcome } from '../shared/fonts'
 import type { LocFileResult } from '../shared/ipc'
 import { exportCsvFile, exportTranslationFiles, readCsvImport } from './localizationIo'
 import { copyExample, createProject } from './project/lifecycle'
@@ -127,6 +128,13 @@ ipcMain.handle(IPC.projectExample, (_e, title: string) =>
 )
 ipcMain.handle(IPC.overlaySave, (_e, swfName: string, doc: OverlayDoc) => session.saveOverlay(swfName, doc))
 ipcMain.handle(IPC.menuSave, (_e, swfName: string, doc: unknown) => session.saveMenuSettings(swfName, doc))
+ipcMain.handle(IPC.projectFonts, () => session.getProjectFonts())
+ipcMain.handle(IPC.projectFontSave, (_e, hash: string, settings: { charsets: string[]; extraChars: string }) => session.saveProjectFontSettings(hash, settings))
+ipcMain.handle(IPC.projectFontAdd, async (): Promise<AddFontOutcome> => {
+  const r = await dialog.showOpenDialog(win!, { title: strings.insp.embeddedFont.pickTitle, properties: ['openFile'], filters: [{ name: strings.insp.embeddedFont.filter, extensions: ['ttf'] }] })
+  if (r.canceled || !r.filePaths[0]) return { ok: false, error: '', cancelled: true }
+  return session.addProjectFontFile(r.filePaths[0])
+})
 ipcMain.handle(IPC.locLoad, () => session.getLocalization())
 ipcMain.handle(IPC.locSave, (_e, doc: unknown) => session.saveLocalization(doc))
 const locFail = (e: unknown): LocFileResult => ({ ok: false, error: e instanceof Error ? e.message : String(e) })

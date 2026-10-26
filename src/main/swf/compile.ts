@@ -12,6 +12,8 @@ export interface CompileOptions extends GenerateOptions {
   buildDir: string
   /** Output file; default `<buildDir>/<swf id>.swf`. */
   outPath?: string
+  /** Embedded custom fonts (V5): the TrueType bytes of a font asset hash; the glyph outlines of the planned characters are imported from them. */
+  embeddedFontBytes?: (hash: string) => Buffer | undefined
   /** The resident FFDec wrapper (or anything with its `build`). */
   ffdec: { build(job: FfdecJob): Promise<FfdecResult> }
 }
@@ -64,7 +66,9 @@ export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<Compile
   if (g.embeddedFonts.length) {
     await mkdir(join(dir, 'fonts'), { recursive: true })
     for (const f of g.embeddedFonts) {
-      await writeFile(join(dir, 'fonts', `${f.charId}.ttf`), opts.previewFontBytes!(f.name)!)
+      const bytes = f.hash ? opts.embeddedFontBytes?.(f.hash) : opts.previewFontBytes?.(f.name)
+      if (!bytes) throw new Error(`The font "${f.name}" has no file to import glyphs from.`)
+      await writeFile(join(dir, 'fonts', `${f.charId}.ttf`), bytes)
       await writeFile(join(dir, 'fonts', `${f.charId}.txt`), f.chars, 'utf8')
     }
   }

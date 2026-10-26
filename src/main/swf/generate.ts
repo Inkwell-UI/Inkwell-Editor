@@ -23,6 +23,11 @@ export interface GenerateOptions {
   bindings?: Record<string, string>
   /** Overlay `role` by Figma layer id. A customMenu SWF makes its `button` and `list` layers focusable, and the preview's Play panel can click the `button` ones. */
   roles?: Record<string, string>
+  /**
+   * Embedded custom fonts (V5): overlay `font` (a font asset hash) by Figma layer id, and per hash the family, the natural line height and the characters to embed (a DefineFont3 placeholder
+   * per font in the SWF; the compile step imports the glyph outlines of `chars` from the font file with FFDec). A hash without an entry is the lint error `font-file-missing`.
+   */
+  embeddedFonts?: { byNode: Record<string, string>; fonts: Record<string, { family: string; lineHeight?: number; chars: string }> }
   /** Overlay `locKey` by Figma layer id (V2): a keyed text of a custom menu is translated at start by `inkwell.translate(key)`; the compiled text stays the source language. */
   locKeys?: Record<string, string>
   /** Overlay `list` settings (S8: item template layer, row spacing) by Figma layer id, for layers whose role is `list`. */
@@ -70,7 +75,7 @@ export interface Generated {
   fonts: (FontInfo & { nodeId: string; nodeName: string })[]
   stage: { width: number; height: number }
   /** Preview only: embedded fonts (placeholder character id, font name, characters to import: the text plus printable ASCII). */
-  embeddedFonts: { charId: number; name: string; chars: string }[]
+  embeddedFonts: { charId: number; name: string; chars: string; /** An embedded custom font (V5): its asset hash; absent = a preview device font by `name`. */ hash?: string }[]
   /** Text nodes that need GFx TextField extensions (verticalAlign, textAutoSize, letterSpacing); Ruffle ignores the first two. */
   gfxTextExtensions: number
   /** Images the game SWF loads at runtime from DDS (dds mode; 0 when embedded or in the preview). */
@@ -367,6 +372,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   const defs: Buffer[] = []
   const shapes: Generated['shapes'] = []
   const embedded = new Map<string, { charId: number; chars: Set<string> }>() // preview: font name -> placeholder DefineFont3
+  const custom = new Map<string, { charId: number; family: string; chars: string }>() // embedded custom fonts (V5): asset hash -> placeholder DefineFont3
   const fonts = new Map<string, number>() // alias -> local character id (ImportAssets2)
   const scripts: ScriptItem[] = []
   const fontRows: Generated['fonts'] = []
@@ -524,13 +530,24 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
         defs.push(T.defineShapePlaceholder(id, n.transform.width, n.transform.height))
         out.push(T.placeObject2({ ...base, charId: id }))
       } else {
-        const m = mapText(n, opts.glyphs)
+        const hash = opts.embeddedFonts?.byNode[cid]
+        const face = hash ? opts.embeddedFonts?.fonts[hash] : undefined
+        if (hash && !face) lint.push(issue('error', 'font-file-missing', cid, `The embedded font ${hash.slice(0, 8)} of "${n.name}" is not in the project (fonts/${hash}.ttf). Choose another font or add the file again.`))
+        const m = mapText(n, opts.glyphs, face ? { family: face.family, ...(face.lineHeight ? { lineHeight: face.lineHeight } : {}) } : undefined)
         lint.push(...m.lint)
         if (m.font) fontRows.push({ ...m.font, nodeId: cid, nodeName: n.name })
         if (!m.text) continue
         let fontId = 0
         let fontClass: string | undefined
-        if (!opts.preview) {
+        if (m.text.embedded && hash && face) {
+          let c = custom.get(hash)
+          if (!c) {
+            c = { charId: alloc(), family: face.family, chars: face.chars }
+            custom.set(hash, c)
+            defs.push(T.defineFont3Placeholder(c.charId, face.family))
+          }
+          fontId = c.charId
+        } else if (!opts.preview) {
           fontId = fonts.get(m.text.alias) ?? alloc()
           fonts.set(m.text.alias, fontId)
         } else {
@@ -692,7 +709,10 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     T.showFrame(),
     T.endTag()
   ]
-  const embeddedFonts = [...embedded].map(([name, e]) => ({ charId: e.charId, name, chars: [...e.chars].join('') }))
+  const embeddedFonts = [
+    ...[...embedded].map(([name, e]) => ({ charId: e.charId, name, chars: [...e.chars].join('') })),
+    ...[...custom].map(([hash, c]) => ({ charId: c.charId, name: c.family, chars: c.chars, hash }))
+  ]
   return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls }
 }
 
