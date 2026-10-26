@@ -231,11 +231,6 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .safe-action span { right: 3px; }
 .safe-title { border-color: var(--safe-title); }
 .safe-title span { left: 3px; }
-.stage-foot { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-.shim-badge { border: 1px solid var(--line-strong); border-radius: 4px; padding: 2px 8px; background: var(--info-bg); flex: 1; min-width: 200px; }
-.shim-badge summary { cursor: pointer; display: flex; align-items: center; gap: 6px; }
-.shim-badge summary svg { color: var(--info); }
-.shim-badge ul { margin: 2px 0 4px; padding-left: 18px; }
 .detached { display: flex; height: 100%; width: 100%; background: var(--surface-1); }
 
 /* start screen, dialogs */
@@ -278,7 +273,6 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .stage-banners .banner { padding: 1px 6px; font-size: 12px; pointer-events: auto; min-width: 0; }
 .stage-banners .banner span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .stage-banners .btn { min-height: 20px; padding: 0 6px; flex: none; }
-.preview-panel.is-compact .shim-badge { padding: 0 6px; min-width: 0; }
 /* The small slot (Behaviour mode): one-line toolbar, the long toggles in a popover, the notice and the build chip on one line. */
 .preview-panel { position: relative; }
 .preview-panel.is-compact .stage-toolbar { overflow: visible; flex-wrap: wrap; gap: 4px; }
@@ -286,11 +280,6 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .preview-panel.is-compact .stage-toolbar .btn { padding-left: 6px; padding-right: 6px; }
 .stage-more { position: absolute; z-index: 20; left: 0; right: 0; top: 38px; display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: 6px; box-shadow: 0 8px 24px var(--shadow); }
 .preview-panel.is-compact .stage-toolbar { position: static; }
-.preview-panel.is-compact .stage-foot { flex-wrap: nowrap; gap: 4px; min-width: 0; }
-.preview-panel.is-compact .shim-badge summary { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-.preview-panel.is-compact .shim-badge summary .dim { display: none; }
-.preview-panel.is-compact .shim-badge[open] { position: absolute; z-index: 20; left: 0; right: 0; bottom: 0; max-height: 100%; overflow: auto; background: var(--surface-1); }
-.preview-panel.is-compact .chip-text { display: none; }
 
 .stage-empty { inset: 0; left: 0; top: 0; max-width: none; display: flex; align-items: center; justify-content: center; text-align: center; padding: 44px 16px 8px; }
 

@@ -31,18 +31,6 @@ export const strings = {
   previewError: 'Preview failed',
   previewSafeTitle: 'title-safe',
   previewSafeAction: 'action-safe',
-  badgeTitle: 'Ruffle preview, not the game',
-  badgeShimsShort: '(approximates Flash, not Scaleform GFx)',
-  badgeBody: 'Ruffle approximates Flash; Skyrim runs Scaleform GFx. What this preview does not represent:',
-  badgeFonts: (n: number, approximated: string[]) =>
-    approximated.length
-      ? `Fonts: ${n} text layer${n === 1 ? '' : 's'}; approximated with a lookalike font (not the Skyrim font): ${approximated.join(', ')}`
-      : `Fonts: ${n} text layer${n === 1 ? '' : 's'} drawn with the installed Skyrim fonts`,
-  badgeTextExt: (n: number) => `GFx text extensions (vertical align, auto size): ${n} text layer${n === 1 ? '' : 's'} not applied`,
-  badgeDds: (n: number) => `Images: ${n} image${n === 1 ? '' : 's'} load from DDS through img:// in the game (image mode "dds"); Ruffle cannot load img://, so the preview shows the embedded bitmap instead`,
-  badgeFilters: 'Filters and other GFx-only effects',
-  badgeShimsTitle: 'Active shims in the preview SWF:',
-  badgeShims: ['skse.* (stub)', 'gfxExtensions (stub)', 'Inkwell AS2 bridge (stub)', 'Preview font shim (gfxfontlib.swf cannot load in Ruffle)'],
   syncPort: 'Port',
 
   stage: {

@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react'
-import { useDockRows, useProject } from '../hooks/useProject'
+import { useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
+import { usePreviewBuilds } from '../hooks/usePreviewBuilds'
 import type { SnapshotInfo } from '../../shared/projectState'
 import { figmaConnection, type DotTone } from '../model/connection'
 import { useSettingsStore } from '../state/settingsStore'
@@ -115,9 +116,15 @@ export function StatusBar() {
   const undo = useUndo()
   const show = useDialogStore((s) => s.show)
   const lint = countSeverities(useDockRows())
+  const swf = useActiveSwf()
+  const entries = usePreviewBuilds()
+  const entry = entries.find((e) => e.latest.swfId === swf?.id) ?? (swf ? undefined : entries[0])
+  const failed = sync?.build === 'error' || !!entry?.stale
+  const lastGood = entry?.shownAt !== undefined ? strings.stage.lastGood(new Date(entry.shownAt).toLocaleTimeString()) : undefined
   return (
     <footer className="statusbar" aria-label={strings.status.label}>
       <span className="item" title={strings.status.specTip}><Check size={13} aria-hidden="true" /> {specLabel()}</span>
+      {lastGood && <span className={`item ${failed ? 'is-error' : ''}`} data-testid="last-good" title={lastGood}><Dot tone={failed ? 'error' : 'ok'} /> {lastGood}</span>}
       <Popover
         up
         label={strings.status.historyTitle}

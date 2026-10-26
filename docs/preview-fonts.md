@@ -23,9 +23,9 @@ Cost, warm wrapper, 8 text fields: preview compile 33 ms with device fonts vs ab
 
 `PreviewFontSet.glyphsFor(alias)` returns the cmap (formats 0, 4, 12; `cmapCodePoints` in `src/main/fonts/sfnt.ts`) of the font resolved for an alias: the installed file when present, else the bundled lookalike when it is a real match (Everywhere Light/Medium/Bold). Generic stand-ins (`generic: true`: Barlow standing in for Dragon, the controller buttons, Console...) return undefined, because their characters say nothing about the game font, and the compiler skips the check. The compiler warns once per text layer that uses characters outside the set (`mapText`, `docs/swf-compiler.md`). Tests use synthetic cmaps.
 
-## Badge
+## Approximated faces
 
-`PreviewNotes.approximated` lists the faces a build uses that are drawn with a bundled lookalike; the badge shows them. Faces drawn with installed fonts are not listed.
+`PreviewNotes.approximated` lists the faces a build uses that are drawn with a bundled lookalike; the data is still in the build (`PreviewNotes`); the on-screen badge was removed 2026-10-26. Faces drawn with installed fonts are not listed.
 
 ## Choosing the lookalikes (measured)
 

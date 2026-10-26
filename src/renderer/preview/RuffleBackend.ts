@@ -34,7 +34,7 @@ function loadRuffle(): Promise<void> {
 
 /**
  * The only 1.0 preview: Ruffle. It approximates Flash, not Scaleform GFx: it cannot load gfxfontlib.swf, ignores GFx TextField extensions and
- * reports another Flash version, which is why the preview SWF uses device fonts and the preview shows ShimBadge.
+ * reports another Flash version, which is why the preview SWF uses device fonts.
  * `firstFrame` is `loadeddata` (Ruffle has parsed the movie and run its first frame) plus one animation frame so it has been painted.
  */
 export class RuffleBackend implements PreviewBackend {

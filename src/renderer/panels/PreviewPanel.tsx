@@ -17,7 +17,6 @@ import { stepZoom } from '../preview/geometry'
 import { InspectOverlay } from '../preview/InspectOverlay'
 import { RuffleBackend } from '../preview/RuffleBackend'
 import { SafeZoneOverlay } from '../preview/SafeZoneOverlay'
-import { ShimBadge } from '../preview/ShimBadge'
 import { StageToolbar, type StageMode } from '../preview/StageToolbar'
 import { SwfViewport } from '../preview/SwfViewport'
 import { useLintStore } from '../state/lintStore'
@@ -169,14 +168,6 @@ export function PreviewPanel() {
           {state.status === 'loading' && <p className="preview-status">{strings.previewLoading}</p>}
           {state.status === 'error' && build?.bytes && <p className="preview-message">{strings.previewError}: {state.error}</p>}
           <span className="mode-chip" aria-live="polite">{mode === 'inspect' ? strings.stage.modeInspect : strings.stage.modePlay}</span>
-        </div>
-        <div className="stage-foot">
-          <ShimBadge {...(build ? { notes: build.notes } : {})} />
-          {entry?.shownAt !== undefined && (
-            <span className={`chip ${failed ? 'chip-error' : 'chip-ok'}`} data-testid="last-good" title={strings.stage.lastGood(new Date(entry.shownAt).toLocaleTimeString())}>
-              <span className="dot" aria-hidden="true" /> <span className="chip-text">{strings.stage.lastGood(new Date(entry.shownAt).toLocaleTimeString())}</span>
-            </span>
-          )}
         </div>
       </div>
     </Panel>
