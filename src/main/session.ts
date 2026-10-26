@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
+import { mkdir, rename } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { join, resolve } from 'node:path'
 import { Graph, Swf, type MenuSettings } from '@inkwell-ui/spec'
@@ -703,6 +704,23 @@ export function createSession(deps: SessionDeps) {
         rebuildSwf(swf)
       }
       return r
+    },
+    /** Discards an orphaned SWF: its folder moves to `<project>/.trash/<name>-<time>` (restorable by hand), nothing is deleted. */
+    async discardSwf(swfId: string): Promise<{ ok: true; trash: string } | { ok: false; error: string }> {
+      const info = server?.swfs().find((i) => i.id === swfId)
+      if (!projectDir || !info?.orphaned) return { ok: false, error: 'Only an orphaned SWF can be discarded' }
+      const trash = join(projectDir, '.trash', `${info.name}-${Date.now()}`)
+      try {
+        await mkdir(join(projectDir, '.trash'), { recursive: true })
+        await rename(join(projectDir, 'swfs', info.name), trash)
+      } catch (e) {
+        return { ok: false, error: e instanceof Error ? e.message : String(e) }
+      }
+      for (const m of [overlays, lintBySwf, unreachableBySwf, reports, buildBySwf, previews] as Map<string, unknown>[]) m.delete(swfId)
+      graphs.delete(info.name)
+      menus.delete(info.name)
+      server!.forget(swfId) // its 'swfs' event refreshes the counts, lint and the project push
+      return { ok: true, trash }
     },
     async setStrictMode(on: boolean): Promise<void> {
       if (!projectDir) return

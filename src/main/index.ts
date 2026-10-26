@@ -130,6 +130,7 @@ ipcMain.handle(IPC.graphsLoad, (_e, swf: string, id: string) => session.loadGrap
 ipcMain.handle(IPC.graphsSave, (_e, swf: string, g: unknown) => session.saveGraph(swf, g))
 ipcMain.handle(IPC.graphsCreate, (_e, swf: string, name: string, scope: 'menu' | 'component') => session.createGraph(swf, name, scope))
 ipcMain.handle(IPC.graphsDelete, (_e, swf: string, id: string) => session.deleteGraph(swf, id))
+ipcMain.handle(IPC.swfDiscard, (_e, swfId: string) => session.discardSwf(swfId))
 ipcMain.handle(IPC.graphsAs2, (_e, swf: string, g: unknown) => session.graphAs2(swf, g))
 ipcMain.handle(IPC.packsGet, () => session.getPacks())
 ipcMain.handle(IPC.strictSet, (_e, on: boolean) => session.setStrictMode(on))

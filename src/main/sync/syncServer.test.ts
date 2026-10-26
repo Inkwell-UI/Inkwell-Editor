@@ -173,6 +173,18 @@ describe('syncServer', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it('forget drops an orphaned swf only; a swf with a frame is refused', async () => {
+    const s = await start({ initial: { hud: sample() }, onChange: vi.fn() })
+    expect(s.forget('hud')).toBe(false)
+    expect(s.swfs()).toHaveLength(1)
+    const c = await ready(s)
+    c.ws.send(JSON.stringify({ type: 'swfs', frames: [], loose: [] }))
+    await sleep(80)
+    expect(s.forget('hud')).toBe(true)
+    expect(s.swfs()).toEqual([])
+    expect(s.ir('hud')).toBeUndefined()
+  })
+
   it('a node no root reaches gets an unreachable-node warning on that swf', async () => {
     const s = await start({ initial: { hud: sample() }, onChange: () => ({ issues: [] }) })
     const c = await ready(s)

@@ -72,7 +72,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 
 ## Navigator, Inspector details
 
-- LAYERS: `model/layerTree.ts` walks the IR (root down, children in order). Badges: lint error/warning counts, `$` only when the text content starts with `$`, script/link/pad from the overlay. Orphans: `model/orphans.ts` (orphaned SWFs, and overlay entries whose node id is not in the IR; unknown keys are listed). Relink and Discard are disabled until overlay editing exists.
+- LAYERS: `model/layerTree.ts` walks the IR (root down, children in order). Badges: lint error/warning counts, `$` only when the text content starts with `$`, script/link/pad from the overlay. Orphans: `model/orphans.ts` (orphaned SWFs, and overlay entries whose node id is not in the IR; unknown keys are listed). Relink to Selected and Discard work for overlay orphans of the active SWF (`state/orphanActions.ts`: one overlay edit, graph nodes targeting the old layer are retargeted; Relink refuses a target that already has behavior); for an orphaned SWF Discard moves `swfs/<name>/` to `<project>/.trash/` (IPC `discardSwf`, `session.discardSwf`, sync server `forget`) and Relink stays disabled (a SWF is keyed by its Figma frame id, so relinking would orphan every layer inside).
 - Inspector GFx MAPPING uses `describeTextMapping` from `src/main/swf/text.ts`, the same `sizingFlags` the compiler uses for the TextField. FONT RESOLUTION shows the design spec's order: (1) text style name alias-shaped, (2) font family/style, (3) fallback table (warning `font-fallback`), (4) `font-unmapped`.
 - There are no transform or colour inputs anywhere (Figma owns visuals). The `Figma Source` card is read-only text.
 
@@ -93,7 +93,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 | Contract validation, Contracts tab content | 0.5 |
 | Anchor override, loc keys, focus controls (disabled in the Inspector) | anchoring codegen, 0.4, 0.5 |
 | Localization table, Theme, Locale, Pseudo-Loc, Prompts, Focus Graph, Occupied HUD | 0.4, 0.4, 0.4, 0.5, 0.5, 0.6+ |
-| Relink / Discard orphans | needs the overlay store's relink operation |
+| Relink of an orphaned SWF | needs a layer-matching step between the old and new frame |
 | In-game trace, live variable watch, game dot, hot reload | built in 0.3 Phase 6b (`docs/dev-mode.md`); unverified against the real game |
 | Figma plugin screenshot guide in the Settings view, setup guide link | later |
 | Play-mode virtual gamepad | later |

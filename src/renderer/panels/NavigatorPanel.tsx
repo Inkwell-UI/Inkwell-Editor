@@ -5,7 +5,10 @@ import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hook
 import { useSyncState } from '../hooks/useSyncState'
 import { buildLayerTree, filterTree, flattenTree, type Badge, type LayerRow } from '../model/layerTree'
 import { computeOrphans } from '../model/orphans'
+import { inkwell } from '../hooks/api'
+import { discardOverlayOrphan, relinkOverlayOrphan } from '../state/orphanActions'
 import { useSelectionStore } from '../state/selectionStore'
+import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { FigmaSelectBtn } from '../ui/FigmaSelectBtn'
@@ -119,19 +122,45 @@ export function NavigatorPanel() {
         <section aria-labelledby="nav-orphans">
           <header className="section-title"><h3 id="nav-orphans">{strings.nav.orphans(orphans.length)}</h3></header>
           {orphans.length === 0 && <p className="empty">{strings.nav.none}</p>}
-          {orphans.map((o) => (
-            <div key={o.kind === 'swf' ? o.swfId : `${o.swfId}/${o.nodeId}`} className="card">
-              <div className="card-head">
-                <TriangleAlert size={14} aria-hidden="true" className="tone-warn" />
-                <strong>{o.kind === 'swf' ? strings.nav.orphanSwf(o.swfName) : strings.nav.orphanNode(o.nodeId)}</strong>
+          {orphans.map((o) => {
+            // an overlay entry can only be edited once its SWF's overlay store exists, i.e. while it is the active SWF
+            const notActive = o.kind === 'overlay' && o.swfId !== swf?.id ? strings.nav.openSwfFirst : undefined
+            const relinkReason = o.kind === 'swf' ? strings.nav.relinkSwfReason : notActive ?? (selected ? undefined : strings.nav.relinkNeedsSelection)
+            return (
+              <div key={o.kind === 'swf' ? o.swfId : `${o.swfId}/${o.nodeId}`} className="card">
+                <div className="card-head">
+                  <TriangleAlert size={14} aria-hidden="true" className="tone-warn" />
+                  <strong>{o.kind === 'swf' ? strings.nav.orphanSwf(o.swfName) : strings.nav.orphanNode(o.nodeId)}</strong>
+                </div>
+                <p className="dim">{o.kind === 'swf' ? strings.nav.orphanSwfNote : strings.nav.orphanHas(o.held)}</p>
+                <div className="row-actions">
+                  <Btn
+                    reason={relinkReason}
+                    onClick={() => {
+                      if (o.kind !== 'overlay' || !swf || !selected || !inkwell) return
+                      void relinkOverlayOrphan(swf, o.nodeId, selected, inkwell).then((r) => {
+                        if (!r.ok) useToastStore.getState().push({ tone: 'error', title: strings.nav.relinkFailed[r.error] ?? r.error })
+                      })
+                    }}
+                  >
+                    {strings.nav.relink}
+                  </Btn>
+                  <Btn
+                    reason={notActive}
+                    onClick={() => {
+                      if (o.kind === 'overlay') return void (window.confirm(strings.nav.discardConfirm(o.nodeId)) && discardOverlayOrphan(o.swfId, o.nodeId))
+                      if (!inkwell || !window.confirm(strings.nav.discardSwfConfirm(o.swfName))) return
+                      void inkwell.discardSwf(o.swfId).then((r) =>
+                        useToastStore.getState().push(r.ok ? { tone: 'info', title: strings.nav.discardedSwf(o.swfName), text: r.trash } : { tone: 'error', title: strings.nav.discardSwfFailed, text: r.error })
+                      )
+                    }}
+                  >
+                    {strings.nav.discard}
+                  </Btn>
+                </div>
               </div>
-              <p className="dim">{o.kind === 'swf' ? strings.nav.orphanSwfNote : strings.nav.orphanHas(o.held)}</p>
-              <div className="row-actions">
-                <Btn reason={strings.nav.relinkReason}>{strings.nav.relink}</Btn>
-                <Btn reason={strings.nav.discardReason}>{strings.nav.discard}</Btn>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </section>
 
         <section aria-labelledby="nav-unreachable">

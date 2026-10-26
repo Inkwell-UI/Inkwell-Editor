@@ -29,6 +29,7 @@ export const IPC = {
   graphsSave: 'graphs:save',
   graphsCreate: 'graphs:create',
   graphsDelete: 'graphs:delete',
+  swfDiscard: 'swf:discard',
   graphsAs2: 'graphs:as2',
   packsGet: 'packs:get',
   strictSet: 'project:strict',
@@ -106,6 +107,8 @@ export interface InkwellApi {
   createGraph(swfName: string, name: string, scope: Graph['scope']): Promise<GraphResult<{ graph: Graph }>>
   deleteGraph(swfName: string, id: string): Promise<GraphResult>
   /** Runs codegen on the open (unsaved) `graph` next to the SWF's other saved graphs and returns its AS2 class with the source map (the AS2 split view). Not a build: no FFDec. */
+  /** Discards an ORPHANED SWF by id: its folder moves to `<project>/.trash/` (never deleted). Refused for a SWF that still has a Figma frame. */
+  discardSwf(swfId: string): Promise<{ ok: true; trash: string } | { ok: false; error: string }>
   graphAs2(swfName: string, graph: Graph): Promise<GraphResult<{ as2: GraphAs2 }>>
   /** Node definitions of the loaded packs (the bundled core pack today). Data only; `problems` lists files that failed their schema. */
   getPacks(): Promise<PackSet>

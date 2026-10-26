@@ -331,6 +331,14 @@ export async function startSyncServer(opts: SyncServerOptions) {
       for (const ws of ready) send(ws, m.data)
       return ready.size
     },
+    /** Forgets an orphaned swf (the caller already moved its folder away); a live one is refused. A returning Figma frame creates it fresh. */
+    forget: (swfId: string): boolean => {
+      if (!store.get(swfId)?.orphaned) return false
+      store.delete(swfId)
+      swfsChanged()
+      projectStatus()
+      return true
+    },
     /** Queues a build of one swf (debounced like a patch), e.g. after its overlay changed. */
     rebuild: (swfId: string): void => schedule(swfId),
     /** Queues every swf that still has a Figma frame; returns how many. */
