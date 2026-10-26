@@ -95,10 +95,9 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 | Localization table, Theme, Locale, Pseudo-Loc, Prompts, Focus Graph, Occupied HUD | 0.4, 0.4, 0.4, 0.5, 0.5, 0.6+ |
 | Relink / Discard orphans | needs the overlay store's relink operation |
 | In-game trace, live variable watch, game dot, hot reload | built in 0.3 Phase 6b (`docs/dev-mode.md`); unverified against the real game |
-| Custom menu JSON in Deploy, target pill's Config Ownership dialog | runtime config formats (0.3) |
 | Figma plugin screenshot guide in the Settings view, setup guide link | later |
 | Play-mode virtual gamepad | later |
-| Mock data presets and JSON view | 0.3 |
+| Mock data presets and JSON view | later |
 | Play panel and trace with the preview popped out into its own window | later |
 
 ## Known limits

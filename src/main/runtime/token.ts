@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import type { TokenSource } from '../../shared/devLink'
-import type { DevLinkSettings } from '../../shared/doctor'
+import type { DevLinkSettings, StoredSettings } from '../../shared/doctor'
 import { readDevIni, RUNTIME_INI_REL } from './devIni'
 import type { DevConfig } from './client'
 
@@ -23,4 +23,12 @@ export async function resolveDevConfig(o: { link?: DevLinkSettings; overwriteDir
     return d?.token ? { token: d.token, port: d.port ?? port, source, from: file } : undefined
   }
   return (await fromIni(o.overwriteDir, 'overwrite')) ?? (await fromIni(o.deployRoot, 'deploy')) ?? (o.link?.token ? { token: o.link.token, port, source: 'editor' } : undefined)
+}
+
+/** The project's dev token in the user settings (`devLinks`, key = lower-case project folder, as the session keys it): an existing token is kept, else `make()` is stored. Used by `deploy:menu-nodes --dev`. */
+export function withDevToken(s: StoredSettings, projectDir: string, make: () => string, port = DEFAULT_PORT): { settings: StoredSettings; token: string } {
+  const k = resolve(projectDir).toLowerCase()
+  const cur = s.devLinks?.[k] ?? {}
+  const token = cur.token ?? make()
+  return { token, settings: { ...s, devLinks: { ...s.devLinks, [k]: { ...cur, token, port: cur.port ?? port } } } }
 }

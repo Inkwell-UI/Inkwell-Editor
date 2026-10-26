@@ -55,7 +55,9 @@ The Deploy menu has a **Dev deploy** checkbox (per project, user settings, off b
 
 ## Testing the runtime check (owner, in game)
 
-Deploy a menu mod (for example `yarn deploy:menu-slice` with `INKWELL_PAPYRUS` set) and enable the folder in MO2. (1) With `Inkwell.dll` present: no message. (2) Rename or remove `SKSE/Plugins/Inkwell.dll`, load a save (and start a new game): a message box says "<mod name> needs Inkwell Runtime 0.3.0 or newer, but it is not installed (or SKSE is not running)...". (3) Outdated: edit `Source/Scripts/<modId>_RuntimeCheck.psc` to `RequiredPacked = 262144` (0.4.0) and `RequiredText = "0.4.0"`, recompile it in place (`"D:Mod ToolsRusso Compilerpapyrus.exe" compile -nocache -h <editor>esourcespapyrus-stubs -i <mod>SourceScripts -o <mod>Scripts`), load: "needs Inkwell Runtime 0.4.0 or newer; you have 0.3.0". `Papyrus.0.log` shows a `[Inkwell] <modId>_RuntimeCheck: ...` line only in the failing cases; the plugin shows as light (ESL) in MO2.
+Prepared folder: `Inkwell Menu Check Test` (the slice deployed with the Papyrus compiler; `TEST-IN-GAME-0.3.md`, test T4). Or by hand:
+
+Deploy a menu mod (for example `yarn deploy:menu-slice` with `INKWELL_PAPYRUS` set) and enable the folder in MO2. (1) With `Inkwell.dll` present: no message. (2) Rename or remove `SKSE/Plugins/Inkwell.dll`, load a save (and start a new game): a message box says "<mod name> needs Inkwell Runtime 0.3.0 or newer, but it is not installed (or SKSE is not running)...". (3) Outdated: edit `Source/Scripts/<modId>_RuntimeCheck.psc` to `RequiredPacked = 262144` (0.4.0) and `RequiredText = "0.4.0"`, recompile it in place (`"D:\Mod Tools\Russo Compiler\papyrus.exe" compile -nocache -h "<editor>\resources\papyrus-stubs" -i "<mod>\Source\Scripts" -o "<mod>\Scripts"`), load: "needs Inkwell Runtime 0.4.0 or newer; you have 0.3.0". `Papyrus.0.log` shows a `[Inkwell] <modId>_RuntimeCheck: ...` line only in the failing cases; the plugin shows as light (ESL) in MO2.
 
 ## Known limits
 
@@ -65,4 +67,4 @@ Deploy a menu mod (for example `yarn deploy:menu-slice` with `INKWELL_PAPYRUS` s
 
 - `.pex` files embed a compile timestamp, so they are rewritten on every deploy even when nothing changed.
 - Deploy uses the pipeline's resident FFDec wrapper; a build in progress queues behind it.
-- No hot reload. Installing the zip in real MO2 and Vortex is not tested yet.
+- Hot reload exists only with Dev deploy (`docs/dev-mode.md`). Installing the zip in real MO2 and Vortex is not tested yet.

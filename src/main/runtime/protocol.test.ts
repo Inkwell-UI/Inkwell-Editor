@@ -1,12 +1,12 @@
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { parseIni } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
 import { formatDevValue, maskToken, reloadSummary } from '../../shared/devLink'
 import { devIniText, generateToken, normalizeToken, readDevIni, RUNTIME_INI_REL } from './devIni'
 import { freshCore, helloMessage, parseServerMessage, reduce } from './protocol'
-import { resolveDevConfig } from './token'
+import { resolveDevConfig, withDevToken } from './token'
 
 const TOKEN = '0123456789abcdef'.repeat(4)
 const ack = { type: 'helloAck', ok: true, runtimeVersion: 196608, runtimeVersionString: '0.3.0', protocolVersion: 1, specVersion: 6, gameVersion: '1.6.1170', menus: [{ name: 'A', swf: 'a.swf', open: false }] }
@@ -109,5 +109,16 @@ describe('token source order (UX 4.6)', () => {
     expect(await resolveDevConfig({ link: { token: C }, overwriteDir: root(), deployRoot: dep })).toMatchObject({ token: B, source: 'deploy' })
     expect(await resolveDevConfig({ link: { token: C, port: 8800 }, overwriteDir: root(), deployRoot: root() })).toMatchObject({ token: C, source: 'editor', port: 8800 })
     expect(await resolveDevConfig({})).toBeUndefined()
+  })
+})
+
+describe('withDevToken (deploy:menu-nodes --dev)', () => {
+  it('stores a new token under the lower-case project folder and keeps an existing one', () => {
+    const a = withDevToken({ mo2ModsDir: 'X' }, 'C:\Proj\Menu', () => TOKEN)
+    expect(a.token).toBe(TOKEN)
+    expect(a.settings.devLinks?.[resolve('C:\Proj\Menu').toLowerCase()]).toEqual({ token: TOKEN, port: 8788 })
+    expect(a.settings.mo2ModsDir).toBe('X')
+    const b = withDevToken(a.settings, 'C:\Proj\Menu', () => 'f'.repeat(64))
+    expect(b.token).toBe(TOKEN)
   })
 })
