@@ -38,6 +38,7 @@ function fire(): void {
   clearTimeout(timer)
   if (!dirty) return
   dirty = false
+  if (!enabled()) return // the game went away (or Dev deploy was switched off) since the edit
   // let the debounced graph save reach main and start its rebuild; the deploy then waits for that build
   flushGraphSaves()
   setTimeout(() => void hotReload(true), 400)
