@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { isConfirmed, isGameData, packageFileName, planDeploy, resolveTarget, safeJoin, targetList, withConfirmed, type SwfLike } from './plan'
 import { MenuSettings } from '@inkwell-ui/spec'
 import { resolveSettings } from '../settings'
+import { defaultMenuSettings, flatMenuSettings } from '../../shared/menu'
 
 const ROOT = 'C:\\Modding\\MO2\\mods\\My Mod'
 const hud: SwfLike = { name: 'hud', orphaned: false, kind: 'hudWidget' }
@@ -29,6 +30,10 @@ describe('planDeploy', () => {
     ])
     expect(p.notes).toEqual(['Requires Inkwell Runtime 0.3.0 or newer; not included in this deploy.'])
     expect(p.lint.map((l) => l.code)).toEqual(['menu-replacement-skipped'])
+  })
+  it('customMenu with the flat fallback settings: Interface/<menuName>.swf', () => {
+    const p = planDeploy({ ...base, swfs: [{ ...menu, menu: flatMenuSettings('MyMod', 'wheel', defaultMenuSettings()) }] })
+    expect(p.files.map((f) => f.rel)).toEqual(['Interface/MyMod_Wheel.swf', 'SKSE/Plugins/Inkwell/menus/MyMod_Wheel.json', 'SKSE/Plugins/Inkwell/MyMod.ini'])
   })
   it('customMenu: one INI per mod for several menus; a name and swf from menu.json win; a hostile SWF name stays inside', () => {
     const two = planDeploy({ ...base, swfs: [menu, { name: 'list', orphaned: false, kind: 'customMenu', menu: MenuSettings.parse({ specVersion: 6, name: 'MyMod_Custom', swf: 'Interface/Inkwell/MyMod/Elsewhere.swf' }) }] })

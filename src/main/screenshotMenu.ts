@@ -113,7 +113,7 @@ export async function runMenuShots(o: { outDir: string; projectDir: string; win:
   await wait(500)
   await must('[data-testid="tab-menuSettings"]')
   await until('menu settings form', () => has('[data-testid="menu-settings"]'))
-  check('the form shows the stored values: depth 3, hotkey K (37), requires 0.3.0', (await js<string>(`document.querySelector('[data-testid="menu-depth"]').value`)) === '3' && (await js<string>(`document.querySelector('[data-testid="menu-key-code"]').value`)) === '37' && (await text('[data-testid="menu-requires"]')).includes('0.3.0'))
+  check('the form shows the stored values: depth 3, hotkey F8 (66), requires 0.3.0', (await js<string>(`document.querySelector('[data-testid="menu-depth"]').value`)) === '3' && (await js<string>(`document.querySelector('[data-testid="menu-key-code"]').value`)) === '66' && (await text('[data-testid="menu-requires"]')).includes('0.3.0'))
   check('the Gamepad combo is disabled with its reason', (await js<string>(`document.querySelector('[data-testid="menu-gamepad"]').getAttribute('aria-disabled') + '|' + document.querySelector('[data-testid="menu-gamepad"]').title`)).includes('planned 0.5'))
   await snap('m4-menu-panel-layout')
   await setValue('[data-testid="menu-depth"]', '6')

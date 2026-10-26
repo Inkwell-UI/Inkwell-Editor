@@ -9,7 +9,7 @@
   "inputContext": "menuMode",
   "specVersion": 6,
   "triggers": {
-    "hotkey": 37,
+    "hotkey": 66,
     "modEvent": "InkwellMenuTest_Open",
     "papyrus": true
   },

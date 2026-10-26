@@ -1,7 +1,7 @@
 // Names, MenuDef, default INI and the menu lint codes (S1, S2, S9), pure.
 import { MenuDef, MenuSettings, parseIni, findMenuIni, resolveMenu, MENU_SLOTS, MENU_WARN_THRESHOLD, RUNTIME_LINT_CODES } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
-import { buildMenuDef, defaultMenuSettings, menuLint, menuSwfName, menuSwfPath, minRuntimeOf, modIniText, resolveMenuNames, type MenuSource } from './menu'
+import { buildMenuDef, defaultMenuSettings, flatMenuSettings, menuLint, menuSwfName, menuSwfPath, minRuntimeOf, modIniText, resolveMenuNames, type MenuSource } from './menu'
 
 const src = (swf: string, over: Record<string, unknown> = {}): MenuSource => ({ swf, settings: MenuSettings.parse({ specVersion: 6, ...over }) })
 
@@ -16,6 +16,16 @@ describe('names', () => {
     expect(menuSwfName('3d view')).toBe('M3d_view')
     expect(menuSwfName('..')).toBe('M__')
     expect(menuSwfName('a/b')).toBe('A_b')
+  })
+})
+
+describe('flat layout (O2 fallback)', () => {
+  it('flatMenuSettings puts the SWF at Interface/<menuName>.swf, in the MenuDef too; the default stays the sub-path', () => {
+    const m = src('menu')
+    const flat = { ...m, settings: flatMenuSettings('MyMod', 'menu', m.settings) }
+    expect(resolveMenuNames('MyMod', flat).swf).toBe('Interface/MyMod_Menu.swf')
+    expect(buildMenuDef('MyMod', flat).def?.swf).toBe('Interface/MyMod_Menu.swf')
+    expect(buildMenuDef('MyMod', m).def?.swf).toBe('Interface/Inkwell/MyMod/Menu.swf')
   })
 })
 

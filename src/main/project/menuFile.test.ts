@@ -69,7 +69,7 @@ describe('menu.json', () => {
   it('loadProject carries it; a project save writes it back unchanged, and never overwrites a file it could not read', async () => {
     const dir = scratch()
     const p = await loadProject(dir)
-    expect(p.swfs['menu']!.menu).toMatchObject({ triggers: { hotkey: 37, modEvent: 'InkwellMenuTest_Open' } })
+    expect(p.swfs['menu']!.menu).toMatchObject({ triggers: { hotkey: 66, modEvent: 'InkwellMenuTest_Open' } })
     const bytes = readFileSync(join(dir, 'swfs', 'menu', 'menu.json'), 'utf8')
     await saveProject(dir, p)
     expect(readFileSync(join(dir, 'swfs', 'menu', 'menu.json'), 'utf8')).toBe(bytes)

@@ -8,6 +8,8 @@ import type { DeployLintItem } from './deploy'
 
 /** O2 (owner decision 2026-10-26, unverified in game): where a menu SWF goes. THE one place to change if the engine refuses a sub-path; the fallback is `Interface/<modId>_<Swf>.swf`. */
 export const menuSwfPath = (modId: string, swfFile: string): string => `Interface/Inkwell/${modId}/${swfFile}.swf`
+/** The O2 fallback layout (S9): the menu SWF flat under `Interface/` as `<menuName>.swf`. Returns the settings with `swf` set so the planner, the gate and the JSON all see it (the deploy script's `--flat`). */
+export const flatMenuSettings = (modId: string, swfFolder: string, s: MenuSettings): MenuSettings => ({ ...s, swf: `Interface/${resolveMenuNames(modId, { swf: swfFolder, settings: s }).name}.swf` })
 export const MENU_JSON_DIR = 'SKSE/Plugins/Inkwell/menus'
 export const MOD_INI_DIR = 'SKSE/Plugins/Inkwell'
 export const menuJsonPath = (menuName: string): string => `${MENU_JSON_DIR}/${menuName}.json`

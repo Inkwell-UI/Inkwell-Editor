@@ -73,7 +73,7 @@ Only the preview SWF (`preview: true`) gets `_root.inkwell` (`previewMenuBridge`
 
 ## Sample
 
-`samples/menu-slice`: a customMenu SWF `menu` (title, button `btn`, status text `status`), menu.json (K hotkey, mod event `InkwellMenuTest_Open`, modal, cursor, pauses), graph `On Click(btn) -> Set Text(status, "Button clicked!") -> Log`. Mod id `InkwellMenuTest` (the Phase 4 mod folder name `Inkwell Menu Test`). Fonts are the alias fonts (`Everywhere / Medium`); no binaries.
+`samples/menu-slice`: a customMenu SWF `menu` (title, button `btn`, status text `status`), menu.json (F8 hotkey = scan code 66, opens the menu without console or Papyrus; mod event `InkwellMenuTest_Open`, modal, cursor, pauses), graph `On Click(btn) -> Set Text(status, "Button clicked!") -> Log`. Mod id `InkwellMenuTest` (the Phase 4 mod folder name `Inkwell Menu Test`). Fonts are the alias fonts (`Everywhere / Medium`); no binaries.
 
 ## Tests and drivers
 
@@ -85,3 +85,7 @@ Only the preview SWF (`preview: true`) gets `_root.inkwell` (`previewMenuBridge`
 ## Not done here (later phases, S-numbers)
 
 Papyrus runtime check ESP (S3, Phase 7); dev stream, `dumpVariables`, `watch`/`pin` emission and Dev deploy (S6, Phase 6); saved variable codegen (S5), list component and the Game bridge / runtime event nodes (S8, Phase 5); the preview's UI Scale control (S9, Phase 7); menu.json in the SWF's undo history; renaming a Figma frame moves its folder in the build pipeline without carrying menu.json along (the pipeline's rename path only keeps ir.json and overlay.json; not checked for graph files).
+
+## Deploying the slice for an in-game test
+
+`yarn deploy:menu-slice` builds `samples/menu-slice` and deploys it through the real planner/gate into `C:\Modding\MO2\mods\Inkwell Menu Test` (only a `...\mods\<name>` folder; `--to <folder>` or `INKWELL_MENU_DEPLOY` overrides), then copies the runtime to `SKSE\Plugins\Inkwell.dll` (`--dll` or `INKWELL_RUNTIME_DLL`, default `D:\Mods\Inkwell\Inkwell-Runtime\build\Release\Inkwell.dll`; refused when missing; a deploy artefact, not tracked by the manifest, never committed). `-- --flat` deploys the O2 fallback layout `Interface\<MenuName>.swf` (`flatMenuSettings` sets the JSON `swf`; the default stays the sub-path); use a separate folder (`--to ...\Inkwell Menu Test Flat`) and enable only one of the two.
