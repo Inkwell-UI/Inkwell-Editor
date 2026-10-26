@@ -53,7 +53,7 @@ describe('prepareDeploy guards', () => {
     expect(readFileSync(join(i.root, 'Interface', 'Inkwell', 'M', 'Wheel.swf'), 'utf8')).toBe('FWS-mine')
     // the JSON is the Spec's MenuDef: validated, the effective input context written out, no author-only keys
     expect(JSON.parse(readFileSync(join(i.root, 'SKSE', 'Plugins', 'Inkwell', 'menus', 'M_Wheel.json'), 'utf8'))).toEqual({
-      specVersion: 6, name: 'M_Wheel', swf: 'Interface/Inkwell/M/Wheel.swf', minRuntime: '0.3.0',
+      specVersion: 7, name: 'M_Wheel', swf: 'Interface/Inkwell/M/Wheel.swf', minRuntime: '0.3.0',
       flags: { pausesGame: true, cursor: true, modal: true, closeOnEscape: true }, inputContext: 'menuMode', depth: 3, triggers: { hotkey: 37, papyrus: true, modEvent: 'M_Open' }
     })
     const iniPath = join(i.root, 'SKSE', 'Plugins', 'Inkwell', 'M.ini')

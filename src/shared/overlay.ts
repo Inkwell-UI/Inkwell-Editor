@@ -70,6 +70,8 @@ export interface NodeOverlayPatch {
   dataBinding?: string | null
   /** `list` settings of a role-`list` frame (S8): item template layer and row spacing. */
   list?: { itemTemplate?: string; spacing?: number } | null
+  /** Translation key of a text layer (V2.1): `$` + letters, digits, `_`. */
+  locKey?: string | null
 }
 
 /** Immutable edit of one node's overlay entry. Unknown keys of the entry and of the document survive; an entry left empty is removed. */
@@ -100,6 +102,8 @@ export function overlayProblems(doc: unknown): string[] {
       if (name !== undefined && (typeof name !== 'string' || instanceNameError(name))) out.push(`overlay.nodes.${id}.instanceName: not a valid identifier`)
       const role = (n as Record<string, unknown>)['role']
       if (role !== undefined && typeof role !== 'string') out.push(`overlay.nodes.${id}.role: not a string`)
+      const locKey = (n as Record<string, unknown>)['locKey']
+      if (locKey !== undefined && (typeof locKey !== 'string' || !/^\$[A-Za-z0-9_]{1,96}$/.test(locKey))) out.push(`overlay.nodes.${id}.locKey: must be $ followed by letters, digits or _ (at most 96)`)
       const scripts = (n as Record<string, unknown>)['scripts']
       if (scripts !== undefined && !(Array.isArray(scripts) && scripts.every((x) => typeof x === 'string'))) out.push(`overlay.nodes.${id}.scripts: not a list of graph ids`)
       const key = (n as Record<string, unknown>)['debugHotkey']
@@ -108,6 +112,11 @@ export function overlayProblems(doc: unknown): string[] {
     }
   }
   return out
+}
+
+/** Translation keys (V2.1) of the overlay nodes that have one, by Figma layer id; keys of the wrong shape are still returned (the lint reports them, the compiler only passes them on). */
+export function locKeysOf(nodes: Record<string, { locKey?: unknown }>): Record<string, string> {
+  return Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (typeof o.locKey === 'string' && o.locKey ? [[id, o.locKey]] : [])))
 }
 
 /** `list` settings (S8) of the overlay nodes that have them, by Figma layer id: item template layer and row spacing; malformed members are ignored. */

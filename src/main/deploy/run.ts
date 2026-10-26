@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { imageHashes, type Graph, type MenuSettings, type Swf } from '@inkwell-ui/spec'
+import { entriesFor, imageHashes, writeTranslationFile, type Graph, type Localization, type MenuSettings, type Swf } from '@inkwell-ui/spec'
 import { buildMenuDef, defaultMenuSettings, menuJsonPath, menuLint, modIniPath, modIniText, resolveMenuNames, type MenuSource } from '../../shared/menu'
 import { stableStringify } from '../project'
 import type { CodegenPacks } from '../codegen/packs'
@@ -14,7 +14,8 @@ import { isUnmodifiedVanilla } from '../vanilla/cache'
 import { compileWidget, type WidgetOptions } from '../widget/compileWidget'
 import { compileRuntimeCheck } from '../runtime/runtimeCheck'
 import { devIniText, devReloadPaths, RUNTIME_INI_REL } from '../runtime/devIni'
-import { planDeploy, projectMinRuntime, safeJoin, type DeployPlan, type SwfLike } from './plan'
+import { localizationLint } from '../lint/localization'
+import { planDeploy, projectMinRuntime, safeJoin, translationFilePath, type DeployPlan, type SwfLike } from './plan'
 import { readManifest, staleFiles, writeDeploy } from './write'
 
 export interface DeploySwf extends SwfLike {
@@ -61,6 +62,8 @@ export interface DeployInput {
    * Never set for a package or Vortex zip.
    */
   dev?: { token: string; port: number }
+  /** The project's `localization.json` (V2.3): its languages become `Interface/Translations/<modId>_<LANGUAGE>.txt`, and the loc lint reads it. Absent = no translations. */
+  localization?: Localization
   /** Package Mod / Vortex zip: a custom-menu mod without its runtime check is an ERROR (`runtime-check-missing`, O4); a folder deploy only warns. */
   package?: boolean
 }
@@ -68,7 +71,8 @@ export interface DeployInput {
 /** Runtime features a menu SWF uses: they raise its `minRuntime` (`RUNTIME_FEATURE_SINCE`). */
 const menuFeatures = (s: DeploySwf): string[] => [
   ...(s.graphs?.some((g) => g.variables?.some((v) => v.scope === 'saved')) ? ['savedVariables'] : []),
-  ...(Object.values(s.overlay ?? {}).some((o) => o['role'] === 'list') ? ['list'] : [])
+  ...(Object.values(s.overlay ?? {}).some((o) => o['role'] === 'list') ? ['list'] : []),
+  ...(Object.entries(s.overlay ?? {}).some(([id, o]) => typeof o['locKey'] === 'string' && o['locKey'] && s.ir.nodes[id]?.type === 'text') ? ['translation'] : [])
 ]
 
 /** Why a menu mod has no runtime check and what to do (S3 rule 5). */
@@ -101,7 +105,7 @@ const notReady = (s: DeploySwf, buildDir: string): string =>
 export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome> {
   // a customMenu SWF's runtime features raise its minRuntime (menu JSON, runtime check, dialog); everything below reads this list
   const i: DeployInput = { ...input, swfs: input.swfs.map((s) => (s.kind === 'customMenu' ? { ...s, features: menuFeatures(s) } : s)) }
-  const plan = planDeploy({ modId: i.modId, swfs: i.swfs, root: i.root, gameDirs: i.gameDirs, hasPapyrus: !!i.papyrusExe, ...(i.only ? { only: i.only } : {}), ...(i.dev ? { dev: true } : {}) })
+  const plan = planDeploy({ modId: i.modId, swfs: i.swfs, root: i.root, gameDirs: i.gameDirs, hasPapyrus: !!i.papyrusExe, ...(i.only ? { only: i.only } : {}), ...(i.dev ? { dev: true } : {}), ...(i.localization ? { translationLanguages: i.localization.languages } : {}) })
   if (plan.errors.length) return { ok: false, error: plan.errors.join(' '), lint: plan.lint }
   const timer = createStageTimer()
   const lint: DeployLintItem[] = [...plan.lint]
@@ -114,6 +118,8 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
   const menuSources: MenuSource[] = i.swfs.filter((x) => !x.orphaned && x.kind === 'customMenu').map((x) => ({ swf: x.name, settings: x.menu ?? defaultMenuSettings(), ...(x.features ? { features: x.features } : {}) }))
   const menuRows = menuLint(i.modId, menuSources)
   if (i.swfs.some((x) => x.kind === 'customMenu' && !x.orphaned && (!i.only || x.name === i.only))) issues.push(...menuRows.filter((r) => !r.swf)) // project-level rows (menu-limit)
+  const locIssues = localizationLint(i.swfs.filter((x) => !x.orphaned && (!i.only || x.name === i.only)).map((x) => ({ name: x.name, kind: x.kind, ir: x.ir, ...(x.overlay ? { overlay: x.overlay as Record<string, Record<string, unknown>> } : {}) })), i.localization)
+  issues.push(...locIssues)
   timer.start('compile')
   try {
     for (const s of i.swfs.filter((x) => !x.orphaned && (!i.only || x.name === i.only))) {
@@ -179,6 +185,13 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
   } finally {
     timer.end('compile')
   }
+  // V13.2: the translation files; a language without a text for a key carries the source language's text (the player never sees a raw key)
+  if (i.localization && !issues.some((l) => l.severity === 'error'))
+    for (const lang of i.localization.languages) {
+      const rel = translationFilePath(i.modId, lang)
+      const f = plan.files.find((p) => p.rel === rel)
+      if (f && allowed.has(rel)) files.set(rel, { data: Buffer.from(writeTranslationFile(entriesFor(i.localization, lang).entries)), swf: f.swf })
+    }
   if (i.dev && plan.files.some((f) => f.rel === RUNTIME_INI_REL) && !issues.some((l) => l.severity === 'error')) {
     // merged into the file that is there (LogLevel, Watch and the like survive); the token is the editor's, so a stale or runtime-made one is replaced
     const existing = await readFile(safeJoin(i.root, RUNTIME_INI_REL), 'utf8').catch(() => undefined)

@@ -1,11 +1,12 @@
 import { compareVersions, FIRST_RUNTIME_VERSION } from '@inkwell-ui/spec'
 
 // The lowest Inkwell Runtime a custom menu needs (SPEC-CHANGES S3 rule 1): the highest `since` of the runtime features it uses. Every 0.3 feature is in the
-// first runtime, so today the answer is always 0.3.0; a later runtime feature gets a row here with its own version.
+// first runtime; `translation` needs 0.4.0. A later runtime feature gets a row here with its own version.
 export const RUNTIME_FEATURE_SINCE = {
   menu: FIRST_RUNTIME_VERSION, // the menu glue, On Open/Close/Click/Focus/Input/Mod Event nodes, Game bridge nodes, UI scale and offset
   savedVariables: FIRST_RUNTIME_VERSION,
-  list: FIRST_RUNTIME_VERSION
+  list: FIRST_RUNTIME_VERSION,
+  translation: '0.4.0' // `inkwell.translate` / `inkwell.language` and the translation files the runtime reads itself (SPEC-CHANGES V13.2)
 } as const
 export type RuntimeFeature = keyof typeof RUNTIME_FEATURE_SINCE
 

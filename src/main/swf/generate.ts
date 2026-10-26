@@ -23,6 +23,8 @@ export interface GenerateOptions {
   bindings?: Record<string, string>
   /** Overlay `role` by Figma layer id. A customMenu SWF makes its `button` and `list` layers focusable, and the preview's Play panel can click the `button` ones. */
   roles?: Record<string, string>
+  /** Overlay `locKey` by Figma layer id (V2): a keyed text of a custom menu is translated at start by `inkwell.translate(key)`; the compiled text stays the source language. */
+  locKeys?: Record<string, string>
   /** Overlay `list` settings (S8: item template layer, row spacing) by Figma layer id, for layers whose role is `list`. */
   lists?: Record<string, { itemTemplate?: string; spacing?: number }>
   /** Mod id: AS2 classes live under `mods.<modId>.*`. */
@@ -75,6 +77,8 @@ export interface Generated {
   ddsImages: number
   /** Widget only: the compiled settable text fields in layer order (`name` = instance name, `path` relative to the `widget` clip). */
   settableTexts: SettableText[]
+  /** Custom menu: the keyed text layers (`path` from the base clip) the menu class translates at start (V13.2). Empty for widgets and without keys. */
+  translatedTexts: { nodeId: string; path: string; key: string }[]
   /** The generated graph classes with their source maps (empty without graphs). */
   graphClasses: GraphClass[]
   /** On Widget Call signatures of all graphs: the Papyrus API of a widget. */
@@ -134,7 +138,7 @@ const PREVIEW_BRIDGE = [
  */
 const previewMenuBridge = (menuName: string, menuClass: string, paths: Record<string, string>, attach: readonly string[]): string[] => [
   `_root.inkwell = {`,
-  `    ready: true, version: ${packVersion(FIRST_RUNTIME_VERSION)}, menu: ${JSON.stringify(menuName)}, uiScale: 1, offsetX: 0, offsetY: 0, theme: "", saved: {}, depth: 0, reopens: 0,`,
+  `    ready: true, version: ${packVersion(FIRST_RUNTIME_VERSION)}, menu: ${JSON.stringify(menuName)}, uiScale: 1, offsetX: 0, offsetY: 0, theme: "", language: "", saved: {}, depth: 0, reopens: 0,`,
   '    log: function(level, nodeId, text) { trace("[Inkwell] " + level + " " + nodeId + ": " + text); },',
   '    glueReady: function() { _root.inkwellMenu.onOpen(); },',
   // mock: nothing leaves the movie. A mod event sent by the menu comes back to it (the real runtime does this only if it also sinks the event: unverified)
@@ -157,6 +161,8 @@ const previewMenuBridge = (menuName: string, menuClass: string, paths: Record<st
   '    playSound: function(id) { _root.inkwell.log("info", "", "mock playSound " + id); return id != ""; },',
   '    getSetting: function(section, key, d) { var v = _global.Inkwell.mock["setting." + section + "." + key]; return v == undefined ? d : String(v); },',
   '    getInputDevice: function() { return _global.Inkwell.mock["inputDevice"] == "gamepad" ? "gamepad" : "keyboardMouse"; },',
+  // mock data key "tr.<$KEY>" answers translate (the Locale control of the stage toolbar fills them); no entry = the key itself, like the runtime
+  '    translate: function(key) { var v = _global.Inkwell.mock["tr." + key]; return v == undefined ? key : String(v); },',
   '    getSaved: function(name, d) { var v = _root.inkwell.saved[name]; return v == undefined ? d : v; }, setSaved: function(name, v) { _root.inkwell.saved[name] = v; },',
   '    watch: function(g, n, sc, v) { }, pin: function(n, p, v) { }',
   '};',
@@ -371,6 +377,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   const bitmaps = new Map<string, number>() // hash -> DefineBitsLossless2 id (one per image, shared)
   const loads: ImageLoad[] = []
   const settable: SettableText[] = []
+  const keyed: { nodeId: string; here: string; key: string }[] = []
   const layerPaths = new Map<string, string>() // figma node id -> clip path from _root (graph targets)
   const listInfos: ListInfo[] = [] // frames with overlay role `list` (S8)
 
@@ -545,6 +552,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
         const r = (rot * Math.PI) / 180
         const { x: gx, y: gy } = m.text.gutter
         out.push(T.placeObject2({ ...base, charId: id, x: x + gx * Math.cos(r) - gy * Math.sin(r), y: y + gx * Math.sin(r) + gy * Math.cos(r) }))
+        if (opts.locKeys?.[cid]) keyed.push({ nodeId: cid, here, key: opts.locKeys[cid]! })
         if (Object.keys(m.text.script).length) scripts.push({ nodeId: cid, layer: n.name, path: here, script: m.text.script, ...(opts.preview && n.sizing === 'fixed' && m.text.script.verticalAlign ? { previewBoxH: n.transform.height } : {}) })
         if (opts.widget && !opts.preview && opts.settableTexts?.has(cid) && here.startsWith('root.widget.')) {
           // Papyrus is case-insensitive: the instance name becomes a parameter name, so it must be unique ignoring case
@@ -660,11 +668,12 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     addClass(c.cls, c.source)
     if (!menu) frameCode.push(`${baseExpr}.inkwellGraph${k} = new mods.${mod}.${c.cls}(${baseExpr});`, `${baseExpr}.inkwellGraph${k}.init();`)
   })
+  const translatedTexts = menu ? keyed.flatMap((k) => (k.here.startsWith('root.') ? [{ nodeId: k.nodeId, path: k.here.slice('root.'.length), key: k.key }] : [])) : []
   if (menu) {
     // the menu class creates and init()s the graphs once the runtime bridge is ready (S7); the runtime waits for its glueReady()
     const pathOf = (id: string): string | undefined => (layerPaths.get(id)?.startsWith('root.') ? layerPaths.get(id)!.slice('root.'.length) : undefined)
     const byRole = (...r: string[]): string[] => Object.entries(opts.roles ?? {}).filter(([, role]) => r.includes(role)).flatMap(([id]) => pathOf(id) ?? [])
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
       frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, listInfos.map((l) => listAttachCode(mod, l, '_root'))))
@@ -684,7 +693,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     T.endTag()
   ]
   const embeddedFonts = [...embedded].map(([name, e]) => ({ charId: e.charId, name, chars: [...e.chars].join('') }))
-  return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, graphClasses: gen?.classes ?? [], graphCalls }
+  return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls }
 }
 
 /** `node-off-stage`: a visible layer whose box lies entirely outside the frame (the stage), so it never shows. One warning per subtree. */

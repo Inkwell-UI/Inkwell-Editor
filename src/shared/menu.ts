@@ -34,6 +34,9 @@ export interface MenuSource {
   features?: readonly string[]
 }
 
+/** The mod name of the translation files (V13.2): set in the menu JSON when the SWF has translated text. */
+export const menuTranslations = (modId: string, m: MenuSource): string | undefined => (m.features?.includes('translation') ? modId : undefined)
+
 /** Engine menu name (S1): the author's `name`, else `<modId>_<SwfName>`; and the SWF path, the author's `swf`, else the O2 path. */
 export function resolveMenuNames(modId: string, m: MenuSource): { name: string; swf: string; file: string } {
   const file = menuSwfName(m.swf)
@@ -59,7 +62,8 @@ export function buildMenuDef(modId: string, m: MenuSource): { def: MenuDef; prob
   if (problems.length) return { problems }
   // userDefaults and the author-only keys never reach the deployed JSON; unknown keys of the source are not part of the runtime's file either
   const parsed = MenuDef.safeParse({
-    specVersion: SPEC_VERSION, name: r.name, swf: r.swf, minRuntime: minRuntimeOf(m), flags: s.flags, inputContext: effectiveInputContext(s), depth: s.depth, triggers: s.triggers
+    specVersion: SPEC_VERSION, name: r.name, swf: r.swf, minRuntime: minRuntimeOf(m), flags: s.flags, inputContext: effectiveInputContext(s), depth: s.depth, triggers: s.triggers,
+    ...(menuTranslations(modId, m) ? { translations: menuTranslations(modId, m) } : {})
   })
   if (!parsed.success) return { problems: parsed.error.issues.map((i) => ({ code: i.path[0] === 'swf' ? 'menu-swf-invalid' : 'menu-invalid', message: `${i.path.join('.') || 'menu'}: ${i.message}` })) }
   return { def: parsed.data, problems: [] }

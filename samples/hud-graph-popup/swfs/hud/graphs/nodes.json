@@ -689,7 +689,7 @@
     }
   ],
   "scope": "component",
-  "specVersion": 6,
+  "specVersion": 7,
   "variables": [
     {
       "default": "",

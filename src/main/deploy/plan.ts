@@ -95,6 +95,9 @@ export interface DeployPlan {
   widgets: Record<string, string>
 }
 
+/** `Interface/Translations/<modId>_<LANGUAGE>.txt` (V3). */
+export const translationFilePath = (modId: string, language: string): string => `Interface/Translations/${modId}_${language}.txt`
+
 /** The deploy dialog's line for menu mods (UX 5.1, S3 rule 6). */
 export const RUNTIME_NOTE = 'Requires Inkwell Runtime'
 /** The deploy dialog's line for a Dev deploy. */
@@ -115,7 +118,7 @@ const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
  * customMenu -> Interface/Inkwell/<modId>/<Swf>.swf (O2, `menuSwfPath`), SKSE/Plugins/Inkwell/menus/<menu>.json, and once per mod the commented default
  * SKSE/Plugins/Inkwell/<modId>.ini (created if absent, never overwritten; docs/menus.md) and the runtime check (`<modId>_RuntimeCheck.esp`, Scripts/*.pex, Source/Scripts/*.psc; needs the Papyrus compiler); menuReplacement is not deployed.
  */
-export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; gameDirs: string[]; hasPapyrus: boolean; only?: string; dev?: boolean }): DeployPlan {
+export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; gameDirs: string[]; hasPapyrus: boolean; only?: string; dev?: boolean; translationLanguages?: readonly string[] }): DeployPlan {
   const plan: DeployPlan = { root: o.root, files: [], lint: [], notes: [], errors: [], widgets: {} }
   if (!isAbsolute(o.root)) plan.errors.push(`The target folder "${o.root}" is not an absolute path.`)
   if (isGameData(o.root, o.gameDirs)) plan.errors.push(`Refusing to deploy into the game's Data folder (${o.root}). Deploy to an MO2 mod folder or the overwrite folder; MO2's virtual file system puts the files in the game.`)
@@ -125,6 +128,7 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
   let espDone = false
   let iniDone = false
   let checkDone = false
+  let translationsDone = false
   for (const s of swfs) {
     const add = (rel: string): void => void plan.files.push({ rel, swf: s.name })
     if (s.kind === 'hudWidget') {
@@ -152,6 +156,11 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
       if (MENU_NAME.test(m.name) && !RESERVED_WINDOWS_NAME.test(m.name) && !plan.files.some((f) => f.rel.toLowerCase() === menuJsonPath(m.name).toLowerCase())) add(menuJsonPath(m.name))
       if (o.dev && MENU_NAME.test(m.name)) devReloadPaths(m.name).forEach(add)
       if (!iniDone) add(modIniPath(o.modId)), (iniDone = true)
+      // V13.2: one translation file per project language, next to the first menu that has keyed text (the runtime reads them itself)
+      if (!translationsDone && s.features?.includes('translation')) {
+        translationsDone = true
+        for (const l of o.translationLanguages ?? []) add(translationFilePath(o.modId, l))
+      }
       if (!plan.notes.some((n) => n.startsWith(RUNTIME_NOTE))) plan.notes.push(runtimeNoteText(projectMinRuntime(o.swfs)))
       if (!checkDone) {
         // the runtime check (S3, O4): one master-less plugin per mod, next to the first menu; it needs the Papyrus compiler

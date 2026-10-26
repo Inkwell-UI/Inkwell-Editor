@@ -231,7 +231,7 @@ class mods.MyMod.WheelMenu {
     }
     function stub() {
         var noop = function() {};
-        return { ready: false, version: 0, menu: "", uiScale: 1, offsetX: 0, offsetY: 0, theme: "", log: noop, glueReady: noop, openMenu: function() { return false; }, closeMenu: function() { return false; }, sendModEvent: noop, callRuntime: function() { return ""; }, playSound: function() { return false; }, getSetting: function(section, key, defaultValue) { return defaultValue; }, getInputDevice: function() { return "keyboardMouse"; }, getSaved: function(name, defaultValue) { return defaultValue; }, setSaved: noop, watch: noop, pin: noop };
+        return { ready: false, version: 0, menu: "", uiScale: 1, offsetX: 0, offsetY: 0, theme: "", language: "", log: noop, glueReady: noop, openMenu: function() { return false; }, closeMenu: function() { return false; }, sendModEvent: noop, callRuntime: function() { return ""; }, playSound: function() { return false; }, getSetting: function(section, key, defaultValue) { return defaultValue; }, getInputDevice: function() { return "keyboardMouse"; }, translate: function(key) { return key; }, getSaved: function(name, defaultValue) { return defaultValue; }, setSaved: noop, watch: noop, pin: noop };
     }
     function begin(bridge) {
         this.bridge = bridge;
