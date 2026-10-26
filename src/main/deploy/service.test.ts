@@ -65,7 +65,7 @@ describe('deploy service export gate', () => {
     const { svc, root } = setup([warn], true)
     const p = await svc.prepare('mo2Mod', 'all')
     if (!p.ok) throw new Error(p.error)
-    expect(p.gate).toMatchObject({ ok: false, strict: true, blocking: [{ code: 'font-fallback', severity: 'error' }] })
+    expect(p.gate).toMatchObject({ ok: false, strict: true, blocking: expect.arrayContaining([expect.objectContaining({ code: 'font-fallback', severity: 'error' })]) }) // Strict Mode also blocks the fixture's runtime-check-missing warning
     expect((await svc.commit(p.token)).ok).toBe(false)
     expect(existsSync(root)).toBe(false)
   })

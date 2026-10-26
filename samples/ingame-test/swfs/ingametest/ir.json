@@ -102,7 +102,19 @@
         "1:92",
         "1:93",
         "1:96",
-        "1:97"
+        "1:97",
+        "1:98",
+        "1:99",
+        "1:101",
+        "1:102",
+        "1:103",
+        "1:105",
+        "1:106",
+        "1:107",
+        "1:109",
+        "1:110",
+        "1:111",
+        "1:112"
       ],
       "transform": {
         "x": 0,
@@ -5146,6 +5158,727 @@
         {
           "start": 0,
           "end": 24,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:98": {
+      "id": "1:98",
+      "name": "H L",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 500,
+        "y": 830,
+        "width": 594,
+        "height": 23,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "L  frames: solid fill | clip content | translucent fill",
+      "runs": [
+        {
+          "start": 0,
+          "end": 55,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereBoldFont"
+          },
+          "size": 18,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8235294117647058,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:99": {
+      "id": "1:99",
+      "name": "L1",
+      "parent": "1:1",
+      "children": [
+        "1:100"
+      ],
+      "transform": {
+        "x": 500,
+        "y": 866,
+        "width": 200,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "frame",
+      "clipContent": false,
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.16862745098039217,
+            "g": 0.2901960784313726,
+            "b": 0.47843137254901963
+          }
+        }
+      ]
+    },
+    "1:100": {
+      "id": "1:100",
+      "name": "l1 text",
+      "parent": "1:99",
+      "children": [],
+      "transform": {
+        "x": 14,
+        "y": 18,
+        "width": 144,
+        "height": 30,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "Frame fill",
+      "runs": [
+        {
+          "start": 0,
+          "end": 10,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 24,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 1,
+              "g": 0.8823529411764706,
+              "b": 0.2901960784313726
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:101": {
+      "id": "1:101",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 720,
+        "y": 876,
+        "width": 425,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "L1 frame with a solid blue fill and a text child: blue box,",
+      "runs": [
+        {
+          "start": 0,
+          "end": 59,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:102": {
+      "id": "1:102",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 720,
+        "y": 892,
+        "width": 188,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "yellow text readable on it",
+      "runs": [
+        {
+          "start": 0,
+          "end": 26,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:103": {
+      "id": "1:103",
+      "name": "L2",
+      "parent": "1:1",
+      "children": [
+        "1:104"
+      ],
+      "transform": {
+        "x": 500,
+        "y": 946,
+        "width": 120,
+        "height": 50,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "frame",
+      "clipContent": true,
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.1803921568627451,
+            "g": 0.4196078431372549,
+            "b": 0.30980392156862746
+          }
+        }
+      ]
+    },
+    "1:104": {
+      "id": "1:104",
+      "name": "l2 over",
+      "parent": "1:103",
+      "children": [],
+      "transform": {
+        "x": -40,
+        "y": -20,
+        "width": 200,
+        "height": 90,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 90
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 90
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.8784313725490196,
+            "g": 0.22745098039215686,
+            "b": 0.22745098039215686
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:105": {
+      "id": "1:105",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 720,
+        "y": 950,
+        "width": 432,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "L2 clipContent on: a green 120x50 box with the red rectangle",
+      "runs": [
+        {
+          "start": 0,
+          "end": 60,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:106": {
+      "id": "1:106",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 720,
+        "y": 966,
+        "width": 339,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "cut at its edges (no red outside the green box)",
+      "runs": [
+        {
+          "start": 0,
+          "end": 47,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:107": {
+      "id": "1:107",
+      "name": "L3",
+      "parent": "1:1",
+      "children": [
+        "1:108"
+      ],
+      "transform": {
+        "x": 500,
+        "y": 1010,
+        "width": 120,
+        "height": 50,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "frame",
+      "clipContent": false,
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.1803921568627451,
+            "g": 0.4196078431372549,
+            "b": 0.30980392156862746
+          }
+        }
+      ]
+    },
+    "1:108": {
+      "id": "1:108",
+      "name": "l3 over",
+      "parent": "1:107",
+      "children": [],
+      "transform": {
+        "x": -40,
+        "y": -20,
+        "width": 200,
+        "height": 90,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 200,
+            "y": 90
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 90
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.8784313725490196,
+            "g": 0.22745098039215686,
+            "b": 0.22745098039215686
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:109": {
+      "id": "1:109",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 720,
+        "y": 1020,
+        "width": 490,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "L3 clipContent off (control): the red rectangle sticks out all round",
+      "runs": [
+        {
+          "start": 0,
+          "end": 68,
+          "font": {
+            "kind": "alias",
+            "name": "$EverywhereFont"
+          },
+          "size": 12,
+          "fill": {
+            "type": "solid",
+            "color": {
+              "r": 0.6666666666666666,
+              "g": 0.6901960784313725,
+              "b": 0.7372549019607844
+            }
+          }
+        }
+      ],
+      "sizing": "autoWidth",
+      "align": "left",
+      "verticalAlign": "top",
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "textFit": "none",
+      "truncate": false
+    },
+    "1:110": {
+      "id": "1:110",
+      "name": "l4 bar",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 880,
+        "y": 946,
+        "width": 80,
+        "height": 60,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "shape",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 80,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 80,
+            "y": 60
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 60
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.9490196078431372,
+            "g": 0.9490196078431372,
+            "b": 0.9490196078431372
+          }
+        }
+      ],
+      "strokes": []
+    },
+    "1:111": {
+      "id": "1:111",
+      "name": "L4",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 860,
+        "y": 940,
+        "width": 120,
+        "height": 50,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "frame",
+      "clipContent": false,
+      "fills": [
+        {
+          "type": "solid",
+          "color": {
+            "r": 0.8784313725490196,
+            "g": 0.22745098039215686,
+            "b": 0.22745098039215686
+          },
+          "opacity": 0.5
+        }
+      ]
+    },
+    "1:112": {
+      "id": "1:112",
+      "name": "label",
+      "parent": "1:1",
+      "children": [],
+      "transform": {
+        "x": 1000,
+        "y": 950,
+        "width": 440,
+        "height": 15,
+        "rotation": 0
+      },
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "visible": true,
+      "opacity": 1,
+      "type": "text",
+      "content": "L4 50% red frame fill over a white bar: the bar shows through",
+      "runs": [
+        {
+          "start": 0,
+          "end": 61,
           "font": {
             "kind": "alias",
             "name": "$EverywhereFont"
