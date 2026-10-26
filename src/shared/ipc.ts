@@ -1,3 +1,4 @@
+import type { DevEvent, DevReloadResult, DevState } from './devLink'
 import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, PrepareResult } from './deploy'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, PathSettingKey, ResolvedSettings, SetSettingResult, SettingKey } from './doctor'
 import type { FontToolProgress, FontToolResult, FontToolStatus } from './fonts'
@@ -58,7 +59,16 @@ export const IPC = {
   fontsStatus: 'fonts:status',
   fontsInstall: 'fonts:install',
   fontsRemove: 'fonts:remove',
-  fontsProgress: 'fonts:progress'
+  fontsProgress: 'fonts:progress',
+  devGet: 'dev:get',
+  devState: 'dev:state',
+  devEvents: 'dev:events',
+  devConnect: 'dev:connect',
+  devDisconnect: 'dev:disconnect',
+  devToken: 'dev:token',
+  devPort: 'dev:port',
+  devDeploy: 'dev:deploy',
+  devReload: 'dev:reload'
 } as const
 
 export type SaveOverlayResult = { ok: true } | { ok: false; error: string }
@@ -158,4 +168,19 @@ export interface InkwellApi {
   /** Reverses exactly what the manifest lists; never rejects. */
   removeFonts(): Promise<FontToolResult>
   onFontProgress(cb: (p: FontToolProgress) => void): () => void
+
+  /** The game dev connection (docs/dev-mode.md): state (never the token, only `tokenMasked`), the stream of trace/watch/pin events in batches, and the controls. */
+  getDevState(): Promise<DevState>
+  onDevState(cb: (s: DevState) => void): () => void
+  onDevEvents(cb: (e: DevEvent[]) => void): () => void
+  /** Connect (also retries after a refusal) / Disconnect (stops the automatic retries for this session). */
+  devConnect(): Promise<void>
+  devDisconnect(): Promise<void>
+  /** Paste the token of the game's Inkwell.ini (`null` forgets the pasted one). The reason when it is not 64 hex digits. */
+  devSetToken(token: string | null): Promise<{ ok: true } | { ok: false; error: string }>
+  devSetPort(port: number): Promise<{ ok: true } | { ok: false; error: string }>
+  /** The project's Dev deploy toggle (off by default). Turning it on makes the token (once) and builds the dev SWFs. */
+  devSetDeploy(on: boolean): Promise<void>
+  /** Trigger Hot Reload: `menu` absent = every menu. Never rejects. */
+  devReload(menu?: string): Promise<DevReloadResult>
 }

@@ -61,6 +61,18 @@ export function mergeResults(old: CheckResult[] | undefined, fresh: CheckResult[
   return [...merged, ...fresh.filter((r) => !old.some((o) => o.id === r.id))]
 }
 
+/** Per project (key: the project folder, lower case): the dev connection to the game (docs/dev-mode.md). Never in the project, never in git. */
+export interface DevLinkSettings {
+  /** 64 lower-case hex digits: the token the editor generated for this project's Dev deploys (once, then kept). */
+  token?: string
+  /** A token the user pasted (the game's Inkwell.ini was overwritten by MO2, or the runtime made its own); wins over every other source. */
+  pasted?: string
+  /** [Dev] Port the Dev deploy writes and the connection uses; default 8788. */
+  port?: number
+  /** The "Dev deploy" toggle: off by default; Package Mod never includes dev mode whatever this says. */
+  deploy?: boolean
+}
+
 /** Stored settings (`<userData>/settings.json`). Every field is optional; defaults live in `resolveSettings`. */
 export interface StoredSettings extends Partial<Record<SettingKey, string>> {
   /** Project folder (lower case) -> deploy targets the user has confirmed once. */
@@ -69,6 +81,8 @@ export interface StoredSettings extends Partial<Record<SettingKey, string>> {
   doctorSeen?: boolean
   /** SHA-256 (64 hex) of every Figma plugin secret the user approved. Never the secrets; never in a project. */
   figmaPlugins?: string[]
+  /** Project folder (lower case) -> dev connection settings. */
+  devLinks?: Record<string, DevLinkSettings>
 }
 
 export type SettingSource = 'env' | 'settings' | 'default'

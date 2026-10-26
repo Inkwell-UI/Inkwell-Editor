@@ -56,7 +56,7 @@ export interface WriteOutcome {
  * Writes `files` under `root` and retires what the previous manifest lists but this deploy no longer produces. Only files named in the old manifest are ever
  * deleted (and only if still byte-identical to what Inkwell wrote); every path goes through `safeJoin`; the new manifest is written last.
  */
-export async function writeDeploy(o: { root: string; modId: string; files: Map<string, { data: Buffer; swf: string; createOnly?: boolean }>; scope?: Set<string> }): Promise<WriteOutcome> {
+export async function writeDeploy(o: { root: string; modId: string; files: Map<string, { data: Buffer; swf: string; createOnly?: boolean; untracked?: boolean }>; scope?: Set<string> }): Promise<WriteOutcome> {
   const out: WriteOutcome = { written: [], unchanged: [], removed: [], kept: [], preserved: [] }
   const old = await readManifest(o.root)
   for (const rel of o.files.keys()) safeJoin(o.root, rel) // validate everything before the first write
@@ -72,6 +72,14 @@ export async function writeDeploy(o: { root: string; modId: string; files: Map<s
       continue
     }
     const hash = sha256(f.data)
+    if (f.untracked) { // written whenever it differs but never in the manifest: Inkwell.ini belongs to the user and the runtime, so a deploy without it leaves it alone
+      if (await readFile(p).then((b) => sha256(b) === hash, () => false)) out.unchanged.push(rel)
+      else {
+        await writeAtomic(p, f.data)
+        out.written.push(rel)
+      }
+      continue
+    }
     next[rel] = { sha256: hash, swf: f.swf }
     const cur = await readFile(p).then((b) => sha256(b), () => undefined)
     if (cur === hash) out.unchanged.push(rel)

@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { homedir, release } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { Graph, Swf, type MenuSettings } from '@inkwell-ui/spec'
 import { bindingsOf } from '../shared/graphBinding'
 import { defIndex, emptyGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type PackSet } from '../shared/graphs'
@@ -13,12 +13,17 @@ import type { OpenResult, ProjectState, RecentProject, SnapshotInfo } from '../s
 import { flattenReports, type LintRow, type SwfReport, type SyncUiState } from '../shared/syncState'
 import { ffdecState } from '../shared/ffdec'
 import type { DeployLintItem, DeployResult, DeployScope, DeployState, DeployTargetId, DeployTargetInfo, PrepareResult } from '../shared/deploy'
-import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, ResolvedSettings, SetSettingResult, SettingKey, StoredSettings } from '../shared/doctor'
+import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, DevLinkSettings, ResolvedSettings, SetSettingResult, SettingKey, StoredSettings } from '../shared/doctor'
 import { buildCacheAction, runBenchmark, runDoctor, type DoctorContext } from './doctor'
 import { checkSkyrim, type SkyrimFacts } from './doctor/checks'
 import { createFontTool } from './fonts'
 import { sandboxFontSystem, windowsFontSystem } from './fonts/install'
 import { createDeployService } from './deploy/service'
+import { resolveTarget } from './deploy/plan'
+import { createDevClient, type ClientState } from './runtime/client'
+import { generateToken, normalizeToken } from './runtime/devIni'
+import { DEFAULT_PORT, resolveDevConfig } from './runtime/token'
+import { initialDevState, reloadSummary, type DevReloadResult, type DevState } from '../shared/devLink'
 import { createAssetStore, type AssetStore } from './images/assets'
 import { createTrust } from './sync/figmaTrust'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
@@ -232,6 +237,8 @@ export function createSession(deps: SessionDeps) {
       ...cfg,
       assets,
       previewFonts: fonts(),
+      devBuild: () => link().deploy === true,
+      onDevBuild: (n) => void devFresh.add(n),
       packDirs: [corePackDir(deps.appPath)],
       ...(dir ? { projectDir: dir } : {}),
       buildDir: dir ? join(dir, 'build') : join(deps.userData, 'build'),
@@ -321,6 +328,9 @@ export function createSession(deps: SessionDeps) {
       looseCount = 0
       update({ connections: 0, build: 'idle', buildError: undefined, lintCount: 0, fonts: [], lint: [], graphLint: [], timing: undefined, previewMs: undefined, unreachableNodes: [], connectionIssue: undefined })
       await start(dir, keep)
+      devClient.stop()
+      devFresh.clear()
+      if (dir && !devUserOff) devClient.start()
       if (dir && meta) await remember({ dir, name: meta.name, openedAt: new Date().toISOString() })
       pushProjectNow()
       return { ok: true }
@@ -333,6 +343,63 @@ export function createSession(deps: SessionDeps) {
       update({ server: server ? 'listening' : 'error', ...(server ? {} : { error: msg }) })
       return { ok: false, error: msg }
     }
+  }
+
+  // ---- the game dev connection (docs/dev-mode.md) ----
+  const linkKey = (): string | undefined => (projectDir ? resolve(projectDir).toLowerCase() : undefined)
+  const link = (): DevLinkSettings => (linkKey() ? stored.devLinks?.[linkKey()!] : undefined) ?? {}
+  const patchLink = async (patch: Partial<DevLinkSettings>, remove: (keyof DevLinkSettings)[] = []): Promise<void> => {
+    const k = linkKey()
+    if (!k) return
+    await settingsReady
+    const cur: DevLinkSettings = { ...stored.devLinks?.[k], ...patch }
+    for (const r of remove) delete cur[r]
+    stored = { ...stored, devLinks: { ...stored.devLinks, [k]: cur } }
+    await saveSettings(settingsFile, stored)
+  }
+  let devUserOff = false // the user pressed Disconnect: no automatic connecting until Connect or a new token
+  const { devDeploy: _d, ...initialClient } = initialDevState()
+  let devClientState: ClientState = initialClient
+  const devState = (): DevState => ({ ...devClientState, devDeploy: link().deploy === true })
+  const pushDev = (): void => deps.broadcast(IPC.devState, devState())
+  const deployRoot = (): string | undefined => {
+    const p = projectState()
+    if (!p || !meta) return undefined
+    const t = resolveTarget('mo2Mod', resolved(), { dir: p.dir, name: p.name, modId: p.modId, ...(meta.deploy ? { deploy: meta.deploy } : {}) })
+    return 'root' in t ? t.root : undefined
+  }
+  const devClient = createDevClient({
+    editorVersion: deps.editorVersion,
+    resolveConfig: async () => {
+      await settingsReady
+      if (!projectDir) return undefined
+      const r = resolved()
+      const root = deployRoot()
+      return resolveDevConfig({ link: link(), ...(r.mo2OverwriteDir ? { overwriteDir: r.mo2OverwriteDir } : {}), ...(root ? { deployRoot: root } : {}) })
+    },
+    onState: (s) => {
+      devClientState = s
+      pushDev()
+    },
+    onEvents: (e) => deps.broadcast(IPC.devEvents, e)
+  })
+  /** The dev SWFs (`<name>.dev.swf`) that are current; cleared when the toggle changes or a project opens, because only a build with the toggle on makes them. */
+  const devFresh = new Set<string>()
+  const ensureDevBuilds = async (): Promise<void> => {
+    for (const i of server?.swfs() ?? []) {
+      const ir = i.orphaned ? undefined : server?.ir(i.id)
+      if (ir?.target.kind === 'customMenu' && !devFresh.has(i.name)) await pipeline!.onChange(i.id, ir, i.name)
+    }
+  }
+  /** Hot reload after a Dev deploy (S6: the editor deploys first, then sends `reload`): one request per deployed menu. */
+  async function reloadAfterDeploy(menus: string[]): Promise<string> {
+    if (devClient.state().phase !== 'connected') return 'hot reload skipped: the game is not connected (start Skyrim with Dev Mode, then use Trigger Hot Reload)'
+    const rs: DevReloadResult[] = []
+    for (const m of menus) rs.push(await devClient.reload(m))
+    const bad = rs.find((r) => !r.ok)
+    return reloadSummary({
+      ok: !bad, reloaded: rs.flatMap((r) => r.reloaded), skipped: rs.flatMap((r) => r.skipped), ms: rs.reduce((a, r) => a + r.ms, 0), ...(bad?.error ? { error: bad.error } : {})
+    })
   }
 
   let deployState = 0
@@ -367,6 +434,11 @@ export function createSession(deps: SessionDeps) {
       return pipeline.getFfdec()
     },
     report: reportDeploy,
+    dev: () => {
+      const l = link()
+      return l.deploy && l.token ? { token: l.token, port: l.port ?? DEFAULT_PORT } : undefined
+    },
+    ensureDevBuilds,
     ...(deps.chooseZip ? { chooseZip: deps.chooseZip } : {})
   })
   let lastZip: string | undefined // the only path "Open folder" may reveal: never a path from the renderer
@@ -470,9 +542,55 @@ export function createSession(deps: SessionDeps) {
     deployCommit: async (token: string): Promise<DeployResult> => {
       const r = await deploy.commit(token)
       if (r.zipPath) lastZip = r.zipPath
+      if (r.ok && r.devMenus) {
+        const hot = await reloadAfterDeploy(r.devMenus)
+        r.hotReload = hot
+        if (state.deploy) update({ deploy: { ...state.deploy, hotReload: hot }, deploySeq: ++deployState })
+        if (devClient.isWanted() && devClient.state().phase !== 'connected') devClient.configChanged() // the INI just written may hold the token the connection lacked
+      }
       return r
     },
     lastPackage: (): string | undefined => lastZip,
+    devState,
+    devConnect: (): void => {
+      devUserOff = false
+      devClient.start()
+    },
+    devDisconnect: (): void => {
+      devUserOff = true
+      devClient.stop()
+    },
+    async devSetToken(raw: string | null): Promise<{ ok: true } | { ok: false; error: string }> {
+      if (!projectDir) return { ok: false, error: 'Open a project first.' }
+      if (raw === null || raw.trim() === '') await patchLink({}, ['pasted'])
+      else {
+        const t = normalizeToken(raw)
+        if (!t) return { ok: false, error: 'A token is 64 hexadecimal digits (0-9, a-f), as in the [Dev] Token= line of Inkwell.ini.' }
+        await patchLink({ pasted: t })
+      }
+      devUserOff = false
+      devClient.start()
+      devClient.configChanged()
+      pushDev()
+      return { ok: true }
+    },
+    async devSetPort(port: number): Promise<{ ok: true } | { ok: false; error: string }> {
+      if (!projectDir) return { ok: false, error: 'Open a project first.' }
+      if (!Number.isInteger(port) || port < 1024 || port > 65535) return { ok: false, error: 'The port is a whole number from 1024 to 65535 (the runtime default is 8788).' }
+      await patchLink({ port })
+      devClient.configChanged()
+      pushDev()
+      return { ok: true }
+    },
+    async devSetDeploy(on: boolean): Promise<void> {
+      if (!projectDir) return
+      if (on) await patchLink({ deploy: true, ...(link().token ? {} : { token: generateToken() }) }) // one token per project, made once and kept in the user settings
+      else await patchLink({}, ['deploy'])
+      devFresh.clear()
+      pushDev()
+      if (on) server?.rebuildAll() // the dev SWFs are built with the next builds; a Dev deploy that comes first builds them itself
+    },
+    devReload: (menu?: string): Promise<DevReloadResult> => devClient.reload(menu),
     deployCancel: (): void => deploy.cancel(),
     fontStatus: () => fontTool.status(),
     installFonts: () => fontTool.install(),
@@ -599,6 +717,7 @@ export function createSession(deps: SessionDeps) {
     },
     stop: async (): Promise<void> => {
       clearTimeout(pushTimer)
+      devClient.stop()
       await stopServer()
     }
   }

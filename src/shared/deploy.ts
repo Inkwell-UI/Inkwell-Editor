@@ -23,6 +23,8 @@ export interface DeployFileInfo {
   swf: string
   /** Written only when the file does not exist yet (the commented default INI): a later deploy never overwrites it. */
   keepExisting?: boolean
+  /** The runtime-wide Inkwell.ini of a Dev deploy (docs/dev-mode.md): merged into the existing file, written on every Dev deploy, never in the manifest. */
+  devIni?: boolean
 }
 export interface DeployLintItem {
   severity: 'error' | 'warning' | 'info'
@@ -65,11 +67,17 @@ export interface DeployResult {
   zipPath?: string
   /** The user closed the save dialog; nothing was written. */
   cancelled?: boolean
+  /** A Dev deploy: the menu names (menu JSON `name`) that were written, for the hot reload. */
+  devMenus?: string[]
+  /** A Dev deploy: what the hot reload did (the game's ack with its time, or why nothing was sent). Filled by the session, not by the deploy service. */
+  hotReload?: string
 }
 
 /** Progress and last result, shown in the status bar and as a toast. */
 export interface DeployState {
   state: 'preparing' | 'writing' | 'done' | 'error'
   message: string
+  /** The hot reload that followed a Dev deploy (docs/dev-mode.md): what the game answered, or why nothing was sent. */
+  hotReload?: string
   timing?: BuildTiming
 }

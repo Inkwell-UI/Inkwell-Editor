@@ -4,6 +4,7 @@ import { defaultMenuSettings, menuJsonPath, modIniPath, resolveMenuNames } from 
 import type { ResolvedSettings, StoredSettings } from '../../shared/doctor'
 import type { DeployLintItem, DeployTargetId, DeployTargetInfo } from '../../shared/deploy'
 import { isPapyrusName } from '../widget/papyrus'
+import { RUNTIME_INI_REL } from '../runtime/devIni'
 import { isInside } from '../vanilla/cache'
 
 // Pure deploy decisions: where a target points, what files a project produces there, and the guards that keep every write inside the chosen folder.
@@ -88,6 +89,8 @@ export interface DeployPlan {
 
 /** The deploy dialog's line for menu mods (UX 5.1, S3 rule 6). */
 export const RUNTIME_NOTE = 'Requires Inkwell Runtime'
+/** The deploy dialog's line for a Dev deploy. */
+export const DEV_NOTE_TEXT = 'Dev deploy: Inkwell.ini is written with DevMode=1 and a token, and the menus are built with the dev hooks (live pin and variable values). Use it for testing only, never ship this folder; Package Mod never contains it.'
 export const RUNTIME_NOTE_TEXT = `${RUNTIME_NOTE} ${FIRST_RUNTIME_VERSION} or newer; not included in this deploy.`
 
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
@@ -98,7 +101,7 @@ const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
  * customMenu -> Interface/Inkwell/<modId>/<Swf>.swf (O2, `menuSwfPath`), SKSE/Plugins/Inkwell/menus/<menu>.json, and once per mod the commented default
  * SKSE/Plugins/Inkwell/<modId>.ini (created if absent, never overwritten; docs/menus.md); menuReplacement is not deployed.
  */
-export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; gameDirs: string[]; hasPapyrus: boolean; only?: string }): DeployPlan {
+export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; gameDirs: string[]; hasPapyrus: boolean; only?: string; dev?: boolean }): DeployPlan {
   const plan: DeployPlan = { root: o.root, files: [], lint: [], notes: [], errors: [], widgets: {} }
   if (!isAbsolute(o.root)) plan.errors.push(`The target folder "${o.root}" is not an absolute path.`)
   if (isGameData(o.root, o.gameDirs)) plan.errors.push(`Refusing to deploy into the game's Data folder (${o.root}). Deploy to an MO2 mod folder or the overwrite folder; MO2's virtual file system puts the files in the game.`)
@@ -135,6 +138,12 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
       if (!iniDone) add(modIniPath(o.modId)), (iniDone = true)
       if (!plan.notes.some((n) => n.startsWith(RUNTIME_NOTE))) plan.notes.push(RUNTIME_NOTE_TEXT)
     } else plan.lint.push({ severity: 'warning', code: 'menu-replacement-skipped', message: `"${s.name}" is a menu replacement; replacements are not deployed yet.` })
+  }
+  // Dev deploy (docs/dev-mode.md): the runtime-wide Inkwell.ini with DevMode=1 and the token, only next to a custom menu (HUD widgets do not use the runtime)
+  const firstMenu = swfs.find((s) => s.kind === 'customMenu')
+  if (o.dev && firstMenu) {
+    plan.files.push({ rel: RUNTIME_INI_REL, swf: firstMenu.name })
+    plan.notes.push(DEV_NOTE_TEXT)
   }
   for (const f of plan.files) {
     try {

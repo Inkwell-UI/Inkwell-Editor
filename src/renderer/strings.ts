@@ -502,7 +502,7 @@ export const strings = {
     historyTip: 'Show the last 50 builds',
     historyCols: ['#', 'SWF', 'Edit to preview', 'Stages'],
     historyNote: 'Edit to preview = pipeline total + Ruffle first frame. It does not include the Figma debounce. Amber above 1000 ms.',
-    stage: (n: string) => ({ sync: 'Sync', codegen: 'Codegen', swf: 'SWF', ffdec: 'FFDec', 'preview-build': 'Preview', preview: 'Ruffle', compile: 'Compile', vanilla: 'Vanilla check', write: 'Write' } as Record<string, string>)[n] ?? n,
+    stage: (n: string) => ({ sync: 'Sync', codegen: 'Codegen', swf: 'SWF', ffdec: 'FFDec', 'preview-build': 'Preview', 'dev-build': 'Dev SWF', preview: 'Ruffle', compile: 'Compile', vanilla: 'Vanilla check', write: 'Write' } as Record<string, string>)[n] ?? n,
     ffdec: (s?: string) => (s === 'warm' ? 'FFDec: warm' : s === 'cold' ? 'FFDec: cold' : 'FFDec: checking'),
     ffdecNotFound: 'FFDec: not found',
     openDoctor: 'Open the settings',

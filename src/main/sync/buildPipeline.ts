@@ -39,6 +39,10 @@ export interface PipelineConfig {
   assets?: Pick<AssetStore, 'get' | 'has'>
   /** The plugin's last hello (pluginVersion, fileKey) for figma/snapshot.json; undefined keeps the stored one. */
   snapshotSource?: () => SnapshotSource | undefined
+  /** True while the project's Dev deploy toggle is on: every custom menu also builds `<name>.dev.swf` (pin/watch hooks, docs/dev-mode.md) next to the game SWF. */
+  devBuild?: () => boolean
+  /** After a dev SWF was written. */
+  onDevBuild?: (name: string) => void
   /** After figma/snapshot.json was checked (written only when its content changed). */
   onSnapshot?: (s: FigmaSnapshot) => void
 }
@@ -130,6 +134,15 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     }
     const images = cfg.assets ? (h: string) => cfg.assets!.get(h) : undefined
     const r = await compileSwf(ir, { modId, instanceNames, roles, lists, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+    // Dev SWF (Dev deploy only): the game SWF plus the hooks that stream pin and variable values to the editor. Never part of the normal build or Package Mod.
+    const dt = createStageTimer()
+    if (cfg.devBuild?.() && ir.target.kind === 'customMenu') {
+      dt.start('dev-build')
+      await compileSwf(ir, { modId, instanceNames, roles, lists, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+      dt.end('dev-build')
+      cfg.onDevBuild?.(name)
+    }
+    const dev = dt.finishBuild()
     // Preview SWF: same content with device-font text, built after the game SWF. Its failure is reported to the preview panel only.
     const pt = createStageTimer()
     pt.start('preview-build')
@@ -147,7 +160,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     }
     pt.end('preview-build')
     const prev = pt.finishBuild()
-    const timing: BuildTiming = { stages: { ...sync.stages, ...r.timings.stages, ...prev.stages }, total: sync.total + r.timings.total + prev.total }
+    const timing: BuildTiming = { stages: { ...sync.stages, ...r.timings.stages, ...dev.stages, ...prev.stages }, total: sync.total + r.timings.total + dev.total + prev.total }
     cfg.onBuild?.(r.swfPath, timing, r.lint.length, toReport(swfId, name, r))
     cfg.onPreview?.(preview) // after onBuild, so the window's timing is already the new build's when the renderer answers
     return {

@@ -24,6 +24,10 @@ export interface DeployDeps {
   report(s: DeployState): void
   /** Package targets: the native save dialog, starting at `defaultPath`; undefined = cancelled. */
   chooseZip?(defaultPath: string): Promise<string | undefined>
+  /** The project's Dev deploy toggle with its token and port (docs/dev-mode.md); undefined = off. Asked for folder targets only: a package or Vortex zip never gets dev mode. */
+  dev?(): { token: string; port: number } | undefined
+  /** Makes sure the dev builds of the custom menus (`build/<name>.dev.swf`) exist and are current. */
+  ensureDevBuilds?(): Promise<void>
 }
 
 /** Deploy in two steps so the UI can ask before anything is written: `prepare` compiles and checks everything, `commit` writes. One prepared deploy is pending at a time. */
@@ -46,13 +50,15 @@ export function createDeployService(d: DeployDeps) {
     if ('error' in t) return { ok: false, error: t.error }
     if (scope === 'active' && !activeName) return { ok: false, error: 'No SWF is selected.' }
     const pkg = isPackageTarget(id)
-    d.report({ state: 'preparing', message: pkg ? 'Compiling for the package...' : 'Compiling for deploy...' })
+    const dev = pkg ? undefined : d.dev?.()
+    d.report({ state: 'preparing', message: pkg ? 'Compiling for the package...' : dev ? 'Compiling for Dev deploy...' : 'Compiling for deploy...' })
     try {
+      if (dev) await d.ensureDevBuilds?.()
       const gameDirs = (await findSkyrim({ ...(resolved.skyrimPath ? { manual: resolved.skyrimPath } : {}) })).map((c) => c.path)
       const input: DeployInput = {
         modId: p.modId, modName: p.name, swfs: p.swfs, root: t.root, gameDirs, ...(p.imageMode ? { imageMode: p.imageMode } : {}), ...(p.assets ? { assets: p.assets } : {}), ...(scope === 'active' && activeName ? { only: activeName } : {}),
         buildDir: join(p.dir, 'build'), ffdec: d.ffdec(), ...(resolved.papyrusExe ? { papyrusExe: resolved.papyrusExe } : {}),
-        stubsDir: join(d.appPath, 'resources/papyrus-stubs'), packs: (await loadCodegenPacks([corePackDir(d.appPath)])).packs, vanillaHashes: await loadVanillaHashes(vanillaCacheRoot(d.userData))
+        ...(dev ? { dev } : {}), stubsDir: join(d.appPath, 'resources/papyrus-stubs'), packs: (await loadCodegenPacks([corePackDir(d.appPath)])).packs, vanillaHashes: await loadVanillaHashes(vanillaCacheRoot(d.userData))
       }
       const r = await prepareDeploy(input)
       if (!r.ok) {
@@ -92,7 +98,7 @@ export function createDeployService(d: DeployDeps) {
       await d.saveStored(withConfirmed(d.settings().stored, c.dir, c.input.root)).catch(() => undefined) // the deploy succeeded; failing to remember it only asks again
       d.report({
         state: 'done', ...(r.timing ? { timing: r.timing } : {}),
-        message: `Deployed ${r.written} file(s)${r.unchanged ? `, ${r.unchanged} unchanged` : ''}${r.removed?.length ? `, ${r.removed.length} removed` : ''} to ${c.input.root}`
+        message: `${r.devMenus ? 'Dev deployed' : 'Deployed'} ${r.written} file(s)${r.unchanged ? `, ${r.unchanged} unchanged` : ''}${r.removed?.length ? `, ${r.removed.length} removed` : ''} to ${c.input.root}`
       })
     } else d.report({ state: 'error', message: r.error ?? 'Deploy failed.' })
     return r

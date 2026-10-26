@@ -12,7 +12,8 @@ import { decodePng } from '../images/png'
 import { unreachableNodes, UNREACHABLE_MESSAGE } from '../sync/syncServer'
 import { isUnmodifiedVanilla } from '../vanilla/cache'
 import { compileWidget, type WidgetOptions } from '../widget/compileWidget'
-import { planDeploy, type DeployPlan, type SwfLike } from './plan'
+import { devIniText, RUNTIME_INI_REL } from '../runtime/devIni'
+import { planDeploy, safeJoin, type DeployPlan, type SwfLike } from './plan'
 import { readManifest, staleFiles, writeDeploy } from './write'
 
 export interface DeploySwf extends SwfLike {
@@ -54,13 +55,20 @@ export interface DeployInput {
   assets?: Pick<AssetStore, 'get' | 'png'>
   /** Node definitions and templates for compiling graphs; without them graphs are not compiled. */
   packs?: CodegenPacks
+  /**
+   * Dev deploy (docs/dev-mode.md): custom menus ship their dev build (`<name>.dev.swf`, with the pin/watch hooks) and `Inkwell.ini` gets `DevMode=1`, the token and the port.
+   * Never set for a package or Vortex zip.
+   */
+  dev?: { token: string; port: number }
 }
 
 /** Everything is compiled and checked before the first byte is written. */
 export interface Prepared {
   plan: DeployPlan
-  files: Map<string, { data: Buffer; swf: string; createOnly?: boolean }>
+  files: Map<string, { data: Buffer; swf: string; createOnly?: boolean; untracked?: boolean }>
   info: DeployFileInfo[]
+  /** Dev deploy: the menu names written. */
+  devMenus?: string[]
   removed: string[]
   /** Deploy-level notices from the plan (no SWF lint; never promoted by Strict Mode). */
   lint: DeployLintItem[]
@@ -79,12 +87,13 @@ const notReady = (s: DeploySwf, buildDir: string): string =>
         : `"${s.name}" has no build yet (${join(buildDir, `${s.name}.swf`)}). Run Build All first.`
 
 export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
-  const plan = planDeploy({ modId: i.modId, swfs: i.swfs, root: i.root, gameDirs: i.gameDirs, hasPapyrus: !!i.papyrusExe, ...(i.only ? { only: i.only } : {}) })
+  const plan = planDeploy({ modId: i.modId, swfs: i.swfs, root: i.root, gameDirs: i.gameDirs, hasPapyrus: !!i.papyrusExe, ...(i.only ? { only: i.only } : {}), ...(i.dev ? { dev: true } : {}) })
   if (plan.errors.length) return { ok: false, error: plan.errors.join(' '), lint: plan.lint }
   const timer = createStageTimer()
   const lint: DeployLintItem[] = [...plan.lint]
   const issues: DeployLintItem[] = []
-  const files = new Map<string, { data: Buffer; swf: string; createOnly?: boolean }>()
+  const files = new Map<string, { data: Buffer; swf: string; createOnly?: boolean; untracked?: boolean }>()
+  const devMenus: string[] = []
   const allowed = new Set(plan.files.map((f) => f.rel))
   // custom menus (S9): the project's menus decide the slot lint and the INI; a scoped deploy still lints the whole project's count
   const menuSources: MenuSource[] = i.swfs.filter((x) => !x.orphaned && x.kind === 'customMenu').map((x) => ({ swf: x.name, settings: x.menu ?? defaultMenuSettings() }))
@@ -112,7 +121,7 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
           files.set(rel, { data, swf: s.name })
         }
       } else if (s.kind === 'customMenu') {
-        const data = s.build?.state === 'done' ? await readFile(join(i.buildDir, `${s.name}.swf`)).catch(() => undefined) : undefined
+        const data = s.build?.state === 'done' ? await readFile(join(i.buildDir, i.dev ? `${s.name}.dev.swf` : `${s.name}.swf`)).catch(() => undefined) : undefined
         if (!data) {
           fail('build-not-ready', notReady(s, i.buildDir))
           continue
@@ -123,6 +132,7 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
         if (issues.slice(first).some((l) => l.severity === 'error')) continue
         const src: MenuSource = { swf: s.name, settings: s.menu ?? defaultMenuSettings() }
         files.set(resolveMenuNames(i.modId, src).swf, { data, swf: s.name })
+        devMenus.push(resolveMenuNames(i.modId, src).name)
         files.set(menuJsonPath(resolveMenuNames(i.modId, src).name), { data: Buffer.from(stableStringify(buildMenuDef(i.modId, src).def)), swf: s.name })
         // one commented default INI per mod (all its menus); created if absent, never overwritten or retired (docs/menus.md)
         const ini = modIniPath(i.modId)
@@ -143,6 +153,11 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
   } finally {
     timer.end('compile')
   }
+  if (i.dev && plan.files.some((f) => f.rel === RUNTIME_INI_REL) && !issues.some((l) => l.severity === 'error')) {
+    // merged into the file that is there (LogLevel, Watch and the like survive); the token is the editor's, so a stale or runtime-made one is replaced
+    const existing = await readFile(safeJoin(i.root, RUNTIME_INI_REL), 'utf8').catch(() => undefined)
+    files.set(RUNTIME_INI_REL, { data: Buffer.from(devIniText(existing, i.dev)), swf: plan.files.find((f) => f.rel === RUNTIME_INI_REL)!.swf, untracked: true })
+  }
   const missing = plan.files.filter((f) => !files.has(f.rel))
   if (missing.length && i.papyrusExe && !issues.some((l) => l.severity === 'error')) return { ok: false, error: `The build did not produce: ${missing.map((m) => m.rel).join(', ')}.`, lint }
   timer.start('vanilla')
@@ -154,7 +169,7 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
   const t = timer.finishBuild()
   return {
     ok: true,
-    prepared: { plan, files, info: [...files].map(([rel, f]) => ({ rel, size: f.data.length, swf: f.swf, ...(f.createOnly ? { keepExisting: true } : {}) })), removed, lint, issues, scope, stages: t.stages }
+    prepared: { plan, files, info: [...files].map(([rel, f]) => ({ rel, size: f.data.length, swf: f.swf, ...(f.createOnly ? { keepExisting: true } : {}), ...(f.untracked ? { devIni: true } : {}) })), removed, lint, issues, scope, stages: t.stages, ...(i.dev ? { devMenus } : {}) }
   }
 }
 
@@ -166,7 +181,7 @@ export async function commitDeploy(i: Pick<DeployInput, 'root' | 'modId' | 'only
     const write = performance.now() - t0
     const stages = { ...p.stages, write }
     return {
-      ok: true, root: i.root, written: o.written.length, unchanged: o.unchanged.length, removed: o.removed, kept: o.kept, preserved: o.preserved,
+      ok: true, root: i.root, ...(p.devMenus ? { devMenus: p.devMenus } : {}), written: o.written.length, unchanged: o.unchanged.length, removed: o.removed, kept: o.kept, preserved: o.preserved,
       timing: { stages, total: Object.values(stages).reduce((a, b) => a + b, 0) }
     }
   } catch (e) {

@@ -1,6 +1,6 @@
 import { mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { dirname, extname, join } from 'node:path'
-import type { PathSettingKey, ResolvedSettings, SettingKey, StoredSettings } from '../shared/doctor'
+import type { DevLinkSettings, PathSettingKey, ResolvedSettings, SettingKey, StoredSettings } from '../shared/doctor'
 
 const KEYS: SettingKey[] = ['ffdecDir', 'javaPath', 'papyrusExe', 'creationKitSources', 'skyrimPath', 'figmaManifest', 'mo2ModsDir', 'mo2OverwriteDir', 'mo2ModName']
 export const DEFAULT_FFDEC_DIR = 'C:\\Program Files (x86)\\FFDec'
@@ -36,6 +36,21 @@ export function validateSettings(raw: unknown): StoredSettings {
   if (Array.isArray(r['figmaPlugins'])) {
     const hs = [...new Set(r['figmaPlugins'].filter((x): x is string => typeof x === 'string' && /^[0-9a-f]{64}$/.test(x)))].slice(0, 256)
     if (hs.length) out.figmaPlugins = hs
+  }
+  const dl = r['devLinks']
+  if (dl && typeof dl === 'object' && !Array.isArray(dl)) {
+    const m: Record<string, DevLinkSettings> = {}
+    for (const [k, v] of Object.entries(dl)) {
+      if (!v || typeof v !== 'object' || Array.isArray(v)) continue
+      const x = v as Record<string, unknown>
+      const e: DevLinkSettings = {}
+      if (typeof x['token'] === 'string' && /^[0-9a-f]{64}$/.test(x['token'])) e.token = x['token']
+      if (typeof x['pasted'] === 'string' && /^[0-9a-f]{64}$/.test(x['pasted'])) e.pasted = x['pasted']
+      if (typeof x['port'] === 'number' && Number.isInteger(x['port']) && x['port'] >= 1024 && x['port'] <= 65535) e.port = x['port']
+      if (x['deploy'] === true) e.deploy = true
+      if (Object.keys(e).length) m[k] = e
+    }
+    if (Object.keys(m).length) out.devLinks = m
   }
   const dc = r['deployConfirmed']
   if (dc && typeof dc === 'object' && !Array.isArray(dc)) {
