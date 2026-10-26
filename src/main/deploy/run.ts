@@ -12,8 +12,9 @@ import { decodePng } from '../images/png'
 import { unreachableNodes, UNREACHABLE_MESSAGE } from '../sync/syncServer'
 import { isUnmodifiedVanilla } from '../vanilla/cache'
 import { compileWidget, type WidgetOptions } from '../widget/compileWidget'
+import { compileRuntimeCheck } from '../runtime/runtimeCheck'
 import { devIniText, RUNTIME_INI_REL } from '../runtime/devIni'
-import { planDeploy, safeJoin, type DeployPlan, type SwfLike } from './plan'
+import { planDeploy, projectMinRuntime, safeJoin, type DeployPlan, type SwfLike } from './plan'
 import { readManifest, staleFiles, writeDeploy } from './write'
 
 export interface DeploySwf extends SwfLike {
@@ -60,7 +61,18 @@ export interface DeployInput {
    * Never set for a package or Vortex zip.
    */
   dev?: { token: string; port: number }
+  /** Package Mod / Vortex zip: a custom-menu mod without its runtime check is an ERROR (`runtime-check-missing`, O4); a folder deploy only warns. */
+  package?: boolean
 }
+
+/** Runtime features a menu SWF uses: they raise its `minRuntime` (`RUNTIME_FEATURE_SINCE`). */
+const menuFeatures = (s: DeploySwf): string[] => [
+  ...(s.graphs?.some((g) => g.variables?.some((v) => v.scope === 'saved')) ? ['savedVariables'] : []),
+  ...(Object.values(s.overlay ?? {}).some((o) => o['role'] === 'list') ? ['list'] : [])
+]
+
+/** Why a menu mod has no runtime check and what to do (S3 rule 5). */
+const CHECK_MISSING = 'The runtime check (the in-game message when Inkwell Runtime is missing or too old) was not generated because no Papyrus compiler is set. Set the compiler path in Settings (or INKWELL_PAPYRUS), then deploy again.'
 
 /** Everything is compiled and checked before the first byte is written. */
 export interface Prepared {
@@ -86,7 +98,9 @@ const notReady = (s: DeploySwf, buildDir: string): string =>
       : s.build.state === 'failed' ? `"${s.name}": the last build failed. Fix it and run Build All.`
         : `"${s.name}" has no build yet (${join(buildDir, `${s.name}.swf`)}). Run Build All first.`
 
-export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
+export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome> {
+  // a customMenu SWF's runtime features raise its minRuntime (menu JSON, runtime check, dialog); everything below reads this list
+  const i: DeployInput = { ...input, swfs: input.swfs.map((s) => (s.kind === 'customMenu' ? { ...s, features: menuFeatures(s) } : s)) }
   const plan = planDeploy({ modId: i.modId, swfs: i.swfs, root: i.root, gameDirs: i.gameDirs, hasPapyrus: !!i.papyrusExe, ...(i.only ? { only: i.only } : {}), ...(i.dev ? { dev: true } : {}) })
   if (plan.errors.length) return { ok: false, error: plan.errors.join(' '), lint: plan.lint }
   const timer = createStageTimer()
@@ -94,9 +108,10 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
   const issues: DeployLintItem[] = []
   const files = new Map<string, { data: Buffer; swf: string; createOnly?: boolean; untracked?: boolean }>()
   const devMenus: string[] = []
+  let checkDone = false
   const allowed = new Set(plan.files.map((f) => f.rel))
   // custom menus (S9): the project's menus decide the slot lint and the INI; a scoped deploy still lints the whole project's count
-  const menuSources: MenuSource[] = i.swfs.filter((x) => !x.orphaned && x.kind === 'customMenu').map((x) => ({ swf: x.name, settings: x.menu ?? defaultMenuSettings() }))
+  const menuSources: MenuSource[] = i.swfs.filter((x) => !x.orphaned && x.kind === 'customMenu').map((x) => ({ swf: x.name, settings: x.menu ?? defaultMenuSettings(), ...(x.features ? { features: x.features } : {}) }))
   const menuRows = menuLint(i.modId, menuSources)
   if (i.swfs.some((x) => x.kind === 'customMenu' && !x.orphaned && (!i.only || x.name === i.only))) issues.push(...menuRows.filter((r) => !r.swf)) // project-level rows (menu-limit)
   timer.start('compile')
@@ -130,13 +145,23 @@ export async function prepareDeploy(i: DeployInput): Promise<PrepareOutcome> {
         issues.push(...menuRows.filter((r) => r.swf === s.name))
         if (s.menuError) fail('menu-file-invalid', `${s.menuError}. Fix or delete swfs/${s.name}/menu.json.`)
         if (issues.slice(first).some((l) => l.severity === 'error')) continue
-        const src: MenuSource = { swf: s.name, settings: s.menu ?? defaultMenuSettings() }
+        const src: MenuSource = { swf: s.name, settings: s.menu ?? defaultMenuSettings(), ...(s.features ? { features: s.features } : {}) }
         files.set(resolveMenuNames(i.modId, src).swf, { data, swf: s.name })
         devMenus.push(resolveMenuNames(i.modId, src).name)
         files.set(menuJsonPath(resolveMenuNames(i.modId, src).name), { data: Buffer.from(stableStringify(buildMenuDef(i.modId, src).def)), swf: s.name })
         // one commented default INI per mod (all its menus); created if absent, never overwritten or retired (docs/menus.md)
         const ini = modIniPath(i.modId)
         if (allowed.has(ini) && !files.has(ini)) files.set(ini, { data: Buffer.from(modIniText(i.modName ?? i.modId, i.modId, menuSources)), swf: s.name, createOnly: true })
+        // the runtime check (S3, O4): once per mod. Without a Papyrus compiler it cannot exist: an error for a package, a warning for a folder deploy
+        if (!checkDone) {
+          checkDone = true
+          if (!i.papyrusExe) issues.push({ severity: i.package ? 'error' : 'warning', code: 'runtime-check-missing', message: i.package ? `${CHECK_MISSING} Package Mod will not package a menu mod without it.` : CHECK_MISSING, swf: s.name })
+          else {
+            const r = await compileRuntimeCheck({ modId: i.modId, modName: i.modName ?? i.modId, minRuntime: projectMinRuntime(i.swfs), papyrusExe: i.papyrusExe, buildDir: join(i.buildDir, 'deploy', 'runtime-check'), ...(i.stubsDir ? { stubsDir: i.stubsDir } : {}) })
+            for (const l of r.lint) issues.push({ severity: l.severity, code: l.code, message: l.message, swf: s.name, nodeId: l.nodeId })
+            if (!issues.slice(first).some((l) => l.severity === 'error')) for (const [rel, data] of Object.entries(r.files)) if (allowed.has(rel)) files.set(rel, { data, swf: s.name })
+          }
+        }
       }
       // dds mode: the game SWF loads img://textures/Inkwell/<modId>/<hash>.dds, so ship one DDS per image (embedded mode adds nothing)
       if (i.imageMode === 'dds')

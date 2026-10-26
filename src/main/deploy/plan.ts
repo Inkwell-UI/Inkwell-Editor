@@ -1,6 +1,8 @@
 import { isAbsolute, join, resolve, sep } from 'node:path'
-import { FIRST_RUNTIME_VERSION, MENU_NAME, type MenuSettings } from '@inkwell-ui/spec'
-import { defaultMenuSettings, menuJsonPath, modIniPath, resolveMenuNames } from '../../shared/menu'
+import { MENU_NAME, type MenuSettings } from '@inkwell-ui/spec'
+import { defaultMenuSettings, menuJsonPath, minRuntimeOf, modIniPath, resolveMenuNames } from '../../shared/menu'
+import { maxVersion } from '../../shared/runtimeFeatures'
+import { runtimeCheckNames } from '../runtime/runtimeCheck'
 import type { ResolvedSettings, StoredSettings } from '../../shared/doctor'
 import type { DeployLintItem, DeployTargetId, DeployTargetInfo } from '../../shared/deploy'
 import { isPapyrusName } from '../widget/papyrus'
@@ -17,10 +19,14 @@ export function isGameData(root: string, gameDirs: string[]): boolean {
   return GAME_DATA.test(root) || gameDirs.some((g) => isInside(root, join(g, 'Data')))
 }
 
-/** Joins `rel` under `root` or throws: no absolute paths, no drive letters, no `..`, no empty parts, no reserved characters. */
+/** Windows device names (`CON.json` opens the console, not a file), also as a folder name. */
+export const RESERVED_WINDOWS_NAME = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i
+
+/** Joins `rel` under `root` or throws: no absolute paths, no drive letters, no `..`, no empty parts, no reserved characters or device names. */
 export function safeJoin(root: string, rel: string): string {
   if (!rel || isAbsolute(rel) || /^[a-z]:/i.test(rel) || /[<>:"|?*\0]/.test(rel) || rel.split(/[\\/]/).some((p) => p === '' || p === '.' || p === '..' || /[. ]$/.test(p)))
     throw new Error(`Refusing unsafe path "${rel}".`)
+  if (rel.split(/[\\/]/).some((p) => RESERVED_WINDOWS_NAME.test(p.split('.')[0]!))) throw new Error(`Refusing "${rel}": a part of the path is a reserved Windows device name (CON, NUL, COM1...). Rename the menu or the mod id.`)
   const full = resolve(root, ...rel.split(/[\\/]/))
   if (!full.toLowerCase().startsWith(resolve(root).toLowerCase() + sep)) throw new Error(`"${rel}" would leave the target folder.`)
   return full
@@ -39,6 +45,8 @@ export interface SwfLike {
   kind: 'hudWidget' | 'customMenu' | 'menuReplacement'
   /** customMenu: `swfs/<name>/menu.json` (absent = the defaults). */
   menu?: MenuSettings
+  /** customMenu: runtime features the SWF uses (`RuntimeFeature` names; they raise `minRuntime`). */
+  features?: readonly string[]
 }
 
 /** Folder a target writes to, or the reason it has none. A leaf name (mod name) may not contain separators. */
@@ -91,7 +99,13 @@ export interface DeployPlan {
 export const RUNTIME_NOTE = 'Requires Inkwell Runtime'
 /** The deploy dialog's line for a Dev deploy. */
 export const DEV_NOTE_TEXT = 'Dev deploy: Inkwell.ini is written with DevMode=1 and a token, and the menus are built with the dev hooks (live pin and variable values). Use it for testing only, never ship this folder; Package Mod never contains it.'
-export const RUNTIME_NOTE_TEXT = `${RUNTIME_NOTE} ${FIRST_RUNTIME_VERSION} or newer; not included in this deploy.`
+/** S3 rule 6. */
+export const runtimeNoteText = (minRuntime: string): string => `${RUNTIME_NOTE} ${minRuntime} or newer; not included in this deploy.`
+export const runtimeCheckNote = (esp: string): string => `${esp}: a small plugin that tells players in game when Inkwell Runtime is missing or too old. It is part of every menu mod (no master needed); keep it enabled with the mod.`
+
+/** The highest Inkwell Runtime the project's (non-orphaned) custom menus need: what every generated file declares (menu JSON `minRuntime`, the Papyrus check, the dialog). */
+export const projectMinRuntime = (swfs: readonly SwfLike[]): string =>
+  maxVersion(swfs.filter((s) => !s.orphaned && s.kind === 'customMenu').map((s) => minRuntimeOf({ swf: s.name, settings: s.menu ?? defaultMenuSettings(), ...(s.features ? { features: s.features } : {}) })))
 
 const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
 
@@ -99,7 +113,7 @@ const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
  * project + settings -> the files a deploy writes. Layout (design spec "Menus, contracts and SkyUI"):
  * hudWidget -> Interface/exported/widgets/<modId>/<Widget>.swf, Scripts/*.pex (only with a Papyrus compiler), Source/Scripts/*.psc, <modId>.esp (once);
  * customMenu -> Interface/Inkwell/<modId>/<Swf>.swf (O2, `menuSwfPath`), SKSE/Plugins/Inkwell/menus/<menu>.json, and once per mod the commented default
- * SKSE/Plugins/Inkwell/<modId>.ini (created if absent, never overwritten; docs/menus.md); menuReplacement is not deployed.
+ * SKSE/Plugins/Inkwell/<modId>.ini (created if absent, never overwritten; docs/menus.md) and the runtime check (`<modId>_RuntimeCheck.esp`, Scripts/*.pex, Source/Scripts/*.psc; needs the Papyrus compiler); menuReplacement is not deployed.
  */
 export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; gameDirs: string[]; hasPapyrus: boolean; only?: string; dev?: boolean }): DeployPlan {
   const plan: DeployPlan = { root: o.root, files: [], lint: [], notes: [], errors: [], widgets: {} }
@@ -110,6 +124,7 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
   if (swfs.length === 0) plan.errors.push(o.only ? `The SWF "${o.only}" cannot be deployed (missing or orphaned).` : 'The project has no SWF to deploy.')
   let espDone = false
   let iniDone = false
+  let checkDone = false
   for (const s of swfs) {
     const add = (rel: string): void => void plan.files.push({ rel, swf: s.name })
     if (s.kind === 'hudWidget') {
@@ -134,9 +149,18 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
       const m = resolveMenuNames(o.modId, { swf: s.name, settings: s.menu ?? defaultMenuSettings() })
       add(m.swf)
       // an invalid or duplicate menu name is the export gate's `menu-name-invalid` / `menu-name-duplicate`, not a path clash
-      if (MENU_NAME.test(m.name) && !plan.files.some((f) => f.rel.toLowerCase() === menuJsonPath(m.name).toLowerCase())) add(menuJsonPath(m.name))
+      if (MENU_NAME.test(m.name) && !RESERVED_WINDOWS_NAME.test(m.name) && !plan.files.some((f) => f.rel.toLowerCase() === menuJsonPath(m.name).toLowerCase())) add(menuJsonPath(m.name))
       if (!iniDone) add(modIniPath(o.modId)), (iniDone = true)
-      if (!plan.notes.some((n) => n.startsWith(RUNTIME_NOTE))) plan.notes.push(RUNTIME_NOTE_TEXT)
+      if (!plan.notes.some((n) => n.startsWith(RUNTIME_NOTE))) plan.notes.push(runtimeNoteText(projectMinRuntime(o.swfs)))
+      if (!checkDone) {
+        // the runtime check (S3, O4): one master-less plugin per mod, next to the first menu; it needs the Papyrus compiler
+        checkDone = true
+        const c = runtimeCheckNames(o.modId)
+        if (o.hasPapyrus) {
+          add(c.psc), add(c.pex), add(c.esp)
+          plan.notes.push(runtimeCheckNote(c.esp))
+        } else plan.lint.push({ severity: 'warning', code: 'papyrus-compiler-missing', message: 'No Papyrus compiler is set: the runtime check (the in-game message when Inkwell Runtime is missing or too old) cannot be generated for this menu mod. Set INKWELL_PAPYRUS or the compiler path in Settings.' })
+      }
     } else plan.lint.push({ severity: 'warning', code: 'menu-replacement-skipped', message: `"${s.name}" is a menu replacement; replacements are not deployed yet.` })
   }
   // Dev deploy (docs/dev-mode.md): the runtime-wide Inkwell.ini with DevMode=1 and the token, only next to a custom menu (HUD widgets do not use the runtime)

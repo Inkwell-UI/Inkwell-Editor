@@ -1,7 +1,7 @@
 // The export gate through the deploy service: prepare shows it, commit refuses a blocked deploy even when the renderer asks.
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import type { Swf } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
 import type { DeployLintItem, DeployState } from '../../shared/deploy'
@@ -10,6 +10,10 @@ import { frame } from '../swf/ir.testutil'
 import { sha256 } from '../vanilla/bsa'
 import type { DeploySwf } from './run'
 import { createDeployService } from './service'
+
+
+const appRoot = resolve(__dirname, '../../..')
+const papyrusExe = process.env['INKWELL_PAPYRUS'] && existsSync(process.env['INKWELL_PAPYRUS']) ? process.env['INKWELL_PAPYRUS'] : undefined // the runtime check of a menu mod needs it (S3)
 
 function setup(lint: DeployLintItem[], strictMode = false, chooseZip?: (def: string) => Promise<string | undefined>) {
   const tmp = mkdtempSync(join(tmpdir(), 'inkwell-svc-'))
@@ -20,9 +24,9 @@ function setup(lint: DeployLintItem[], strictMode = false, chooseZip?: (def: str
   const reports: DeployState[] = []
   const mods = join(tmp, 'mods')
   const svc = createDeployService({
-    userData: join(tmp, 'userData'), appPath: tmp,
+    userData: join(tmp, 'userData'), appPath: appRoot,
     project: () => ({ dir, name: 'Test', version: '1.2.0', modId: 'T', swfs: [swf], strictMode }),
-    settings: () => ({ stored: {}, resolved: { ffdecDir: '', javaPath: '', source: {}, mo2ModsDir: mods } }),
+    settings: () => ({ stored: {}, resolved: { ffdecDir: '', javaPath: '', source: {}, mo2ModsDir: mods, ...(papyrusExe ? { papyrusExe } : {}) } }),
     saveStored: async () => undefined,
     ffdec: () => ({ build: () => Promise.reject(new Error('unused')) }),
     report: (s) => void reports.push(s),
@@ -34,7 +38,7 @@ const warn: DeployLintItem = { severity: 'warning', code: 'font-fallback', messa
 const err: DeployLintItem = { severity: 'error', code: 'font-unmapped', message: 'no alias', nodeId: '1:3', layerName: 'Sub' }
 
 describe('deploy service export gate', () => {
-  it('a warning passes: listed in the gate, the commit writes', async () => {
+  it.skipIf(!papyrusExe)('a warning passes: listed in the gate, the commit writes', async () => {
     const { svc, root } = setup([warn])
     const p = await svc.prepare('mo2Mod', 'all')
     if (!p.ok) throw new Error(p.error)
@@ -43,6 +47,7 @@ describe('deploy service export gate', () => {
     expect(existsSync(join(root, 'Interface', 'Inkwell', 'T', 'Wheel.swf'))).toBe(true)
     expect(existsSync(join(root, 'SKSE', 'Plugins', 'Inkwell', 'menus', 'T_Wheel.json'))).toBe(true)
     expect(existsSync(join(root, 'SKSE', 'Plugins', 'Inkwell', 'T.ini'))).toBe(true)
+    for (const f of ['T_RuntimeCheck.esp', 'Scripts/T_RuntimeCheck.pex', 'Source/Scripts/T_RuntimeCheck.psc']) expect(existsSync(join(root, ...f.split('/'))), f).toBe(true)
   })
 
   it('an error blocks: the dialog is forced, the commit is refused and nothing is written', async () => {
@@ -74,7 +79,7 @@ describe('Package Mod (and the Vortex target): the deploy files as one zip', () 
     return { ...r, asked }
   }
 
-  it('plans the same files as a deploy and writes them at the zip root; default <project>/dist/<Name>-<version>.zip', async () => {
+  it.skipIf(!papyrusExe)('plans the same files as a deploy and writes them at the zip root; default <project>/dist/<Name>-<version>.zip', async () => {
     const { svc, root, asked, tmp, dir } = pkg([warn])
     const d = await svc.prepare('mo2Mod', 'all')
     const p = await svc.prepare('package', 'all')
@@ -82,13 +87,17 @@ describe('Package Mod (and the Vortex target): the deploy files as one zip', () 
     expect(p.files).toEqual(d.files)
     expect(p).toMatchObject({ needsConfirm: false, removed: [], root: join(dir, 'dist'), gate: { ok: true } })
     const r = await svc.commit(p.token)
-    expect(r).toMatchObject({ ok: true, zipPath: join(tmp, 'out', 'pick.zip'), written: 3 })
+    expect(r).toMatchObject({ ok: true, zipPath: join(tmp, 'out', 'pick.zip'), written: 6 })
     expect(asked).toEqual([join(dir, 'dist', 'Test-1.2.0.zip')])
     const zip = readFileSync(r.zipPath!)
     expect(readZipEntry(zip, 'Interface/Inkwell/T/Wheel.swf')?.toString()).toBe('FWS-mine')
     expect(JSON.parse(readZipEntry(zip, 'SKSE/Plugins/Inkwell/menus/T_Wheel.json')!.toString())).toMatchObject({ name: 'T_Wheel', swf: 'Interface/Inkwell/T/Wheel.swf' })
     expect(readZipEntry(zip, 'SKSE/Plugins/Inkwell/T.ini')?.toString()).toContain('[Menu.T_Wheel]') // the package carries the INI too (a fresh install has none)
     expect(readZipEntry(zip, 'Inkwell.ini')).toBeUndefined()
+    // the runtime check is mandatory in the package (O4)
+    expect(readZipEntry(zip, 'T_RuntimeCheck.esp')?.subarray(0, 4).toString()).toBe('TES4')
+    expect(readZipEntry(zip, 'Scripts/T_RuntimeCheck.pex')?.readUInt32BE(0)).toBe(0xfa57c0de)
+    expect(readZipEntry(zip, 'Source/Scripts/T_RuntimeCheck.psc')?.toString()).toContain('SKSE.GetPluginVersion("Inkwell")')
     expect(existsSync(root)).toBe(false) // the MO2 folder is not touched
     expect(existsSync(`${r.zipPath}.inkwell-tmp`)).toBe(false)
     // byte-identical on a second package of the same input
@@ -110,7 +119,7 @@ describe('Package Mod (and the Vortex target): the deploy files as one zip', () 
     }
   })
 
-  it("refuses to save into a game Data folder; a cancelled dialog writes nothing", async () => {
+  it.skipIf(!papyrusExe)("refuses to save into a game Data folder; a cancelled dialog writes nothing", async () => {
     const data = pkg([], (tmp) => join(tmp, 'Skyrim Special Edition', 'Data', 'm.zip'))
     const p = await data.svc.prepare('package', 'all')
     if (!p.ok) throw new Error(p.error)

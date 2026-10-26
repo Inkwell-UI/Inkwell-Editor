@@ -1,7 +1,8 @@
 import {
-  effectiveInputContext, FIRST_RUNTIME_VERSION, HOTKEY_RANGE, MENU_NAME, MENU_SLOTS, MENU_WARN_THRESHOLD, MenuDef, MenuSettings, MOD_EVENT_NAME, SPEC_VERSION, writeDefaultModIni, type UserDefaults
+  effectiveInputContext, HOTKEY_RANGE, MENU_NAME, MENU_SLOTS, MENU_WARN_THRESHOLD, MenuDef, MenuSettings, MOD_EVENT_NAME, SPEC_VERSION, writeDefaultModIni, type UserDefaults
 } from '@inkwell-ui/spec'
 import type { DeployLintItem } from './deploy'
+import { minRuntimeFor } from './runtimeFeatures'
 
 // The custom-menu target (docs/menus.md): names and paths derived from the project, the MenuDef the runtime reads, the commented default INI and the
 // lint codes of the export gate. Pure: the main process deploys with it, the Menu settings panel validates with it.
@@ -29,6 +30,8 @@ export interface MenuSource {
   /** SWF folder name under `swfs/`. */
   swf: string
   settings: MenuSettings
+  /** Runtime features the SWF uses (`RuntimeFeature` names); absent = only the base menu. */
+  features?: readonly string[]
 }
 
 /** Engine menu name (S1): the author's `name`, else `<modId>_<SwfName>`; and the SWF path, the author's `swf`, else the O2 path. */
@@ -38,7 +41,7 @@ export function resolveMenuNames(modId: string, m: MenuSource): { name: string; 
 }
 
 /** The highest Inkwell Runtime version what the SWF uses needs (S3 rule 1). Every 0.3 feature is in the first runtime. */
-export const minRuntimeOf = (_m: MenuSource): string => FIRST_RUNTIME_VERSION
+export const minRuntimeOf = (m: MenuSource): string => minRuntimeFor(['menu', ...(m.features ?? [])])
 
 export type MenuProblem = { code: string; message: string }
 
@@ -48,6 +51,7 @@ export function buildMenuDef(modId: string, m: MenuSource): { def: MenuDef; prob
   const s = m.settings
   const problems: MenuProblem[] = []
   if (!MENU_NAME.test(r.name)) problems.push({ code: 'menu-name-invalid', message: `Menu name "${r.name}" must match ${MENU_NAME} (letters, digits and _, starting with a letter, 2 to 64 characters).` })
+  if (/^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i.test(r.name)) problems.push({ code: 'menu-name-invalid', message: `Menu name "${r.name}" is a reserved Windows device name (the menu JSON would be named after it). Pick another name.` })
   const hk = s.triggers.hotkey
   if (hk !== undefined && !(Number.isInteger(hk) && hk >= HOTKEY_RANGE.min && hk <= HOTKEY_RANGE.max)) problems.push({ code: 'menu-hotkey-invalid', message: `Open key ${hk} must be a DirectInput scan code from ${HOTKEY_RANGE.min} to ${HOTKEY_RANGE.max} (1 is Escape).` })
   const me = s.triggers.modEvent

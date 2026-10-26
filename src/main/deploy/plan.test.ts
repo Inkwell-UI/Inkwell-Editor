@@ -26,32 +26,34 @@ describe('planDeploy', () => {
   it('customMenu: the SWF under Interface/Inkwell/<modId>/ (O2), the menu JSON and the default INI; the runtime note; menu replacements are skipped; orphans ignored', () => {
     const p = planDeploy({ ...base, swfs: [menu, { name: 'inv', orphaned: false, kind: 'menuReplacement' }, { name: 'old', orphaned: true, kind: 'customMenu' }] })
     expect(p.files).toEqual([
-      { rel: 'Interface/Inkwell/MyMod/Wheel.swf', swf: 'wheel' }, { rel: 'SKSE/Plugins/Inkwell/menus/MyMod_Wheel.json', swf: 'wheel' }, { rel: 'SKSE/Plugins/Inkwell/MyMod.ini', swf: 'wheel' }
+      { rel: 'Interface/Inkwell/MyMod/Wheel.swf', swf: 'wheel' }, { rel: 'SKSE/Plugins/Inkwell/menus/MyMod_Wheel.json', swf: 'wheel' }, { rel: 'SKSE/Plugins/Inkwell/MyMod.ini', swf: 'wheel' },
+      { rel: 'Source/Scripts/MyMod_RuntimeCheck.psc', swf: 'wheel' }, { rel: 'Scripts/MyMod_RuntimeCheck.pex', swf: 'wheel' }, { rel: 'MyMod_RuntimeCheck.esp', swf: 'wheel' }
     ])
-    expect(p.notes).toEqual(['Requires Inkwell Runtime 0.3.0 or newer; not included in this deploy.'])
+    expect(p.notes[0]).toBe('Requires Inkwell Runtime 0.3.0 or newer; not included in this deploy.')
+    expect(p.notes[1]).toContain('MyMod_RuntimeCheck.esp')
     expect(p.lint.map((l) => l.code)).toEqual(['menu-replacement-skipped'])
   })
   it('customMenu with the flat fallback settings: Interface/<menuName>.swf', () => {
     const p = planDeploy({ ...base, swfs: [{ ...menu, menu: flatMenuSettings('MyMod', 'wheel', defaultMenuSettings()) }] })
-    expect(p.files.map((f) => f.rel)).toEqual(['Interface/MyMod_Wheel.swf', 'SKSE/Plugins/Inkwell/menus/MyMod_Wheel.json', 'SKSE/Plugins/Inkwell/MyMod.ini'])
+    expect(p.files.map((f) => f.rel)).toEqual(['Interface/MyMod_Wheel.swf', 'SKSE/Plugins/Inkwell/menus/MyMod_Wheel.json', 'SKSE/Plugins/Inkwell/MyMod.ini', 'Source/Scripts/MyMod_RuntimeCheck.psc', 'Scripts/MyMod_RuntimeCheck.pex', 'MyMod_RuntimeCheck.esp'])
   })
   it('customMenu: one INI per mod for several menus; a name and swf from menu.json win; a hostile SWF name stays inside', () => {
     const two = planDeploy({ ...base, swfs: [menu, { name: 'list', orphaned: false, kind: 'customMenu', menu: MenuSettings.parse({ specVersion: 6, name: 'MyMod_Custom', swf: 'Interface/Inkwell/MyMod/Elsewhere.swf' }) }] })
     expect(two.files.map((f) => f.rel)).toEqual([
-      'Interface/Inkwell/MyMod/Wheel.swf', 'SKSE/Plugins/Inkwell/menus/MyMod_Wheel.json', 'SKSE/Plugins/Inkwell/MyMod.ini',
+      'Interface/Inkwell/MyMod/Wheel.swf', 'SKSE/Plugins/Inkwell/menus/MyMod_Wheel.json', 'SKSE/Plugins/Inkwell/MyMod.ini', 'Source/Scripts/MyMod_RuntimeCheck.psc', 'Scripts/MyMod_RuntimeCheck.pex', 'MyMod_RuntimeCheck.esp',
       'Interface/Inkwell/MyMod/Elsewhere.swf', 'SKSE/Plugins/Inkwell/menus/MyMod_Custom.json'
     ])
     // file names come from the sanitised SWF name; a name that is too long for a menu name writes no JSON (the gate reports menu-name-invalid)
     for (const name of ['..\\..\\evil', 'a/b', 'C:evil', '..']) {
       const p = planDeploy({ ...base, swfs: [{ name, orphaned: false, kind: 'customMenu' }] })
       expect(p.errors, name).toEqual([])
-      for (const f of p.files) expect(f.rel, name).toMatch(/^(Interface\/Inkwell\/MyMod\/[A-Za-z0-9_]+\.swf|SKSE\/Plugins\/Inkwell\/(menus\/MyMod_[A-Za-z0-9_]+\.json|MyMod\.ini))$/)
+      for (const f of p.files) expect(f.rel, name).toMatch(/^(Interface\/Inkwell\/MyMod\/[A-Za-z0-9_]+\.swf|SKSE\/Plugins\/Inkwell\/(menus\/MyMod_[A-Za-z0-9_]+\.json|MyMod\.ini))$|^(Source\/Scripts\/MyMod_RuntimeCheck\.psc|Scripts\/MyMod_RuntimeCheck\.pex|MyMod_RuntimeCheck\.esp)$/)
     }
-    expect(planDeploy({ ...base, swfs: [{ name: 'x'.repeat(70), orphaned: false, kind: 'customMenu' }] }).files.map((f) => f.rel)).toEqual([`Interface/Inkwell/MyMod/X${'x'.repeat(69)}.swf`, 'SKSE/Plugins/Inkwell/MyMod.ini'])
+    expect(planDeploy({ ...base, swfs: [{ name: 'x'.repeat(70), orphaned: false, kind: 'customMenu' }] }).files.map((f) => f.rel)).toEqual([`Interface/Inkwell/MyMod/X${'x'.repeat(69)}.swf`, 'SKSE/Plugins/Inkwell/MyMod.ini', 'Source/Scripts/MyMod_RuntimeCheck.psc', 'Scripts/MyMod_RuntimeCheck.pex', 'MyMod_RuntimeCheck.esp'])
     expect(planDeploy({ ...base, swfs: [{ name: 'x', orphaned: false, kind: 'customMenu', menu: { specVersion: 6, swf: 'Interface/../x.swf' } as never }] }).errors.join()).toMatch(/unsafe path/)
   })
   it('only: just the named SWF; unknown name is an error', () => {
-    expect(planDeploy({ ...base, swfs: [hud, menu], only: 'wheel' }).files.map((f) => f.rel)).toEqual(['Interface/Inkwell/MyMod/Wheel.swf', 'SKSE/Plugins/Inkwell/menus/MyMod_Wheel.json', 'SKSE/Plugins/Inkwell/MyMod.ini'])
+    expect(planDeploy({ ...base, swfs: [hud, menu], only: 'wheel' }).files.map((f) => f.rel)).toEqual(['Interface/Inkwell/MyMod/Wheel.swf', 'SKSE/Plugins/Inkwell/menus/MyMod_Wheel.json', 'SKSE/Plugins/Inkwell/MyMod.ini', 'Source/Scripts/MyMod_RuntimeCheck.psc', 'Scripts/MyMod_RuntimeCheck.pex', 'MyMod_RuntimeCheck.esp'])
     expect(planDeploy({ ...base, swfs: [hud], only: 'nope' }).errors[0]).toContain('nope')
   })
   it('refuses the game Data folder (detected install and the name pattern), tested both ways', () => {

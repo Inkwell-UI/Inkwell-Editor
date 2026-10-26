@@ -12,7 +12,7 @@ export interface PapyrusScript {
 /** Papyrus identifiers (and the file names derived from them): ASCII letters and digits, starting with a letter. */
 export const isPapyrusName = (s: string): boolean => /^[A-Za-z][A-Za-z0-9]*$/.test(s)
 
-const str = (s: string): string => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ')}"`
+export const str = (s: string): string => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ')}"`
 const flt = (n: number): string => (Number.isInteger(n) ? n.toFixed(1) : String(n))
 
 export const widgetScriptName = (modId: string, widgetName: string): string => `${modId}_${widgetName}`

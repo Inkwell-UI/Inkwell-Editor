@@ -52,3 +52,35 @@ export function buildEsp(o: { questEdid: string; scriptName: string; author?: st
   const tes4 = rec('TES4', ESL_FLAG, 0, Buffer.concat([sub('HEDR', hedr), sub('CNAM', cstr(o.author ?? 'Inkwell')), sub('MAST', cstr(MASTER)), sub('DATA', Buffer.alloc(8))]))
   return Buffer.concat([tes4, grup])
 }
+
+/** Form id of the quest of a master-less plugin: load-order index 0 (the file itself) with the ESL-legal local id range starting at 0x800. */
+export const NO_MASTER_QUEST_FORM_ID = 0x00000800
+/** The player reference (`Game.GetPlayer()`), the fixed form id every plugin may fill an alias with. */
+export const PLAYER_REF = 0x00000014
+
+/**
+ * ESL-flagged ESP with NO master: one start-game-enabled quest (Quest script optional) with one reference alias that is forced to the player and has
+ * `aliasScript` attached (SPEC-CHANGES S3/O4, the runtime check). Same record layouts as `buildEsp`, plus (UESP):
+ *   QUST tail = ANAM{nextAliasId=1}, then per alias ALST{id u32} ALID{name} FNAM{flags u32} ALFR{forced ref} VTCK{0} ALED{}
+ *   VMAD alias entry = object (v2: u16 0, u16 aliasId, u32 quest form id), version i16 5, objectFormat i16 2, scriptCount u16, scripts as above
+ * Hand-written like the widget plugin; not yet loaded in the game or checked in xEdit/CK.
+ */
+export function buildPlayerAliasEsp(o: { questEdid: string; aliasName: string; aliasScript: string; author?: string }): Buffer {
+  const vmad = Buffer.concat([
+    i16(5), i16(2), u16(0), // no quest script
+    Buffer.from([2]), u16(0), wstr(''), u16(1), // fragment marker, 0 fragments, empty file name, ONE alias
+    u16(0), u16(0), u32(NO_MASTER_QUEST_FORM_ID), i16(5), i16(2), u16(1), wstr(o.aliasScript), Buffer.from([0]), u16(0)
+  ])
+  const dnam = Buffer.concat([u16(0x0001), Buffer.from([50, 0]), u32(0), u32(0)])
+  const quest = rec('QUST', 0, NO_MASTER_QUEST_FORM_ID, Buffer.concat([
+    sub('EDID', cstr(o.questEdid)), sub('VMAD', vmad), sub('DNAM', dnam), sub('ANAM', u32(1)),
+    sub('ALST', u32(0)), sub('ALID', cstr(o.aliasName)), sub('FNAM', u32(0)), sub('ALFR', u32(PLAYER_REF)), sub('VTCK', u32(0)), sub('ALED', Buffer.alloc(0))
+  ]))
+  const grup = Buffer.concat([Buffer.from('GRUP'), u32(24 + quest.length), Buffer.from('QUST'), u32(0), u32(0), u16(0), u16(0), quest])
+  const hedr = Buffer.alloc(12)
+  hedr.writeFloatLE(1.71, 0)
+  hedr.writeUInt32LE(1, 4)
+  hedr.writeUInt32LE(0x801, 8)
+  const tes4 = rec('TES4', ESL_FLAG, 0, Buffer.concat([sub('HEDR', hedr), sub('CNAM', cstr(o.author ?? 'Inkwell'))]))
+  return Buffer.concat([tes4, grup])
+}

@@ -146,11 +146,12 @@ describe('prepareDeploy guards', () => {
     if (!all.ok) throw new Error(all.error)
     expect(all.prepared.issues).toEqual([
       { severity: 'error', code: 'font-unmapped', message: 'no alias', nodeId: '1:5', layerName: 'Title', swf: 'bad' },
-      { severity: 'warning', code: 'unreachable-node', message: expect.stringContaining('Stray'), swf: 'wheel', nodeId: 'x', layerName: 'Stray' }
+      { severity: 'warning', code: 'unreachable-node', message: expect.stringContaining('Stray'), swf: 'wheel', nodeId: 'x', layerName: 'Stray' },
+      { severity: 'warning', code: 'runtime-check-missing', message: expect.stringContaining('no Papyrus compiler'), swf: 'wheel' } // no compiler in this input: a folder deploy only warns
     ])
     expect([...all.prepared.files.keys()]).toEqual(['Interface/Inkwell/M/Wheel.swf', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json', 'SKSE/Plugins/Inkwell/M.ini']) // the blocked SWF contributes nothing
     const one = await prepareDeploy({ ...i, only: 'wheel' })
-    expect(one.ok && one.prepared.issues.map((l) => l.swf)).toEqual(['wheel'])
+    expect(one.ok && one.prepared.issues.map((l) => l.swf)).toEqual(['wheel', 'wheel'])
   })
 
   it('dds image mode adds one DDS per image under textures/Inkwell/<modId>/, recorded in the manifest; embedded mode adds nothing', async () => {

@@ -1,7 +1,7 @@
 // Dev deploy (docs/dev-mode.md, SPEC-CHANGES S6/O5): the dev INI and the dev SWF are written only when the toggle is on and the target is a folder; Package Mod and the Vortex zip never get them.
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { parseIni, type Swf } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
 import { readZipEntry } from '../doctor/zip'
@@ -12,6 +12,8 @@ import type { DeploySwf } from './run'
 import { createDeployService } from './service'
 import { MANIFEST_NAME } from './write'
 
+const appRoot = resolve(__dirname, '../../..')
+const papyrusExe = process.env['INKWELL_PAPYRUS'] && existsSync(process.env['INKWELL_PAPYRUS']) ? process.env['INKWELL_PAPYRUS'] : undefined
 const TOKEN = '5a'.repeat(32)
 const INI = join('SKSE', 'Plugins', 'Inkwell', 'Inkwell.ini')
 
@@ -26,9 +28,9 @@ function setup(initial: boolean) {
   const mods = join(tmp, 'mods')
   let ensured = 0
   const svc = createDeployService({
-    userData: join(tmp, 'userData'), appPath: tmp,
+    userData: join(tmp, 'userData'), appPath: appRoot,
     project: () => ({ dir, name: 'Test', version: '1.0.0', modId: 'T', swfs: [swf] }),
-    settings: () => ({ stored: {}, resolved: { ffdecDir: '', javaPath: '', source: {}, mo2ModsDir: mods } }),
+    settings: () => ({ stored: {}, resolved: { ffdecDir: '', javaPath: '', source: {}, mo2ModsDir: mods, ...(papyrusExe ? { papyrusExe } : {}) } }),
     saveStored: async () => undefined,
     ffdec: () => ({ build: () => Promise.reject(new Error('unused')) }),
     report: () => undefined,
@@ -91,7 +93,7 @@ describe('Dev deploy off, or a zip target', () => {
     expect(readFileSync(join(s.root, 'Interface', 'Inkwell', 'T', 'Wheel.swf'), 'utf8')).toBe('FWS-game')
     expect(existsSync(join(s.root, INI))).toBe(false)
   })
-  it('Package Mod and the Vortex zip never contain dev mode, the token or the dev SWF, even with the toggle on', async () => {
+  it.skipIf(!papyrusExe)('Package Mod and the Vortex zip never contain dev mode, the token or the dev SWF, even with the toggle on', async () => {
     for (const target of ['package', 'vortex'] as const) {
       const s = setup(true)
       const { r } = await deploy(s, target)
