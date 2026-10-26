@@ -189,7 +189,7 @@ export const strings = {
   assets: {
     title: 'Assets',
     sections: [
-      { id: 'as2', title: 'IMPORTED AS2 CLASSES', action: '+ Import', reason: `${BY} AS2 import (0.2)`, empty: 'No imported AS2 classes. Importing .as files arrives in 0.2.' },
+      { id: 'as2', title: 'IMPORTED AS2 CLASSES', action: '+ Import', reason: 'AS2 import is not scheduled yet', empty: 'No imported AS2 classes. Importing .as files is planned but not scheduled.' },
       { id: 'packs', title: 'NODE PACKS', action: 'Check Updates', reason: `${BY} node packs (0.5)`, empty: 'No node packs. Node packs arrive in 0.2 (core pack) and 0.5 (community packs).' }
     ],
     packsNone: 'Packs: none'
