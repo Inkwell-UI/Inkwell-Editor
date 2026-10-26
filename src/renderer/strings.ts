@@ -207,9 +207,9 @@ export const strings = {
     as2LineTip: (id: string) => `Select node ${id}`,
     loading: 'Loading graphs...',
     empty: 'No graph for this SWF yet. + Graph creates its menu graph.',
-    emptyCanvas: 'Empty graph. Press Space to add a node, or drag a wire out of a pin.',
     varGet: (name: string) => `Get ${name}`,
     varSet: (name: string) => `Set ${name}`,
+    emptyCanvas: 'Empty graph. Press Space to add a node, or drag a wire out of a pin.',
     /** Contextual key hints above the minimap: what applies to nothing, one node or several selected nodes (only keys the canvas or shell handles). */
     keyGroups: (selected: number, wires: number): [string, string][][] => {
       const nav: [string, string][] = [['Zoom to all', 'F'], ['Find nodes', 'Ctrl F']]
@@ -244,8 +244,8 @@ export const strings = {
 
   vars: {
     title: 'Variables',
-    name: 'Variable name',
     drag: 'Drag onto the graph to get or set this variable',
+    name: 'Variable name',
     type: 'Variable type',
     scope: 'Variable scope',
     scopeMenu: 'menu',
@@ -288,13 +288,13 @@ export const strings = {
     noIssues: 'No issues for this layer.',
     gfx: 'GFx MAPPING',
     gfxNone: (type: string) => `No GFx mapping facts for ${type} layers yet.`,
-    sizing: 'Sizing',
     gfxFrameRoot: 'The root frame is the stage and is transparent in game; its solid and gradient fills are not drawn. Use a rectangle for a background.',
     gfxFrameNone: 'Nothing to map: this frame has no fill and does not clip its content.',
     gfxFrameClip: 'Clip content',
     gfxFrameClipTo: 'clip layer (clipDepth), no AS2; unverified in game',
     gfxFrameFill: (kind: string, i: number) => (kind === 'image' ? `Fill ${i}: image` : kind === 'solid' ? `Fill ${i}: solid` : `Fill ${i}: ${kind} (first stop only)`),
     gfxFrameFillTo: (kind: string, name: string) => (kind === 'image' ? `clip ${name}` : `rectangle shape ${name}`),
+    sizing: 'Sizing',
     sizingNames: { autoWidth: 'Auto Width', autoHeight: 'Auto Height', fixed: 'Fixed' } as Record<string, string>,
     noWrap: 'no wrap',
     fixedField: 'fixed TextField',
