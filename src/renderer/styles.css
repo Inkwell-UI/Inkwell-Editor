@@ -64,7 +64,7 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .topbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface-1); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 6px; margin-right: 6px; }
 .project-name { color: var(--fg-dim); padding-left: 8px; border-left: 1px solid var(--line-strong); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.statusbar { display: flex; align-items: center; gap: 4px; padding: 0 8px; min-height: 26px; background: var(--surface-1); border-top: 1px solid var(--line); font-size: 12px; color: var(--fg-dim); }
+.statusbar { position: relative; z-index: 40; display: flex; align-items: center; gap: 4px; padding: 0 8px; min-height: 26px; background: var(--surface-1); border-top: 1px solid var(--line); font-size: 12px; color: var(--fg-dim); }
 .statusbar .item { padding: 2px 8px; border-right: 1px solid var(--line); display: inline-flex; align-items: center; gap: 4px; }
 .statusbar .item:last-child { border-right: 0; }
 .statusbar .item-button { font: inherit; color: inherit; background: transparent; border-top: 0; border-left: 0; border-bottom: 0; cursor: pointer; border-radius: 0; }
@@ -260,7 +260,7 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .statusbar .item-button { min-width: 0; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
 .statusbar .item-button .mono { font-size: 11px; }
 /* Narrow windows: the connection dots and the undo scope never shrink or leave the bar; the long build line gives way first. */
-.statusbar { overflow: hidden; min-width: 0; }
+.statusbar { min-width: 0; } /* no overflow clip: the dot popovers open upward out of the bar */
 .statusbar .item { flex: none; }
 .statusbar .popover-root { display: flex; flex: none; }
 .statusbar .popover-root:has(> [data-testid="timing"]) { flex: 0 1 auto; min-width: 0; }
@@ -422,3 +422,14 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .menu-form .issue { display: flex; gap: 6px; align-items: flex-start; overflow-wrap: anywhere; }
 
 .play-menu .toolbar .gn-input { width: 190px; }
+
+/* Game dot popover, Trace & Watch game source (docs/dev-mode.md) */
+.game-details { min-width: 340px; max-width: 440px; }
+.game-details h4 { margin: 8px 0 2px; font-size: 11px; letter-spacing: 0.05em; color: var(--fg-dim); }
+.game-details .gn-input { min-width: 0; flex: 1 1 160px; }
+.game-details .port-input { width: 90px; flex: 0 0 90px; }
+.tone-ok { color: var(--ok); }
+.watch-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.watch-table th { text-align: left; color: var(--fg-dim); font-weight: 600; padding: 1px 6px 3px 0; }
+.watch-table td { padding: 1px 6px 1px 0; overflow-wrap: anywhere; border-top: 1px solid var(--line); }
+.trace-toolbar { position: sticky; top: 0; z-index: 2; background: var(--surface-1, var(--bg)); padding: 4px 0; }

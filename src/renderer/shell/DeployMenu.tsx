@@ -9,6 +9,7 @@ import { useSelectionStore } from '../state/selectionStore'
 import { useSyncState } from '../hooks/useSyncState'
 import { useDeployStore } from '../state/deployStore'
 import { useDialogStore } from '../state/dialogStore'
+import { useDevStore } from '../state/devStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Dialog } from '../ui/Dialog'
@@ -22,6 +23,7 @@ function Targets({ close }: { close(): void }) {
   const setScope = useDeployStore((s) => s.setScope)
   const start = useDeployStore((s) => s.start)
   const show = useDialogStore((s) => s.show)
+  const devDeploy = useDevStore((s) => s.dev.devDeploy)
   // the settings may have changed while the Setup dialog was open: ask every time the menu opens
   useEffect(() => void inkwell?.getDeployTargets().then(setTargets), [project?.dir])
   const hasCustom = project?.swfs.some((s) => !s.orphaned && s.ir.target.kind === 'customMenu')
@@ -61,6 +63,14 @@ function Targets({ close }: { close(): void }) {
         <label className="check"><input type="radio" name="deploy-scope" checked={scope === 'active'} disabled={!swf} onChange={() => setScope('active')} /> {strings.deploy.scopeActive(swf?.name)}</label>
       </fieldset>
       {hasCustom && <p className="dim">{strings.deploy.custom}</p>}
+      {hasCustom && (
+        <div data-testid="dev-deploy">
+          <label className="check" title={strings.deploy.devToggleNote}>
+            <input type="checkbox" checked={devDeploy} onChange={(e) => void inkwell?.devSetDeploy(e.target.checked)} data-testid="dev-deploy-toggle" /> {strings.deploy.devToggle}
+          </label>
+          <p className="dim">{strings.deploy.devToggleNote}</p>
+        </div>
+      )}
       <p className={lint.errors ? 'tone-error' : 'dim'} data-testid="deploy-lint-summary">
         {strings.deploy.lintSummary(lint.errors, lint.warnings)}. {project?.strictMode ? strings.deploy.strictOn : strings.deploy.strictOff}
       </p>
@@ -159,7 +169,7 @@ export function ConfirmDialog() {
           <>
             <p><strong>{strings.deploy.confirmFiles(p.files.length)}</strong></p>
             <ul className="plain file-list mono" aria-label={strings.deploy.confirmFiles(p.files.length)}>
-              {p.files.map((f) => <li key={f.rel}>{f.rel} <span className="dim">{f.size} B{f.keepExisting ? strings.deploy.keepExisting : ''}</span></li>)}
+              {p.files.map((f) => <li key={f.rel}>{f.rel} <span className="dim">{f.size} B{f.keepExisting ? strings.deploy.keepExisting : ''}{f.devIni ? strings.deploy.devIniFile : ''}</span></li>)}
             </ul>
             {p.removed.length > 0 && <p>{strings.deploy.confirmRemoved(p.removed.length)}</p>}
           </>

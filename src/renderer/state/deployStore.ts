@@ -43,8 +43,8 @@ export const useDeployStore = create<DeployStore>()((set, get) => {
       const lint = [...p.gate.warnings, ...p.lint.filter((l) => l.severity !== 'info')]
       toast().push({
         tone: lint.length ? 'info' : 'ok',
-        title: strings.deploy.toastDone,
-        text: `${r.written} written, ${r.unchanged} unchanged${r.removed?.length ? `, ${r.removed.length} removed` : ''} (${p.root})${lint.length ? `. ${lint.map((l) => l.code).join(', ')}` : ''}`
+        title: r.devMenus ? strings.deploy.toastDevDone : strings.deploy.toastDone,
+        text: `${r.written} written, ${r.unchanged} unchanged${r.removed?.length ? `, ${r.removed.length} removed` : ''} (${p.root})${lint.length ? `. ${lint.map((l) => l.code).join(', ')}` : ''}${r.hotReload ? `. ${r.hotReload}` : ''}`
       })
     } else toast().push({ tone: 'error', title: strings.deploy.toastFailed, text: r.error ?? '' })
   }

@@ -387,12 +387,13 @@ export const strings = {
     watchCols: ['Scope', 'Name', 'Value'],
     start: 'Start Skyrim with Dev Mode enabled',
     source: 'Source: Ruffle preview',
-    notice: 'Ruffle preview, not the game; in-game traces need the Runtime (0.3).',
+    notice: 'Ruffle preview, not the game. Switch the source to Game (Dev Mode) for the runtime in Skyrim.',
     errorsOnly: 'Warnings and errors only',
     nothingToClear: 'no trace lines',
     empty: 'No trace output yet. Fire an entry from the Play tab, or run the preview.',
     select: (title: string) => `Select the ${title} node`,
-    watchLater: 'Variable watch arrives with the runtime (0.3). Pin values from the preview show on the canvas.'
+    emptyGame: 'No game trace yet. Open the menu in Skyrim (Log nodes and failing nodes show up here with their node ids).',
+    watchLater: 'The variable watch shows the game: switch the source to Game (Dev Mode). Pin values from the preview show on the canvas.'
   },
 
   play: {
@@ -480,7 +481,7 @@ export const strings = {
     snapshotFrom: (plugin?: string, fileKey?: string) => (plugin || fileKey ? `From plugin ${plugin ?? '?'}${fileKey ? `, Figma file ${fileKey}` : ''}` : 'No plugin recorded yet (it is recorded on the next sync)'),
     snapshotStale: (names: string[]) => `Changed outside a sync since the snapshot: ${names.join(', ')}. Builds use ir.json; the next sync from Figma brings it back in line.`,
     snapshotBroken: (e: string) => `${e} Builds use ir.json; the next sync rewrites it.`,
-    gameStatus: 'Not connected (dev mode arrives with the runtime)',
+    gameStatus: 'Not connected',
     approvalNote: 'Open Figma and run the Inkwell plugin: it connects by itself. The first time, this window asks you to allow it.',
     mirror: 'Mirror Figma selection',
     mirrorNote: 'Selecting a layer in Figma selects it here. Selecting here cannot select it in Figma yet.',
@@ -751,6 +752,78 @@ export const strings = {
     packageText: (path: string, n: number) => `${n} file(s) in ${path}. Install it with MO2 (Install a new mod from archive) or Vortex (Install From File).`,
     vortexText: (path: string, n: number) => `${n} file(s) in ${path}. In Vortex: Mods > Install From File, choose this zip, then enable and deploy it there.`,
     toastPackageFailed: 'Package failed',
-    openFolder: 'Open folder'
+    openFolder: 'Open folder',
+    // Dev deploy (docs/dev-mode.md)
+    devToggle: 'Dev deploy',
+    devToggleNote: 'Off by default. On: deploys write Inkwell.ini with DevMode=1 and a token, build the custom menus with the live-inspection hooks and hot-reload the open menu. For testing only. Package Mod and Vortex never contain it.',
+    devToggleOn: 'Dev deploy is on for this project',
+    devIniFile: ' (dev mode and token, merged into the existing file)',
+    toastDevDone: 'Dev deployed'
+  },
+
+  // The game dev connection: Game dot, popover, Trace & Watch game source (UX 4.6 Zone 6B and Tab 3, 5.4; docs/dev-mode.md)
+  dev: {
+    phase: {
+      off: 'Disconnected',
+      noToken: 'No dev token yet',
+      waiting: 'Disconnected (start Skyrim with Dev Mode)',
+      connecting: 'Connecting...',
+      connected: 'Connected (Dev Mode)',
+      unauthorized: 'Refused: wrong token',
+      protocolMismatch: 'Refused: protocol mismatch',
+      refused: 'Refused by the game',
+      busy: 'Busy: another editor is connected'
+    } as Record<string, string>,
+    specMismatch: 'Connected, spec version differs',
+    connectedTip: (v: string, port: number) => `Connected: Inkwell Runtime ${v} on 127.0.0.1:${port}`,
+    detailsTitle: 'Game connection (Dev Mode)',
+    runtime: 'Inkwell Runtime',
+    game: 'Skyrim',
+    protocol: 'Protocol',
+    spec: 'Spec',
+    port: 'Port',
+    portSet: 'Set',
+    portLabel: 'Port',
+    token: 'Token',
+    tokenNone: 'none',
+    tokenSources: {
+      none: 'none',
+      pasted: 'pasted by you',
+      overwrite: 'Inkwell.ini in the MO2 overwrite folder',
+      deploy: 'Inkwell.ini of the deploy target',
+      editor: 'made by the editor for this project (Dev deploy)'
+    } as Record<string, string>,
+    menusTitle: 'Menus the runtime knows',
+    menuOpen: 'open',
+    menuClosed: 'closed',
+    noMenus: 'No menus registered.',
+    connect: 'Connect',
+    disconnect: 'Disconnect',
+    pasteTitle: 'Paste the token from Inkwell.ini',
+    pasteHint: 'The [Dev] Token= line, 64 characters. Needed when MO2 keeps another Inkwell.ini (the overwrite folder wins over a mod folder).',
+    pastePlaceholder: '64 hex digits',
+    pasteUse: 'Use token',
+    pasteClear: 'Forget pasted token',
+    noTokenHelp: 'Paste the token from Inkwell.ini or run a Dev deploy.',
+    devDeployOn: 'Dev deploy is on for this project (Deploy menu).',
+    devDeployOff: 'Dev deploy is off: turn it on in the Deploy menu, then deploy.',
+    hotReload: 'Trigger Hot Reload',
+    reloadNeedsGame: 'The game is not connected',
+    // Trace & Watch
+    sourceLabel: 'Source',
+    sourceRuffle: 'Ruffle preview',
+    sourceGame: 'Game (Dev Mode)',
+    sourceGameShort: 'Game',
+    gameNotice: 'Game (Dev Mode): trace lines, variables and pin values streamed by the Inkwell Runtime. Pin and variable values come from a Dev deploy build.',
+    reloading: 'Reloading...',
+    reloadNoMenu: 'This SWF is not a custom menu; reloading every menu the game knows.',
+    reloadMenuUnknown: (name: string) => `The game does not list the menu "${name}" yet. Deploy it first (Dev deploy).`,
+    greyedNote: 'The game is disconnected: this is the last session.',
+    sessionStart: (v: string, game: string) => `Connected to Inkwell Runtime ${v} (Skyrim ${game})`,
+    gameLine: (source: string) => (source === 'runtime' ? 'runtime' : 'AS2'),
+    watchEmpty: 'No variables yet. Open the menu in the game; a Dev deploy build reports them.',
+    watchScope: { component: 'Component', menu: 'Menu', saved: 'Saved' } as Record<string, string>,
+    watchTip: (menu: string, graph: string) => `Menu ${menu}, graph ${graph}`,
+    pinGameTip: (v: string) => `Last value in the game: ${v}`
   }
 }

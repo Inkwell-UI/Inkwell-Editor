@@ -77,4 +77,5 @@
 .gn-head-unknown .gn-title { white-space: normal; }
 
 /* live pin value badge (Ruffle preview) */
+.gn-pin-val.is-game { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
 .gn-pin-val { margin-right: 6px; padding: 0 5px; border-radius: 8px; font-size: 10px; line-height: 15px; color: var(--fg); background: var(--accent-bg); border: 1px solid var(--line-strong); max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

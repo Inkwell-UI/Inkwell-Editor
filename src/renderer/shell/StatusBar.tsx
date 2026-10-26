@@ -14,6 +14,7 @@ import { useWorkspaceStore } from '../state/workspaceStore'
 import { formatMs } from '../model/statusBar'
 import { strings } from '../strings'
 import { Popover } from '../ui/Popover'
+import { GameDot } from './GameDot'
 
 function Dot({ tone }: { tone: DotTone }) {
   return <span className={`dot dot-${tone}`} aria-hidden="true" />
@@ -73,23 +74,6 @@ function SnapshotFacts({ snap }: { snap: SnapshotInfo | undefined }) {
   )
 }
 
-export function GameDot() {
-  return (
-    <Popover
-      label={strings.top.gameDetails}
-      align="end"
-      up
-      trigger={(p) => (
-        <button type="button" className="item item-fixed item-button" {...p} title={`${strings.top.game}: ${strings.top.gameStatus}`} aria-label={`${strings.top.game}: ${strings.top.gameStatus}`} data-testid="dot-game" data-tone="off">
-          <Dot tone="off" /> {strings.top.game}
-        </button>
-      )}
-    >
-      <div className="details"><p><strong>{strings.top.gameStatus}</strong></p></div>
-    </Popover>
-  )
-}
-
 /** Deploy progress and the last result with its stage timings (compile, vanilla check, write). */
 function DeployItem() {
   const d = useSyncState()?.deploy
@@ -99,6 +83,7 @@ function DeployItem() {
     <span className={`item${d.state === 'error' ? ' is-error' : ''}`} title={`${strings.status.deployTip} ${d.message}`} data-testid="deploy-status" role="status">
       {strings.status.deploy}: {d.state === 'done' && d.timing ? <strong>{formatMs(d.timing.total)}</strong> : d.state === 'error' ? 'failed' : d.message}
       {parts.length > 0 && <span className="mono"> [{parts.join(' · ')}]</span>}
+      {d.hotReload && <span data-testid="deploy-hot-reload"> · {d.hotReload}</span>}
     </span>
   )
 }

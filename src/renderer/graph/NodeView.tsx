@@ -7,7 +7,7 @@ import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import { categoryVar, fieldRows, nodePins, PIN_STYLE, type FieldRow, type LayerOption } from '../model/graphModel'
 import { inHandle, outHandle, pinName, type FlowNode, type GraphStore } from '../state/graphStore'
 import type { createGraphValidation } from '../state/graphValidation'
-import { usePinValue } from '../state/traceStore'
+import { usePinBadge } from '../state/devStore'
 import { strings } from '../strings'
 import { FieldEditor } from './FieldEditors'
 
@@ -27,8 +27,9 @@ const pinLabel = (p: { name: string; type: string }, def: NodeDef | undefined, s
 
 function Pin({ side, name, type, label, bad, node }: { side: 'in' | 'out'; name: string; type: keyof typeof PIN_STYLE | 'unknown'; label: string; bad?: boolean; node?: string }) {
   const style = type === 'unknown' ? undefined : PIN_STYLE[type]
-  // last value the Ruffle preview traced for this output (preview builds only; docs/debugging.md)
-  const value = usePinValue(side === 'out' && node ? node : '', name)
+  // last value of this output: from the Ruffle preview's trace, or (Trace & Watch source Game) streamed by the game (docs/debugging.md, docs/dev-mode.md)
+  const badge = usePinBadge(side === 'out' && node ? node : '', name)
+  const value = badge?.value
   return (
     <div className={`gn-pin-head gn-${side}${bad ? ' is-bad' : ''}`} title={`${label}: ${type}`}>
       <Handle
@@ -39,7 +40,7 @@ function Pin({ side, name, type, label, bad, node }: { side: 'in' | 'out'; name:
         {...{ 'data-pin': type, 'data-shape': style?.shape ?? 'unknown' }}
         style={style ? { color: style.color } : undefined}
       />
-      {value !== undefined && <span className="gn-pin-val mono" title={strings.graph.pinValueTip(value)} data-testid="pin-value">{value.length > 24 ? `${value.slice(0, 23)}…` : value}</span>}
+      {value !== undefined && <span className={`gn-pin-val mono${badge?.game ? ' is-game' : ''}`} title={badge?.game ? strings.dev.pinGameTip(value) : strings.graph.pinValueTip(value)} data-testid="pin-value" data-source={badge?.game ? 'game' : 'preview'}>{value.length > 24 ? `${value.slice(0, 23)}…` : value}</span>}
       <span className="gn-pin-label">{label}{type !== 'unknown' && ['Text', 'Button', 'List', 'Image', 'Clip'].includes(type) ? <span className="gn-pin-type"> {type}</span> : null}</span>
     </div>
   )

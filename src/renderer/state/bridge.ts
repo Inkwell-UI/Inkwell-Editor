@@ -8,6 +8,7 @@ import { useSelectionStore } from './selectionStore'
 import { useTimingStore } from './timingStore'
 import { useSyncStore } from './syncStore'
 import { usePopoutStore } from './popoutStore'
+import { useDevStore } from './devStore'
 
 /**
  * Connects the main process to the stores, once per window (main.tsx). Everything the renderer knows about the outside arrives here:
@@ -29,6 +30,9 @@ export function startBridge(): () => void {
   offs.push(api.onSync((s) => useSyncStore.getState().set(s)))
   void api.getProject().then((p) => useProjectStore.getState().setProject(p))
   offs.push(api.onProject((p) => useProjectStore.getState().setProject(p)))
+  void api.getDevState().then((s) => useDevStore.getState().setState(s))
+  offs.push(api.onDevState((s) => useDevStore.getState().setState(s)))
+  offs.push(api.onDevEvents((e) => useDevStore.getState().apply(e)))
   void api.getPreviewDetached().then((d) => usePopoutStore.getState().setDetached(d))
   offs.push(api.onPreviewDetached((d) => usePopoutStore.getState().setDetached(d)))
 

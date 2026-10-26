@@ -26,6 +26,8 @@ export interface MockOptions {
   reload?: (menu: string | undefined) => { ok: boolean; reloaded: string[]; skipped?: { name: string; reason: string }[]; ms?: number; error?: string }
   /** Do not answer `reload` at all (timeout test). */
   silentReload?: boolean
+  /** Accept the connection but never answer the hello (the editor stays in `connecting`). */
+  silentHello?: boolean
 }
 
 export interface MockConn {
@@ -96,6 +98,7 @@ export async function startMockRuntime(o: MockOptions) {
         }
         conn.hello = m
         clearTimeout(handshakeTimer)
+        if (o.silentHello) return
         const ack = (extra: object) => ({ type: 'helloAck', runtimeVersion: o.runtimeVersion ?? 196608, runtimeVersionString: o.runtimeVersionString ?? '0.3.0', protocolVersion: o.protocolVersion ?? 1, specVersion: o.specVersion ?? Number(m['specVersion']), gameVersion: o.gameVersion ?? '1.6.1170', ...extra })
         const given = Buffer.from(String(m['token'] ?? ''))
         const want = Buffer.from(o.token)
