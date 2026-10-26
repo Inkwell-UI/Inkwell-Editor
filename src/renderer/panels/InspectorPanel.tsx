@@ -1,16 +1,19 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { CircleX, Lock, Redo2, TriangleAlert, Undo2, Info } from 'lucide-react'
-import type { Node } from '@inkwell-ui/spec'
+import { LOC_KEY, suggestKey, uniqueKey, type Node } from '@inkwell-ui/spec'
 import { describeTextMapping } from '../../main/swf/text'
+import { keyedTexts } from '../../main/lint/localization'
 import { widgetFrame } from '../../main/widget/frame'
+import { ensureKey, renameKey } from '../../shared/localizationOps'
 import { debugHotkeyOf, ident, instanceNameError, ROLES, widgetAnchorOf, type WidgetAnchor } from '../../shared/overlay'
 import type { FontRow } from '../../shared/syncState'
 import { GraphNodeInspector } from '../graph/GraphNodeInspector'
 import { useUndo } from '../hooks/useUndo'
-import { useActiveOverlay, useActiveSwf, useDockRows } from '../hooks/useProject'
+import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import type { DockRow } from '../model/lintRows'
-import { editNode } from '../state/overlayStore'
+import { defaultTable, useLocalizationStore } from '../state/localizationStore'
+import { editNode, getOverlayDoc } from '../state/overlayStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
@@ -123,6 +126,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
         {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
         <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
+        {node.type === 'text' && <LocKeyField swfId={swfId} node={node} value={(entry as { locKey?: string }).locKey} />}
         {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
         {isWidgetFrame && <DebugHotkeyField swfId={swfId} nodeId={node.id} value={debugHotkeyOf(entry)} />}
         <p className="dim contract">{strings.insp.contractLine}</p>
@@ -226,6 +230,64 @@ function RoleField({ swfId, nodeId, role }: { swfId: string; nodeId: string; rol
         {ROLES.map((r) => <option key={r} value={r}>{strings.insp.roleNames[r]}</option>)}
       </select>
     </label>
+  )
+}
+
+/** Overlay `locKey` of a text layer (V2.1): the translation key. Setting one also creates its row in localization.json (the source text is the layer's text). */
+function LocKeyField({ swfId, node, value }: { swfId: string; node: Extract<Node, { type: 'text' }>; value: string | undefined }) {
+  const project = useProject()
+  const loc = useLocalizationStore((s) => s.localization)
+  const modId = useLocalizationStore((s) => s.modId)
+  const setTable = useLocalizationStore((s) => s.set)
+  const load = useLocalizationStore((s) => s.load)
+  const [draft, setDraft] = useState<string | undefined>()
+  useEffect(() => void (project?.dir && load()), [project?.dir, load])
+  const text = draft ?? value ?? ''
+  const others = keyedTexts((project?.swfs ?? []).map((s) => ({ name: s.name, kind: s.ir.target.kind, orphaned: s.orphaned, ir: s.ir, overlay: (getOverlayDoc(s.id)?.nodes ?? s.overlay.nodes ?? {}) as Record<string, Record<string, unknown>> }))).filter((t) => !(t.swf === (project?.swfs.find((s) => s.id === swfId)?.name) && t.nodeId === node.id))
+  const err = draft === undefined || draft === '' ? undefined : !LOC_KEY.test(draft) ? strings.loc.keyInvalid : others.some((t) => t.key.toLowerCase() === draft.toLowerCase() && t.text !== node.content) ? strings.loc.keyTaken : undefined
+  const apply = (key: string | null): void => {
+    editNode(swfId, node.id, { locKey: key })
+    if (!key) return
+    let table = loc ?? defaultTable(modId || 'Mod')
+    const stillUsed = value !== undefined && others.some((t) => t.key.toLowerCase() === value.toLowerCase())
+    if (value && value.toLowerCase() !== key.toLowerCase() && !stillUsed) table = renameKey(table, value, key)
+    setTable(ensureKey(table, key, node.content))
+  }
+  const commit = (): void => {
+    if (draft === undefined) return
+    if (draft === '') apply(null)
+    else if (!err && draft !== value) apply(draft)
+    setDraft(undefined)
+  }
+  const suggest = (): void => {
+    const ns = (loc ?? defaultTable(modId || 'Mod')).namespace
+    apply(uniqueKey(suggestKey(ns, node.name), [...others.map((t) => t.key), ...Object.keys(loc?.entries ?? {})]))
+  }
+  return (
+    <div className="field">
+      <label className="field-label" htmlFor="loc-key">{strings.loc.keyField}</label>
+      <input
+        id="loc-key"
+        className={err ? 'is-invalid' : undefined}
+        value={text}
+        placeholder="$"
+        spellCheck={false}
+        aria-invalid={!!err}
+        aria-describedby="loc-key-help"
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit()
+          if (e.key === 'Escape') setDraft(undefined)
+        }}
+        data-testid="loc-key"
+      />
+      <span className="row-actions">
+        <Btn onClick={suggest} testId="loc-key-suggest">{strings.loc.keySuggest}</Btn>
+        <Btn onClick={() => apply(null)} reason={value ? undefined : strings.loc.keyClear} testId="loc-key-clear">{strings.loc.keyClear}</Btn>
+      </span>
+      <p id="loc-key-help" className={err ? 'tone-error' : 'dim'}>{err ?? strings.loc.keyHelp}</p>
+    </div>
   )
 }
 

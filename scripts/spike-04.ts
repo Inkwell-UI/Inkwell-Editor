@@ -82,8 +82,21 @@ var done = false;
 function say(s) { if (_root.inkwellTrace) { _root.inkwellTrace("[spike04] " + s); } }
 b4.text = "$Inkwell_Spike04_Hello";
 v4.text = "$Yes";
+var translated = false;
+// S-B2 (runtime 0.4.0): what the generated menu class does in begin(): ask the runtime, keep the compiled text when it has no answer
+function tx(field) {
+  var key = field.text;
+  var t = _root.inkwell.translate(key);
+  if (t != undefined && t != key) { field.text = t; }
+}
 _root.onEnterFrame = function() {
   n++;
+  if (!translated && _root.inkwell.ready == true && _root.inkwell.translate != undefined) {
+    translated = true;
+    say("runtime 0.4.0 bridge: language=" + _root.inkwell.language + " translate=" + typeof(_root.inkwell.translate));
+    tx(b1); tx(b2); tx(b3); tx(b4); tx(b6); tx(b7);
+    tx(b5);
+  }
   if (n == 60) {
     say("t=2s b1='" + b1.text + "' b2='" + b2.text + "' b3='" + b3.text + "' b4='" + b4.text + "' b6='" + b6.text + "' b7='" + b7.text + "' v1='" + v1.text + "' v2='" + v2.text + "' v3='" + v3.text + "' v4='" + v4.text + "'");
   }
@@ -97,7 +110,7 @@ _root.onEnterFrame = function() {
     box._width = box._width * 1.5;
     box._alpha = 50;
     var msg = "S-C readback: textColor=" + c1.textColor.toString(16) + " box._x=" + box._x + " box._width=" + box._width + " box._alpha=" + box._alpha + " tint=" + col.getRGB().toString(16);
-    status.text = msg + String.fromCharCode(10) + "b4='" + b4.text + "' b5='" + b5.text + "'";
+    status.text = msg + String.fromCharCode(10) + "language=" + _root.inkwell.language + " b1='" + b1.text + "' b2='" + b2.text + "' b3='" + b3.text + "' b7='" + b7.text + "'";
     say(msg);
     say("b4(set at start)='" + b4.text + "' b5(set at 3s)='" + b5.text + "'");
   }
@@ -130,8 +143,8 @@ async function main(): Promise<void> {
   }
 
   const menu = {
-    depth: 3, flags: { closeOnEscape: true, cursor: true, modal: true, pausesGame: true }, inputContext: 'menuMode', minRuntime: '0.3.0',
-    name: MENU, specVersion: 6, swf: `Interface/Inkwell/${MOD}/Menu.swf`, triggers: { hotkey: 68, modEvent: `${MOD}_Open`, papyrus: true }
+    depth: 3, flags: { closeOnEscape: true, cursor: true, modal: true, pausesGame: true }, inputContext: 'menuMode', minRuntime: '0.4.0', translations: MOD,
+    name: MENU, specVersion: 7, swf: `Interface/Inkwell/${MOD}/Menu.swf`, triggers: { hotkey: 68, modEvent: `${MOD}_Open`, papyrus: true }
   }
   const mj = resolve(dest, 'SKSE', 'Plugins', 'Inkwell', 'menus', `${MENU}.json`)
   mkdirSync(dirname(mj), { recursive: true })

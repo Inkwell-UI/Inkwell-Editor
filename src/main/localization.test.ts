@@ -15,6 +15,7 @@ import { locKeysOf, patchNodeOverlay, overlayProblems } from '../shared/overlay'
 import { addLanguage, ensureKey, mergeCsv, removeKey, removeLanguage, renameKey, setCell } from '../shared/localizationOps'
 import { minRuntimeFor } from '../shared/runtimeFeatures'
 import { fromCsv, toCsv } from '@inkwell-ui/spec'
+import { previewTranslations } from '../renderer/preview/locale'
 
 const noFfdec = { build: () => Promise.reject(new Error('FFDec must not be used here')) }
 const loc = (over: Record<string, unknown> = {}): Localization =>
@@ -208,5 +209,17 @@ describe('deploy', () => {
     if (!r.ok) throw new Error(r.error)
     expect(r.prepared.issues.some((x) => x.severity === 'error' && x.code === 'loc-key-invalid')).toBe(true)
     expect([...r.prepared.files.keys()].some((k) => k.includes('Translations'))).toBe(false)
+  })
+})
+
+describe('preview locale', () => {
+  it('answers the key itself for the source language (the glue keeps the compiled text), the translation for another, and pseudo-localized text on top', () => {
+    const l = loc()
+    expect(previewTranslations(l, '', false)).toEqual({ $Inkwell_M_Start: '$Inkwell_M_Start', $Inkwell_M_Reset: '$Inkwell_M_Reset' })
+    expect(previewTranslations(l, 'GERMAN', false)).toEqual({ $Inkwell_M_Start: 'Hallo', $Inkwell_M_Reset: 'Zurücksetzen' })
+    expect(previewTranslations(l, 'ENGLISH', false)).toEqual({ $Inkwell_M_Start: 'Hello', $Inkwell_M_Reset: 'Reset' }) // the source language named explicitly: its own texts
+    expect(previewTranslations(l, '', true).$Inkwell_M_Start).toBe('[Héllö··]')
+    expect(previewTranslations(l, 'GERMAN', true).$Inkwell_M_Start).toMatch(/^\[H.*\]$/)
+    expect(previewTranslations(loc({ entries: { $A: { ENGLISH: 'Only' } } }), 'GERMAN', false)).toEqual({ $A: 'Only' }) // no German text: the source text
   })
 })

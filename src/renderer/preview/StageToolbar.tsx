@@ -48,8 +48,8 @@ export function StageToolbar(p: StageToolbarProps) {
       <Btn icon={Waypoints} reason={strings.stage.focusReason}>{strings.stage.focus}</Btn>
       <Btn icon={Keyboard} reason={strings.stage.promptsReason}>{strings.stage.prompts}</Btn>
       <Btn icon={Palette} reason={strings.stage.themeReason}>{strings.stage.theme}</Btn>
-      <Btn icon={Languages} reason={strings.stage.localeReason}>{strings.stage.locale}</Btn>
-      <Btn icon={Sparkles} reason={strings.stage.pseudoReason}>{strings.stage.pseudo}</Btn>
+      {!p.menuControls && <Btn icon={Languages} reason={strings.stage.localeReason}>{strings.stage.locale}</Btn>}
+      {!p.menuControls && <Btn icon={Sparkles} reason={strings.stage.pseudoReason}>{strings.stage.pseudo}</Btn>}
     </>
   )
   return (

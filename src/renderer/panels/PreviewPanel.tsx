@@ -19,6 +19,8 @@ import { RuffleBackend } from '../preview/RuffleBackend'
 import { SafeZoneOverlay } from '../preview/SafeZoneOverlay'
 import { StageToolbar, type StageMode } from '../preview/StageToolbar'
 import { UiScaleControl, uiScaleStore } from '../preview/uiScale'
+import { LocaleControls, localeStore } from '../preview/locale'
+import { useLocalizationStore } from '../state/localizationStore'
 import { SwfViewport } from '../preview/SwfViewport'
 import { useLintStore } from '../state/lintStore'
 import { isPreviewWindow, usePopoutStore } from '../state/popoutStore'
@@ -84,6 +86,12 @@ export function PreviewPanel() {
   useEffect(() => {
     if (ctl && state.status === 'ready' && swf?.ir.target.kind === 'customMenu') uiScaleStore.reapply()
   }, [ctl, state.status, state.seq, swf?.ir.target.kind])
+
+  // the chosen locale and Pseudo-Loc live in the mock data of the running movie: after the mock reset of every load (and when the table changes) bring them back
+  const table = useLocalizationStore((s) => s.localization)
+  useEffect(() => {
+    if (ctl && state.status === 'ready' && swf?.ir.target.kind === 'customMenu') localeStore.reapply(table)
+  }, [ctl, state.status, state.seq, swf?.ir.target.kind, table])
 
   const failed = sync?.build === 'error' || !!entry?.stale
   const err = firstError(dock)
@@ -153,7 +161,7 @@ export function PreviewPanel() {
           onZoomReset={() => setZoom(1)}
           compact={compact}
           swfPicker={picker}
-          {...(swf?.ir.target.kind === 'customMenu' ? { menuControls: <UiScaleControl testId="stage-ui-scale" /> } : {})}
+          {...(swf?.ir.target.kind === 'customMenu' ? { menuControls: <><UiScaleControl testId="stage-ui-scale" /><LocaleControls /></> } : {})}
         />
         {!compact && banners}
         <div className="preview-stage" tabIndex={0} role="group" aria-label={strings.stage.stageLabel} onKeyDownCapture={onStageKey} data-mode={mode} data-testid="stage">

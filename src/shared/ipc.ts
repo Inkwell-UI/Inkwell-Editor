@@ -2,7 +2,7 @@ import type { DevEvent, DevReloadResult, DevState } from './devLink'
 import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, PrepareResult } from './deploy'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, PathSettingKey, ResolvedSettings, SetSettingResult, SettingKey } from './doctor'
 import type { FontToolProgress, FontToolResult, FontToolStatus } from './fonts'
-import type { Graph, MenuSettings } from '@inkwell-ui/spec'
+import type { Graph, Localization, MenuSettings } from '@inkwell-ui/spec'
 import type { GraphAs2, GraphResult, GraphSummary, PackSet } from './graphs'
 import type { OverlayDoc } from './overlay'
 import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from './preview'
@@ -40,6 +40,11 @@ export const IPC = {
   figmaSelection: 'figma:selection',
   menuSettings: 'menu:settings',
   menuSave: 'menu:save',
+  locLoad: 'loc:load',
+  locSave: 'loc:save',
+  locCsvExport: 'loc:csvExport',
+  locCsvImport: 'loc:csvImport',
+  locTxtExport: 'loc:txtExport',
   doctorRun: 'doctor:run',
   doctorBenchmark: 'doctor:benchmark',
   doctorBuildCache: 'doctor:buildCache',
@@ -74,6 +79,15 @@ export const IPC = {
 
 export type SaveOverlayResult = { ok: true } | { ok: false; error: string }
 
+/** The project's `localization.json` (V2.3). `localization` null = none on disk yet (the tab offers to create it); `error` = the file exists but is unreadable, so it is never written. */
+export interface LocalizationState {
+  localization: Localization | null
+  error?: string
+  modId: string
+}
+/** A Localization-tab file action: done with a one-line summary, or why not (`cancelled` = the user closed the dialog, not an error). */
+export type LocFileResult = { ok: true; summary: string; localization?: Localization } | { ok: false; error: string; cancelled?: boolean }
+
 /** `window.inkwell`: the whole renderer-facing API. Every `on*` returns its unsubscribe function. */
 export interface InkwellApi {
   getSync(): Promise<SyncUiState>
@@ -100,6 +114,13 @@ export interface InkwellApi {
   saveOverlay(swfName: string, overlay: OverlayDoc): Promise<SaveOverlayResult>
   /** Writes `swfs/<swfName>/menu.json` (the Spec's MenuSettings; validated, unknown keys kept as sent). The project state follows. */
   saveMenuSettings(swfName: string, settings: MenuSettings): Promise<SaveOverlayResult>
+  /** `localization.json` (Localization tab, Inspector key field). Never rejects. */
+  getLocalization(): Promise<LocalizationState>
+  saveLocalization(doc: Localization): Promise<SaveOverlayResult>
+  /** Dialogs and files: CSV export, CSV import (asks before it changes cells, saves, returns the new table), and the Skyrim translation files into a chosen folder. */
+  exportLocalizationCsv(): Promise<LocFileResult>
+  importLocalizationCsv(): Promise<LocFileResult>
+  exportLocalizationTxt(): Promise<LocFileResult>
   /** Graphs of one SWF (`swfs/<swfName>/graphs/*.json`, docs/graphs.md): summaries, one graph, write (validated; unknown keys kept), create (an id is made from the name; one menu graph per SWF), delete. Never reject. */
   listGraphs(swfName: string): Promise<GraphResult<{ graphs: GraphSummary[] }>>
   loadGraph(swfName: string, id: string): Promise<GraphResult<{ graph: Graph }>>

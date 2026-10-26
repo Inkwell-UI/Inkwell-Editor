@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, rename } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { join, resolve } from 'node:path'
-import { Graph, Swf, type MenuSettings } from '@inkwell-ui/spec'
+import { Graph, Swf, type Localization, type MenuSettings } from '@inkwell-ui/spec'
 import { bindingsOf } from '../shared/graphBinding'
 import { defIndex, emptyGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type PackSet } from '../shared/graphs'
 import { validateGraph } from '../shared/graphValidate'
@@ -32,6 +32,7 @@ import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFont
 import { corePackDir, loadPacks } from './packs'
 import { loadProject, type ProjectMeta } from './project'
 import { writeMenuSettings } from './project/menuFile'
+import { readLocalization, writeLocalization } from './project/localizationFile'
 import { deleteGraph, readGraph, writeGraph } from './project/graphFiles'
 import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
@@ -70,6 +71,7 @@ export function createSession(deps: SessionDeps) {
   let strict = false
   const overlays = new Map<string, OverlayDoc>() // swf id -> overlay (the renderer is the source of truth once it saves)
   const graphs = new Map<string, Map<string, Graph>>() // swf name -> graph id -> graph (the renderer saves; main validates)
+  let localization: { localization?: Localization; error?: string } = {} // localization.json (V2.3): the tab is the writer; main keeps the saved copy for deploy
   const menus = new Map<string, { settings?: MenuSettings; error?: string }>() // swf name -> swfs/<name>/menu.json (the panel is the writer; main keeps the saved copy for deploy)
   let packs: Promise<PackSet> | undefined
   const getPacks = (): Promise<PackSet> => (packs ??= loadPacks([corePackDir(deps.appPath)]))
@@ -215,6 +217,7 @@ export function createSession(deps: SessionDeps) {
     overlays.clear()
     graphs.clear()
     menus.clear()
+    localization = dir ? await readLocalization(dir) : {}
     if (dir) {
       const p = await loadProject(dir)
       meta = p.meta
@@ -423,7 +426,7 @@ export function createSession(deps: SessionDeps) {
       const p = projectState()
       if (!p || !meta) return undefined
       return {
-        dir: p.dir, name: p.name, version: meta.version, modId: p.modId, deploy: meta.deploy, imageMode: meta.imageMode ?? 'embedded', assets, strictMode: p.strictMode,
+        dir: p.dir, name: p.name, version: meta.version, modId: p.modId, deploy: meta.deploy, imageMode: meta.imageMode ?? 'embedded', assets, strictMode: p.strictMode, ...(localization.localization ? { localization: localization.localization } : {}),
         swfs: p.swfs.map((s) => ({
           name: s.name, orphaned: s.orphaned, kind: s.ir.target.kind, ir: s.ir,
           ...(buildBySwf.has(s.id) ? { build: { state: buildBySwf.get(s.id)!, lint: (reports.get(s.id)?.lint ?? []).map(({ severity, code, message, nodeId, layerName }) => ({ severity, code, message, nodeId, layerName })) } } : {}),
@@ -635,6 +638,16 @@ export function createSession(deps: SessionDeps) {
       if (!r.ok) return r
       menus.set(swfName, { settings: r.settings })
       pushProject()
+      return { ok: true }
+    },
+    /** localization.json (Localization tab): the table, or the reason it cannot be read. */
+    getLocalization: (): { localization: Localization | null; error?: string; modId: string } => ({ localization: localization.localization ?? null, ...(localization.error ? { error: localization.error } : {}), modId: meta?.modId ?? '' }),
+    async saveLocalization(doc: unknown): Promise<SaveOverlayResult> {
+      if (!projectDir) return { ok: false, error: 'No project is open' }
+      if (localization.error) return { ok: false, error: `localization.json could not be read (${localization.error}); fix or delete it first.` }
+      const r = await writeLocalization(projectDir, doc)
+      if (!r.ok) return r
+      localization = { localization: r.localization }
       return { ok: true }
     },
     getPacks,

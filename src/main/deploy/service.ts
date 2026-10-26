@@ -16,7 +16,7 @@ export interface DeployDeps {
   userData: string
   appPath: string
   /** The open project, or undefined. */
-  project(): ({ dir: string; name: string; version: string; modId: string; deploy?: { preset: string; path: string }; swfs: DeploySwf[]; strictMode?: boolean } & Pick<DeployInput, 'imageMode' | 'assets'>) | undefined
+  project(): ({ dir: string; name: string; version: string; modId: string; deploy?: { preset: string; path: string }; swfs: DeploySwf[]; strictMode?: boolean } & Pick<DeployInput, 'imageMode' | 'assets' | 'localization'>) | undefined
   settings(): { stored: StoredSettings; resolved: ResolvedSettings }
   saveStored(s: StoredSettings): Promise<void>
   /** The resident FFDec wrapper (throws with a clear message when FFDec is missing). */
@@ -56,7 +56,7 @@ export function createDeployService(d: DeployDeps) {
       await d.ensureBuilds?.(!!dev)
       const gameDirs = (await findSkyrim({ ...(resolved.skyrimPath ? { manual: resolved.skyrimPath } : {}) })).map((c) => c.path)
       const input: DeployInput = {
-        modId: p.modId, modName: p.name, swfs: p.swfs, root: t.root, gameDirs, ...(p.imageMode ? { imageMode: p.imageMode } : {}), ...(p.assets ? { assets: p.assets } : {}), ...(scope === 'active' && activeName ? { only: activeName } : {}),
+        modId: p.modId, modName: p.name, swfs: p.swfs, root: t.root, gameDirs, ...(p.imageMode ? { imageMode: p.imageMode } : {}), ...(p.assets ? { assets: p.assets } : {}), ...(p.localization ? { localization: p.localization } : {}), ...(scope === 'active' && activeName ? { only: activeName } : {}),
         buildDir: join(p.dir, 'build'), ffdec: d.ffdec(), ...(resolved.papyrusExe ? { papyrusExe: resolved.papyrusExe } : {}),
         ...(dev ? { dev } : {}), ...(pkg ? { package: true } : {}), stubsDir: join(d.appPath, 'resources/papyrus-stubs'), packs: (await loadCodegenPacks([corePackDir(d.appPath)])).packs, vanillaHashes: await loadVanillaHashes(vanillaCacheRoot(d.userData))
       }

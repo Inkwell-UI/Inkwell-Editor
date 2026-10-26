@@ -9,6 +9,8 @@ import type { PreviewFontBlob, PreviewRendered } from '../shared/preview'
 import type { OpenResult, UiEvent } from '../shared/projectState'
 import { PRODUCT_NAME } from '../shared/product'
 import { strings } from '../renderer/strings'
+import type { LocFileResult } from '../shared/ipc'
+import { exportCsvFile, exportTranslationFiles, readCsvImport } from './localizationIo'
 import { copyExample, createProject } from './project/lifecycle'
 import { runDoctorDriver } from './screenshotDoctor'
 import { runFigmaShots } from './screenshotFigma'
@@ -125,6 +127,50 @@ ipcMain.handle(IPC.projectExample, (_e, title: string) =>
 )
 ipcMain.handle(IPC.overlaySave, (_e, swfName: string, doc: OverlayDoc) => session.saveOverlay(swfName, doc))
 ipcMain.handle(IPC.menuSave, (_e, swfName: string, doc: unknown) => session.saveMenuSettings(swfName, doc))
+ipcMain.handle(IPC.locLoad, () => session.getLocalization())
+ipcMain.handle(IPC.locSave, (_e, doc: unknown) => session.saveLocalization(doc))
+const locFail = (e: unknown): LocFileResult => ({ ok: false, error: e instanceof Error ? e.message : String(e) })
+ipcMain.handle(IPC.locCsvExport, async (): Promise<LocFileResult> => {
+  const s = session.getLocalization()
+  if (!s.localization) return { ok: false, error: s.error ?? strings.loc.noTable }
+  const r = await dialog.showSaveDialog(win!, { title: strings.loc.csvSaveTitle, defaultPath: `${s.modId || 'translations'}-translations.csv`, filters: [{ name: strings.loc.csvFilter, extensions: ['csv'] }] })
+  if (r.canceled || !r.filePath) return { ok: false, error: '', cancelled: true }
+  try {
+    await exportCsvFile(r.filePath, s.localization)
+    return { ok: true, summary: strings.loc.exported(1, r.filePath) }
+  } catch (e) {
+    return locFail(e)
+  }
+})
+ipcMain.handle(IPC.locCsvImport, async (): Promise<LocFileResult> => {
+  const s = session.getLocalization()
+  if (!s.localization) return { ok: false, error: s.error ?? strings.loc.noTable }
+  const r = await dialog.showOpenDialog(win!, { title: strings.loc.csvOpenTitle, properties: ['openFile'], filters: [{ name: strings.loc.csvFilter, extensions: ['csv'] }] })
+  if (r.canceled || !r.filePaths[0]) return { ok: false, error: '', cancelled: true }
+  try {
+    const m = await readCsvImport(r.filePaths[0], s.localization)
+    const { languagesAdded, keysAdded, cellsChanged, cellsAdded } = m.report
+    if (!languagesAdded.length && !keysAdded && !cellsChanged && !cellsAdded) return { ok: true, summary: strings.loc.importNothing }
+    const ask = await dialog.showMessageBox(win!, { type: 'question', buttons: [strings.loc.importApply, 'Cancel'], defaultId: 1, cancelId: 1, title: strings.loc.importCsv, message: strings.loc.importConfirm(m.report) })
+    if (ask.response !== 0) return { ok: false, error: '', cancelled: true }
+    const saved = await session.saveLocalization(m.localization)
+    return saved.ok ? { ok: true, summary: strings.loc.importConfirm(m.report), localization: m.localization } : { ok: false, error: saved.error }
+  } catch (e) {
+    return locFail(e)
+  }
+})
+ipcMain.handle(IPC.locTxtExport, async (): Promise<LocFileResult> => {
+  const s = session.getLocalization()
+  if (!s.localization) return { ok: false, error: s.error ?? strings.loc.noTable }
+  const dir = await pickFolder(strings.loc.txtFolderTitle)
+  if (!dir) return { ok: false, error: '', cancelled: true }
+  try {
+    const files = await exportTranslationFiles(dir, s.modId, s.localization)
+    return { ok: true, summary: strings.loc.exported(files.length, dir) }
+  } catch (e) {
+    return locFail(e)
+  }
+})
 ipcMain.handle(IPC.graphsList, (_e, swf: string) => session.listGraphs(swf))
 ipcMain.handle(IPC.graphsLoad, (_e, swf: string, id: string) => session.loadGraph(swf, id))
 ipcMain.handle(IPC.graphsSave, (_e, swf: string, g: unknown) => session.saveGraph(swf, g))
