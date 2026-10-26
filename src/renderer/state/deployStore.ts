@@ -17,7 +17,8 @@ export interface DeployStore {
   /** Set while the confirmation dialog is open. */
   confirm: { target: DeployTargetId; prepared: Prepared } | null
   setScope(s: DeployScope): void
-  start(target: DeployTargetId, activeSwf?: string): Promise<void>
+  /** `scope` overrides the Deploy menu's choice for this one deploy (Deploy & reload deploys only the active SWF). */
+  start(target: DeployTargetId, activeSwf?: string, scope?: DeployScope): Promise<void>
   accept(): Promise<void>
   cancel(): void
 }
@@ -53,11 +54,12 @@ export const useDeployStore = create<DeployStore>()((set, get) => {
     scope: 'all',
     confirm: null,
     setScope: (scope) => set({ scope }),
-    async start(target, activeSwf) {
+    async start(target, activeSwf, scopeOverride) {
       if (!inkwell || get().busy) return
       set({ busy: true })
       try {
-        const p = await inkwell.prepareDeploy(target, get().scope, get().scope === 'active' ? activeSwf : undefined)
+        const scope = scopeOverride ?? get().scope
+        const p = await inkwell.prepareDeploy(target, scope, scope === 'active' ? activeSwf : undefined)
         if (!p.ok) toast().push({ tone: 'error', title: isPackageTarget(target) ? strings.deploy.toastPackageFailed : strings.deploy.toastFailed, text: p.error })
         else if (p.needsConfirm) set({ confirm: { target, prepared: p } })
         else await commit(target, p)

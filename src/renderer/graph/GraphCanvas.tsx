@@ -37,7 +37,7 @@ interface MenuState {
  * typing coalesced per word). Mounts only visible nodes (`NAVIGATION_PROPS.onlyRenderVisibleElements`) and never scans the node or edge arrays per node
  * (Knotwork's indexes).
  */
-export function GraphCanvas(props: { swf: SwfDoc; overlay: SwfDoc['overlay'] | undefined; store: GraphStore; defs: ReadonlyMap<string, NodeDef>; focusNode?: { id: string; n: number } | undefined }) {
+export function GraphCanvas(props: { swf: SwfDoc; overlay: SwfDoc['overlay'] | undefined; store: GraphStore; defs: ReadonlyMap<string, NodeDef>; focusNode?: { id: string; n: number } | undefined; fitSignal?: number }) {
   return (
     <ReactFlowProvider>
       <Canvas {...props} />
@@ -45,7 +45,7 @@ export function GraphCanvas(props: { swf: SwfDoc; overlay: SwfDoc['overlay'] | u
   )
 }
 
-function Canvas({ swf, overlay, store, defs, focusNode }: Parameters<typeof GraphCanvas>[0]) {
+function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<typeof GraphCanvas>[0]) {
   const nodes = useStore(store, (s) => s.nodes)
   const edges = useStore(store, (s) => s.edges)
   const variables = useStore(store, (s) => s.variables)
@@ -180,6 +180,11 @@ function Canvas({ swf, overlay, store, defs, focusNode }: Parameters<typeof Grap
     const t = setTimeout(() => !focused.current && void rf.fitView({ padding: 0.15, maxZoom: 1 }), 250)
     return () => clearTimeout(t)
   }, [rf])
+
+  // Tidy Layout moved everything: show the result
+  useEffect(() => {
+    if (fitSignal) void rf.fitView({ padding: 0.15, maxZoom: 1, duration: 250 })
+  }, [fitSignal, rf])
 
   useWheelNavigation(wrap)
   const hasNodes = nodes.length > 0

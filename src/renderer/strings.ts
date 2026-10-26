@@ -191,7 +191,6 @@ export const strings = {
   graph: {
     title: 'Graph',
     tidy: 'Tidy Layout',
-    tidyReason: 'Not built yet',
     as2Split: 'AS2 Split',
     as2Title: 'Generated AS2 (read-only)',
     pinValueTip: (v: string) => `Last value in the Ruffle preview: ${v}`,
@@ -382,6 +381,7 @@ export const strings = {
     title: 'Runtime Trace & Watch',
     game: 'Game: not connected',
     hotReload: 'Trigger Hot Reload',
+    deployReload: 'Deploy & reload',
     clear: 'Clear Trace',
     later: `${BY} Inkwell Runtime (0.3)`,
     live: 'LIVE TRACE',

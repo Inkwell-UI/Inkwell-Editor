@@ -8,6 +8,7 @@ import { clockTime, type TraceLevel } from '../model/traceParse'
 import { sortedWatch, useDevStore, type TraceSource } from '../state/devStore'
 import { findGraphStore } from '../state/graphStore'
 import { graphOfNode, openGraphNode } from '../state/graphReveal'
+import { useDeployStore } from '../state/deployStore'
 import { useTraceStore } from '../state/traceStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
@@ -58,13 +59,17 @@ export function TracePanel() {
   }
   /** The menu of the active SWF as the game knows it (menu JSON `name`), when the SWF is a custom menu. */
   const menuName = swf && project && swf.ir.target.kind === 'customMenu' ? resolveMenuNames(project.modId, { swf: swf.name, settings: swf.menu ?? defaultMenuSettings() }).name : undefined
+  // Dev deploy on: the button builds and deploys the active SWF like Deploy > MO2 mod folder (which reloads the game), else it only asks the game to re-read the disk
+  const deployAndReload = dev.devDeploy && !!menuName
+  const deploying = useDeployStore((s) => s.busy)
   const triggerReload = async (): Promise<void> => {
+    if (deployAndReload) return void useDeployStore.getState().start('mo2Mod', swf?.name, 'active')
     if (!inkwell || reload.busy) return
     setReload({ busy: true, text: strings.dev.reloading })
     const r: DevReloadResult = await inkwell.devReload(menuName)
     setReload({ busy: false, text: reloadSummary(r), bad: !r.ok })
   }
-  const reloadReason = !connected ? strings.dev.reloadNeedsGame : reload.busy ? strings.dev.reloading : undefined
+  const reloadReason = deployAndReload ? (deploying ? strings.deploy.running : undefined) : !connected ? strings.dev.reloadNeedsGame : reload.busy ? strings.dev.reloading : undefined
   const clear = (): void => (game ? clearGame() : clearRuffle())
   const watchRows = sortedWatch(watch)
   const switchTo = (s: TraceSource): void => setSource(s)
@@ -83,7 +88,7 @@ export function TracePanel() {
         )}
         <label><input type="checkbox" checked={errorsOnly} onChange={(e) => setErrorsOnly(e.target.checked)} /> {strings.trace.errorsOnly}</label>
         <span className="push-right row-actions">
-          <Btn onClick={() => void triggerReload()} reason={reloadReason} testId="trace-reload">{strings.trace.hotReload}</Btn>
+          <Btn onClick={() => void triggerReload()} reason={reloadReason} testId="trace-reload">{deployAndReload ? strings.trace.deployReload : strings.trace.hotReload}</Btn>
           <Btn onClick={clear} testId="trace-clear" reason={lines.length ? undefined : strings.trace.nothingToClear}>{strings.trace.clear}</Btn>
         </span>
       </div>

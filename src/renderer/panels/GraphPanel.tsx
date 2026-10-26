@@ -9,6 +9,7 @@ import { useSwfGraphs } from '../hooks/useGraphs'
 import { usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
 import { eventNodes } from '../model/graphModel'
+import { tidyPositions } from '../model/graphLayout'
 import { ownersOfGraph } from '../model/graphNav'
 import { menuGraphId, setActiveGraph } from '../state/graphDocs'
 import type { GraphStore } from '../state/graphStore'
@@ -27,12 +28,19 @@ export function GraphPanel() {
   const { activeId, store, loaded } = useSwfGraphs()
   const actions = useGraphActions()
   const [split, setSplit] = useState(false)
+  const [tidied, setTidied] = useState(0) // bumps the canvas to fit the view after a tidy
+  const tidy = (): void => {
+    if (!store) return
+    const s = store.getState()
+    s.moveNodes(tidyPositions(s.nodes, s.edges)) // one update = one undo entry
+    setTidied((n) => n + 1)
+  }
   return (
     <Panel
       title={strings.graph.title}
       actions={
         <>
-          <Btn label={strings.graph.tidy} reason={strings.graph.tidyReason}>{strings.graph.tidy}</Btn>
+          <Btn label={strings.graph.tidy} onClick={tidy} reason={store ? undefined : strings.nav.noSwf} testId="graph-tidy">{strings.graph.tidy}</Btn>
           <Btn icon={SplitSquareHorizontal} pressed={split} onClick={() => setSplit(!split)} label={strings.graph.as2Split} testId="as2-split">{strings.graph.as2Split}</Btn>
         </>
       }
@@ -49,14 +57,14 @@ export function GraphPanel() {
             {actions.error && <p className="tone-error">{actions.error}</p>}
           </div>
         ) : (
-          <OpenGraph key={`${swf.id}/${activeId}`} store={store} graphId={activeId} split={split} />
+          <OpenGraph key={`${swf.id}/${activeId}`} store={store} graphId={activeId} split={split} tidied={tidied} />
         )}
       </div>
     </Panel>
   )
 }
 
-function OpenGraph({ store, graphId, split }: { store: GraphStore; graphId: string; split: boolean }) {
+function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graphId: string; split: boolean; tidied: number }) {
   const swf = useActiveSwf()!
   const overlay = useActiveOverlay()
   const defs = usePacks()
@@ -93,7 +101,7 @@ function OpenGraph({ store, graphId, split }: { store: GraphStore; graphId: stri
         </label>
       </nav>
       <div className={`graph-body${split ? ' is-split' : ''}`}>
-        <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} />
+        <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} fitSignal={tidied} />
         {split && (
           <As2View swfName={swf.name} store={store} selectedNode={selectedNode} onPick={(id) => revealNode(graphId, id)} />
         )}
