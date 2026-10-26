@@ -38,6 +38,18 @@ function solid(f: Fill, nodeId: string, lint: LintIssue[]): { color: string; opa
   return s ? { color: hex(s.color), opacity: s.color.a ?? 1 } : undefined
 }
 
+/** A frame's solid or gradient fill (first stop) as a w x h rectangle SVG, or undefined when it cannot be drawn. */
+export function rectSvg(w: number, h: number, f: Fill, nodeId: string, lint: LintIssue[]): string | undefined {
+  const s = solid(f, nodeId, lint)
+  if (!s) return undefined
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${num(w)}" height="${num(h)}" viewBox="0 0 ${num(w)} ${num(h)}"><rect width="${num(w)}" height="${num(h)}" fill="${s.color}" fill-opacity="${num(s.opacity)}"/></svg>\n`
+}
+
+/** The clip layer of a frame with clipContent: any opaque fill works, only the shape of the area matters. */
+export const maskSvg = (w: number, h: number): string =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${num(w)}" height="${num(h)}" viewBox="0 0 ${num(w)} ${num(h)}"><rect width="${num(w)}" height="${num(h)}" fill="#000000"/></svg>
+`
+
 /** One SVG for one Shape node, in the node's local space (viewBox 0 0 width height); FFDec places 1 px = 20 twips. */
 export function shapeToSvg(node: Shape): { svg?: string; lint: LintIssue[] } {
   const lint: LintIssue[] = []

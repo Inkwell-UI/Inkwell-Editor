@@ -3,7 +3,7 @@ import { ddsRel, isAssetHash, type ImageMode } from '../images/assets'
 import type { Rgba } from '../images/png'
 import { ident } from '../../shared/overlay'
 import { issue, type LintIssue } from './lint'
-import { shapeToSvg } from './svg'
+import { maskSvg, rectSvg, shapeToSvg } from './svg'
 import * as T from './tags'
 import { mapText, previewDeviceFont, type FontInfo, type GlyphLookup, type TextScript } from './text'
 import { HUD_SCALE, widgetFrame } from '../widget/frame'
@@ -400,20 +400,38 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     return id
   }
 
-  /** A frame's image fills as background clips under its children (`imageFill`, `imageFill_2`...): placements + their reserved names. */
-  const background = (n: Extract<Swf['nodes'][string], { type: 'frame' }>, path: string): [Buffer[], string[]] => {
+  /**
+   * A frame's fills as background clips under its children, bottom fill first: image fills are `imageFill`, `imageFill_2`...; solid fills (and a gradient, drawn as its
+   * first stop) are rectangle shapes named `fill`, `fill_2`... The root frame is the stage and stays transparent in game, so its solid and gradient fills are skipped.
+   * `skip` depths are left free below the first fill (the clip layer). Placements + their reserved names.
+   */
+  const background = (n: Extract<Swf['nodes'][string], { type: 'frame' }>, path: string, skip = 0): [Buffer[], string[]] => {
     const bg: Buffer[] = []
     const names: string[] = []
+    let images = 0
+    let fills = 0
     for (const f of n.fills ?? []) {
+      const depth = skip + bg.length + 1
       if (f.type !== 'image') {
-        lint.push(issue('info', 'frame-fill-unsupported', n.id, `Frame ${f.type} fills are not compiled; only image fills are. Use a rectangle for a coloured background.`))
+        if (n.id === ir.root) {
+          lint.push(issue('info', 'frame-fill-root-skipped', n.id, 'The root frame is the stage and is transparent in game; its solid and gradient fills are not drawn. Use a rectangle for a background.'))
+          continue
+        }
+        const svg = rectSvg(n.transform.width, n.transform.height, f, n.id, lint)
+        if (!svg) continue
+        const name = fills++ ? `fill_${fills}` : 'fill'
+        const id = alloc()
+        shapes.push({ charId: id, nodeId: n.id, svg })
+        defs.push(T.defineShapePlaceholder(id, n.transform.width, n.transform.height))
+        names.push(name)
+        bg.push(T.placeObject2({ depth, charId: id, name, x: 0, y: 0 }))
         continue
       }
-      const name = names.length ? `imageFill_${names.length + 1}` : 'imageFill'
+      const name = images++ ? `imageFill_${images}` : 'imageFill'
       const id = imageClip(f.asset, f.scaleMode, n.transform.width, n.transform.height, n.id, n.name, `${path}.${name}`)
       if (id === undefined) continue
       names.push(name)
-      bg.push(T.placeObject2({ depth: bg.length + 1, charId: id, name, x: 0, y: 0, ...(f.opacity !== undefined && f.opacity < 1 ? { alpha: f.opacity } : {}) }))
+      bg.push(T.placeObject2({ depth, charId: id, name, x: 0, y: 0, ...(f.opacity !== undefined && f.opacity < 1 ? { alpha: f.opacity } : {}) }))
     }
     return [bg, names]
   }
@@ -457,9 +475,17 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
       layerPaths.set(cid, here)
 
       if (n.type === 'frame') {
-        if (n.clipContent) lint.push(issue('info', 'clip-ignored', cid, 'Frame clipping is not applied.'))
         const id = alloc()
-        const inner = place(n, here, ...background(n, here))
+        // Clip content: a filled rectangle at depth 1 as a clip layer (PlaceObject2 clipDepth) masks everything above it in this clip, no AS2 needed
+        const clip = n.clipContent && n.transform.width > 0 && n.transform.height > 0
+        const [bg, reserved] = background(n, here, clip ? 1 : 0)
+        const inner = place(n, here, clip ? [Buffer.alloc(0), ...bg] : bg, reserved)
+        if (clip) {
+          const maskId = alloc()
+          shapes.push({ charId: maskId, nodeId: cid, svg: maskSvg(n.transform.width, n.transform.height) })
+          defs.push(T.defineShapePlaceholder(maskId, n.transform.width, n.transform.height))
+          inner[0] = T.placeObject2({ depth: 1, charId: maskId, x: 0, y: 0, clipDepth: inner.length })
+        }
         if (opts.roles?.[cid] === 'list') {
           const l = listInfo(n)
           if (l) listInfos.push(l)

@@ -106,7 +106,8 @@ export function readPlace(t: RawTag) {
     r.align()
   }
   const name = flags & 0x20 ? r.str() : undefined
-  return { depth, charId, matrix, alphaMult, name }
+  const clipDepth = flags & 0x40 ? r.u16() : undefined
+  return { depth, charId, matrix, alphaMult, name, clipDepth }
 }
 
 export const isTag = (code: number) => (t: RawTag) => t.code === code

@@ -259,11 +259,13 @@ export interface Placement {
   alpha?: number
   /** Uniform scale factor (not combined with `rotation`). */
   scale?: number
+  /** Makes this a clip layer: its shape masks every object from the next depth up to and including this one. */
+  clipDepth?: number
 }
 
 export function placeObject2(p: Placement): Buffer {
   const hasCx = p.alpha !== undefined && p.alpha < 1
-  const flags = 0x04 | 0x02 | (hasCx ? 0x08 : 0) | (p.name ? 0x20 : 0)
+  const flags = 0x04 | 0x02 | (hasCx ? 0x08 : 0) | (p.name ? 0x20 : 0) | (p.clipDepth !== undefined ? 0x40 : 0)
   const m = new Bits()
   const rot = p.rotation ?? 0
   if (rot !== 0) {
@@ -293,7 +295,7 @@ export function placeObject2(p: Placement): Buffer {
   }
   return tag(
     TAG.PlaceObject2,
-    cat(u8(flags), u16(p.depth), u16(p.charId), m.done(), hasCx ? cx.done() : Buffer.alloc(0), p.name ? str(p.name) : Buffer.alloc(0))
+    cat(u8(flags), u16(p.depth), u16(p.charId), m.done(), hasCx ? cx.done() : Buffer.alloc(0), p.name ? str(p.name) : Buffer.alloc(0), p.clipDepth !== undefined ? u16(p.clipDepth) : Buffer.alloc(0))
   )
 }
 

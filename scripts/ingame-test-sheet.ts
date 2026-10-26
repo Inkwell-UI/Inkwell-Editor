@@ -132,6 +132,20 @@ export function buildSheet(id: string, name: string, width: number, height: numb
   label(1250, 980, 'K4 group rotated 90 deg (box at far right): stands upright,')
   label(1250, 996, 'text reads bottom to top')
 
+  // Column 2 lower (x=500): frame fills and clip content (frames inside the root frame)
+  head(500, 830, 'L  frames: solid fill | clip content | translucent fill')
+  group('L1', 500, 866, 200, 60, 0, { fills: [solid(C.b1)] }, () => text('l1 text', 14, 18, 'Frame fill', { size: 24, color: C.yellow }))
+  label(720, 876, 'L1 frame with a solid blue fill and a text child: blue box,')
+  label(720, 892, 'yellow text readable on it')
+  group('L2', 500, 946, 120, 50, 0, { clipContent: true, fills: [solid(C.b2)] }, () => rect('l2 over', -40, -20, 200, 90, C.red))
+  label(720, 950, 'L2 clipContent on: a green 120x50 box with the red rectangle')
+  label(720, 966, 'cut at its edges (no red outside the green box)')
+  group('L3', 500, 1010, 120, 50, 0, { clipContent: false, fills: [solid(C.b2)] }, () => rect('l3 over', -40, -20, 200, 90, C.red))
+  label(720, 1020, 'L3 clipContent off (control): the red rectangle sticks out all round')
+  rect('l4 bar', 880, 946, 80, 60, C.bar)
+  group('L4', 860, 940, 120, 50, 0, { fills: [solid(C.red, 0.5)] }, () => {})
+  label(1000, 950, 'L4 50% red frame fill over a white bar: the bar shows through')
+
   const ids = rootKids
   const ir = {
     specVersion: 4, id, name, target: { kind: 'hudWidget' }, stage: { width, height }, root: '1:1',

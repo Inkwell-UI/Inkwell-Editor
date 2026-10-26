@@ -28,7 +28,7 @@ Scale modes: `fill` (cover, centred, cropped by the shape or the mask) and `fit`
 | `image-too-large` | error | a side over 4096 px |
 | `image-not-power-of-two` | warning, dds mode only | a side that is not 64, 128, 256... (the game may refuse such textures; unverified) |
 | `image-scale-mode` | warning | `crop`, `tile` or an unknown mode |
-| `frame-fill-unsupported` | info | a non-image frame fill (draw a rectangle instead) |
+| `frame-fill-root-skipped` | info | a solid or gradient fill on the root frame (the stage stays transparent; nested frames draw theirs, `docs/swf-compiler.md`) |
 
 ## Modules
 

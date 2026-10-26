@@ -57,6 +57,24 @@ describe.skipIf(!can)('compileSwf (real FFDec)', () => {
     }
   }, 60_000)
 
+  it('a nested frame with a solid fill and clipContent: the fill and the mask shapes are filled in and the clip layer survives FFDec', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
+    const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
+    try {
+      const ir = swf([frame('f', ['g']), frame('g', ['s'], { clipContent: true, fills: [{ type: 'solid', color: { r: 0, g: 0, b: 1 } }] }), rectShape('s')], { id: 'frameclip' })
+      const r = await compileSwf(ir, { modId: 'ItestMod', buildDir: dir, ffdec })
+      expect(r.lint).toEqual([])
+      const xmlPath = join(dir, 'out.xml')
+      execFileSync(javaPath, ['-jar', join(ffdecDir, 'ffdec-cli.jar'), '-swf2xml', r.swfPath, xmlPath], { stdio: 'ignore' })
+      const xml = readFileSync(xmlPath, 'utf8')
+      expect(xml).toMatch(/clipDepth="3"/) // mask 1, fill 2, rect 3
+      expect(xml).toMatch(/name="fill"/)
+      expect(xml).toMatch(/<color type="RGBA" alpha="255" blue="255" green="0" red="0"\/>/) // the frame's fill, drawn
+    } finally {
+      ffdec.stop()
+    }
+  }, 60_000)
+
   it('preview: a rotated text uses an embedded font whose glyphs FFDec imported from the TTF (subset only)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
     const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })

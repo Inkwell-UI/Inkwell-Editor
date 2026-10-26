@@ -33,7 +33,7 @@ describe('ingame test sheet', () => {
     const ir = buildSheet(v.id, v.name, v.width, v.height)
     const groups = Object.values(ir.nodes).filter((n) => n.type === 'frame' && n.id !== ir.root)
     const withText = (g: (typeof groups)[number]) => g.type === 'frame' && g.children.some((c) => ir.nodes[c]?.type === 'text')
-    expect(groups.filter(withText).map((g) => [g.transform.rotation, g.opacity]).sort()).toEqual([[0, 0.5], [0, 1], [30, 1], [90, 1]].sort())
+    expect(groups.filter(withText).map((g) => [g.transform.rotation, g.opacity]).sort()).toEqual([[0, 0.5], [0, 1], [0, 1], [30, 1], [90, 1]].sort()) // the second [0, 1] is L1, the frame fill row
     const g = generate(ir, { modId: 'IngameTest' })
     expect(g.lint.filter((l) => l.severity === 'error')).toEqual([])
     const fields = parseSwf(writeSwf({ widthPx: v.width, heightPx: v.height, tags: g.tags })).tags.filter((t) => t.code === TAG.DefineEditText).map(readEditText)

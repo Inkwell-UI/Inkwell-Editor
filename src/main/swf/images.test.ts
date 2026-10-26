@@ -100,11 +100,11 @@ describe('images, embedded mode (default)', () => {
   it('a frame image fill is a background clip under the children, sized to the frame', () => {
     const f = frame('g', ['t'], { fills: [{ type: 'solid', color: { r: 1, g: 0, b: 0 } }, { type: 'image', asset: B.hash, scaleMode: 'fit', opacity: 0.5 }] })
     const g = gen([frame('f', ['g']), f, textNode('t')])
-    expect(codes(g.lint)).toEqual([['info', 'frame-fill-unsupported', 'g']])
-    const inner = sprites(tagsOf(g)).find((s) => s.tags.filter((x) => x.code === TAG.PlaceObject2).length === 2)!
+    expect(codes(g.lint)).toEqual([])
+    const inner = sprites(tagsOf(g)).find((s) => s.tags.filter((x) => x.code === TAG.PlaceObject2).length === 3)!
     const p = inner.tags.filter((x) => x.code === TAG.PlaceObject2).map(readPlace)
-    expect(p.map((x) => [x.depth, x.name])).toEqual([[1, 'imageFill'], [2, 'text_t']])
-    expect(p[0]!.alphaMult).toBeCloseTo(0.5, 2)
+    expect(p.map((x) => [x.depth, x.name])).toEqual([[1, 'fill'], [2, 'imageFill'], [3, 'text_t']]) // fills bottom first, in the order Figma lists them
+    expect(p[1]!.alphaMult).toBeCloseTo(0.5, 2)
   })
 
   it('the root frame can carry an image fill too', () => {
