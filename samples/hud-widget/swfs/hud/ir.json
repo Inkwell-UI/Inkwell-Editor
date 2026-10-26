@@ -287,7 +287,7 @@
     }
   },
   "root": "1:1",
-  "specVersion": 4,
+  "specVersion": 6,
   "stage": {
     "height": 1080,
     "width": 1920
