@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { ProjectState } from '../../shared/projectState'
-import { WORKSPACES } from '../workspace/workspaces'
+import { applyOverrides } from '../workspace/layout'
+import { BEHAVIOUR_PREVIEW_HEIGHT, WORKSPACES } from '../workspace/workspaces'
 import { resolveActiveSwf, useProjectStore } from './projectStore'
 import { useSelectionStore } from './selectionStore'
 import { useSettingsStore } from './settingsStore'
@@ -70,11 +71,20 @@ describe('workspace store', () => {
     expect(WORKSPACES.behaviour.layout.kind).toBe('split')
   })
   it('sanitizePersisted drops garbage', () => {
-    const p = sanitizePersisted({ active: 'nope', sizes: { layout: { ok: [1, 2], bad: [0], worse: 'x' } }, tabs: { localization: { k: 'p', j: 3 } } })
+    const p = sanitizePersisted({ active: 'nope', sizes: { layout: { 'navigator|preview|inspector': [1, 2, 3], 'navigator|lintBudget': [0], 'navigator|inspector': 'x', stale: [1, 2] } }, tabs: { localization: { k: 'p', j: 3 } } })
     expect(p.active).toBe('layout')
-    expect(p.sizes.layout).toEqual({ ok: [1, 2] })
+    expect(p.sizes.layout).toEqual({ 'navigator|preview|inspector': [1, 2, 3] })
     expect(p.tabs.localization).toEqual({ k: 'p' })
     expect(sanitizePersisted(42).active).toBe('layout')
+  })
+  it('sizes stored for the old Behaviour layout (preview strip over graph, inspector at the right) do not touch the new one', () => {
+    const p = sanitizePersisted({
+      sizes: { behaviour: { 'navigator|preview|inspector': [1, 5, 2], 'preview|graph': [3, 2], 'navigator|play': [5, 1.4] }, layout: { 'navigator|preview|inspector': [1, 5, 2] } }
+    })
+    expect(p.sizes.behaviour).toEqual({ 'navigator|play': [5, 1.4] }) // main/dock split still exists, the two moved ones are gone
+    expect(p.sizes.layout).toEqual({ 'navigator|preview|inspector': [1, 5, 2] }) // other modes untouched
+    const layout = applyOverrides(WORKSPACES.behaviour.layout, { sizes: p.sizes.behaviour })
+    expect(JSON.stringify(layout)).toContain('"fixed":' + BEHAVIOUR_PREVIEW_HEIGHT)
   })
 })
 

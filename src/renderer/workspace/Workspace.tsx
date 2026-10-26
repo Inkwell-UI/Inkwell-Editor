@@ -43,14 +43,21 @@ export function Workspace({ layout, registry = panelRegistry, onResize = () => u
 }
 
 const cellStyle = (node: LayoutNode, extra: CSSProperties = {}): CSSProperties => ({ flex: `${node.size ?? 1} 1 0`, ...extra })
+const isFixed = (n: LayoutNode): boolean => n.kind === 'panel' && !!n.fixed
 
 function Node({ node, ctx, axis }: { node: LayoutNode; ctx: Ctx; axis: 'row' | 'column' }) {
   if (node.kind === 'panel') {
     const def = ctx.registry[node.panel]!
     const Component = def.component
     // The slot is sized by its share along the parent's axis; the panel inside fills it and scrolls by itself.
+    // A fixed panel keeps its px extent along the parent's axis (no share, no splitter).
+    const style = node.fixed
+      ? axis === 'row'
+        ? { flex: `0 0 ${node.fixed}px`, width: node.fixed, minWidth: node.fixed, minHeight: def.minSize.height }
+        : { flex: `0 0 ${node.fixed}px`, height: node.fixed, minHeight: node.fixed, minWidth: def.minSize.width }
+      : cellStyle(node, { minWidth: def.minSize.width, minHeight: def.minSize.height })
     return (
-      <div className="slot" data-cell data-panel={node.panel} style={cellStyle(node, { minWidth: def.minSize.width, minHeight: def.minSize.height })}>
+      <div className="slot" data-cell data-panel={node.panel} data-fixed={node.fixed || undefined} style={style}>
         <Component />
       </div>
     )
@@ -113,7 +120,7 @@ function SplitView({ node, ctx }: { node: SplitNode; ctx: Ctx; axis: 'row' | 'co
       {node.children.map((c, i) => (
         <Fragment key={c.kind === 'panel' ? c.panel : `${c.kind}${i}`}>
           <Node node={c} ctx={ctx} axis={node.direction} />
-          {i < node.children.length - 1 && (
+          {i < node.children.length - 1 && !isFixed(c) && !isFixed(node.children[i + 1]!) && (
             <div
               className={`splitter ${horizontal ? 'splitter-col' : 'splitter-row'}`}
               role="separator"

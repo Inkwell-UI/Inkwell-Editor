@@ -9,6 +9,11 @@ export interface PanelNode {
   panel: string
   /** Share of the parent split along its direction (flex-grow; default 1). */
   size?: number
+  /**
+   * Fixed extent in px along the parent split's axis (height in a column, width in a row): the slot keeps it, ignores `size` and any stored
+   * user size, and has no splitter on either side. Only valid on a panel.
+   */
+  fixed?: number
 }
 export interface SplitNode {
   kind: 'split'
@@ -44,6 +49,8 @@ export function validateLayout(layout: unknown, knownIds: Iterable<string>): str
     const node = n as Record<string, unknown>
     if (node['size'] !== undefined && !(typeof node['size'] === 'number' && node['size'] > 0 && Number.isFinite(node['size'])))
       errors.push(`${path}: size must be a positive number`)
+    if (node['fixed'] !== undefined && !(node['kind'] === 'panel' && typeof node['fixed'] === 'number' && node['fixed'] > 0 && Number.isFinite(node['fixed'])))
+      errors.push(`${path}: fixed must be a positive number on a panel`)
     if (node['kind'] === 'panel') panel(node, path)
     else if (inTabs) errors.push(`${path}: a tab must be a panel`)
     else if (node['kind'] === 'split') {
@@ -116,7 +123,7 @@ export function applyOverrides(n: LayoutNode, o: LayoutOverrides): LayoutNode {
     ...n,
     children: n.children.map((c, i) => {
       const child = applyOverrides(c, o)
-      return fits ? { ...child, size: sizes![i]! } : child
+      return fits && !(c.kind === 'panel' && c.fixed) ? { ...child, size: sizes![i]! } : child
     })
   }
 }
@@ -131,3 +138,6 @@ export function tabsKeyOf(n: LayoutNode, id: string): string | undefined {
   }
   return undefined
 }
+
+/** Keys of every split and tabs node in a layout (what a stored size or tab may be filed under). */
+export const nodeKeys = (n: LayoutNode): string[] => (n.kind === 'panel' ? [] : [nodeKey(n), ...(n.kind === 'split' ? n.children.flatMap(nodeKeys) : [])])

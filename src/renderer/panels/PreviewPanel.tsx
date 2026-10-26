@@ -31,7 +31,8 @@ import { Btn } from '../ui/Btn'
 import { Panel } from './Panel'
 
 const idle = { status: 'idle' as const }
-const COMPACT_BELOW = 300 // px of panel height: the Behaviour mode's strip
+const COMPACT_BELOW = 300 // px of panel height (the fixed preview slot of Behaviour mode) ...
+const COMPACT_NARROW = 400 // ... or width (a narrow column)
 
 /**
  * Zone 3, the preview stage (UX 4.3): stage toolbar, the simulated screen with the stage fitted inside, safe zones, the Inspect overlay,
@@ -111,7 +112,7 @@ export function PreviewPanel() {
   if (project && project.swfs.length === 0) emptyMessage = strings.stage.noSwfs
   else if (!build) emptyMessage = entry?.latest.error ? `${strings.previewError}: ${entry.latest.error}` : swf?.orphaned ? strings.stage.orphaned : strings.previewNone
 
-  const compact = rootSize.height > 0 && rootSize.height < COMPACT_BELOW
+  const compact = rootSize.height > 0 && (rootSize.height < COMPACT_BELOW || rootSize.width < COMPACT_NARROW)
   const banners = (
     <>
         {failed && (
@@ -122,7 +123,7 @@ export function PreviewPanel() {
         </div>
       )}
       {project && sync && sync.server === 'listening' && sync.connections === 0 && (
-        <div className="banner banner-info" data-testid="snapshot-banner" data-snapshot={usableSnapshot(project.snapshot) ? 'yes' : 'no'}>
+        <div className="banner banner-info" data-testid="snapshot-banner" data-snapshot={usableSnapshot(project.snapshot) ? 'yes' : 'no'} title={usableSnapshot(project.snapshot) ? strings.stage.snapshot : strings.stage.noSnapshot}>
           <WifiOff size={14} aria-hidden="true" />
           {usableSnapshot(project.snapshot) ? <span title={strings.stage.snapshot}>{strings.stage.snapshot}</span> : <span title={strings.stage.noSnapshot}>{strings.stage.noSnapshot}</span>}
           <Btn icon={Link2Off} reason={strings.stage.setupGuideReason}>{strings.stage.setupGuide}</Btn>
@@ -172,8 +173,8 @@ export function PreviewPanel() {
         <div className="stage-foot">
           <ShimBadge {...(build ? { notes: build.notes } : {})} />
           {entry?.shownAt !== undefined && (
-            <span className={`chip ${failed ? 'chip-error' : 'chip-ok'}`} data-testid="last-good">
-              <span className="dot" aria-hidden="true" /> {strings.stage.lastGood(new Date(entry.shownAt).toLocaleTimeString())}
+            <span className={`chip ${failed ? 'chip-error' : 'chip-ok'}`} data-testid="last-good" title={strings.stage.lastGood(new Date(entry.shownAt).toLocaleTimeString())}>
+              <span className="dot" aria-hidden="true" /> <span className="chip-text">{strings.stage.lastGood(new Date(entry.shownAt).toLocaleTimeString())}</span>
             </span>
           )}
         </div>

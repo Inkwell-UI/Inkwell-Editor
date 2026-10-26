@@ -1,9 +1,9 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { layoutPanelIds, validateLayout } from './layout'
+import { layoutPanelIds, validateLayout, type LayoutNode } from './layout'
 import { panelIds, panelRegistry } from './panelRegistry'
-import { WORKSPACE_IDS, WORKSPACES } from './workspaces'
+import { BEHAVIOUR_PREVIEW_HEIGHT, WORKSPACE_IDS, WORKSPACES } from './workspaces'
 
 describe('panel registry', () => {
   it('every entry has a title, a component and sane sizes', () => {
@@ -32,6 +32,17 @@ describe('panel registry', () => {
     expect(WORKSPACE_IDS.filter((i) => has(i, 'graph'))).toEqual(['behaviour'])
     expect(WORKSPACE_IDS.filter((i) => has(i, 'localization'))).toEqual(['localization'])
     expect(WORKSPACE_IDS.every((i) => has(i, 'preview') && has(i, 'inspector') && has(i, 'lintBudget'))).toBe(true)
+  })
+
+  it('Behaviour: the graph owns the centre column, the right column is [fixed preview, inspector] with no splitter between', () => {
+    const main = (WORKSPACES.behaviour.layout as { children: LayoutNode[] }).children[0] as { children: LayoutNode[] }
+    expect(main.children).toHaveLength(3)
+    expect(main.children[1]).toMatchObject({ kind: 'panel', panel: 'graph' })
+    const right = main.children[2] as { kind: string; direction: string; children: LayoutNode[] }
+    expect(right).toMatchObject({ kind: 'split', direction: 'column' })
+    expect(right.children[0]).toMatchObject({ kind: 'panel', panel: 'preview', fixed: BEHAVIOUR_PREVIEW_HEIGHT })
+    expect(right.children[1]).toMatchObject({ kind: 'panel', panel: 'inspector' })
+    expect(JSON.stringify([WORKSPACES.layout.layout, WORKSPACES.localization.layout])).not.toContain('"fixed"')
   })
 
   it('panels are independent: no panel imports another panel or the workspace layer (only the Panel chrome, hooks, stores, models, preview pieces, ui, strings, shared)', () => {

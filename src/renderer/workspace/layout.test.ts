@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { applyOverrides, layoutPanelIds, nodeKey, removePanel, tabsKeyOf, validateLayout, type LayoutNode } from './layout'
+import { applyOverrides, layoutPanelIds, nodeKey, nodeKeys, removePanel, tabsKeyOf, validateLayout, type LayoutNode } from './layout'
 import { WORKSPACE_IDS, WORKSPACES } from './workspaces'
 
 const ids = ['a', 'b', 'c']
 const p = (panel: string, size?: number): LayoutNode => ({ kind: 'panel', panel, ...(size !== undefined ? { size } : {}) })
+const fx = (panel: string, fixed: number): LayoutNode => ({ kind: 'panel', panel, fixed })
 const row = (...children: LayoutNode[]): LayoutNode => ({ kind: 'split', direction: 'row', children })
 const tabs = (...t: string[]): LayoutNode => ({ kind: 'tabs', tabs: t.map((x) => ({ kind: 'panel', panel: x })) })
 
@@ -27,6 +28,11 @@ describe('validateLayout', () => {
     expect(validateLayout({ kind: 'tabs', tabs: [row(p('a'))] }, ids)).toEqual(['layout.tabs[0]: a tab must be a panel'])
     expect(validateLayout({ kind: 'nope' }, ids)).toEqual(['layout: unknown node kind'])
     expect(validateLayout(null, ids)).toEqual(['layout: not an object'])
+  })
+  it('fixed must be a positive number on a panel', () => {
+    expect(validateLayout(row(p('a'), fx('b', 200)), ids)).toEqual([])
+    expect(validateLayout(row(fx('a', 0), fx('b', Number.NaN)), ids)).toHaveLength(2)
+    expect(validateLayout({ ...row(p('a')), fixed: 100 } as unknown as LayoutNode, ids)).toEqual(['layout: fixed must be a positive number on a panel'])
   })
   it('layouts survive a JSON round trip (plain data)', () => {
     for (const id of WORKSPACE_IDS) expect(JSON.parse(JSON.stringify(WORKSPACES[id].layout))).toEqual(WORKSPACES[id].layout)
@@ -54,6 +60,14 @@ describe('layout helpers', () => {
     expect(o.children.map((c) => c.size)).toEqual([2, 5])
     expect((o.children[1] as { active?: string }).active).toBe('c')
     expect(applyOverrides(l, { sizes: { 'a|b': [2] }, tabs: { 'b|c': 'zzz' } })).toEqual(l)
+  })
+  it('applyOverrides never gives a fixed panel a stored size', () => {
+    const l = row(fx('a', 200), p('b'))
+    const o = applyOverrides(l, { sizes: { 'a|b': [3, 4] } }) as Extract<LayoutNode, { kind: 'split' }>
+    expect(o.children).toEqual([fx('a', 200), p('b', 4)])
+  })
+  it('nodeKeys lists every split and tabs key', () => {
+    expect(nodeKeys(row(p('a'), { kind: 'split', direction: 'column', children: [p('b'), tabs('c', 'd')] }))).toEqual(['a|b', 'b|c', 'c|d'])
   })
   it('tabsKeyOf finds the group of a panel', () => {
     expect(tabsKeyOf(row(p('a'), tabs('b', 'c')), 'c')).toBe('b|c')

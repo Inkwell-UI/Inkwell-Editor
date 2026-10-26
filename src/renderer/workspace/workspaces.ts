@@ -6,7 +6,7 @@ import type { LayoutNode } from './layout'
  * the user's own sizes are stored per mode by `state/workspaceStore.ts` and applied on top.
  *
  *   Layout:       [ left tabs | preview | inspector ] / dock
- *   Behaviour:    [ left tabs | column [ preview strip / graph ] | inspector ] / dock
+ *   Behaviour:    [ left tabs | graph | column [ preview (fixed size) / inspector ] ] / dock
  *   Localization: [ left tabs | preview | inspector ] / dock (Localization first and large)
  *   Zone 1 (top bar) and Zone 6B (status bar) are shell chrome around the layout, not layout panels.
  */
@@ -24,34 +24,36 @@ const tabs = (panels: string[], active?: string, size?: number): LayoutNode => (
   tabs: panels.map((panel) => ({ kind: 'panel' as const, panel }))
 })
 
-const frame = (left: LayoutNode, center: LayoutNode, dock: LayoutNode, shares: { main: number; dock: number }): LayoutNode => ({
+const inspector: LayoutNode = { kind: 'panel', panel: 'inspector' }
+
+const frame = (left: LayoutNode, center: LayoutNode, dock: LayoutNode, shares: { main: number; dock: number }, right: LayoutNode = { ...inspector, size: 1.7 }): LayoutNode => ({
   kind: 'split',
   direction: 'column',
   children: [
-    { kind: 'split', direction: 'row', size: shares.main, children: [{ ...left, size: 1.3 }, { ...center, size: 5 }, { kind: 'panel', panel: 'inspector', size: 1.7 }] },
+    { kind: 'split', direction: 'row', size: shares.main, children: [{ ...left, size: 1.3 }, { ...center, size: 5 }, { ...right, size: 1.7 }] },
     { ...dock, size: shares.dock }
   ]
 })
 
 const preview: LayoutNode = { kind: 'panel', panel: 'preview' }
 
+/** px: title bar + compact toolbar + a 16:9 stage about the inspector column wide (~300 px) + the Ruffle notice. */
+export const BEHAVIOUR_PREVIEW_HEIGHT = 280
+
 export const WORKSPACE_IDS: readonly WorkspaceId[] = ['layout', 'behaviour', 'localization']
 
 export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
   // Layout: the stage is the whole centre; assets and the lint dock support it.
   layout: { id: 'layout', layout: frame(tabs(['navigator', 'assets']), preview, tabs(['lintBudget']), { main: 5, dock: 1.1 }) },
-  // Behaviour: the graph is large, the preview a strip; contracts and variables (left tabs), play, trace, mock data and data binding (dock tabs) are the supporting views.
+  // Behaviour: the graph takes the whole centre; the preview is a small FIXED slot above the inspector (not resizable: its toolbar goes compact, the stage scales to fit); contracts and variables (left tabs), play, trace, mock data and data binding (dock tabs) are the supporting views.
   behaviour: {
     id: 'behaviour',
     layout: frame(
       tabs(['navigator', 'contracts', 'variables']),
-      {
-        kind: 'split',
-        direction: 'column',
-        children: [{ ...preview, size: 2 }, { kind: 'panel', panel: 'graph', size: 3 }]
-      },
+      { kind: 'panel', panel: 'graph' },
       tabs(['play', 'trace', 'mockData', 'dataBinding', 'lintBudget'], 'trace'),
-      { main: 5, dock: 1.4 }
+      { main: 5, dock: 1.4 },
+      { kind: 'split', direction: 'column', children: [{ ...preview, fixed: BEHAVIOUR_PREVIEW_HEIGHT }, { ...inspector, size: 1 }] }
     )
   },
   // Localization: the string table gets the room; the preview next to it (Locale and Pseudo-Loc toggles) shows the effect.

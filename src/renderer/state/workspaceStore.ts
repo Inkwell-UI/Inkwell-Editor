@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { tabsKeyOf } from '../workspace/layout'
+import { nodeKeys, removePanel, tabsKeyOf } from '../workspace/layout'
 import { isWorkspaceId, WORKSPACE_IDS, WORKSPACES, type WorkspaceId } from '../workspace/workspaces'
 import { safeStorage } from './safeStorage'
 
@@ -27,7 +27,12 @@ type Persisted = Pick<WorkspaceStore, 'active' | 'sizes' | 'tabs'>
 
 const empty = <T>(): Record<WorkspaceId, Record<string, T>> => ({ layout: {}, behaviour: {}, localization: {} })
 
-/** Defensive read of whatever localStorage held: wrong shapes and unknown ids are dropped, never thrown on. */
+/** Split keys a workspace can have now (also with the preview detached, which collapses splits). Sizes filed under any other key come from an older layout and are dropped. */
+const valid = Object.fromEntries(
+  WORKSPACE_IDS.map((ws) => [ws, new Set([...nodeKeys(WORKSPACES[ws].layout), ...nodeKeys(removePanel(WORKSPACES[ws].layout, 'preview')!)])])
+) as Record<WorkspaceId, Set<string>>
+
+/** Defensive read of whatever localStorage held: wrong shapes, unknown ids and sizes of splits that no longer exist are dropped, never thrown on. */
 export function sanitizePersisted(raw: unknown): Persisted {
   const out: Persisted = { active: 'layout', sizes: empty(), tabs: empty() }
   if (!raw || typeof raw !== 'object') return out
@@ -37,7 +42,7 @@ export function sanitizePersisted(raw: unknown): Persisted {
     const sz = (r['sizes'] as Record<string, unknown> | undefined)?.[ws]
     if (sz && typeof sz === 'object')
       for (const [k, v] of Object.entries(sz))
-        if (Array.isArray(v) && v.length > 0 && v.every((n) => typeof n === 'number' && n > 0 && Number.isFinite(n))) out.sizes[ws][k] = v as number[]
+        if (valid[ws].has(k) && Array.isArray(v) && v.length > 0 && v.every((n) => typeof n === 'number' && n > 0 && Number.isFinite(n))) out.sizes[ws][k] = v as number[]
     const tb = (r['tabs'] as Record<string, unknown> | undefined)?.[ws]
     if (tb && typeof tb === 'object') for (const [k, v] of Object.entries(tb)) if (typeof v === 'string') out.tabs[ws][k] = v
   }
