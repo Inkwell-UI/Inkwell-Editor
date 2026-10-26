@@ -1,6 +1,6 @@
 
-import { ChevronDown, Hammer, Settings2, FileStack, PenLine } from 'lucide-react'
-import { PRODUCT_NAME } from '../../shared/product'
+import { useEffect } from 'react'
+import { ChevronDown, Hammer, Settings2, FileStack } from 'lucide-react'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
@@ -83,16 +83,12 @@ export function TopBar() {
   const swf = useActiveSwf()
   const sync = useSyncState()
   const show = useDialogStore((s) => s.show)
+  useEffect(() => { document.title = strings.windowTitleFor(project?.name) }, [project?.name])
   const compiling = sync?.build === 'compiling'
   const buildReason =
     sync?.ffdec?.status === 'notFound' ? strings.top.buildNoFfdec : !project?.swfs.some((s) => !s.orphaned) ? strings.top.buildNoSwfs : undefined
   return (
     <header className="topbar" aria-label={strings.top.label}>
-      <div className="brand">
-        <PenLine size={16} aria-hidden="true" />
-        <strong>{PRODUCT_NAME}</strong>
-        <span className="project-name" title={project?.dir}>{project?.name}</span>
-      </div>
       <SwfSwitcher />
       <Btn icon={Settings2} onClick={() => show('configOwnership')} label={strings.top.targetLabel(swf?.ir.target.kind)} testId="target-pill" className="btn-pill">
         {swf ? strings.top.kindNames[swf.ir.target.kind] : strings.top.noTarget}

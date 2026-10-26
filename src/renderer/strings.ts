@@ -5,6 +5,7 @@ const BY = 'Arrives with the'
 
 export const strings = {
   windowTitle: PRODUCT_NAME,
+  windowTitleFor: (project: string | undefined) => (project ? `${project} - ${PRODUCT_NAME}` : PRODUCT_NAME),
   previewWindowTitle: `${PRODUCT_NAME} - Preview`,
   loading: 'Loading',
   close: 'Close',

@@ -62,8 +62,6 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .shell { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .shell-main { flex: 1; min-height: 0; display: flex; }
 .topbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--surface-1); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-.brand { display: flex; align-items: center; gap: 6px; margin-right: 6px; }
-.project-name { color: var(--fg-dim); padding-left: 8px; border-left: 1px solid var(--line-strong); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .statusbar { position: relative; z-index: 40; display: flex; align-items: center; gap: 4px; padding: 0 8px; min-height: 26px; background: var(--surface-1); border-top: 1px solid var(--line); font-size: 12px; color: var(--fg-dim); }
 .statusbar .item { padding: 2px 8px; border-right: 1px solid var(--line); display: inline-flex; align-items: center; gap: 4px; }
 .statusbar .item:last-child { border-right: 0; }
