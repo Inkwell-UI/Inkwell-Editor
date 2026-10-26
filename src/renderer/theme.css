@@ -36,6 +36,10 @@
   --info-bg: #14283f;
   --hover: rgba(255, 255, 255, 0.07);
   --hit-bg: rgba(255, 209, 102, 0.16);
+  --code-keyword: #c4a1ff;
+  --code-string: #8fd694;
+  --code-number: #ffb069;
+  --code-comment: #9d9da7;
   --press: rgba(255, 255, 255, 0.12);
   --backdrop: rgba(5, 7, 10, 0.62);
   --shadow: rgba(0, 0, 0, 0.5);

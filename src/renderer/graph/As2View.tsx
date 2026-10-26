@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import type { GraphAs2 } from '../../shared/graphs'
 import { inkwell } from '../hooks/api'
-import { linesOfNode, nodeOfLine, sourceLines } from '../model/as2View'
+import { highlightAs2, linesOfNode, nodeOfLine, sourceLines } from '../model/as2View'
 import { toGraph, type GraphStore } from '../state/graphStore'
 import { strings } from '../strings'
 
@@ -34,7 +34,7 @@ export function As2View({ swfName, store, selectedNode, onPick }: { swfName: str
     )
     return () => clearTimeout(t)
   }, [key, swfName]) // eslint-disable-line react-hooks/exhaustive-deps
-  const lines = useMemo(() => (as2 ? sourceLines(as2.source) : []), [as2])
+  const lines = useMemo(() => (as2 ? highlightAs2(sourceLines(as2.source)) : []), [as2])
   const mine = useMemo(() => new Set(as2 ? linesOfNode(as2.lines, selectedNode) : []), [as2, selectedNode])
   const box = useRef<HTMLDivElement>(null)
   useEffect(() => void box.current?.querySelector('.is-hit')?.scrollIntoView({ block: 'nearest' }), [mine])
@@ -58,7 +58,9 @@ export function As2View({ swfName, store, selectedNode, onPick }: { swfName: str
                 data-node={node}
               >
                 <span className="as2-no" aria-hidden="true">{n}</span>
-                <code>{text || ' '}</code>
+                <code>
+                  {text.length ? text.map((t, i) => (t.kind === 'plain' ? t.text : <span key={i} className={`as2-${t.kind}`}>{t.text}</span>)) : ' '}
+                </code>
               </div>
             )
           })}
