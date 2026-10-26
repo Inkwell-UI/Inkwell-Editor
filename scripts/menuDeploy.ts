@@ -59,8 +59,11 @@ async function main(o: { sample: string; envVar: string; script: string }): Prom
       lists: listSettings(nodes),
       graphs: { graphs: Object.values(s.graphs ?? {}), packs }
     })
+    // the runtime check (message when Inkwell.dll is missing) needs the user's Papyrus compiler: INKWELL_PAPYRUS, else without it the deploy warns `runtime-check-missing`
+    const papyrusExe = process.env['INKWELL_PAPYRUS']
     const input: DeployInput = {
       modId, modName: project.meta.name, root: dest, gameDirs: [], buildDir, ffdec, vanillaHashes: new Set(), packs,
+      ...(papyrusExe && existsSync(papyrusExe) ? { papyrusExe, stubsDir: resolve(root, 'resources/papyrus-stubs') } : {}),
       swfs: [{
         name: 'menu', orphaned: false, kind: 'customMenu', ir, graphs: Object.values(s.graphs ?? {}), build: { state: 'done', lint: built.lint },
         menu: flat ? flatMenuSettings(modId, 'menu', base) : base

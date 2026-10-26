@@ -58,6 +58,45 @@ describe('menu class', () => {
   it('frame code creates _root.inkwellMenu and starts it', () => {
     expect(menuFrameCode('My Mod', 'Wheel')).toEqual(['_root.inkwellMenu = new mods.My_Mod.WheelMenu(this);', '_root.inkwellMenu.start();'])
   })
+  describe('UI scale and offset from the INI (S2, S9)', () => {
+    const src = menuClassSource({ modId: 'M', swfCls: 'X', graphs: [] })
+    const block = src.slice(src.indexOf('        var s = Number(bridge.uiScale);'), src.indexOf('        var g;'))
+    it('golden block: applied to the menu root at start, once, in the 1920x1080 reference stage', () => {
+      expect(block).toMatchInlineSnapshot(`
+        "        var s = Number(bridge.uiScale);
+                if (!(s > 0)) s = 1;
+                var ox = Number(bridge.offsetX) || 0;
+                var oy = Number(bridge.offsetY) || 0;
+                if (s != 1 || ox != 0 || oy != 0) {
+                    _root._xscale = 100 * s;
+                    _root._yscale = 100 * s;
+                    _root._x = 960 * (1 - s) + ox;
+                    _root._y = 540 * (1 - s) + oy;
+                }
+        "
+      `)
+    })
+    // the AS2 of the block is also valid JavaScript, so run it against a fake root
+    const run = (bridge: Record<string, unknown>): Record<string, number> => {
+      const _root: Record<string, number> = { _xscale: 100, _yscale: 100, _x: 0, _y: 0 }
+      new Function('bridge', '_root', 'Number', block)(bridge, _root, Number)
+      return _root
+    }
+    it('scales around the stage centre and adds the offset', () => {
+      expect(run({ uiScale: 1.5, offsetX: 40, offsetY: -20 })).toEqual({ _xscale: 150, _yscale: 150, _x: 960 * -0.5 + 40, _y: 540 * -0.5 - 20 })
+      expect(run({ uiScale: 0.5, offsetX: 0, offsetY: 0 })).toEqual({ _xscale: 50, _yscale: 50, _x: 480, _y: 270 })
+    })
+    it('leaves the root alone at the defaults, and treats a broken scale as 1', () => {
+      const untouched = { _xscale: 100, _yscale: 100, _x: 0, _y: 0 }
+      expect(run({ uiScale: 1, offsetX: 0, offsetY: 0 })).toEqual(untouched)
+      for (const bad of [undefined, 0, -2, NaN, 'abc']) expect(run({ uiScale: bad, offsetX: 0, offsetY: 0 }), String(bad)).toEqual(untouched)
+      expect(run({ uiScale: 1, offsetX: 'x', offsetY: undefined })).toEqual(untouched) // a broken offset is 0
+      expect(run({ uiScale: 1, offsetX: 25, offsetY: 0 })._x).toBe(25) // the offset alone moves the menu
+    })
+    it('the stub bridge (no runtime) is scale 1 at 0,0', () => {
+      expect(src).toContain('uiScale: 1, offsetX: 0, offsetY: 0')
+    })
+  })
   it('no focus block and no graphs without them', () => {
     const src = menuClassSource({ modId: 'M', swfCls: 'X', graphs: [] })
     expect(src).not.toContain('tabEnabled')
@@ -108,6 +147,10 @@ describe('generate() for a customMenu SWF', () => {
     expect(frame.indexOf('_root.inkwell = {')).toBeLessThan(frame.indexOf('_root.inkwellMenu = new'))
     for (const m of BRIDGE_MEMBERS) expect(frame.split('_root.inkwell = {')[1]!.split('};')[0]).toContain(`${m.name}`)
     expect(frame).toContain('"inkwellClick"')
+    // the preview's UI Scale control: the bridge values change, the root is reset and the menu class restarted (the Ruffle driver checks the effect)
+    expect(frame).toContain('"inkwellUiScale"')
+    expect(frame).toContain('_root.inkwell.uiScale = Number(scale) || 1;')
+    expect(frame.indexOf('_root._xscale = 100;')).toBeLessThan(frame.indexOf('_root.inkwellMenu = new', frame.indexOf('var reopen')))
     expect(frame).toContain('_global.Inkwell.paths["2:3"] = "btn";')
   })
   it('a customMenu without graphs still gets the glue (the runtime waits for glueReady)', async () => {

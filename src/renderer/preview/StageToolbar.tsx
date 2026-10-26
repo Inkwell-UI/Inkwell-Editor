@@ -25,6 +25,8 @@ export interface StageToolbarProps {
   compact: boolean
   /** SWF picker (the detached window has no top bar). */
   swfPicker?: ReactNode
+  /** Custom menu only: the UI Scale control (S9); sits in the More popover of the compact toolbar. */
+  menuControls?: ReactNode
 }
 
 /**
@@ -35,6 +37,7 @@ export function StageToolbar(p: StageToolbarProps) {
   const [more, setMore] = useState(false)
   const secondary = (
     <>
+      {p.menuControls}
       <span className="zoom" role="group" aria-label={strings.stage.zoom}>
         <Btn icon={ZoomOut} label={strings.stage.zoomOut} onClick={() => p.onZoom(-1)} />
         <button type="button" className="btn btn-quiet zoom-value" onClick={p.onZoomReset} title={strings.stage.zoomReset} aria-label={strings.stage.zoomReset}>{Math.round(p.zoom * 100)}%</button>

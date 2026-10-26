@@ -5,6 +5,7 @@ import { useSwfGraphs } from '../hooks/useGraphs'
 import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
 import { callArgs, playEntries, type PlayEntry } from '../model/playEntries'
 import { previewBus } from '../preview/previewBus'
+import { UiScaleControl } from '../preview/uiScale'
 import { useGraphDocs } from '../state/graphDocs'
 import { findGraphStore, toGraph } from '../state/graphStore'
 import { strings } from '../strings'
@@ -29,6 +30,7 @@ function MenuControls({ running }: { running: boolean }) {
         <Btn icon={DoorOpen} onClick={() => done(previewBus.call('inkwellMenuOpen'), strings.play.menuOpened)} reason={reason} testId="play-menu-open">{strings.play.menuOpen}</Btn>
         <Btn icon={DoorClosed} onClick={() => done(previewBus.call('inkwellMenuClose'), strings.play.menuClosed)} reason={reason} testId="play-menu-close">{strings.play.menuClose}</Btn>
         <Btn icon={RotateCcw} onClick={() => done(previewBus.call('inkwellMenuReopen'), strings.play.menuReopened)} reason={reason} testId="play-menu-reopen">{strings.play.menuReopen}</Btn>
+        <UiScaleControl testId="play-ui-scale" />
         {target ? (
           <>
             <label>

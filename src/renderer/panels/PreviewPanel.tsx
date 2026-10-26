@@ -18,6 +18,7 @@ import { InspectOverlay } from '../preview/InspectOverlay'
 import { RuffleBackend } from '../preview/RuffleBackend'
 import { SafeZoneOverlay } from '../preview/SafeZoneOverlay'
 import { StageToolbar, type StageMode } from '../preview/StageToolbar'
+import { UiScaleControl, uiScaleStore } from '../preview/uiScale'
 import { SwfViewport } from '../preview/SwfViewport'
 import { useLintStore } from '../state/lintStore'
 import { isPreviewWindow, usePopoutStore } from '../state/popoutStore'
@@ -79,6 +80,10 @@ export function PreviewPanel() {
   useEffect(() => {
     if (ctl && state.status === 'ready') deliverMock(ctl.backend, JSON.parse(mockJson) as Record<string, string | number | boolean>)
   }, [ctl, state.status, state.seq, mockJson])
+  // a rebuild restarts the movie at scale 1: bring the chosen UI scale back (custom menus only; the callback does not exist in other previews)
+  useEffect(() => {
+    if (ctl && state.status === 'ready' && swf?.ir.target.kind === 'customMenu') uiScaleStore.reapply()
+  }, [ctl, state.status, state.seq, swf?.ir.target.kind])
 
   const failed = sync?.build === 'error' || !!entry?.stale
   const err = firstError(dock)
@@ -148,6 +153,7 @@ export function PreviewPanel() {
           onZoomReset={() => setZoom(1)}
           compact={compact}
           swfPicker={picker}
+          {...(swf?.ir.target.kind === 'customMenu' ? { menuControls: <UiScaleControl testId="stage-ui-scale" /> } : {})}
         />
         {!compact && banners}
         <div className="preview-stage" tabIndex={0} role="group" aria-label={strings.stage.stageLabel} onKeyDownCapture={onStageKey} data-mode={mode} data-testid="stage">

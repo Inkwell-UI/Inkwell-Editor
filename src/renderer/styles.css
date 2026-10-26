@@ -203,6 +203,8 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .inline { display: inline-flex; align-items: center; gap: 4px; }
 .zoom { display: inline-flex; align-items: center; }
 .zoom-value { min-width: 48px; justify-content: center; }
+.gn-input.ui-scale-input { width: 64px; min-width: 0; flex: none; }
+label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .banner { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 4px; border: 1px solid; }
 .banner span { flex: 1; }
 .banner-error { background: var(--err-bg); border-color: var(--err); color: var(--fg); }

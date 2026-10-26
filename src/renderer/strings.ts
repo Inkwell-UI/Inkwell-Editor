@@ -54,6 +54,8 @@ export const strings = {
     zoomOut: 'Zoom out',
     zoomReset: 'Reset zoom to fit',
     more: 'More stage controls',
+    uiScale: 'UI scale',
+    uiScaleTip: 'Menu size as the user INI setting UIScale would set it (0.50 to 2.00). Reopens the menu in the preview so the effect is visible.',
     occupied: 'Occupied HUD',
     occupiedReason: 'Arrives with community occupied-zone data (0.6+)',
     focus: 'Focus Graph',

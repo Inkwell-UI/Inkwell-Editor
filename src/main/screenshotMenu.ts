@@ -86,6 +86,27 @@ export async function runMenuShots(o: { outDir: string; projectDir: string; win:
   console.log('[menu] open/close result:', await text('[data-testid="play-menu-result"]'))
   check('Close then Open: no error', !(await text('[data-testid="play-menu-result"]')).includes('did not take'))
 
+  // ---- UI scale (S9): the Play panel's control reopens the menu with inkwell.uiScale; the glue scales the root (150 %, centred), 1 puts it back
+  await setValue('[data-testid="play-ui-scale"]', '1.5')
+  await wait(500)
+  check('UI scale 1.5: the glue scaled the menu root to 150 % around the centre', (await get('_xscale')) === '150' && (await get('_x')) === '-480' && (await get('_y')) === '-270', `${await get('_xscale')} at ${await get('_x')},${await get('_y')}`)
+  check('UI scale 1.5: the menu class restarted and runs', (await get('inkwellMenu.graphs.length')) === '1')
+  await snap('u1-ui-scale-150')
+  await setValue('[data-testid="play-ui-scale"]', '0.5')
+  await wait(500)
+  check('UI scale 0.5: root at 50 %', (await get('_xscale')) === '50' && (await get('_x')) === '480', `${await get('_xscale')} at ${await get('_x')}`)
+  await snap('u2-ui-scale-50')
+  await must('[data-testid="stage-more"]') // the compact toolbar keeps the same control in its More menu
+  await until('UI scale in More', () => has('[data-testid="stage-ui-scale"]'))
+  await setValue('[data-testid="stage-ui-scale"]', '0.75')
+  await wait(500)
+  check('UI scale 0.75 from the More menu: root at 75 %', (await get('_xscale')) === '75', await get('_xscale'))
+  await snap('u3-ui-scale-more-menu')
+  await must('[data-testid="stage-more"]')
+  await setValue('[data-testid="play-ui-scale"]', '1')
+  await wait(500)
+  check('UI scale 1: the root is back at 100 %, 0,0', (await get('_xscale')) === '100' && (await get('_x')) === '0' && (await get('_y')) === '0')
+
   // ---- a real mouse click on the button in the preview (not the Play panel): reload the movie first so the text is back to the start
   await must('[data-testid="mode-play"]') // Play mode: clicks reach the movie (Inspect mode puts an overlay on top)
   await must('[data-testid="stage-reload"]')
@@ -156,7 +177,7 @@ export async function runMenuShots(o: { outDir: string; projectDir: string; win:
     }
     if (!p.ok) throw new Error(`prepare failed: ${p.error}`)
     console.log('[menu] deploy files:', JSON.stringify(p.files.map((f) => f.rel)), 'gate', JSON.stringify({ ok: p.gate.ok, warnings: p.gate.warnings.map((w) => w.code), blocking: p.gate.blocking.map((w) => w.code) }), 'notes', JSON.stringify(p.notes))
-    check('deploy plans the SWF, the menu JSON and the INI', p.files.map((f) => f.rel).sort().join() === ['Interface/Inkwell/InkwellMenuTest/Menu.swf', 'SKSE/Plugins/Inkwell/InkwellMenuTest.ini', 'SKSE/Plugins/Inkwell/menus/InkwellMenuTest_Menu.json'].join())
+    check('deploy plans the SWF, the menu JSON and the INI (and the runtime check when a Papyrus compiler is set)', p.files.map((f) => f.rel).filter((r) => !r.includes('RuntimeCheck')).sort().join() === ['Interface/Inkwell/InkwellMenuTest/Menu.swf', 'SKSE/Plugins/Inkwell/InkwellMenuTest.ini', 'SKSE/Plugins/Inkwell/menus/InkwellMenuTest_Menu.json'].join())
     const c = await o.session.deployCommit(p.token)
     check('deploy committed', c.ok === true, JSON.stringify(c))
   }
