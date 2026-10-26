@@ -29,5 +29,8 @@
       "description": "Id of a graph variable"
     }
   },
-  "as2Template": "templates/SetVariable.as2"
+  "as2Template": "templates/SetVariable.as2",
+  "extra": {
+    "writesVariable": "variable"
+  }
 }

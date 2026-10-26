@@ -35,5 +35,6 @@
   "as2Template": "templates/OnClick.as2",
   "extra": {
     "entry": true
-  }
+  },
+  "requiresRuntime": true
 }

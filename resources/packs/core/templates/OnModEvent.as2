@@ -1,0 +1,6 @@
+// [{{node.id}}] core/OnModEvent@1
+__g.addModEventHandler({{field.name}}, function(strArg, numArg) {
+    var {{out.strArg}} = strArg == undefined ? "" : String(strArg);
+    var {{out.numArg}} = Number(numArg) || 0;
+    {{guarded.then}}
+});

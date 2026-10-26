@@ -12,6 +12,8 @@ export interface MenuGlueInput {
   graphs: readonly { cls: string; id: string }[]
   /** Clip paths from the base clip (`_root`) of layers whose overlay role is `button` or `list`: they are made focusable so On Focus / On Blur and Tab/arrow focus work. */
   focusable?: readonly string[]
+  /** Full name of the generated list class when the SWF has a list: `onInput` forwards the user events to its `input` (S8). */
+  listClass?: string
 }
 
 export const menuClassName = (swfCls: string): string => `${swfCls}Menu`
@@ -116,6 +118,7 @@ export function menuClassSource(i: MenuGlueInput): string {
     '        }',
     '    }',
     '    function onInput(action) {',
+    ...(i.listClass ? [`        ${i.listClass}.input(action);`] : []),
     '        for (var k = 0; k < this.graphs.length; k++) this.graphs[k].handleInput(action);',
     '    }',
     '    function onMessage(name, text, number, flag) {',

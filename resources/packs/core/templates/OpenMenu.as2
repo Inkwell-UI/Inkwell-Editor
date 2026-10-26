@@ -1,0 +1,3 @@
+// [{{node.id}}] core/OpenMenu@1
+var {{out.opened}} = __g.bridge.openMenu({{in.menu}}) == true;
+{{next.then}}

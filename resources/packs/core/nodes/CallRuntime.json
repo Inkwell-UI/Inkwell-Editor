@@ -1,0 +1,39 @@
+{
+  "kind": "CallRuntime",
+  "major": 1,
+  "title": "Call Runtime",
+  "category": "Game",
+  "milestone": "0.3",
+  "pure": false,
+  "requiresRuntime": true,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "name",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "arg",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "result",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/CallRuntime.as2",
+  "extra": {}
+}

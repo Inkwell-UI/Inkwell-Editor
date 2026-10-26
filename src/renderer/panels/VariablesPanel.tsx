@@ -4,7 +4,7 @@ import { useStore } from 'zustand'
 import type { Graph } from '@inkwell-ui/spec'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { useActiveSwf } from '../hooks/useProject'
-import { defaultFor, newVariableId, variableTarget, VARIABLE_TYPES } from '../model/variables'
+import { defaultFor, newVariableId, savedTypeError, SAVED_VARIABLE_TYPES, variableTarget, VARIABLE_TYPES } from '../model/variables'
 import { menuGraphId, openGraphs } from '../state/graphDocs'
 import { findGraphStore, type GraphStore } from '../state/graphStore'
 import { strings } from '../strings'
@@ -21,17 +21,17 @@ export function VariablesPanel() {
   const { ids, activeId, loaded } = useSwfGraphs()
   const [name, setName] = useState('')
   const [type, setType] = useState<(typeof VARIABLE_TYPES)[number]>('Number')
-  const [scope, setScope] = useState<'menu' | 'component'>('menu')
+  const [scope, setScope] = useState<'menu' | 'component' | 'saved'>('menu')
   if (!swf) return <Panel title={strings.vars.title}><p className="empty">{strings.nav.noSwf}</p></Panel>
   const activeScope = activeId ? (findGraphStore(swf.id, activeId)?.getState().meta.scope as Graph['scope'] | undefined) : undefined
   const target = variableTarget(scope, { menuGraphId: menuGraphId(swf.id), activeId, activeScope })
   const add = (): void => {
-    if ('reason' in target || !name.trim()) return
+    if ('reason' in target || !name.trim() || (scope === 'saved' && savedTypeError(type))) return
     const store = findGraphStore(swf.id, target.graphId)
-    store?.getState().addVariable({ id: newVariableId(name, openGraphs(swf.id)), name: name.trim(), type, default: defaultFor(type) })
+    store?.getState().addVariable({ id: newVariableId(name, openGraphs(swf.id)), name: name.trim(), type, default: defaultFor(type), ...(scope === 'saved' ? { scope } : {}) })
     setName('')
   }
-  const reason = 'reason' in target ? target.reason : !name.trim() ? strings.vars.nameFirst : undefined
+  const reason = 'reason' in target ? target.reason : !name.trim() ? strings.vars.nameFirst : scope === 'saved' ? savedTypeError(type) : undefined
   const ordered = [...ids].sort((a, b) => Number(findGraphStore(swf.id, a)?.getState().meta.scope !== 'menu') - Number(findGraphStore(swf.id, b)?.getState().meta.scope !== 'menu'))
   return (
     <Panel title={strings.vars.title}>
@@ -44,6 +44,7 @@ export function VariablesPanel() {
           <select className="gn-input" aria-label={strings.vars.scope} value={scope} onChange={(e) => setScope(e.target.value as typeof scope)} data-testid="var-scope">
             <option value="menu">{strings.vars.scopeMenu}</option>
             <option value="component">{strings.vars.scopeComponent}</option>
+            <option value="saved">{strings.vars.scopeSaved}</option>
           </select>
           <Btn icon={Plus} variant="primary" onClick={add} reason={reason} testId="var-add">{strings.vars.add}</Btn>
         </form>
@@ -71,7 +72,7 @@ function GraphVariables({ store }: { store: GraphStore }) {
           <input className="gn-input" aria-label={strings.vars.name} value={v.name} onChange={(e) => a.updateVariable(v.id, { name: e.target.value })} />
           <Btn icon={Trash2} label={strings.vars.remove(v.name)} onClick={() => a.removeVariable(v.id)} />
           <select className="gn-input" aria-label={strings.vars.type} value={v.type} onChange={(e) => a.updateVariable(v.id, { type: e.target.value as typeof v.type, default: defaultFor(e.target.value as typeof v.type) })}>
-            {VARIABLE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {(v.scope === 'saved' ? SAVED_VARIABLE_TYPES : VARIABLE_TYPES).map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
           <DefaultEditor type={v.type} value={v.default} onChange={(d) => a.updateVariable(v.id, { default: d })} />
           <span className="chip" title={strings.vars.scopeTip(v.scope)}>{v.scope}</span>

@@ -63,8 +63,8 @@ export interface GraphState extends Doc {
   connect(from: { node: string; pin: string }, to: { node: string; pin: string }): void
   disconnect(edgeId: string): void
   setSelection(ids: string[]): void
-  /** The scope of a variable is the graph's scope (menu graph: menu variables; component graph: component variables). */
-  addVariable(v: Pick<Variable, 'id' | 'name' | 'type'> & { default?: unknown }): void
+  /** The scope of a variable is the graph's scope (menu graph: menu variables; component graph: component variables) unless given: `saved` (S5) goes to the menu graph. */
+  addVariable(v: Pick<Variable, 'id' | 'name' | 'type'> & { default?: unknown; scope?: Variable['scope'] }): void
   updateVariable(id: string, patch: Partial<Pick<Variable, 'name' | 'type' | 'default'>>): void
   removeVariable(id: string): void
   beginDrag(): void
@@ -173,7 +173,7 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
           const on = new Set(ids)
           set((s) => ({ nodes: s.nodes.map((n) => (!!n.selected === on.has(n.id) ? n : { ...n, selected: on.has(n.id) }) ) }))
         },
-        addVariable: (v) => set((s) => ({ variables: [...s.variables, { ...v, scope: s.meta.scope } as Variable] })),
+        addVariable: (v) => set((s) => ({ variables: [...s.variables, { ...v, scope: v.scope ?? s.meta.scope } as Variable] })),
         updateVariable: (id, patch) =>
           history.edit(`var:${id}`, patch.name ?? patch.default, get, () => set((s) => ({ variables: s.variables.map((v) => (v.id === id ? ({ ...v, ...patch } as Variable) : v)) }))),
         removeVariable: (id) => set((s) => ({ variables: s.variables.filter((v) => v.id !== id) })),

@@ -1,4 +1,4 @@
-import type { Graph } from '@inkwell-ui/spec'
+import { GraphVariable, SAVED_TYPES, type Graph } from '@inkwell-ui/spec'
 import { newGraphId } from '../../shared/graphs'
 import type { BindProp } from '../../shared/graphBinding'
 
@@ -13,16 +13,24 @@ export function newVariableId(name: string, graphs: readonly Pick<Graph, 'variab
   return newGraphId(name, new Set(graphs.flatMap((g) => g.variables.map((v) => v.id))))
 }
 
-/** Which graph a new variable of `scope` goes to, or why none can: a menu variable lives in the menu graph, a component variable in the open component graph. */
-export function variableTarget(scope: 'menu' | 'component', o: { menuGraphId: string | undefined; activeId: string | undefined; activeScope: Graph['scope'] | undefined }): { graphId: string } | { reason: string } {
-  if (scope === 'menu') return o.menuGraphId ? { graphId: o.menuGraphId } : { reason: 'The SWF has no menu graph yet' }
+/** The types a saved variable may have (S5); the Variables panel offers only these for the Saved scope. */
+export const SAVED_VARIABLE_TYPES = SAVED_TYPES
+/** Why a variable of `type` cannot have scope `saved` (the Spec schema's own message), or undefined when it can. */
+export const savedTypeError = (type: string): string | undefined => {
+  const r = GraphVariable.safeParse({ id: 'x', name: 'x', type, scope: 'saved' })
+  return r.success ? undefined : (r.error.issues[0]?.message ?? 'invalid saved variable')
+}
+
+/** Which graph a new variable of `scope` goes to, or why none can: a menu or saved variable lives in the menu graph, a component variable in the open component graph. */
+export function variableTarget(scope: 'menu' | 'component' | 'saved', o: { menuGraphId: string | undefined; activeId: string | undefined; activeScope: Graph['scope'] | undefined }): { graphId: string } | { reason: string } {
+  if (scope !== 'component') return o.menuGraphId ? { graphId: o.menuGraphId } : { reason: 'The SWF has no menu graph yet' }
   return o.activeId && o.activeScope === 'component' ? { graphId: o.activeId } : { reason: 'Open a component graph first' }
 }
 
 /** Variables a layer's data binding can use: the menu graph's menu variables plus the variables of the graphs attached to that layer. */
 export function bindableVariables(graphs: readonly Graph[], attached: readonly string[]): Variable[] {
   const menu = graphs.find((g) => g.scope === 'menu')
-  return [...(menu?.variables.filter((v) => v.scope === 'menu') ?? []), ...graphs.filter((g) => g.scope === 'component' && attached.includes(g.id)).flatMap((g) => g.variables)]
+  return [...(menu?.variables.filter((v) => v.scope === 'menu' || v.scope === 'saved') ?? []), ...graphs.filter((g) => g.scope === 'component' && attached.includes(g.id)).flatMap((g) => g.variables)]
 }
 
 /** The type a bound property wants; a differing source type is flagged in the panel (not blocked: codegen coerces at run time). */

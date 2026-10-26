@@ -1,0 +1,45 @@
+{
+  "kind": "GetSelected",
+  "major": 1,
+  "title": "Get Selected",
+  "category": "List",
+  "milestone": "0.3",
+  "pure": false,
+  "requiresRuntime": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "List"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": -1
+    },
+    {
+      "name": "item",
+      "type": "Object",
+      "default": {}
+    },
+    {
+      "name": "found",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/GetSelected.as2",
+  "extra": {
+    "note": "exec, not pure: a pure node has one output (docs/templates.md)"
+  }
+}

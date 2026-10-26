@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SendModEvent@1
+__g.bridge.sendModEvent({{in.event}}, {{in.strArg}}, {{in.numArg}});
+{{next.then}}

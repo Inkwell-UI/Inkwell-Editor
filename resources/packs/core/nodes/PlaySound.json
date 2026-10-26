@@ -1,0 +1,33 @@
+{
+  "kind": "PlaySound",
+  "major": 1,
+  "title": "Play Sound",
+  "category": "Game",
+  "milestone": "0.3",
+  "pure": false,
+  "requiresRuntime": true,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "sound",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "played",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/PlaySound.as2"
+}

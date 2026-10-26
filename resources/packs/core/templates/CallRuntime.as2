@@ -1,0 +1,4 @@
+// [{{node.id}}] core/CallRuntime@1
+var r_{{node.uid}} = __g.bridge.callRuntime({{in.name}}, {{in.arg}});
+var {{out.result}} = r_{{node.uid}} == undefined ? "" : String(r_{{node.uid}});
+{{next.then}}

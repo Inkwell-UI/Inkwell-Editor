@@ -1,0 +1,49 @@
+{
+  "kind": "OnRuntimeMessage",
+  "major": 1,
+  "title": "On Runtime Message",
+  "category": "Events",
+  "milestone": "0.3",
+  "pure": false,
+  "requiresRuntime": true,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "name",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "number",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "flag",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {
+    "name": {
+      "type": "string",
+      "default": "",
+      "description": "Message key (Inkwell_API.Set* key); empty = any name"
+    }
+  },
+  "as2Template": "templates/OnRuntimeMessage.as2",
+  "extra": {
+    "entry": true,
+    "needsGlue": "addMessageHandler",
+    "unverifiedInGame": "runtime message delivery"
+  }
+}

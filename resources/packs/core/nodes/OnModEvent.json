@@ -1,0 +1,39 @@
+{
+  "kind": "OnModEvent",
+  "major": 1,
+  "title": "On Mod Event",
+  "category": "Events",
+  "milestone": "0.3",
+  "pure": false,
+  "requiresRuntime": true,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "strArg",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "numArg",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "name": {
+      "type": "string",
+      "default": "",
+      "description": "SKSE mod event name; fires only while the menu is open"
+    }
+  },
+  "as2Template": "templates/OnModEvent.as2",
+  "extra": {
+    "entry": true,
+    "needsGlue": "addModEventHandler",
+    "unverifiedInGame": "mod event delivery"
+  }
+}

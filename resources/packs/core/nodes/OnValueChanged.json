@@ -41,5 +41,6 @@
   "extra": {
     "entry": true,
     "unverifiedInGame": "CLIK addEventListener"
-  }
+  },
+  "requiresRuntime": true
 }

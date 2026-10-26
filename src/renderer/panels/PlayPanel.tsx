@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
-import { DoorClosed, DoorOpen, MousePointerClick, Play } from 'lucide-react'
+import { DoorClosed, DoorOpen, MousePointerClick, Play, RotateCcw, Send } from 'lucide-react'
+import { INPUT_ACTIONS } from '@inkwell-ui/spec'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
 import { callArgs, playEntries, type PlayEntry } from '../model/playEntries'
@@ -17,6 +18,7 @@ function MenuControls({ running }: { running: boolean }) {
   const buttons = Object.entries(overlay?.nodes ?? {}).filter(([id, o]) => o['role'] === 'button' && swf?.ir.nodes[id]).map(([id]) => ({ id, name: swf!.ir.nodes[id]!.name }))
   const [pick, setPick] = useState<string | undefined>()
   const [result, setResult] = useState<{ ok: boolean; text: string }>()
+  const [ev, setEv] = useState({ name: '', str: '', num: '0', flag: false, action: 'Down' as string })
   const target = buttons.find((b) => b.id === pick) ?? buttons[0]
   const reason = running ? undefined : strings.play.noPreview
   const done = (ok: boolean, what: string): void => setResult({ ok, text: ok ? strings.play.menuCalled(what, new Date().toLocaleTimeString()) : strings.play.menuFailed })
@@ -26,6 +28,7 @@ function MenuControls({ running }: { running: boolean }) {
       <div className="toolbar">
         <Btn icon={DoorOpen} onClick={() => done(previewBus.call('inkwellMenuOpen'), strings.play.menuOpened)} reason={reason} testId="play-menu-open">{strings.play.menuOpen}</Btn>
         <Btn icon={DoorClosed} onClick={() => done(previewBus.call('inkwellMenuClose'), strings.play.menuClosed)} reason={reason} testId="play-menu-close">{strings.play.menuClose}</Btn>
+        <Btn icon={RotateCcw} onClick={() => done(previewBus.call('inkwellMenuReopen'), strings.play.menuReopened)} reason={reason} testId="play-menu-reopen">{strings.play.menuReopen}</Btn>
         {target ? (
           <>
             <label>
@@ -37,6 +40,18 @@ function MenuControls({ running }: { running: boolean }) {
             <Btn icon={MousePointerClick} onClick={() => done(previewBus.call('inkwellClick', target.id), strings.play.menuClicked(target.name))} reason={reason} testId="play-menu-click">{strings.play.menuClick}</Btn>
           </>
         ) : <span className="dim">{strings.play.menuNoButtons}</span>}
+      </div>
+      <div className="toolbar" data-testid="play-events" aria-label={strings.play.eventsTitle}>
+        <input className="gn-input" placeholder={strings.play.eventName} aria-label={strings.play.eventName} value={ev.name} onChange={(e) => setEv({ ...ev, name: e.target.value })} data-testid="play-event-name" />
+        <input className="gn-input" placeholder={strings.play.eventStr} aria-label={strings.play.eventStr} value={ev.str} onChange={(e) => setEv({ ...ev, str: e.target.value })} data-testid="play-event-str" />
+        <input className="gn-input" inputMode="decimal" aria-label={strings.play.eventNum} value={ev.num} onChange={(e) => setEv({ ...ev, num: e.target.value })} data-testid="play-event-num" />
+        <label><input type="checkbox" checked={ev.flag} onChange={(e) => setEv({ ...ev, flag: e.target.checked })} data-testid="play-event-flag" /> {strings.play.eventFlag}</label>
+        <Btn icon={Send} onClick={() => done(previewBus.call('inkwellModEvent', ev.name, ev.str, ev.num), strings.play.sentModEvent(ev.name))} reason={reason ?? (ev.name.trim() ? undefined : strings.vars.nameFirst)} testId="play-send-modevent">{strings.play.sendModEvent}</Btn>
+        <Btn icon={Send} onClick={() => done(previewBus.call('inkwellMessage', ev.name, ev.str, ev.num, String(ev.flag)), strings.play.sentMessage(ev.name))} reason={reason} testId="play-send-message">{strings.play.sendMessage}</Btn>
+        <select value={ev.action} onChange={(e) => setEv({ ...ev, action: e.target.value })} aria-label={strings.play.inputAction} data-testid="play-input-action">
+          {INPUT_ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <Btn icon={Send} onClick={() => done(previewBus.call('inkwellInput', ev.action), strings.play.sentInput(ev.action))} reason={reason} testId="play-send-input">{strings.play.sendInput}</Btn>
       </div>
       {result && <p className={result.ok ? 'dim' : 'tone-error'} role="status" data-testid="play-menu-result">{result.text}</p>}
     </div>

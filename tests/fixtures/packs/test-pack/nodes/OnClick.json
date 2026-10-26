@@ -5,6 +5,7 @@
   "category": "Events",
   "milestone": "0.2",
   "pure": false,
+  "requiresRuntime": true,
   "inputs": [
     {
       "name": "target",

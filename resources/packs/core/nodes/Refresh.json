@@ -1,0 +1,27 @@
+{
+  "kind": "Refresh",
+  "major": 1,
+  "title": "Refresh",
+  "category": "List",
+  "milestone": "0.3",
+  "pure": false,
+  "requiresRuntime": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "List"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Refresh.as2"
+}

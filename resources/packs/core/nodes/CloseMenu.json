@@ -1,0 +1,33 @@
+{
+  "kind": "CloseMenu",
+  "major": 1,
+  "title": "Close Menu",
+  "category": "Game",
+  "milestone": "0.3",
+  "pure": false,
+  "requiresRuntime": true,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "menu",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "closed",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/CloseMenu.as2"
+}

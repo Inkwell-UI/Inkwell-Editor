@@ -1,4 +1,4 @@
-import { GAME_BRIDGE_NODES, pinCompat, PinType, RUNTIME_ONLY_EVENTS, type Graph, type GraphNode, type NodeDef } from '@inkwell-ui/spec'
+import { pinCompat, PinType, SAVED_LIMITS, SAVED_TYPES, type Graph, type GraphNode, type NodeDef } from '@inkwell-ui/spec'
 import type { Issue } from '@nicklaj/knotwork'
 
 /** Codes of graph issues; the Lint dock, the export gate and Strict Mode show them like compiler lint. */
@@ -35,8 +35,8 @@ export interface ValidateCtx {
   target?: 'hudWidget' | 'customMenu' | 'menuReplacement'
 }
 
-/** S7/S8: the node only works in a custom menu served by the Inkwell Runtime (its definition says `requiresRuntime`; the 0.2 pack copy predates the flag, so the Spec's title lists count too). */
-export const needsRuntime = (d: NodeDef): boolean => d.requiresRuntime === true || (RUNTIME_ONLY_EVENTS as readonly string[]).includes(d.title) || (GAME_BRIDGE_NODES as readonly string[]).includes(d.title)
+/** S7/S8: the node only works in a custom menu served by the Inkwell Runtime (the definition's `requiresRuntime`; core pack 0.3.0 sets it on all 20 such nodes). */
+export const needsRuntime = (d: NodeDef): boolean => d.requiresRuntime === true
 
 const isPinType = (v: unknown): v is PinType => PinType.safeParse(v).success
 const isEntry = (d: NodeDef): boolean => (d.extra as { entry?: unknown } | undefined)?.entry === true
@@ -136,6 +136,8 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
       if (ctx.target === 'hudWidget') add(at(v), 'runtime-required', 'warning', `The saved variable "${v.name}" needs the Inkwell Runtime; a HUD widget does not keep it.`)
       else if (g.scope !== 'menu' || (ctx.target !== undefined && ctx.target !== 'customMenu')) add(at(v), 'saved-variable-invalid', 'error', `The saved variable "${v.name}" is only allowed in the menu graph of a custom menu.`)
       if (mine.has(v.name) || others.has(v.name)) add(at(v), 'saved-variable-invalid', 'error', `The saved variable name "${v.name}" is used twice in this SWF.`)
+      if (!(SAVED_TYPES as readonly string[]).includes(v.type)) add(at(v), 'saved-variable-invalid', 'error', `The saved variable "${v.name}" is ${v.type}; a saved variable must be Bool, Number or String.`)
+      if (new TextEncoder().encode(v.name).length > SAVED_LIMITS.keyBytes || v.name === '') add(at(v), 'saved-variable-invalid', 'error', `The saved variable name "${v.name}" must be 1 to ${SAVED_LIMITS.keyBytes} bytes.`)
       mine.add(v.name)
     }
   }

@@ -1,0 +1,3 @@
+// [{{node.id}}] core/CloseMenu@1
+var {{out.closed}} = __g.bridge.closeMenu({{in.menu}}) == true;
+{{next.then}}

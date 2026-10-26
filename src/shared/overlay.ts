@@ -107,3 +107,14 @@ export function overlayProblems(doc: unknown): string[] {
   }
   return out
 }
+
+/** `list` settings (S8) of the overlay nodes that have them, by Figma layer id: item template layer and row spacing; malformed members are ignored. */
+export function listSettings(nodes: Record<string, { list?: unknown }>): Record<string, { itemTemplate?: string; spacing?: number }> {
+  const out: Record<string, { itemTemplate?: string; spacing?: number }> = {}
+  for (const [id, o] of Object.entries(nodes)) {
+    const l = o.list as { itemTemplate?: unknown; spacing?: unknown } | undefined
+    if (!l || typeof l !== 'object') continue
+    out[id] = { ...(typeof l.itemTemplate === 'string' && l.itemTemplate ? { itemTemplate: l.itemTemplate } : {}), ...(typeof l.spacing === 'number' && Number.isFinite(l.spacing) && l.spacing >= 0 ? { spacing: l.spacing } : {}) }
+  }
+  return out
+}

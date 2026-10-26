@@ -1,0 +1,4 @@
+// [{{node.id}}] core/GetInputDevice@1
+var {{out.device}} = __g.bridge.getInputDevice() == "gamepad" ? "gamepad" : "keyboardMouse";
+var {{out.gamepad}} = {{out.device}} == "gamepad";
+{{next.then}}

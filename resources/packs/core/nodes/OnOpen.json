@@ -16,5 +16,6 @@
   "as2Template": "templates/OnOpen.as2",
   "extra": {
     "entry": true
-  }
+  },
+  "requiresRuntime": true
 }

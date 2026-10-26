@@ -1,0 +1,35 @@
+{
+  "kind": "GetSetting",
+  "major": 1,
+  "title": "Get Setting",
+  "category": "Game",
+  "milestone": "0.3",
+  "pure": true,
+  "requiresRuntime": true,
+  "inputs": [
+    {
+      "name": "section",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "key",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "default",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/GetSetting.as2"
+}

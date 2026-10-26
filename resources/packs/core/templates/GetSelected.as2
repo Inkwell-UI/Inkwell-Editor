@@ -1,0 +1,7 @@
+// [{{node.id}}] core/GetSelected@1
+var {{out.index}} = Number({{in.target}}.getSelectedIndex());
+if (isNaN({{out.index}}) || {{out.index}} < 0) {{out.index}} = -1;
+var i_{{node.uid}} = {{out.index}} < 0 ? undefined : {{in.target}}.getItem({{out.index}});
+var {{out.found}} = typeof i_{{node.uid}} == "object" && i_{{node.uid}} != null;
+var {{out.item}} = {{out.found}} ? i_{{node.uid}} : {};
+{{next.then}}

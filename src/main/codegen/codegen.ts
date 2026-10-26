@@ -1,4 +1,4 @@
-import { pinCompat, type Graph, type GraphNode, type NodeDef, type PinType } from '@inkwell-ui/spec'
+import { pinCompat, SAVED_TYPES, type Graph, type GraphNode, type NodeDef, type PinType } from '@inkwell-ui/spec'
 import { resolvePins, type ResolvedPin } from '../../shared/graphValidate'
 import { parseBindings, type BindProp } from '../../shared/graphBinding'
 import { ident } from '../../shared/overlay'
@@ -209,6 +209,9 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     }
   }
 
+  /** Saved scope only exists in a menu served by the runtime (S5); elsewhere the variable is a plain menu variable (the lint `runtime-required` says so). */
+  const isSaved = (v: Graph['variables'][number]): boolean => i.menu === true && v.scope === 'saved' && (SAVED_TYPES as readonly string[]).includes(v.type)
+
   const bodyOf = (n: GraphNode, d: NodeDef): string[] => {
     const t = i.packs.templates.get(`${n.kind}`)
     if (t === undefined) throw new Skip(`${d.title} has no AS2 template.`)
@@ -364,7 +367,12 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           const sub = chain(n, own[3]!, ctx)
           if (own[2] === 'guarded' && isEntry && i.preview && lines.some((l) => l.includes('{{params}}')))
             for (const p of [...outs].reverse()) sub.unshift({ t: `__g.pv("${safeId(n.id)}", "${safeId(p)}", ${uids.get(n.id)}_${p});`, n: n.id })
-          const boundVar = /^core\/(SetVariable|Toggle)@/.test(n.kind) ? String(n.fields['variable']) : undefined
+          // the field named by `extra.writesVariable` holds the variable this node assigns (Set Variable, Toggle); the kind test covers a pack copy that predates the flag
+          const wv = (d.extra as { writesVariable?: unknown } | undefined)?.writesVariable
+          const boundVar = typeof wv === 'string' ? String(n.fields[wv]) : /^core\/(SetVariable|Toggle)@/.test(n.kind) ? String(n.fields['variable']) : undefined
+          const bv = boundVar ? g.variables.find((x) => x.id === boundVar) : undefined
+          // S5.4: a saved variable goes to the bridge right after its assignment, before the continuation
+          if (bv && isSaved(bv)) out.push({ t: `${own[1]}__g.bridge.setSaved(${as2Literal(bv.name)}, __g.v_${varNames.get(bv.id)});`, n: n.id })
           if (boundVar && binders.has(boundVar)) out.push({ t: `${own[1]}__g.b_${varNames.get(boundVar)}();`, n: n.id })
           if (own[2] === 'next') out.push(...ind(sub, own[1]!))
           else
@@ -390,7 +398,23 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
 
   // ---- the class ----
   const init: Line[] = [{ t: 'var __g = this;' }]
-  for (const v of g.variables) init.push({ t: `__g.v_${varNames.get(v.id)} = ${as2Literal(v.default ?? defaultOf(v.type))};` })
+  for (const v of g.variables) {
+    const vn = `__g.v_${varNames.get(v.id)}`
+    const dflt = as2Literal(v.default ?? defaultOf(v.type))
+    if (!isSaved(v)) {
+      init.push({ t: `${vn} = ${dflt};` })
+      continue
+    }
+    // saved scope (S5.4): read through the bridge; a stored value of another type (the author retyped the variable) is replaced by the default and a warning is logged
+    const as = v.type === 'Bool' ? 'boolean' : v.type === 'Number' ? 'number' : 'string'
+    init.push(
+      { t: `${vn} = __g.bridge.getSaved(${as2Literal(v.name)}, ${dflt});` },
+      { t: `if (typeof (${vn}) != "${as}"${v.type === 'Number' ? ` || isNaN(${vn})` : ''}) {` },
+      { t: `    __g.log("warn", "", ${as2Literal(`saved variable ${v.name}: the stored value is not a ${v.type}, using the default`)});` },
+      { t: `    ${vn} = ${dflt};` },
+      { t: '}' }
+    )
+  }
   for (const [vid, stmts] of binders) {
     const vn = varNames.get(vid)!
     init.push({ t: `__g.b_${vn} = function() {` }, { t: '    try {' }, ...stmts.map((t) => ({ t: `        ${t}` })), { t: '    } catch (e) {' }, { t: `        __g.fail("binding:${vn}", e);` }, { t: '    }' }, { t: '};' }, { t: `__g.b_${vn}();` })

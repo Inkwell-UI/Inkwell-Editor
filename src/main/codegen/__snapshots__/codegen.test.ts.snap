@@ -190,6 +190,27 @@ exports[`golden AS2 per node kind > core/Branch@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/CallRuntime@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/CallRuntime@1
+                var r_n1 = __g.bridge.callRuntime("", "");
+                var n1_result = r_n1 == undefined ? "" : String(r_n1);
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/CancelDelay@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -243,6 +264,26 @@ exports[`golden AS2 per node kind > core/Clamp@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/CloseMenu@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/CloseMenu@1
+                var n1_closed = __g.bridge.closeMenu("") == true;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
 
@@ -551,6 +592,27 @@ exports[`golden AS2 per node kind > core/GetField@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/GetInputDevice@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/GetInputDevice@1
+                var n1_device = __g.bridge.getInputDevice() == "gamepad" ? "gamepad" : "keyboardMouse";
+                var n1_gamepad = n1_device == "gamepad";
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/GetPosition@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -569,6 +631,48 @@ exports[`golden AS2 per node kind > core/GetPosition@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/GetSelected@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/GetSelected@1
+                var n1_index = Number(__g.base.title.getSelectedIndex());
+                if (isNaN(n1_index) || n1_index < 0) n1_index = -1;
+                var i_n1 = n1_index < 0 ? undefined : __g.base.title.getItem(n1_index);
+                var n1_found = typeof i_n1 == "object" && i_n1 != null;
+                var n1_item = n1_found ? i_n1 : {};
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/GetSetting@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + (({ f: function(v) { return v == undefined ? "" : String(v); } }).f(__g.bridge.getSetting("", "", ""))));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
         };"
 `;
 
@@ -892,6 +996,22 @@ exports[`golden AS2 per node kind > core/OnLoad@1 1`] = `
         if (__g.onLoad != undefined) __g.onLoad();"
 `;
 
+exports[`golden AS2 per node kind > core/OnModEvent@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnModEvent@1
+        __g.addModEventHandler("", function(strArg, numArg) {
+            var n1_strArg = strArg == undefined ? "" : String(strArg);
+            var n1_numArg = Number(numArg) || 0;
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        });"
+`;
+
 exports[`golden AS2 per node kind > core/OnOpen@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -904,6 +1024,24 @@ exports[`golden AS2 per node kind > core/OnOpen@1 1`] = `
                 __g.fail("n1", e);
             }
         };"
+`;
+
+exports[`golden AS2 per node kind > core/OnRuntimeMessage@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/OnRuntimeMessage@1
+        __g.addMessageHandler("", function(name, text, number, flag) {
+            var n1_name = name == undefined ? "" : String(name);
+            var n1_text = text == undefined ? "" : String(text);
+            var n1_number = Number(number) || 0;
+            var n1_flag = flag == true;
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        });"
 `;
 
 exports[`golden AS2 per node kind > core/OnTimer@1 1`] = `
@@ -959,6 +1097,26 @@ exports[`golden AS2 per node kind > core/OnWidgetCall@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/OpenMenu@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/OpenMenu@1
+                var n1_opened = __g.bridge.openMenu("") == true;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/Or@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -974,6 +1132,26 @@ exports[`golden AS2 per node kind > core/Or@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/PlaySound@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/PlaySound@1
+                var n1_played = __g.bridge.playSound("") == true;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
 
@@ -1012,6 +1190,26 @@ exports[`golden AS2 per node kind > core/Random@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Refresh@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/Refresh@1
+                __g.base.title.refresh();
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
 
@@ -1066,6 +1264,26 @@ exports[`golden AS2 per node kind > core/Select@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SendModEvent@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SendModEvent@1
+                __g.bridge.sendModEvent("", "", 0);
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
 
@@ -1160,6 +1378,26 @@ exports[`golden AS2 per node kind > core/SetImage@1 1`] = `
             try {
                 // [n1] core/SetImage@1
                 __g.base.title.loadMovie("");
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetItems@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetItems@1
+                __g.base.title.setItems([] instanceof Array ? [] : []);
                 // [l_then] core/Log@1
                 trace("[Inkwell] info l_then: " + "");
             } catch (e) {

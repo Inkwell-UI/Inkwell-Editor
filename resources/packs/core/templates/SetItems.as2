@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetItems@1
+{{in.target}}.setItems({{in.items}} instanceof Array ? {{in.items}} : []);
+{{next.then}}

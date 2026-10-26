@@ -28,5 +28,8 @@
       "description": "Id of a Bool graph variable"
     }
   },
-  "as2Template": "templates/Toggle.as2"
+  "as2Template": "templates/Toggle.as2",
+  "extra": {
+    "writesVariable": "variable"
+  }
 }

@@ -1,0 +1,3 @@
+// [{{node.id}}] core/PlaySound@1
+var {{out.played}} = __g.bridge.playSound({{in.sound}}) == true;
+{{next.then}}

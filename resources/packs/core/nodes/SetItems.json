@@ -1,0 +1,32 @@
+{
+  "kind": "SetItems",
+  "major": 1,
+  "title": "Set Items",
+  "category": "List",
+  "milestone": "0.3",
+  "pure": false,
+  "requiresRuntime": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "List"
+    },
+    {
+      "name": "items",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/SetItems.as2"
+}

@@ -1,0 +1,8 @@
+// [{{node.id}}] core/OnRuntimeMessage@1
+__g.addMessageHandler({{field.name}}, function(name, text, number, flag) {
+    var {{out.name}} = name == undefined ? "" : String(name);
+    var {{out.text}} = text == undefined ? "" : String(text);
+    var {{out.number}} = Number(number) || 0;
+    var {{out.flag}} = flag == true;
+    {{guarded.then}}
+});

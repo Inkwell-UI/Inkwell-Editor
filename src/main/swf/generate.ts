@@ -12,6 +12,7 @@ import { packVersion, FIRST_RUNTIME_VERSION } from '@inkwell-ui/spec'
 import { generateGraphClasses, type GraphClass, type WidgetCall } from '../codegen/codegen'
 import { menuClassName, menuClassSource, menuFrameCode } from '../codegen/menuGlue'
 import type { CodegenPacks } from '../codegen/packs'
+import { listAttachCode, listClassName, listClassSource, type ListInfo } from './listAs2'
 
 export interface GenerateOptions {
   /** Characters the font behind an alias can draw (lint `font-missing-glyph`); omitted or undefined for an alias: not checked. */
@@ -22,6 +23,8 @@ export interface GenerateOptions {
   bindings?: Record<string, string>
   /** Overlay `role` by Figma layer id. A customMenu SWF makes its `button` and `list` layers focusable, and the preview's Play panel can click the `button` ones. */
   roles?: Record<string, string>
+  /** Overlay `list` settings (S8: item template layer, row spacing) by Figma layer id, for layers whose role is `list`. */
+  lists?: Record<string, { itemTemplate?: string; spacing?: number }>
   /** Mod id: AS2 classes live under `mods.<modId>.*`. */
   modId: string
   /** Overlay instance names by node id; the default is the sanitized layer name. */
@@ -127,13 +130,31 @@ const PREVIEW_BRIDGE = [
  * trace line the Trace panel parses; `glueReady` plays the runtime's next step (the menu opens). Callbacks for the Play panel: `inkwellMenuOpen` / `inkwellMenuClose` call
  * the menu class like the runtime does, `inkwellClick(nodeId)` fires `onRelease` of a role-`button` layer (`_global.Inkwell.paths`). Never part of the game SWF.
  */
-const previewMenuBridge = (menuName: string, paths: Record<string, string>): string[] => [
+const previewMenuBridge = (menuName: string, menuClass: string, paths: Record<string, string>, attach: readonly string[]): string[] => [
   `_root.inkwell = {`,
-  `    ready: true, version: ${packVersion(FIRST_RUNTIME_VERSION)}, menu: ${JSON.stringify(menuName)}, uiScale: 1, offsetX: 0, offsetY: 0, theme: "", saved: {},`,
+  `    ready: true, version: ${packVersion(FIRST_RUNTIME_VERSION)}, menu: ${JSON.stringify(menuName)}, uiScale: 1, offsetX: 0, offsetY: 0, theme: "", saved: {}, depth: 0,`,
   '    log: function(level, nodeId, text) { trace("[Inkwell] " + level + " " + nodeId + ": " + text); },',
   '    glueReady: function() { _root.inkwellMenu.onOpen(); },',
-  '    openMenu: function(name) { return true; }, closeMenu: function(name) { return true; }, sendModEvent: function(e, s, n) { }, callRuntime: function(name, arg) { return ""; },',
-  '    playSound: function(id) { return false; }, getSetting: function(section, key, d) { return d; }, getInputDevice: function() { return "keyboardMouse"; },',
+  // mock: nothing leaves the movie. A mod event sent by the menu comes back to it (the real runtime does this only if it also sinks the event: unverified)
+  '    openMenu: function(name) { _root.inkwell.log("info", "", "mock openMenu " + name); return true; }, closeMenu: function(name) { _root.inkwell.log("info", "", "mock closeMenu " + name); return true; },',
+  '    sendModEvent: function(e, s, n) {',
+  '        _root.inkwell.log("info", "", "mock sendModEvent " + e + " (" + s + ", " + n + ")");',
+  '        if (_root.inkwell.depth > 4) return;',
+  '        _root.inkwell.depth++;',
+  '        try { _root.inkwellMenu.onModEvent(e, s, n); } catch (x) { }',
+  '        _root.inkwell.depth--;',
+  '    },',
+  '    callRuntime: function(name, arg) {',
+  '        if (name == "inkwell.version") return String(_root.inkwell.version);',
+  '        if (name == "inkwell.ismenuopen") return "1";',
+  '        if (name == "inkwell.isdevmode") return "0";',
+  '        _root.inkwell.log("warn", "", "mock callRuntime: unknown name " + name);',
+  '        return "";',
+  '    },',
+  // mock data keys: "setting.<Section>.<Key>" answers Get Setting, "inputDevice" = "gamepad" switches Get Input Device
+  '    playSound: function(id) { _root.inkwell.log("info", "", "mock playSound " + id); return id != ""; },',
+  '    getSetting: function(section, key, d) { var v = _global.Inkwell.mock["setting." + section + "." + key]; return v == undefined ? d : String(v); },',
+  '    getInputDevice: function() { return _global.Inkwell.mock["inputDevice"] == "gamepad" ? "gamepad" : "keyboardMouse"; },',
   '    getSaved: function(name, d) { var v = _root.inkwell.saved[name]; return v == undefined ? d : v; }, setSaved: function(name, v) { _root.inkwell.saved[name] = v; },',
   '    watch: function(g, n, sc, v) { }, pin: function(n, p, v) { }',
   '};',
@@ -142,6 +163,17 @@ const previewMenuBridge = (menuName: string, paths: Record<string, string>): str
   'try {',
   '    flash.external.ExternalInterface.addCallback("inkwellMenuOpen", null, function() { _root.inkwellMenu.onOpen(); return true; });',
   '    flash.external.ExternalInterface.addCallback("inkwellMenuClose", null, function() { _root.inkwellMenu.onClose(); return true; });',
+  // what the engine does at every open: a fresh movie, so a new menu class and fresh graphs (menu variables restart); saved values stay in the bridge. Clip texts are not reset (Reload does that)
+  '    flash.external.ExternalInterface.addCallback("inkwellMenuReopen", null, function() {',
+  '        _root.inkwellMenu.onClose();',
+  ...attach.map((l) => `        ${l}`),
+  `        _root.inkwellMenu = new ${menuClass}(_root);`,
+  '        _root.inkwellMenu.start();',
+  '        return true;',
+  '    });',
+  '    flash.external.ExternalInterface.addCallback("inkwellModEvent", null, function(name, strArg, numArg) { _root.inkwellMenu.onModEvent(name, strArg, Number(numArg) || 0); return true; });',
+  '    flash.external.ExternalInterface.addCallback("inkwellMessage", null, function(name, text, number, flag) { _root.inkwellMenu.onMessage(name, text, Number(number) || 0, flag == true || flag == "true"); return true; });',
+  '    flash.external.ExternalInterface.addCallback("inkwellInput", null, function(action) { _root.inkwellMenu.onInput(action); return true; });',
   '    flash.external.ExternalInterface.addCallback("inkwellClick", null, function(nodeId) {',
   '        var p = _global.Inkwell.paths[nodeId];',
   '        if (p == undefined) return false;',
@@ -312,6 +344,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   const loads: ImageLoad[] = []
   const settable: SettableText[] = []
   const layerPaths = new Map<string, string>() // figma node id -> clip path from _root (graph targets)
+  const listInfos: ListInfo[] = [] // frames with overlay role `list` (S8)
 
   /** One clip (sprite) showing image `hash` in a w x h box; undefined (with lint) when it cannot be drawn. */
   const imageClip = (hash: string, scaleMode: string | undefined, w: number, h: number, nodeId: string, layer: string, path: string): number | undefined => {
@@ -409,6 +442,10 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
         if (n.clipContent) lint.push(issue('info', 'clip-ignored', cid, 'Frame clipping is not applied.'))
         const id = alloc()
         const inner = place(n, here, ...background(n, here))
+        if (opts.roles?.[cid] === 'list') {
+          const l = listInfo(n)
+          if (l) listInfos.push(l)
+        }
         defs.push(T.sprite(id, inner))
         out.push(T.placeObject2({ ...base, charId: id }))
       } else if (n.type === 'image') {
@@ -465,6 +502,33 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
       depth++
     }
     return out
+  }
+
+  /** The list component of frame `n` (already placed): item template, its text layers, geometry. Lint and undefined when it cannot work. */
+  const listInfo = (n: Extract<Swf['nodes'][string], { type: 'frame' }>): ListInfo | undefined => {
+    const cfg = opts.lists?.[n.id]
+    if (cfg?.itemTemplate && !n.children.includes(cfg.itemTemplate)) lint.push(issue('warning', 'list-template-invalid', n.id, `The item template ${cfg.itemTemplate} is not a child of the list "${n.name}"; the first child is used.`))
+    const tid = cfg?.itemTemplate && n.children.includes(cfg.itemTemplate) ? cfg.itemTemplate : n.children[0]
+    const t = tid ? ir.nodes[tid] : undefined
+    const tp = tid ? layerPaths.get(tid) : undefined
+    if (!t || t.type !== 'frame' || !tp) {
+      lint.push(issue('error', 'list-template-invalid', n.id, `The list "${n.name}" needs a visible frame as its item template (the first child, or the layer set in its list settings); it is not a list without one.`))
+      return undefined
+    }
+    const fields: ListInfo['fields'] = []
+    const walk = (id: string): void => {
+      for (const c of ir.nodes[id]?.children ?? []) {
+        const cn = ir.nodes[c]
+        const cp = layerPaths.get(c)
+        if (!cn || !cp) continue
+        if (cn.type === 'text') fields.push({ name: cp.slice(cp.lastIndexOf('.') + 1), path: cp.slice(tp.length + 1) })
+        else if (cn.type === 'frame') walk(c)
+      }
+    }
+    walk(tid!)
+    if (!fields.length) lint.push(issue('warning', 'list-template-no-text', t.id, `The item template "${t.name}" of the list "${n.name}" has no text layer, so rows show no item text.`))
+    const here = layerPaths.get(n.id)!
+    return { path: here.slice('root.'.length), template: tp.slice(tp.lastIndexOf('.') + 1), w: n.transform.width, h: n.transform.height, tx: t.transform.x, ty: t.transform.y, tw: t.transform.width, th: t.transform.height, spacing: cfg?.spacing ?? 0, fields }
   }
 
   const root = ir.nodes[ir.root]
@@ -534,6 +598,10 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
       'if (_global.Inkwell == undefined) _global.Inkwell = { bridge: { send: function() {}, on: function() {} } };',
       ...PREVIEW_BRIDGE
     )
+  if (listInfos.length) {
+    addClass('InkwellList', listClassSource(mod))
+    frameCode.push(...listInfos.map((l) => listAttachCode(mod, l)))
+  }
   gen?.classes.forEach((c, k) => {
     addClass(c.cls, c.source)
     if (!menu) frameCode.push(`${baseExpr}.inkwellGraph${k} = new mods.${mod}.${c.cls}(${baseExpr});`, `${baseExpr}.inkwellGraph${k}.init();`)
@@ -542,10 +610,10 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     // the menu class creates and init()s the graphs once the runtime bridge is ready (S7); the runtime waits for its glueReady()
     const pathOf = (id: string): string | undefined => (layerPaths.get(id)?.startsWith('root.') ? layerPaths.get(id)!.slice('root.'.length) : undefined)
     const byRole = (...r: string[]): string[] => Object.entries(opts.roles ?? {}).filter(([, role]) => r.includes(role)).flatMap(([id]) => pathOf(id) ?? [])
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort() }))
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(listInfos.length ? { listClass: listClassName(mod) } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
-      frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, paths))
+      frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, listInfos.map((l) => listAttachCode(mod, l, '_root'))))
     }
     frameCode.push(...menuFrameCode(mod, swfCls))
   }

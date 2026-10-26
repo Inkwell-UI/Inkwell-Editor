@@ -23,5 +23,6 @@
   "extra": {
     "entry": true,
     "needsGlue": "addInputHandler"
-  }
+  },
+  "requiresRuntime": true
 }

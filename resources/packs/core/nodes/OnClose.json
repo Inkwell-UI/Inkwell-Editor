@@ -16,5 +16,6 @@
   "as2Template": "templates/OnClose.as2",
   "extra": {
     "entry": true
-  }
+  },
+  "requiresRuntime": true
 }

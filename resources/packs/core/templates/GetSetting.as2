@@ -1,0 +1,2 @@
+// [{{node.id}}] core/GetSetting@1
+({ f: function(v) { return v == undefined ? "" : String(v); } }).f(__g.bridge.getSetting({{in.section}}, {{in.key}}, {{in.default}}))

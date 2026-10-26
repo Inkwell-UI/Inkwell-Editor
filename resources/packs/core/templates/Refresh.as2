@@ -1,0 +1,3 @@
+// [{{node.id}}] core/Refresh@1
+{{in.target}}.refresh();
+{{next.then}}
