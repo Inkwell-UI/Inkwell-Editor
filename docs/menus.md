@@ -28,6 +28,31 @@ IPC `saveMenuSettings(swf, settings)` validates with `MenuSettings` and writes u
 
 `docs/deploy.md`. The INI is **created if absent and never overwritten or retired** (S9): the file entry is `createOnly`, it is not in `.inkwell-deploy.json`, a redeploy reports it as `preserved`. The Package Mod zip contains it (a fresh install has none) and never `Inkwell.ini`. The deploy dialog says "Requires Inkwell Runtime 0.3.0 or newer; not included in this deploy." The runtime DLL and `Inkwell_API.pex` are never written by the editor. A previous flat deploy (`Interface/<name>.swf`) is retired through its manifest like any file this deploy no longer produces.
 
+## Runtime check: the missing / outdated runtime message (S3, O4, Phase 7)
+
+Without `Inkwell.dll` nothing of a menu mod runs, so the message must come from Papyrus. Every custom-menu mod therefore ships a tiny plugin (`src/main/runtime/runtimeCheck.ts`, `buildPlayerAliasEsp` in `src/main/widget/esp.ts`):
+
+| File | What |
+| --- | --- |
+| `<modId>_RuntimeCheck.esp` | ESL-flagged, **no master** (the widget plugin has SkyUI as master and is not reused), one start-game-enabled quest `<modId>_RuntimeCheckQuest` with a reference alias `InkwellRuntimeCheckPlayer` forced to the player (`ALFR 0x14`) |
+| `Scripts/<modId>_RuntimeCheck.pex`, `Source/Scripts/<modId>_RuntimeCheck.psc` | the script attached to the **alias** (not the quest): `OnInit` (the alias is first filled: new game, or the mod added to a save) and `OnPlayerLoadGame` (every load) call `Check()` |
+
+`Check()` asks `SKSE.GetPluginVersion("Inkwell")` (`RUNTIME_PLUGIN_NAME`) and compares it with the packed minimum the script declares (`RequiredPacked`, `RequiredMajor`, `RequiredText`, `ModName` as AutoReadOnly properties): `<= 0` shows "not installed (or SKSE is not running)", a different major shows the major-mismatch text, a lower packed version (low nibble ignored) shows "needs X or newer; you have Y". `Debug.MessageBox` shows the text, `Debug.Trace` logs one line. The three texts are produced from the Spec's `RUNTIME_MESSAGES` (the generator splits the Spec's own strings, so they cannot drift; a test evaluates the script's expression against them). Only vanilla and SKSE types are used (never `Inkwell_API`). The script is compiled with the same compiler and stubs as the widget scripts (`resources/papyrus-stubs`: new original stubs `SKSE.psc`, `Alias.psc`, `ReferenceAlias.psc`). It shows on every load while the runtime is missing (no "once" flag: a Papyrus variable would be saved and hide the message after the first time). Deviation from S3's text: ONE script on the alias (S3 sketches a quest script plus an alias script); the plugin is `<modId>_RuntimeCheck.esp` (S3 says `<modId>_Runtime.esp`).
+
+Names come from the mod id (`runtimeCheckNames`): two mods never collide. **One check per mod**, next to the first menu, even with several menus; its minimum is the highest of the project's menus (`projectMinRuntime`). **Decision, a mod with a HUD widget and a menu:** two plugins, `<modId>.esp` (widget, SkyUI master) and `<modId>_RuntimeCheck.esp` (no master), so the menu mod never depends on SkyUI and a widget-only mod never gets the runtime message; the planner reports a clash if a widget's script name would equal the check's (a widget SWF named `RuntimeCheck`).
+
+**Minimum version.** `src/shared/runtimeFeatures.ts`: `RUNTIME_FEATURE_SINCE` (`menu`, `savedVariables`, `list`: all 0.3.0), `minRuntimeFor(features)` = the highest `since` (default 0.3.0). `prepareDeploy` derives the features from the SWF (saved variables in its graphs, role `list` in the overlay), and the one value goes into the menu JSON `minRuntime`, the Papyrus constants, the Menu settings panel ("Requires") and the deploy dialog ("Requires Inkwell Runtime X or newer; not included in this deploy"). A later runtime feature adds a row with its own version.
+
+**Without a Papyrus compiler** the check cannot be built: no plugin is written (a plugin without its script would do nothing) and the gate row `runtime-check-missing` says "no Papyrus compiler is set ... Set the compiler path in Settings (or INKWELL_PAPYRUS), then deploy again". It is a **warning in a folder deploy and in a Dev deploy** and an **error in Package Mod / Vortex** (`DeployInput.package`; Strict Mode promotes the warning like any other). If the script fails to compile, the compiler's lines (`papyrus-compile-failed`, `<modId>_RuntimeCheck.psc:line:col: ...`) block the gate.
+
+**Not verified in game** (nothing ran): that `SKSE.GetPluginVersion("Inkwell")` returns the DLL's `SKSEPlugin_Version` (CommonLibSSE-NG packs `major<<24 | minor<<16 | patch<<4`, the same as `packVersion`; the plugin name is `Inkwell` in the Runtime's CMakeLists), that the hand-written alias record loads (xEdit/CK not used), and that a start-game-enabled quest of a plugin added to an EXISTING save starts without a `.seq` file. How to test: `docs/deploy.md`, "Testing the runtime check".
+
+## UI scale and offset (S2, S9, Phase 7)
+
+The generated menu class applies `inkwell.uiScale`, `offsetX` and `offsetY` to `_root` in `begin()` (once, after the bridge is ready; the engine's stage scaling is untouched): `_xscale = _yscale = 100 * s; _x = 960 * (1 - s) + offsetX; _y = 540 * (1 - s) + offsetY` in the 1920x1080 reference stage; a scale that is not a positive number is 1 and nothing is touched at 1/0/0. The runtime clamps the INI to 0.50..2.00; the glue does not. Golden block and a run of it against a fake root: `codegen/menuGlue.test.ts`. **Unverified in game:** `_root` transforms in the game's GFx and their interaction with anchoring code.
+
+**Preview:** `UI scale` (0.50 to 2.00) in the stage toolbar (the More popover of the compact toolbar) and in the Play panel; both are one control and one value (`preview/uiScale.tsx`). Changing it calls `inkwellUiScale` on the mock bridge, which sets `inkwell.uiScale`, resets the root and reopens the menu, so Ruffle shows what the glue does; a rebuild re-applies the chosen value. The value is a preview setting only: the Menu settings panel's "UI Scale Factor" is the default written to the INI (`userDefaults.uiScale`); the preview does not follow it. In a popped-out preview window the Play panel's control cannot reach the movie (the same limit as the other Play controls). The Ruffle driver (`INKWELL_SHOTS_MENU=1`) checks 1.5, 0.5, 0.75 (More menu) and back to 1 (states `u1` to `u3`).
+
 ## Lint and the export gate
 
 | Code | Severity | Where |
@@ -40,7 +65,8 @@ IPC `saveMenuSettings(swf, settings)` validates with `MenuSettings` and writes u
 | `menu-file-invalid` | error | menu.json exists but is unreadable |
 | `runtime-required` | warning | a graph node that needs the runtime (the node's `requiresRuntime`, or one of the Spec's `RUNTIME_ONLY_EVENTS` / `GAME_BRIDGE_NODES` titles, because the bundled core pack copy predates the flag) in a **hudWidget** graph; also a `saved` variable in a HUD widget. `validateGraph(g, {target})`, so the Lint dock, the canvas badges and the export gate agree |
 | `saved-variable-invalid` | error | a `saved` variable outside the menu graph of a custom menu, or a name used twice in the SWF |
-| `runtime-check-missing` | not implemented | needs the generated no-master ESP and Papyrus check (S3 rule 3, O4): Phase 7 |
+| `runtime-check-missing` | warning in a folder or Dev deploy, **error** in Package Mod / Vortex | the deploy has no runtime check because no Papyrus compiler is set (section above); the message says what to do |
+| `menu-name-invalid` (device name) | error | a menu named CON, NUL, COM1, ... (its JSON would be named after a Windows device); `safeJoin` also refuses such a path part |
 
 `menu-*` rows are deploy/Package gate rows and the panel's list; they are not in the Lint dock (the dock shows the sync builds' lint and the graph issues). `runtime-required` and `saved-variable-invalid` are graph issues and are in the dock.
 
@@ -138,7 +164,7 @@ Ruffle has no runtime; the preview SWF's mock `_root.inkwell` (`previewMenuBridg
 
 ## Not done here (later phases, S-numbers)
 
-Papyrus runtime check ESP (S3, Phase 7); dev stream, `dumpVariables`, `watch`/`pin` emission and Dev deploy (S6, Phase 6); saved values in the Mock Data panel; the preview's UI Scale control (S9, Phase 7); menu.json in the SWF's undo history; renaming a Figma frame moves its folder in the build pipeline without carrying menu.json along (the pipeline's rename path only keeps ir.json and overlay.json; not checked for graph files).
+Dev stream, `dumpVariables`, `watch`/`pin` emission and Dev deploy (S6, Phase 6); saved values in the Mock Data panel; menu.json in the SWF's undo history; renaming a Figma frame moves its folder in the build pipeline without carrying menu.json along (the pipeline's rename path only keeps ir.json and overlay.json; not checked for graph files).
 
 ## Deploying the slice for an in-game test
 

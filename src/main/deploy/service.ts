@@ -133,5 +133,9 @@ export function createDeployService(d: DeployDeps) {
   return { targets, prepare, commit, cancel: (): void => void (pending = undefined) }
 }
 
-const blockedMessage = (g: GateResult, pkg = false): string =>
-  `${pkg ? 'Package' : 'Deploy'} blocked: ${g.blocking.length} lint error(s)${g.strict ? ' (Strict Mode promotes warnings)' : ''}. ${g.blocking.slice(0, 3).map((l) => `${l.swf ? `${l.swf}: ` : ''}${l.code}`).join(', ')}${g.blocking.length > 3 ? ', ...' : ''}`
+/** The status bar line of a blocked deploy: the count, and the FIRST problem in words (the dialog and the Lint dock list the rest). */
+const blockedMessage = (g: GateResult, pkg = false): string => {
+  const first = g.blocking[0]
+  const what = first ? ` First: ${first.swf ? `${first.swf}: ` : ''}${first.message.length > 220 ? `${first.message.slice(0, 217)}...` : first.message}` : ''
+  return `${pkg ? 'Package' : 'Deploy'} blocked: ${g.blocking.length} lint error(s)${g.strict ? ' (Strict Mode promotes warnings)' : ''}.${what}${g.blocking.length > 1 ? ` (+${g.blocking.length - 1} more: ${g.blocking.slice(1, 4).map((l) => l.code).join(', ')}${g.blocking.length > 4 ? ', ...' : ''})` : ''}`
+}

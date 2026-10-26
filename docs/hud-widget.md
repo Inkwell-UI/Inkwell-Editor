@@ -2,6 +2,8 @@
 
 Milestone 0.1 items 14-16. `compileWidget(ir, { modId, widgetName?, buildDir, ffdec, papyrusExe? })` turns an IR whose `target.kind` is `hudWidget` into an in-memory mod folder (`{ files, lint, timings }`); `writeModFolder(dir, files)` writes it.
 
+> A mod that also has a custom menu gets a second, separate plugin `<modId>_RuntimeCheck.esp` (no master, no SkyUI) with its own quest and script; it never touches this widget plugin (`docs/menus.md`, Runtime check).
+
 ## What is generated
 
 ```

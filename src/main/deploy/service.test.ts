@@ -56,6 +56,7 @@ describe('deploy service export gate', () => {
     if (!p.ok) throw new Error(p.error)
     expect(p).toMatchObject({ needsConfirm: true, gate: { ok: false, blocking: [{ code: 'font-unmapped', swf: 'wheel', nodeId: '1:3' }] } })
     expect(reports.at(-1)).toMatchObject({ state: 'error', message: expect.stringContaining('Deploy blocked: 1 lint error') })
+    expect(reports.at(-1)?.message).toContain('First: wheel: no alias') // the first problem in words, not just a code
     expect(await svc.commit(p.token)).toMatchObject({ ok: false, error: expect.stringContaining('Deploy blocked') })
     expect(existsSync(root)).toBe(false)
   })

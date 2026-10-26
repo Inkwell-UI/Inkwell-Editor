@@ -39,10 +39,10 @@ describe.skipIf(!papyrusExe)('a customMenu deploy with a Papyrus compiler', () =
     for (const f of CHECK) expect(existsSync(join(i.root, ...f.split('/'))), f).toBe(true)
     expect(JSON.parse(readFileSync(join(i.root, 'SKSE/Plugins/Inkwell/menus/M_Wheel.json'), 'utf8')).minRuntime).toBe('0.3.0')
     expect(readFileSync(join(i.root, 'Source/Scripts/M_RuntimeCheck.psc'), 'utf8')).toContain('RequiredText = "0.3.0"')
-    // a second deploy changes nothing; the plugin is part of the manifest (retired with the mod)
+    // a second deploy rewrites at most the .pex; the plugin is part of the manifest (retired with the mod)
     const again = await prepareDeploy(i)
     if (!again.ok) throw new Error(again.error)
-    expect((await commitDeploy(i, again.prepared)).written).toBe(0)
+    expect((await commitDeploy(i, again.prepared)).written).toBeLessThanOrEqual(1) // only the .pex can differ: the compiler stamps its compile time
   })
   it('two menus share ONE check', async () => {
     const r = await prepareDeploy(input({ papyrusExe: papyrusExe! }, 'wheel', 'inventory'))
