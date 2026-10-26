@@ -6,15 +6,8 @@ import { cmapCodePoints, nameString, readSfnt } from './sfnt'
 // files are `project/fontFiles.ts`, the compile step is FFDec's `fonts` job (swf/compile.ts), which imports the glyph outlines of exactly `chars` into a DefineFont3.
 // Spike S-A (TEST-IN-GAME-0.4.md section 6) proved in game that such a font draws, with accents, and that a character outside the subset draws as an empty box.
 
-/** Named character ranges the author can ship on top of the characters the texts use (V5.1). */
-export const CHARSETS = {
-  basicLatin: { label: 'Basic Latin', ranges: [[0x20, 0x7e]] },
-  latin1: { label: 'Latin-1 (accents of Western Europe)', ranges: [[0xa0, 0xff]] },
-  latinExtendedA: { label: 'Latin Extended-A (Central Europe)', ranges: [[0x100, 0x17f]] },
-  cyrillic: { label: 'Cyrillic', ranges: [[0x400, 0x4ff]] }
-} as const satisfies Record<string, { label: string; ranges: readonly (readonly [number, number])[] }>
-export type CharsetId = keyof typeof CHARSETS
-export const isCharsetId = (s: string): s is CharsetId => Object.hasOwn(CHARSETS, s)
+import { CHARSETS, isCharsetId, type CharsetId } from '../../shared/fonts'
+export { CHARSETS, isCharsetId, type CharsetId }
 export const DEFAULT_CHARSETS: readonly CharsetId[] = ['basicLatin', 'latin1']
 
 /** Per-font settings kept in `fonts.json` (not in the IR): the chosen charsets and extra characters. */

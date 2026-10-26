@@ -105,3 +105,13 @@ export interface FontToolProgress {
 /** The faces of FIGMA_FACES whose family/style is not in `have`. */
 export const missingFaces = (have: readonly { family: string; style: string }[]): MissingFace[] =>
   FIGMA_FACES.filter((f) => !have.some((h) => h.family === f.family && h.style === f.style)).map((f) => ({ family: f.family, style: f.style, aliases: f.aliases }))
+
+/** Named character ranges the author can ship on top of the characters the texts use (V5.1). */
+export const CHARSETS = {
+  basicLatin: { label: 'Basic Latin', ranges: [[0x20, 0x7e]] },
+  latin1: { label: 'Latin-1 (accents of Western Europe)', ranges: [[0xa0, 0xff]] },
+  latinExtendedA: { label: 'Latin Extended-A (Central Europe)', ranges: [[0x100, 0x17f]] },
+  cyrillic: { label: 'Cyrillic', ranges: [[0x400, 0x4ff]] }
+} as const satisfies Record<string, { label: string; ranges: readonly (readonly [number, number])[] }>
+export type CharsetId = keyof typeof CHARSETS
+export const isCharsetId = (s: string): s is CharsetId => Object.hasOwn(CHARSETS, s)
