@@ -24,7 +24,7 @@ const loc = (over: Record<string, unknown> = {}): Localization =>
   })
 
 /** A custom menu SWF with one keyed text ('t', content "Hello") and one plain text ('p'). */
-const menuIr = (kind: 'customMenu' | 'hudWidget' = 'customMenu'): Swf => {
+const menuIr = (kind: LocSwf['kind'] = 'customMenu'): Swf => {
   const t = textNode('t', { content: 'Hello', name: 'Title' })
   const p = textNode('p', { content: 'plain', name: 'Plain' })
   return swf([frame('r', ['t', 'p']), t, p], { target: { kind } })
