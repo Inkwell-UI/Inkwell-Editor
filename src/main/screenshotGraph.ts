@@ -139,7 +139,7 @@ export async function runGraphShots(o: { outDir: string; projectDir: string; win
   await snap('g8-node-inspector')
   console.log('[shots] selected layer row after node click:', await js<string>(`document.querySelector('.layer-row.is-selected .layer-name')?.textContent ?? '(none)'`))
 
-  await setValue('[data-testid="event-jump"]', 'call') // the event jump list selects and centres the event node
+  await js(`document.querySelector('[data-testid="event-item-call"]').click()`) // the event list selects and centres the event node
   await wait(500)
   console.log('[shots] event jump selected:', await js<string>(`document.querySelector('.gn.is-selected .gn-title')?.textContent ?? '(none)'`))
   console.log('[shots] nodes mounted after the jump (only visible ones are):', await js<number>(`document.querySelectorAll('.react-flow__node').length`))

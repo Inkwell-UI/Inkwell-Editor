@@ -201,11 +201,20 @@ export const strings = {
     loading: 'Loading graphs...',
     empty: 'No graph for this SWF yet. + Graph creates its menu graph.',
     emptyCanvas: 'Empty graph. Press Space to add a node, or drag a wire out of a pin.',
-    keys: 'Space: add node · Ctrl+F: find · Ctrl+C / V / D: copy, paste, duplicate · Delete: remove',
+    /** Contextual key hints above the minimap: what applies to nothing, one node or several selected nodes (only keys the canvas or shell handles). */
+    keyGroups: (selected: number, wires: number): [string, string][][] => {
+      const nav: [string, string][] = [['Zoom to all', 'F'], ['Find nodes', 'Ctrl F']]
+      const groups: [string, string][][] = selected
+        ? [[['Copy', 'Ctrl C'], ['Duplicate', 'Ctrl D'], [selected > 1 ? `Delete ${selected} nodes` : 'Delete', 'Del']], [['Zoom to selection', 'F'], ['Find nodes', 'Ctrl F']]]
+        : wires
+          ? [[['Delete wire', 'Del']], nav]
+          : [[['Add a node', 'Space'], ['Paste', 'Ctrl V'], ['Select all', 'Ctrl A']], nav]
+      return [...groups, [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Y']]]
+    },
     breadcrumbLabel: 'Graph location',
     crumbRoot: 'GRAPH:',
-    events: 'Jump to event',
-    eventsCount: (n: number) => `Events (${n})`,
+    eventsTitle: 'Events',
+    eventsFilter: 'Filter',
     spawnTitle: 'Add node',
     spawnFromPin: 'Add node connected to this pin',
     unknownNode: 'Unknown Pack Node (Data Preserved)',

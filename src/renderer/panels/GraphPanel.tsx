@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { SplitSquareHorizontal, Zap } from 'lucide-react'
+import { ChevronDown, ChevronRight, SplitSquareHorizontal } from 'lucide-react'
 import { nodeIndex } from '@nicklaj/knotwork'
 import { useStore } from 'zustand'
 import { As2View } from '../graph/As2View'
@@ -92,20 +92,40 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
         <span aria-hidden="true">&gt;</span><span data-testid="crumb-graph">{name}</span>
         {owner && <><span aria-hidden="true">&gt;</span><button type="button" className="row-link" onClick={() => selectComponent(owner, 'navigator')}>{swf.ir.nodes[owner]?.name}</button></>}
         {nodeTitle && <><span aria-hidden="true">&gt;</span><span>{nodeTitle}</span></>}
-        <label className="events-jump">
-          <Zap size={12} aria-hidden="true" />
-          <select aria-label={strings.graph.events} value="" onChange={(e) => e.target.value && setFocus({ id: e.target.value, n: (focus?.n ?? 0) + 1 })} data-testid="event-jump">
-            <option value="">{strings.graph.eventsCount(events.length)}</option>
-            {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.detail ? `${ev.title}: ${ev.detail}` : ev.title}</option>)}
-          </select>
-        </label>
       </nav>
       <div className={`graph-body${split ? ' is-split' : ''}`}>
         <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} fitSignal={tidied} />
+        <EventList events={events} selected={selectedNode} onPick={(id) => setFocus({ id, n: (focus?.n ?? 0) + 1 })} />
         {split && (
           <As2View swfName={swf.name} store={store} selectedNode={selectedNode} onPick={(id) => revealNode(graphId, id)} />
         )}
       </div>
     </>
+  )
+}
+
+/** Floating list of the graph's event nodes over the canvas' top left (filterable, collapsible); a click selects the event and centres the canvas on it. */
+function EventList({ events, selected, onPick }: { events: ReturnType<typeof eventNodes>; selected: string | undefined; onPick: (id: string) => void }) {
+  const [open, setOpen] = useState(true)
+  const [q, setQ] = useState('')
+  const label = (ev: (typeof events)[number]): string => (ev.detail ? `${ev.title}: ${ev.detail}` : ev.title)
+  const shown = events.filter((ev) => label(ev).toLowerCase().includes(q.trim().toLowerCase()))
+  return (
+    <aside className="event-list" data-testid="event-list">
+      <button type="button" className="event-list-head" aria-expanded={open} onClick={() => setOpen(!open)}>
+        {open ? <ChevronDown size={13} aria-hidden="true" /> : <ChevronRight size={13} aria-hidden="true" />}
+        <span>{strings.graph.eventsTitle}</span><span className="dim">{events.length}</span>
+      </button>
+      {open && (
+        <>
+          <input className="gn-input" placeholder={strings.graph.eventsFilter} aria-label={strings.graph.eventsFilter} value={q} onChange={(e) => setQ(e.target.value)} />
+          <ul>
+            {shown.map((ev) => (
+              <li key={ev.id}><button type="button" className={ev.id === selected ? 'is-selected' : ''} onClick={() => onPick(ev.id)} data-testid={`event-item-${ev.id}`}>{label(ev)}</button></li>
+            ))}
+          </ul>
+        </>
+      )}
+    </aside>
   )
 }

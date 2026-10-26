@@ -1,5 +1,5 @@
 import {
-  applyEdgeChanges, applyNodeChanges, Background, Controls, MiniMap, ReactFlow, ReactFlowProvider, useReactFlow,
+  applyEdgeChanges, applyNodeChanges, Background, Controls, MiniMap, ReactFlow, ReactFlowProvider, useReactFlow, useViewport,
   type Connection, type EdgeChange, type NodeChange, type OnConnectEnd
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -8,7 +8,7 @@ import {
 } from '@nicklaj/knotwork'
 import type { NodeDef as KwDef } from '@nicklaj/knotwork'
 import '@nicklaj/knotwork/knotwork.css'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import type { NodeDef } from '@inkwell-ui/spec'
 import type { SwfDoc } from '../../shared/projectState'
@@ -50,6 +50,11 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   const nodes = useStore(store, (s) => s.nodes)
   const edges = useStore(store, (s) => s.edges)
   const variables = useStore(store, (s) => s.variables)
+  const picked = useStore(store, (s) => s.nodes.filter((n) => n.selected).length)
+  const wires = useStore(store, (s) => s.edges.filter((e) => e.selected).length)
+  const keysRef = useRef<HTMLDivElement>(null)
+  const [keysBacked, setKeysBacked] = useState(false)
+  const view = useViewport()
   const wrap = useRef<HTMLDivElement>(null)
   const rf = useReactFlow()
   const [menu, setMenu] = useState<MenuState | null>(null)
@@ -143,6 +148,11 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     if (mod && k === 'f') return void (e.preventDefault(), setFind(true))
     if (mod && k === 'c') return void (e.preventDefault(), clipboard.copy())
     if (mod && k === 'v') return void (e.preventDefault(), clipboard.paste())
+    if (mod && k === 'a') return void (e.preventDefault(), store.getState().setSelection(store.getState().nodes.map((n) => n.id)))
+    if (!mod && !e.altKey && k === 'f') {
+      const sel = store.getState().nodes.filter((n) => n.selected).map((n) => ({ id: n.id }))
+      return void (e.preventDefault(), rf.fitView({ ...(sel.length ? { nodes: sel } : {}), duration: 250, padding: 0.3, maxZoom: 1.2 }))
+    }
     if (mod && k === 'd') return void (e.preventDefault(), clipboard.duplicate())
   }
 
@@ -187,6 +197,16 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     if (fitSignal) void rf.fitView({ padding: 0.15, maxZoom: 1, duration: 250 })
   }, [fitSignal, rf])
 
+  // the hints get a dark backing only while a mounted node sits under them
+  useLayoutEffect(() => {
+    const box = keysRef.current?.getBoundingClientRect()
+    if (!box) return
+    setKeysBacked([...(wrap.current?.querySelectorAll('.react-flow__node') ?? [])].some((el) => {
+      const r = el.getBoundingClientRect()
+      return r.left < box.right && r.right > box.left && r.top < box.bottom && r.bottom > box.top
+    }))
+  }, [view.x, view.y, view.zoom, nodes, picked, wires])
+
   useWheelNavigation(wrap)
   const hasNodes = nodes.length > 0
 
@@ -216,10 +236,16 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
         >
           <Background gap={20} />
           <Controls showInteractive={false} />
-          <MiniMap pannable zoomable style={{ width: 140, height: 90 }} className="graph-minimap" nodeColor="var(--line-strong)" maskColor="var(--backdrop)" />
+          <MiniMap pannable zoomable style={{ width: 140, height: 90 }} className="graph-minimap" nodeColor="var(--fg-faint)" maskColor="rgba(255, 255, 255, 0.18)" />
         </ReactFlow>
         {!hasNodes && <div className="graph-hint"><p className="empty">{strings.graph.emptyCanvas}</p></div>}
-        <div className="graph-keys dim">{strings.graph.keys}</div>
+        <div className={`graph-keys${keysBacked ? ' is-backed' : ''}`} ref={keysRef} data-testid="graph-keys">
+          {strings.graph.keyGroups(picked, wires).map((g, i) => (
+            <div key={i} className="graph-keys-group">
+              {g.map(([label, key]) => <div key={label} className="graph-key"><span>{label}</span><kbd>{key}</kbd></div>)}
+            </div>
+          ))}
+        </div>
         {find && (
           <FindBar<FlowNode>
             nodes={nodes}

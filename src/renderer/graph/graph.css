@@ -10,26 +10,31 @@
 }
 
 .graph-flow { position: relative; flex: 1; min-height: 0; min-width: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--sunken); outline: none; }
-.graph-flow:focus-visible { border-color: var(--focus); }
 .graph-flow .react-flow { --xy-background-color: var(--sunken); --xy-edge-stroke-default: var(--fg-faint); font-family: inherit; }
 .graph-flow .react-flow__controls-button { background: var(--surface-2); color: var(--fg); border-color: var(--line); }
 .graph-flow .react-flow__controls-button svg { fill: currentColor; }
-.graph-minimap.react-flow__minimap { background: var(--surface-1); border: 1px solid var(--line); border-radius: 4px; }
+.graph-minimap.react-flow__minimap { background: var(--bg); border: 1px solid var(--line); border-radius: 0; } /* the view is the dark window, the rest of the map is veiled */
+.graph-minimap .react-flow__minimap-mask { fill-rule: evenodd; stroke: none; }
 .graph-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; text-align: center; padding: 16px; }
-.graph-keys { background: var(--sunken); padding: 1px 8px; border-radius: 4px; position: absolute; left: 50%; transform: translateX(-50%); bottom: 6px; font-size: 11px; white-space: nowrap; pointer-events: none; z-index: 5; }
+.graph-keys { position: absolute; right: 15px; bottom: 115px; z-index: 5; display: flex; flex-direction: column; gap: 10px; width: 190px; font-size: 12px; color: var(--fg-dim); pointer-events: none; }
+.graph-keys-group { display: flex; flex-direction: column; gap: 4px; }
+.graph-key { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.graph-keys > * { text-shadow: 0 1px 2px #000; }
+.graph-keys.is-backed { background: rgba(0, 0, 0, 0.6); border-radius: 6px; padding: 6px 8px; margin: -6px -8px; box-sizing: content-box; }
+.graph-key kbd { font: inherit; font-size: 11px; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 6px; white-space: nowrap; }
 
 /* wires: Exec thick and white, data thin and in the colour of the type it carries */
 .react-flow__edge.gw-exec .react-flow__edge-path { stroke-linecap: round; }
 .react-flow__edge.gw-data .react-flow__edge-path { stroke-dasharray: none; }
 
 /* nodes */
-.gn { min-width: 176px; max-width: 232px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 6px; font-size: 12px; color: var(--fg); box-shadow: 0 2px 8px var(--shadow); }
-.gn.is-selected { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus), 0 2px 8px var(--shadow); }
-.gn[data-status="error"] { border-color: var(--err); }
-.gn[data-status="warning"] { border-color: var(--warn); }
-.gn-head { display: flex; align-items: center; gap: 6px; padding: 5px 10px; background: var(--surface-3); border-top: 3px solid var(--gn-accent, var(--line-strong)); border-bottom: 1px solid var(--line); border-radius: 5px 5px 0 0; font-weight: 600; }
+.gn { min-width: 220px; max-width: 288px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 6px; font-size: 12px; color: var(--fg); box-shadow: 0 4px 10px var(--shadow); }
+.gn.is-selected { border-color: var(--fg); box-shadow: 0 0 0 3px var(--kw-select-soft), 0 0 16px var(--kw-select-soft); } /* soft white glow = selection; the border is status only */
+.gn[data-status="error"] { border: 2px solid var(--err); }
+.gn[data-status="warning"] { border: 2px solid var(--warn); }
+.gn-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: color-mix(in srgb, var(--gn-accent, var(--line-strong)) 65%, #000); color: #fff; border-radius: 5px 5px 0 0; font-weight: 600; }
 .gn-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gn-tag { font-size: 10px; font-weight: 500; color: var(--fg-dim); border: 1px solid var(--line-strong); border-radius: 8px; padding: 0 6px; white-space: nowrap; }
+.gn-tag { font-size: 10px; font-weight: 500; color: #fff; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; padding: 0 6px; white-space: nowrap; }
 .gn-badge { display: inline-flex; }
 .gn-badge.is-error { color: var(--err); }
 .gn-badge.is-warning { color: var(--warn); }
@@ -43,7 +48,7 @@
 .gn-pin-type { color: var(--fg-dim); font-size: 10px; }
 .gn-inline { padding: 0 14px 4px; }
 .gn-fields { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px 8px; border-top: 1px solid var(--line); }
-.gn-field { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.gn-field { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; }
 .gn-field-label { color: var(--fg-dim); font-size: 11px; }
 .gn-input { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; background: var(--bg); color: var(--fg); border: 1px solid var(--line-strong); border-radius: 4px; padding: 2px 6px; font: inherit; font-size: 12px; }
 .gn-input[type="checkbox"] { width: auto; }
@@ -64,13 +69,8 @@
 .gn-reroute .gn-pin-head { padding: 0; min-height: 0; }
 
 /* pins: shape + colour (the colour is set inline from theme.css; the shape here) */
-.gn .gn-handle.react-flow__handle { width: 12px; height: 12px; min-width: 0; min-height: 0; border: 0; border-radius: 0; background: currentColor; }
-.gn-handle[data-shape="circle"] { border-radius: 50% !important; }
-.gn-handle[data-shape="triangle"] { clip-path: polygon(0 0, 100% 50%, 0 100%); }
-.gn-handle[data-shape="diamond"] { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
-.gn-handle[data-shape="hexagon"] { clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); }
-.gn-handle[data-shape="octagon"] { clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }
-.gn-handle[data-shape="frame"] { clip-path: polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, 28% 28%, 28% 72%, 72% 72%, 72% 28%, 28% 28%); }
+.gn .gn-handle.react-flow__handle { width: 14px; height: 14px; min-width: 0; min-height: 0; border: 0; border-radius: 50%; background: currentColor; clip-path: none; }
+.gn .gn-handle.react-flow__handle[data-pin="Exec"] { border-radius: 3px; }
 .gn .gn-handle.react-flow__handle[data-shape="unknown"] { color: var(--warn); background: repeating-linear-gradient(45deg, currentColor 0 3px, transparent 3px 6px); }
 .gn-handle.valid, .gn-handle.connectingto { scale: 1.5; }
 .gn-unknown { min-width: 200px; }
