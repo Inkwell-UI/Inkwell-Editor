@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Sin@1
+(isFinite(Math.sin({{in.value}})) ? (Math.sin({{in.value}})) : 0)

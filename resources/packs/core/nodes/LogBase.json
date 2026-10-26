@@ -1,0 +1,30 @@
+{
+  "kind": "LogBase",
+  "major": 1,
+  "title": "Log Base",
+  "category": "Logic",
+  "milestone": "0.3",
+  "pure": true,
+  "description": "Logarithm of the value in the given base (0 if not finite).",
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "base",
+      "type": "Number",
+      "default": 10
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/LogBase.as2"
+}

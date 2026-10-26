@@ -1,0 +1,2 @@
+// [{{node.id}}] core/LogBase@1
+(isFinite((Math.log({{in.value}}) / Math.log({{in.base}}))) ? ((Math.log({{in.value}}) / Math.log({{in.base}}))) : 0)

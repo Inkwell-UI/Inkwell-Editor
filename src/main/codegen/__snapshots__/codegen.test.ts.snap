@@ -18,6 +18,24 @@ exports[`golden AS2 per node kind > core/Abs@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/Acos@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.acos(0)) ? (Math.acos(0)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/Add@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -144,6 +162,24 @@ exports[`golden AS2 per node kind > core/ArraySortByField@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/Asin@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.asin(0)) ? (Math.asin(0)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/Assert@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -163,6 +199,42 @@ exports[`golden AS2 per node kind > core/Assert@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Atan@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.atan(0)) ? (Math.atan(0)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Atan2@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.atan2(0, 0)) ? (Math.atan2(0, 0)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
         };"
 `;
 
@@ -323,6 +395,24 @@ exports[`golden AS2 per node kind > core/Concat@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/Cos@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.cos(0)) ? (Math.cos(0)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/Counter@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -344,6 +434,24 @@ exports[`golden AS2 per node kind > core/Counter@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/DegreesToRadians@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite((0 * Math.PI / 180)) ? ((0 * Math.PI / 180)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
         };"
 `;
 
@@ -413,6 +521,24 @@ exports[`golden AS2 per node kind > core/DoOnce@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Exp@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.exp(0)) ? (Math.exp(0)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
         };"
 `;
 
@@ -766,6 +892,24 @@ exports[`golden AS2 per node kind > core/Lerp@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/Ln@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.log(0)) ? (Math.log(0)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/Log@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -783,6 +927,24 @@ exports[`golden AS2 per node kind > core/Log@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/LogBase@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite((Math.log(0) / Math.log(10))) ? ((Math.log(0) / Math.log(10))) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
         };"
 `;
 
@@ -1155,6 +1317,24 @@ exports[`golden AS2 per node kind > core/PlaySound@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/Power@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.pow(0, 1)) ? (Math.pow(0, 1)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/ProgressSetValue@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -1172,6 +1352,24 @@ exports[`golden AS2 per node kind > core/ProgressSetValue@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/RadiansToDegrees@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite((0 * 180 / Math.PI)) ? ((0 * 180 / Math.PI)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
         };"
 `;
 
@@ -1572,6 +1770,42 @@ exports[`golden AS2 per node kind > core/SetVisible@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/Sign@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite((0 > 0 ? 1 : (0 < 0 ? -1 : 0))) ? ((0 > 0 ? 1 : (0 < 0 ? -1 : 0))) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Sin@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.sin(0)) ? (Math.sin(0)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/Split@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -1580,6 +1814,24 @@ exports[`golden AS2 per node kind > core/Split@1 1`] = `
             try {
                 // [l] core/Log@1
                 trace("[Inkwell] info l: " + (String("").split(",")));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Sqrt@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.sqrt(0)) ? (Math.sqrt(0)) : 0)));
             } catch (e) {
                 __g.fail("e", e);
             }
@@ -1708,6 +1960,24 @@ exports[`golden AS2 per node kind > core/Switch@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/Tan@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + String((isFinite(Math.tan(0)) ? (Math.tan(0)) : 0)));
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
         };"
 `;
 

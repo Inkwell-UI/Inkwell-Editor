@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Ln@1
+(isFinite(Math.log({{in.value}})) ? (Math.log({{in.value}})) : 0)

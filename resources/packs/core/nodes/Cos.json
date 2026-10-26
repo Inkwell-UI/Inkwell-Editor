@@ -1,0 +1,25 @@
+{
+  "kind": "Cos",
+  "major": 1,
+  "title": "Cos",
+  "category": "Logic",
+  "milestone": "0.3",
+  "pure": true,
+  "description": "Cosine of an angle in radians.",
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Cos.as2"
+}

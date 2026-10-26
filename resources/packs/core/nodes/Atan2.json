@@ -1,0 +1,30 @@
+{
+  "kind": "Atan2",
+  "major": 1,
+  "title": "Atan2",
+  "category": "Logic",
+  "milestone": "0.3",
+  "pure": true,
+  "description": "Angle in radians of the point (x, y).",
+  "inputs": [
+    {
+      "name": "y",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "x",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Atan2.as2"
+}

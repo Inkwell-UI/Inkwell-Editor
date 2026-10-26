@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Atan2@1
+(isFinite(Math.atan2({{in.y}}, {{in.x}})) ? (Math.atan2({{in.y}}, {{in.x}})) : 0)

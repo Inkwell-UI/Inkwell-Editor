@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Sign@1
+(isFinite(({{in.value}} > 0 ? 1 : ({{in.value}} < 0 ? -1 : 0))) ? (({{in.value}} > 0 ? 1 : ({{in.value}} < 0 ? -1 : 0))) : 0)

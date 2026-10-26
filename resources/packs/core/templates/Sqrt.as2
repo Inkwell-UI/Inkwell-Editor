@@ -1,0 +1,2 @@
+// [{{node.id}}] core/Sqrt@1
+(isFinite(Math.sqrt({{in.value}})) ? (Math.sqrt({{in.value}})) : 0)
