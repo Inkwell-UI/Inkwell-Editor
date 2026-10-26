@@ -59,6 +59,11 @@ export interface CodegenInput {
    * Without it the output is exactly what a HUD widget gets.
    */
   menu?: boolean
+  /**
+   * Dev build of a custom menu (SPEC-CHANGES S6/S7, docs/dev-mode.md): needs `menu`. Pure node outputs go to `bridge.pin(node, pin, value)`, every variable assignment to
+   * `bridge.watch(graph, name, scope, value)` and the class gets `dumpVariables()`. Only for a dev deploy into a game folder; the normal game build and Package Mod never set it.
+   */
+  dev?: boolean
 }
 
 interface Line {
@@ -149,6 +154,7 @@ const key = (node: string, pin: string): string => `${node}\u0000${pin}`
 /** Generates one AS2 class for one graph. */
 function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssue[], first: boolean): GraphClass {
   const file = `__Packages/mods/${ident(i.modId)}/${cls}.as`
+  const dev = i.menu === true && i.dev === true
   const issue = (message: string, nodeId?: string): void => void issues.push({ graphId: g.id, ...(nodeId ? { nodeId } : {}), code: 'graph-codegen', message })
   const nodes = new Map(g.nodes.map((n) => [n.id, n]))
   const defOf = (n: GraphNode): NodeDef | undefined => i.packs.defs.get(n.kind)
@@ -328,7 +334,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     }
     const volatile = inVol || (d.extra as { volatile?: unknown } | undefined)?.volatile === true
     const out = d.outputs[0]?.name ?? 'value'
-    if (i.preview) expr = `__g.pv("${safeId(n.id)}", "${safeId(out)}", ${expr})`
+    if (i.preview || dev) expr = `__g.pv("${safeId(n.id)}", "${safeId(out)}", ${expr})`
     if (!volatile && (consumers.get(key(n.id, out)) ?? 0) > 1 && !isTrivial(expr)) {
       const t = temp(uids.get(n.id)!)
       ctx.pre.push({ t: `var ${t} = ${expr};`, n: n.id })
@@ -365,7 +371,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         if (own) {
           if (!(pinsOf.get(n.id)?.outputs ?? []).some((p) => p.name === own[3] && p.type === 'Exec')) throw new Skip(`template uses the unknown exec output "${own[3]}".`)
           const sub = chain(n, own[3]!, ctx)
-          if (own[2] === 'guarded' && isEntry && i.preview && lines.some((l) => l.includes('{{params}}')))
+          if (own[2] === 'guarded' && isEntry && (i.preview || dev) && lines.some((l) => l.includes('{{params}}')))
             for (const p of [...outs].reverse()) sub.unshift({ t: `__g.pv("${safeId(n.id)}", "${safeId(p)}", ${uids.get(n.id)}_${p});`, n: n.id })
           // the field named by `extra.writesVariable` holds the variable this node assigns (Set Variable, Toggle); the kind test covers a pack copy that predates the flag
           const wv = (d.extra as { writesVariable?: unknown } | undefined)?.writesVariable
@@ -373,6 +379,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           const bv = boundVar ? g.variables.find((x) => x.id === boundVar) : undefined
           // S5.4: a saved variable goes to the bridge right after its assignment, before the continuation
           if (bv && isSaved(bv)) out.push({ t: `${own[1]}__g.bridge.setSaved(${as2Literal(bv.name)}, __g.v_${varNames.get(bv.id)});`, n: n.id })
+          if (bv && dev) out.push({ t: `${own[1]}__g.bridge.watch(${as2Literal(g.id)}, ${as2Literal(bv.name)}, "${bv.scope}", __g.v_${varNames.get(bv.id)});`, n: n.id })
           if (boundVar && binders.has(boundVar)) out.push({ t: `${own[1]}__g.b_${varNames.get(boundVar)}();`, n: n.id })
           if (own[2] === 'next') out.push(...ind(sub, own[1]!))
           else
@@ -501,6 +508,21 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '        }' },
           { t: '    }' }
         ]),
+    ...(dev
+      ? [
+          { t: '    // dev build only (S6): live pin values and the full variable dump go to the runtime, which streams them to the editor' },
+          { t: '    function pv(nodeId, pin, v) {' },
+          { t: '        try {' },
+          { t: '            this.bridge.pin(nodeId, pin, v);' },
+          { t: '        } catch (e) {' },
+          { t: '        }' },
+          { t: '        return v;' },
+          { t: '    }' },
+          { t: '    function dumpVariables() {' },
+          ...g.variables.map((v) => ({ t: `        this.bridge.watch(${as2Literal(g.id)}, ${as2Literal(v.name)}, "${v.scope}", this.v_${varNames.get(v.id)});` })),
+          { t: '    }' }
+        ]
+      : []),
     ...(i.preview
       ? [
           { t: '    // preview only: live pin values for the editor (traced as "[Inkwell] pin <node>.<pin> = <value>"); passes the value through' },

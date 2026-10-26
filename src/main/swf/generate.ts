@@ -38,6 +38,8 @@ export interface GenerateOptions {
    * with the preview shims (skse, gfxExtensions, bridge stubs), and `widget` is ignored: the design frame shows at the design size.
    */
   preview?: boolean
+  /** Custom menu only: the dev flavour of the game SWF (graph `pin`/`watch` calls and `dumpVariables`, S6/S7); a dev deploy ships it, Package Mod never does. Ignored by the preview. */
+  dev?: boolean
   /** Preview only: device font name per alias (a font Ruffle has loaded by name); default `previewDeviceFont` (_sans, _typewriter, _serif). */
   previewFont?: (alias: string) => string
   /**
@@ -572,7 +574,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   const basePrefix = widget && wf ? 'root.widget.' : 'root.'
   const gen = opts.graphs?.graphs.length
     ? generateGraphClasses({
-        modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}), ...(menu ? { menu: true } : {}),
+        modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}), ...(menu ? { menu: true } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}),
         layerPath: (id) => (id === (widget && wf ? wf.frame.id : ir.root) ? '' : layerPaths.get(id)?.startsWith(basePrefix) ? layerPaths.get(id)!.slice(basePrefix.length) : undefined)
       })
     : undefined
@@ -611,7 +613,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     // the menu class creates and init()s the graphs once the runtime bridge is ready (S7); the runtime waits for its glueReady()
     const pathOf = (id: string): string | undefined => (layerPaths.get(id)?.startsWith('root.') ? layerPaths.get(id)!.slice('root.'.length) : undefined)
     const byRole = (...r: string[]): string[] => Object.entries(opts.roles ?? {}).filter(([, role]) => r.includes(role)).flatMap(([id]) => pathOf(id) ?? [])
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(listInfos.length ? { listClass: listClassName(mod) } : {}) }))
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
       frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, listInfos.map((l) => listAttachCode(mod, l, '_root'))))

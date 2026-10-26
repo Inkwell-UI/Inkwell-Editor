@@ -14,6 +14,8 @@ export interface MenuGlueInput {
   focusable?: readonly string[]
   /** Full name of the generated list class when the SWF has a list: `onInput` forwards the user events to its `input` (S8). */
   listClass?: string
+  /** Dev build (S6): `dumpVariables()` asks every graph for its variables. The normal game build keeps the empty method. */
+  dev?: boolean
 }
 
 export const menuClassName = (swfCls: string): string => `${swfCls}Menu`
@@ -127,9 +129,19 @@ export function menuClassSource(i: MenuGlueInput): string {
     '    function onModEvent(name, strArg, numArg) {',
     '        for (var k = 0; k < this.graphs.length; k++) this.graphs[k].handleModEvent(name, strArg, numArg);',
     '    }',
-    '    // dev builds report every variable through bridge.watch (S6, Phase 6); nothing to report yet',
-    '    function dumpVariables() {',
-    '    }',
+    ...(i.dev
+      ? [
+          '    // dev build (S6): the runtime asks for a full dump when the editor subscribes to the watch',
+          '    function dumpVariables() {',
+          '        for (var k = 0; k < this.graphs.length; k++) {',
+          '            try {',
+          '                this.graphs[k].dumpVariables();',
+          '            } catch (e) {',
+          '            }',
+          '        }',
+          '    }'
+        ]
+      : ['    // only a dev build reports its variables (S6)', '    function dumpVariables() {', '    }']),
     '}',
     ''
   ]
