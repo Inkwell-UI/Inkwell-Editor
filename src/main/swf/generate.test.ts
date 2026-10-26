@@ -14,6 +14,14 @@ describe('generate preview', () => {
   const prev = generate(swf(nodes()), { modId: 'M', preview: true })
   const tags = (g: typeof game) => parseSwf(writeSwf({ widthPx: 1920, heightPx: 1080, tags: g.tags })).tags
 
+  it('vertical align: the preview moves a fixed-size field by the free space (Ruffle ignores the GFx property); the game SWF only sets the property', () => {
+    const cls = (g: typeof game) => g.as2.find((f) => f.path.endsWith('Layout.as'))!.source
+    expect(cls(prev)).toContain('t.verticalAlign = "center";')
+    expect(cls(prev)).toContain('var free = 30 - t.textHeight;')
+    expect(cls(prev)).toContain('t._y += (free / 2) * Math.cos(r);')
+    expect(cls(game)).not.toContain('textHeight')
+  })
+
   it('text uses a device font: no ImportAssets2, no font id, no outlines', () => {
     const t = tags(prev)
     expect(t.some((x) => x.code === TAG.ImportAssets2)).toBe(false)

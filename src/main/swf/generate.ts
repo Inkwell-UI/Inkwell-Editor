@@ -234,6 +234,8 @@ interface ScriptItem {
   layer: string
   path: string
   script: TextScript
+  /** Preview only: the box height in px of a fixed-size text with a verticalAlign; Ruffle ignores the GFx property, so the script moves the field instead. */
+  previewBoxH?: number
 }
 
 /** The AS2 class that applies GFx text extensions. Tiny, readable, one try/catch per node, errors logged as strings (no Error class in GFx). */
@@ -259,6 +261,14 @@ function layoutClass(modId: string, cls: string, swfId: string, items: ScriptIte
     const s = it.script
     out.push(`        // node ${comment(it.nodeId)} "${comment(it.layer)}"`, '        try {', `            var t = ${it.path};`)
     if (s.verticalAlign) out.push(`            t.verticalAlign = "${s.verticalAlign}";`)
+    if (s.verticalAlign && it.previewBoxH !== undefined) {
+      // shortcut: set once at start, a later Set Text does not re-centre in the preview (the game does); upgrade if the preview needs to follow text changes
+      const share = s.verticalAlign === 'center' ? ' / 2' : ''
+      out.push(
+        `            var free = ${Math.round(it.previewBoxH * 1000) / 1000} - t.textHeight;`,
+        `            if (free > 0) { var r = t._rotation * Math.PI / 180; t._x -= (free${share}) * Math.sin(r); t._y += (free${share}) * Math.cos(r); }`
+      )
+    }
     if (s.textAutoSize) out.push(`            t.textAutoSize = "${s.textAutoSize}";`)
     if (s.letterSpacing !== undefined) out.push(`            mods.${modId}.${cls}.letterSpacing(t, ${Math.round(s.letterSpacing * 1000) / 1000});`)
     out.push('        } catch (e) {', `            trace("[Inkwell] node ${lit(it.nodeId)}: " + e);`, '        }')
@@ -535,7 +545,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
         const r = (rot * Math.PI) / 180
         const { x: gx, y: gy } = m.text.gutter
         out.push(T.placeObject2({ ...base, charId: id, x: x + gx * Math.cos(r) - gy * Math.sin(r), y: y + gx * Math.sin(r) + gy * Math.cos(r) }))
-        if (Object.keys(m.text.script).length) scripts.push({ nodeId: cid, layer: n.name, path: here, script: m.text.script })
+        if (Object.keys(m.text.script).length) scripts.push({ nodeId: cid, layer: n.name, path: here, script: m.text.script, ...(opts.preview && n.sizing === 'fixed' && m.text.script.verticalAlign ? { previewBoxH: n.transform.height } : {}) })
         if (opts.widget && !opts.preview && opts.settableTexts?.has(cid) && here.startsWith('root.widget.')) {
           // Papyrus is case-insensitive: the instance name becomes a parameter name, so it must be unique ignoring case
           if (settable.some((t) => t.name.toLowerCase() === name.toLowerCase()))

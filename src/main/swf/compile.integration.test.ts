@@ -57,6 +57,18 @@ describe.skipIf(!can)('compileSwf (real FFDec)', () => {
     }
   }, 60_000)
 
+  it('preview: the vertical-align emulation (textHeight, _rotation) compiles with FFDec', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
+    const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
+    try {
+      const ir = swf([frame('f', ['t']), textNode('t', { verticalAlign: 'center' })], { id: 'valign' })
+      const r = await compileSwf(ir, { modId: 'ItestMod', buildDir: dir, ffdec, preview: true })
+      expect(r.lint).toEqual([])
+    } finally {
+      ffdec.stop()
+    }
+  }, 60_000)
+
   it('a nested frame with a solid fill and clipContent: the fill and the mask shapes are filled in and the clip layer survives FFDec', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
     const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
