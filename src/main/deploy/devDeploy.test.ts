@@ -1,12 +1,12 @@
 // Dev deploy (docs/dev-mode.md, SPEC-CHANGES S6/O5): the dev INI and the dev SWF are written only when the toggle is on and the target is a folder; Package Mod and the Vortex zip never get them.
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { parseIni, type Swf } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
 import { readZipEntry } from '../doctor/zip'
 import { frame } from '../swf/ir.testutil'
-import { RUNTIME_INI_REL } from '../runtime/devIni'
+import { devReloadPaths, RUNTIME_INI_REL } from '../runtime/devIni'
 import { planDeploy } from './plan'
 import type { DeploySwf } from './run'
 import { createDeployService } from './service'
@@ -60,6 +60,16 @@ describe('Dev deploy on', () => {
     expect(p.files.find((f) => f.rel === RUNTIME_INI_REL)).toMatchObject({ devIni: true })
     expect(p.notes.join(' ')).toMatch(/Dev deploy/)
     expect(JSON.stringify(p)).not.toContain(TOKEN) // the dialog never sees the token
+  })
+  it('ships 16 reload copies of the dev SWF (the engine finds only files that exist at startup); a normal deploy removes them', async () => {
+    const s = setup(true)
+    await deploy(s)
+    const dir = join(s.root, 'Interface', 'Inkwell', '_dev')
+    expect(readdirSync(dir).sort()).toEqual(devReloadPaths('T_Wheel').map((r) => r.split('/').pop()!).sort())
+    expect(readFileSync(join(dir, 't_wheel_0.swf'), 'utf8')).toBe('FWS-dev')
+    s.setDev(false)
+    await deploy(s)
+    expect(existsSync(dir) ? readdirSync(dir) : []).toEqual([])
   })
   it('merges into an existing Inkwell.ini and replaces its token; a later normal deploy leaves it alone', async () => {
     const s = setup(true)

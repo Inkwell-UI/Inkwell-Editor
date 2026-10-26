@@ -6,7 +6,7 @@ import { runtimeCheckNames } from '../runtime/runtimeCheck'
 import type { ResolvedSettings, StoredSettings } from '../../shared/doctor'
 import type { DeployLintItem, DeployTargetId, DeployTargetInfo } from '../../shared/deploy'
 import { isPapyrusName } from '../widget/papyrus'
-import { RUNTIME_INI_REL } from '../runtime/devIni'
+import { devReloadPaths, RUNTIME_INI_REL } from '../runtime/devIni'
 import { isInside } from '../vanilla/cache'
 
 // Pure deploy decisions: where a target points, what files a project produces there, and the guards that keep every write inside the chosen folder.
@@ -150,6 +150,7 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
       add(m.swf)
       // an invalid or duplicate menu name is the export gate's `menu-name-invalid` / `menu-name-duplicate`, not a path clash
       if (MENU_NAME.test(m.name) && !RESERVED_WINDOWS_NAME.test(m.name) && !plan.files.some((f) => f.rel.toLowerCase() === menuJsonPath(m.name).toLowerCase())) add(menuJsonPath(m.name))
+      if (o.dev && MENU_NAME.test(m.name)) devReloadPaths(m.name).forEach(add)
       if (!iniDone) add(modIniPath(o.modId)), (iniDone = true)
       if (!plan.notes.some((n) => n.startsWith(RUNTIME_NOTE))) plan.notes.push(runtimeNoteText(projectMinRuntime(o.swfs)))
       if (!checkDone) {

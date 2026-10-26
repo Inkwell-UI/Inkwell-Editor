@@ -6,6 +6,17 @@ import { parseIni, writeIni, RuntimeToken } from '@inkwell-ui/spec'
 /** Deploy-relative path of the runtime-wide INI (next to the per-mod `<modId>.ini`). */
 export const RUNTIME_INI_REL = 'SKSE/Plugins/Inkwell/Inkwell.ini'
 
+/** How many reload copies of a menu's SWF a Dev deploy ships (the runtime's DEV_SLOTS). */
+export const DEV_RELOAD_SLOTS = 16
+/**
+ * Deploy-relative paths of a menu's reload copies. The engine caches a loaded movie by name and only finds loose files that existed when the game started,
+ * so each hot reload loads the next of these (the runtime overwrites its content first). Name rule = the runtime's DevBare.
+ */
+export const devReloadPaths = (menuName: string): string[] => {
+  const key = menuName.toLowerCase().replace(/[^a-z0-9]/g, '_')
+  return Array.from({ length: DEV_RELOAD_SLOTS }, (_, i) => `Interface/Inkwell/_dev/${key}_${i}.swf`)
+}
+
 /** 256 random bits as 64 lower-case hex digits (S6.3). */
 export const generateToken = (): string => randomBytes(32).toString('hex')
 

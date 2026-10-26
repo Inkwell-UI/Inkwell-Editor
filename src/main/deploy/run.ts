@@ -13,7 +13,7 @@ import { unreachableNodes, UNREACHABLE_MESSAGE } from '../sync/syncServer'
 import { isUnmodifiedVanilla } from '../vanilla/cache'
 import { compileWidget, type WidgetOptions } from '../widget/compileWidget'
 import { compileRuntimeCheck } from '../runtime/runtimeCheck'
-import { devIniText, RUNTIME_INI_REL } from '../runtime/devIni'
+import { devIniText, devReloadPaths, RUNTIME_INI_REL } from '../runtime/devIni'
 import { planDeploy, projectMinRuntime, safeJoin, type DeployPlan, type SwfLike } from './plan'
 import { readManifest, staleFiles, writeDeploy } from './write'
 
@@ -148,6 +148,7 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
         const src: MenuSource = { swf: s.name, settings: s.menu ?? defaultMenuSettings(), ...(s.features ? { features: s.features } : {}) }
         files.set(resolveMenuNames(i.modId, src).swf, { data, swf: s.name })
         devMenus.push(resolveMenuNames(i.modId, src).name)
+        if (i.dev) for (const rel of devReloadPaths(resolveMenuNames(i.modId, src).name)) if (allowed.has(rel)) files.set(rel, { data, swf: s.name })
         files.set(menuJsonPath(resolveMenuNames(i.modId, src).name), { data: Buffer.from(stableStringify(buildMenuDef(i.modId, src).def)), swf: s.name })
         // one commented default INI per mod (all its menus); created if absent, never overwritten or retired (docs/menus.md)
         const ini = modIniPath(i.modId)
