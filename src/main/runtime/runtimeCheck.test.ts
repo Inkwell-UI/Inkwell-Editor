@@ -108,6 +108,10 @@ describe.skipIf(!papyrusExe)('compileRuntimeCheck (needs INKWELL_PAPYRUS)', () =
     expect(pex.readUInt32BE(0)).toBe(0xfa57c0de)
     expect(pex.includes(Buffer.from('GetPluginVersion'))).toBe(true)
     expect(pex.includes(Buffer.from('Inkwell'))).toBe(true)
+    expect(pex.subarray(8, 16)).toEqual(Buffer.alloc(8)) // the compile time is zeroed: the same input gives the same bytes
+    await new Promise((done) => setTimeout(done, 1100))
+    const again = await compileRuntimeCheck({ modId: 'MyMod', modName: 'My Mod', minRuntime: '0.3.0', papyrusExe: papyrusExe!, buildDir: mkdtempSync(join(tmpdir(), 'inkwell-rc-')) })
+    expect(again.files['Scripts/MyMod_RuntimeCheck.pex']!.equals(pex)).toBe(true)
   })
   it('a compile error comes back as lint and yields no plugin', async () => {
     const r = await compileRuntimeCheck({ modId: 'MyMod', modName: 'x', minRuntime: '0.3.0', papyrusExe: papyrusExe!, stubsDir: mkdtempSync(join(tmpdir(), 'inkwell-nostubs-')), buildDir: mkdtempSync(join(tmpdir(), 'inkwell-rc-')) })

@@ -81,7 +81,10 @@ export async function compileRuntimeCheck(o: { modId: string; modName: string; m
   const r = await compilePapyrus({ papyrusExe: o.papyrusExe, scripts: [script], workDir: join(o.buildDir, 'papyrus'), ...(o.stubsDir ? { stubsDir: o.stubsDir } : {}) })
   const pex = r.pex[script.name]
   if (pex && pex.length) {
-    files[n.pex] = pex
+    // the compiler stamps its compile time in the header (u64 at offset 8, big-endian); zeroing it makes deploys and packages byte-reproducible (nothing reads it in game)
+    const stable = Buffer.from(pex)
+    if (stable.readUInt32BE(0) === 0xfa57c0de) stable.fill(0, 8, 16)
+    files[n.pex] = stable
     files[n.esp] = buildPlayerAliasEsp({ questEdid: n.quest, aliasName: n.alias, aliasScript: n.script })
   }
   return { files, lint: r.lint }
