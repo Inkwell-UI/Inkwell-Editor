@@ -1,7 +1,7 @@
 import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, PrepareResult } from './deploy'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, PathSettingKey, ResolvedSettings, SetSettingResult, SettingKey } from './doctor'
 import type { FontToolProgress, FontToolResult, FontToolStatus } from './fonts'
-import type { Graph } from '@inkwell-ui/spec'
+import type { Graph, MenuSettings } from '@inkwell-ui/spec'
 import type { GraphAs2, GraphResult, GraphSummary, PackSet } from './graphs'
 import type { OverlayDoc } from './overlay'
 import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from './preview'
@@ -37,6 +37,7 @@ export const IPC = {
   uiEvent: 'ui:event',
   figmaSelection: 'figma:selection',
   menuSettings: 'menu:settings',
+  menuSave: 'menu:save',
   doctorRun: 'doctor:run',
   doctorBenchmark: 'doctor:benchmark',
   doctorBuildCache: 'doctor:buildCache',
@@ -86,6 +87,8 @@ export interface InkwellApi {
   getRecentProjects(): Promise<RecentProject[]>
   /** Writes `swfs/<swfName>/overlay.json` (validated; unknown keys kept as sent). */
   saveOverlay(swfName: string, overlay: OverlayDoc): Promise<SaveOverlayResult>
+  /** Writes `swfs/<swfName>/menu.json` (the Spec's MenuSettings; validated, unknown keys kept as sent). The project state follows. */
+  saveMenuSettings(swfName: string, settings: MenuSettings): Promise<SaveOverlayResult>
   /** Graphs of one SWF (`swfs/<swfName>/graphs/*.json`, docs/graphs.md): summaries, one graph, write (validated; unknown keys kept), create (an id is made from the name; one menu graph per SWF), delete. Never reject. */
   listGraphs(swfName: string): Promise<GraphResult<{ graphs: GraphSummary[] }>>
   loadGraph(swfName: string, id: string): Promise<GraphResult<{ graph: Graph }>>

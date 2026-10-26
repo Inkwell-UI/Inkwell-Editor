@@ -1,4 +1,4 @@
-import type { Swf } from '@inkwell-ui/spec'
+import type { MenuSettings, Swf } from '@inkwell-ui/spec'
 import type { OverlayDoc } from './overlay'
 
 /** One SWF of the open project as the renderer sees it: the visual IR (read-only here) and its overlay (editable through `saveOverlay`). */
@@ -11,6 +11,10 @@ export interface SwfDoc {
   orphaned: boolean
   ir: Swf
   overlay: OverlayDoc
+  /** `swfs/<name>/menu.json` (custom menu settings, S9); absent = none on disk yet (the panel shows the defaults). */
+  menu?: MenuSettings
+  /** menu.json exists but could not be read: the panel shows it and does not write. */
+  menuError?: string
 }
 
 /** The open project, main -> renderer. `null` in the API means no project is open (start screen). */

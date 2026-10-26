@@ -1,0 +1,17 @@
+{
+  "bindings": [],
+  "nodes": {
+    "2:3": {
+      "instanceName": "btn",
+      "role": "button",
+      "scripts": [
+        "main"
+      ]
+    },
+    "2:4": {
+      "instanceName": "status"
+    }
+  },
+  "specVersion": 6,
+  "version": 1
+}

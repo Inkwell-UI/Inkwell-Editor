@@ -1,0 +1,68 @@
+{
+  "comments": [],
+  "edges": [
+    {
+      "from": {
+        "node": "click",
+        "pin": "then"
+      },
+      "to": {
+        "node": "settext",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "settext",
+        "pin": "then"
+      },
+      "to": {
+        "node": "log",
+        "pin": "in"
+      }
+    }
+  ],
+  "groups": [],
+  "id": "main",
+  "name": "Main",
+  "nodes": [
+    {
+      "fields": {
+        "target": "2:3"
+      },
+      "id": "click",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "target": "2:4",
+        "text": "Button clicked!"
+      },
+      "id": "settext",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 260,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "level": "info",
+        "message": "button clicked"
+      },
+      "id": "log",
+      "kind": "core/Log@1",
+      "pos": {
+        "x": 520,
+        "y": 0
+      }
+    }
+  ],
+  "scope": "menu",
+  "specVersion": 6,
+  "variables": []
+}

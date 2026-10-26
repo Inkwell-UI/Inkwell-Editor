@@ -1,0 +1,21 @@
+{
+  "depth": 3,
+  "flags": {
+    "closeOnEscape": true,
+    "cursor": true,
+    "modal": true,
+    "pausesGame": true
+  },
+  "inputContext": "menuMode",
+  "specVersion": 6,
+  "triggers": {
+    "hotkey": 37,
+    "modEvent": "InkwellMenuTest_Open",
+    "papyrus": true
+  },
+  "userDefaults": {
+    "offsetX": 0,
+    "offsetY": 0,
+    "uiScale": 1
+  }
+}

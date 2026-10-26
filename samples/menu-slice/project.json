@@ -1,0 +1,10 @@
+{
+  "author": "Inkwell",
+  "deploy": {
+    "path": "C:/Modding/MO2/mods/Inkwell Menu Test",
+    "preset": "mo2"
+  },
+  "modId": "InkwellMenuTest",
+  "name": "Inkwell Menu Test",
+  "version": "0.3.0"
+}

@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { homedir, release } from 'node:os'
 import { join } from 'node:path'
-import { Graph, Swf } from '@inkwell-ui/spec'
+import { Graph, Swf, type MenuSettings } from '@inkwell-ui/spec'
 import { bindingsOf } from '../shared/graphBinding'
 import { defIndex, emptyGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type PackSet } from '../shared/graphs'
 import { validateGraph } from '../shared/graphValidate'
@@ -25,6 +25,7 @@ import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSetti
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { corePackDir, loadPacks } from './packs'
 import { loadProject, type ProjectMeta } from './project'
+import { writeMenuSettings } from './project/menuFile'
 import { deleteGraph, readGraph, writeGraph } from './project/graphFiles'
 import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
@@ -63,6 +64,7 @@ export function createSession(deps: SessionDeps) {
   let strict = false
   const overlays = new Map<string, OverlayDoc>() // swf id -> overlay (the renderer is the source of truth once it saves)
   const graphs = new Map<string, Map<string, Graph>>() // swf name -> graph id -> graph (the renderer saves; main validates)
+  const menus = new Map<string, { settings?: MenuSettings; error?: string }>() // swf name -> swfs/<name>/menu.json (the panel is the writer; main keeps the saved copy for deploy)
   let packs: Promise<PackSet> | undefined
   const getPacks = (): Promise<PackSet> => (packs ??= loadPacks([corePackDir(deps.appPath)]))
   let codegenPacks: ReturnType<typeof loadCodegenPacks> | undefined
@@ -157,7 +159,7 @@ export function createSession(deps: SessionDeps) {
       .swfs()
       .flatMap((i) => {
         const ir = server!.ir(i.id)
-        return ir ? [{ id: i.id, name: i.name, orphaned: i.orphaned, ir, overlay: overlays.get(i.id) ?? normalizeOverlay({}) }] : []
+        return ir ? [{ id: i.id, name: i.name, orphaned: i.orphaned, ir, overlay: overlays.get(i.id) ?? normalizeOverlay({}), ...(menus.get(i.name)?.settings ? { menu: menus.get(i.name)!.settings! } : {}), ...(menus.get(i.name)?.error ? { menuError: menus.get(i.name)!.error! } : {}) }] : []
       })
       .sort((a, b) => a.name.localeCompare(b.name))
     return { dir: projectDir, name: meta.name, modId: meta.modId, strictMode: strict, swfs, ...(snapshot ? { snapshot } : {}) }
@@ -173,7 +175,7 @@ export function createSession(deps: SessionDeps) {
       const all = [...(graphs.get(i.name)?.values() ?? [])]
       if (!ir || !all.length) continue
       const layers = new Set(Object.keys(ir.nodes))
-      graphIssues.set(i.name, all.flatMap((g) => validateGraph(g, { defs, layers, siblings: all }).map((x) => {
+      graphIssues.set(i.name, all.flatMap((g) => validateGraph(g, { defs, layers, siblings: all, target: ir.target.kind }).map((x) => {
         const layerName = x.targetId ? (ir.nodes[x.targetId]?.name ?? x.targetId) : ''
         const row: LintRow = { swfName: i.name, nodeId: x.targetId ?? '', layerName, severity: x.level, code: x.code, message: `${g.name}: ${x.message}`, graphId: g.id, graphNodeId: x.nodeId! }
         return { row, item: { severity: x.level, code: x.code, message: row.message, ...(x.targetId ? { nodeId: x.targetId, layerName } : {}) } }
@@ -206,6 +208,7 @@ export function createSession(deps: SessionDeps) {
     const initial: Record<string, Swf> = {}
     overlays.clear()
     graphs.clear()
+    menus.clear()
     if (dir) {
       const p = await loadProject(dir)
       meta = p.meta
@@ -215,6 +218,7 @@ export function createSession(deps: SessionDeps) {
         initial[name] = ir
         overlays.set(ir.id, normalizeOverlay(s.overlay))
         graphs.set(name, new Map(Object.entries(s.graphs ?? {})))
+        if (s.menu || s.menuError) menus.set(name, { ...(s.menu ? { settings: s.menu } : {}), ...(s.menuError ? { error: s.menuError } : {}) })
       }
       const r = await readSnapshot(dir) // a missing or broken snapshot never stops the project from opening: builds use ir.json
       snapshot = r.snapshot ? snapshotInfo(r.snapshot, staleSwfs(r.snapshot, initial)) : r.error ? { updatedAt: '', swfs: 0, stale: [], error: r.error } : undefined
@@ -344,6 +348,8 @@ export function createSession(deps: SessionDeps) {
         swfs: p.swfs.map((s) => ({
           name: s.name, orphaned: s.orphaned, kind: s.ir.target.kind, ir: s.ir,
           ...(buildBySwf.has(s.id) ? { build: { state: buildBySwf.get(s.id)!, lint: (reports.get(s.id)?.lint ?? []).map(({ severity, code, message, nodeId, layerName }) => ({ severity, code, message, nodeId, layerName })) } } : {}),
+          ...(menus.get(s.name)?.settings ? { menu: menus.get(s.name)!.settings! } : {}),
+          ...(menus.get(s.name)?.error ? { menuError: menus.get(s.name)!.error! } : {}),
           ...(graphs.get(s.name)?.size ? { graphs: [...graphs.get(s.name)!.values()] } : {}),
           ...(graphIssues.get(s.name)?.length ? { graphLint: graphIssues.get(s.name)!.map((x) => x.item) } : {}),
           ...(s.overlay.nodes ? { overlay: s.overlay.nodes } : {}),
@@ -489,6 +495,17 @@ export function createSession(deps: SessionDeps) {
         if (changed) server!.rebuild(info.id) // instance names and data bindings feed the compiler
       }
       return r
+    },
+    /** menu.json of a custom menu (Menu settings panel). Refused while an unreadable file sits there. */
+    async saveMenuSettings(swfName: string, doc: unknown): Promise<SaveOverlayResult> {
+      if (!projectDir || !server?.swfs().some((i) => i.name === swfName)) return { ok: false, error: 'No such swf in the open project' }
+      const prev = menus.get(swfName)
+      if (prev?.error) return { ok: false, error: `menu.json could not be read (${prev.error}); fix or delete it first.` }
+      const r = await writeMenuSettings(projectDir, swfName, doc)
+      if (!r.ok) return r
+      menus.set(swfName, { settings: r.settings })
+      pushProject()
+      return { ok: true }
     },
     getPacks,
     listGraphs(swf: string): GraphResult<{ graphs: GraphSummary[] }> {

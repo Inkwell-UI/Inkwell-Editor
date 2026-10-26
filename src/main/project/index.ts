@@ -1,8 +1,9 @@
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { migrate, SPEC_VERSION, type Graph } from '@inkwell-ui/spec'
+import { migrate, SPEC_VERSION, type Graph, type MenuSettings } from '@inkwell-ui/spec'
 import { z } from 'zod'
 import { readGraphs, writeGraphLocked } from './graphFiles'
+import { readMenuSettings, writeMenuLocked } from './menuFile'
 
 // project.json is editor-owned. Unknown keys are kept (looseObject) so they survive load -> save.
 export const ProjectMetaSchema = z.looseObject({
@@ -27,7 +28,8 @@ export type Opaque = z.infer<typeof OpaqueObject>
 export interface Project {
   meta: ProjectMeta
   /** `graphs`: the SWF's `graphs/<id>.json` files by graph id (docs/graphs.md). */
-  swfs: Record<string, { ir: Opaque; overlay: Opaque; graphs?: Record<string, Graph> }>
+  /** `menu`: `swfs/<name>/menu.json` of a custom menu (absent = none on disk); `menuError`: the file exists but could not be read, so it is never written back. */
+  swfs: Record<string, { ir: Opaque; overlay: Opaque; graphs?: Record<string, Graph>; menu?: MenuSettings; menuError?: string }>
   /** Raw text of packs.lock (format not defined yet); undefined if absent. */
   packsLock?: string
 }
@@ -56,11 +58,14 @@ export async function loadProject(dir: string): Promise<Project> {
   const swfDir = join(dir, 'swfs')
   const entries = await readdir(swfDir, { withFileTypes: true }).catch(() => [])
   for (const e of entries.filter((e) => e.isDirectory())) {
+    const menu = await readMenuSettings(dir, e.name)
     swfs[e.name] = {
       // Old projects open through the spec's migrations (specVersion is saved back as current).
       ir: OpaqueObject.parse(await readJson(join(swfDir, e.name, 'ir.json')).then(upgrade)),
       overlay: OpaqueObject.parse(await readJson(join(swfDir, e.name, 'overlay.json'))),
-      graphs: Object.fromEntries((await readGraphs(dir, e.name)).graphs.map((g) => [g.id, g]))
+      graphs: Object.fromEntries((await readGraphs(dir, e.name)).graphs.map((g) => [g.id, g])),
+      ...(menu.settings ? { menu: menu.settings } : {}),
+      ...(menu.error ? { menuError: menu.error } : {})
     }
   }
   const packsLock = await readFile(join(dir, 'packs.lock'), 'utf8').catch(() => undefined)
@@ -76,6 +81,8 @@ export async function saveProject(dir: string, project: Project): Promise<void> 
     await mkdir(d, { recursive: true })
     await writeFile(join(d, 'ir.json'), stableStringify(swf.ir))
     await writeFile(join(d, 'overlay.json'), stableStringify(swf.overlay))
+    // menu.json is written only when the project holds one (and it was readable): a file the editor could not read survives
+    if (swf.menu && !swf.menuError) await writeMenuLocked(dir, name, swf.menu)
     // graph files are written, never deleted here: a graph the editor could not read must survive. Unlocked: the build pipeline calls this inside `exclusive`.
     for (const g of Object.values(swf.graphs ?? {})) {
       const r = await writeGraphLocked(dir, name, g)

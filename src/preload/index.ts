@@ -21,6 +21,7 @@ const api: InkwellApi = {
   openExample: (t) => ipcRenderer.invoke(IPC.projectExample, t),
   getRecentProjects: () => ipcRenderer.invoke(IPC.projectRecent),
   saveOverlay: (swfName, overlay) => ipcRenderer.invoke(IPC.overlaySave, swfName, overlay),
+  saveMenuSettings: (swfName, settings) => ipcRenderer.invoke(IPC.menuSave, swfName, settings),
   listGraphs: (swf) => ipcRenderer.invoke(IPC.graphsList, swf),
   loadGraph: (swf, id) => ipcRenderer.invoke(IPC.graphsLoad, swf, id),
   saveGraph: (swf, g) => ipcRenderer.invoke(IPC.graphsSave, swf, g),

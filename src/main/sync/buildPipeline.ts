@@ -81,6 +81,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     timer.start('sync')
     let instanceNames: Record<string, string> = {}
     let bindings: Record<string, string> = {}
+    let roles: Record<string, string> = {}
     let modId = 'inkwell'
     let imageMode: ImageMode = 'embedded'
     let snapshotError: string | undefined
@@ -97,13 +98,14 @@ export function createBuildPipeline(cfg: PipelineConfig) {
         if (prev) delete p.swfs[prev]
         modId = p.meta.modId
         imageMode = p.meta.imageMode ?? 'embedded'
-        const nodes = (overlay['nodes'] ?? {}) as Record<string, { instanceName?: string; dataBinding?: unknown }>
+        const nodes = (overlay['nodes'] ?? {}) as Record<string, { instanceName?: string; dataBinding?: unknown; role?: unknown }>
         bindings = bindingsOf(nodes)
+        roles = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (typeof o.role === 'string' && o.role ? [[id, o.role]] : [])))
         instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : [])))
         // The editor never edits the visual IR: this stores exactly what Figma sent.
         p.swfs[name] = { ir: ir as unknown as Record<string, unknown>, overlay }
-        // graphs are saved by the editor (graphFiles); the cached copy here may be stale, so a build never writes them back
-        await saveProject(dir, { ...p, swfs: Object.fromEntries(Object.entries(p.swfs).map(([n, { graphs: _g, ...rest }]) => [n, rest])) })
+        // graphs and menu.json are saved by the editor; the cached copy here may be stale, so a build never writes them back
+        await saveProject(dir, { ...p, swfs: Object.fromEntries(Object.entries(p.swfs).map(([n, { graphs: _g, menu: _m, menuError: _e, ...rest }]) => [n, rest])) })
         // figma/snapshot.json follows ir.json in the same lock; a failure is reported, the build goes on (ir.json is already saved)
         try {
           const irs = Object.fromEntries(Object.entries(p.swfs).map(([n, s]) => [n, s.ir as unknown as Parameters<typeof compileSwf>[0]]))
@@ -124,13 +126,13 @@ export function createBuildPipeline(cfg: PipelineConfig) {
       if (gs.length) graphs = { graphs: gs, packs: (await (codegenPacks ??= loadCodegenPacks(cfg.packDirs))).packs }
     }
     const images = cfg.assets ? (h: string) => cfg.assets!.get(h) : undefined
-    const r = await compileSwf(ir, { modId, instanceNames, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+    const r = await compileSwf(ir, { modId, instanceNames, roles, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
     // Preview SWF: same content with device-font text, built after the game SWF. Its failure is reported to the preview panel only.
     const pt = createStageTimer()
     pt.start('preview-build')
     const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: ir.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
     try {
-      const pr = await compileSwf(ir, { modId, instanceNames, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
+      const pr = await compileSwf(ir, { modId, instanceNames, roles, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
       const buf = await readFile(pr.swfPath)
       preview.bytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
       preview.notes = {
