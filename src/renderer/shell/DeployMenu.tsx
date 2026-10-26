@@ -159,7 +159,7 @@ export function ConfirmDialog() {
           <>
             <p><strong>{strings.deploy.confirmFiles(p.files.length)}</strong></p>
             <ul className="plain file-list mono" aria-label={strings.deploy.confirmFiles(p.files.length)}>
-              {p.files.map((f) => <li key={f.rel}>{f.rel} <span className="dim">{f.size} B</span></li>)}
+              {p.files.map((f) => <li key={f.rel}>{f.rel} <span className="dim">{f.size} B{f.keepExisting ? strings.deploy.keepExisting : ''}</span></li>)}
             </ul>
             {p.removed.length > 0 && <p>{strings.deploy.confirmRemoved(p.removed.length)}</p>}
           </>

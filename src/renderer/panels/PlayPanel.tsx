@@ -1,7 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
-import { Play } from 'lucide-react'
+import { DoorClosed, DoorOpen, MousePointerClick, Play } from 'lucide-react'
 import { useSwfGraphs } from '../hooks/useGraphs'
-import { useActiveSwf } from '../hooks/useProject'
+import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
 import { callArgs, playEntries, type PlayEntry } from '../model/playEntries'
 import { previewBus } from '../preview/previewBus'
 import { useGraphDocs } from '../state/graphDocs'
@@ -9,6 +9,39 @@ import { findGraphStore, toGraph } from '../state/graphStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Panel } from './Panel'
+
+/** Custom menu: fire what the runtime fires (open, close) and a click on a Button layer in the Ruffle mock of the runtime (docs/menus.md). */
+function MenuControls({ running }: { running: boolean }) {
+  const swf = useActiveSwf()
+  const overlay = useActiveOverlay()
+  const buttons = Object.entries(overlay?.nodes ?? {}).filter(([id, o]) => o['role'] === 'button' && swf?.ir.nodes[id]).map(([id]) => ({ id, name: swf!.ir.nodes[id]!.name }))
+  const [pick, setPick] = useState<string | undefined>()
+  const [result, setResult] = useState<{ ok: boolean; text: string }>()
+  const target = buttons.find((b) => b.id === pick) ?? buttons[0]
+  const reason = running ? undefined : strings.play.noPreview
+  const done = (ok: boolean, what: string): void => setResult({ ok, text: ok ? strings.play.menuCalled(what, new Date().toLocaleTimeString()) : strings.play.menuFailed })
+  return (
+    <div className="play-menu" data-testid="play-menu">
+      <h3>{strings.play.menuTitle}</h3>
+      <div className="toolbar">
+        <Btn icon={DoorOpen} onClick={() => done(previewBus.call('inkwellMenuOpen'), strings.play.menuOpened)} reason={reason} testId="play-menu-open">{strings.play.menuOpen}</Btn>
+        <Btn icon={DoorClosed} onClick={() => done(previewBus.call('inkwellMenuClose'), strings.play.menuClosed)} reason={reason} testId="play-menu-close">{strings.play.menuClose}</Btn>
+        {target ? (
+          <>
+            <label>
+              {strings.play.menuTarget}{' '}
+              <select value={target.id} onChange={(e) => setPick(e.target.value)} aria-label={strings.play.menuTarget} data-testid="play-menu-target">
+                {buttons.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </label>
+            <Btn icon={MousePointerClick} onClick={() => done(previewBus.call('inkwellClick', target.id), strings.play.menuClicked(target.name))} reason={reason} testId="play-menu-click">{strings.play.menuClick}</Btn>
+          </>
+        ) : <span className="dim">{strings.play.menuNoButtons}</span>}
+      </div>
+      {result && <p className={result.ok ? 'dim' : 'tone-error'} role="status" data-testid="play-menu-result">{result.text}</p>}
+    </div>
+  )
+}
 
 const memory: { pick: string | undefined; values: Record<string, Record<string, string | boolean>> } = { pick: undefined, values: {} }
 
@@ -60,8 +93,9 @@ export function PlayPanel() {
   return (
     <Panel title={strings.play.title}>
       <div className="play" data-testid="play-panel">
+        {swf?.ir.target.kind === 'customMenu' && <MenuControls running={running} />}
         {!entry ? (
-          <p className="empty">{!swf ? strings.nav.noSwf : loaded ? strings.play.noEntries : strings.graph.loading}</p>
+          swf?.ir.target.kind === 'customMenu' ? null : <p className="empty">{!swf ? strings.nav.noSwf : loaded ? strings.play.noEntries : strings.graph.loading}</p>
         ) : (
           <>
             <div className="toolbar">

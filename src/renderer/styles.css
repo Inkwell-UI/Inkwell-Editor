@@ -399,3 +399,24 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .stage-banners .banner-info { width: max-content; padding: 2px 4px; }
 .stage-banners .banner-info > :not(svg) { display: none; }
 .preview-panel.is-compact .mode-chip { display: none; }
+
+/* Menu settings (UX 5.1): two columns when there is room (the dialog), one in a narrow panel */
+.menu-form { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.menu-form-head { margin: 0 0 4px; font-size: 13px; }
+.menu-cols { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 4px 20px; }
+.menu-col { min-width: 0; }
+.menu-col h4 { margin: 4px 0 2px; font-size: 12px; letter-spacing: 0.04em; color: var(--fg-dim); }
+.menu-col .field { margin: 6px 0; }
+.menu-col .field-row { align-items: flex-start; }
+.menu-col .field-row > .field { flex: 1; min-width: 0; }
+.menu-col input[type='number'], .menu-col input:not([type]) { width: 100%; box-sizing: border-box; }
+.menu-col select { max-width: 100%; }
+.menu-col .field-row { flex-wrap: wrap; }
+.menu-col .field-row > select { flex: 1 1 110px; min-width: 0; }
+.menu-col input.menu-key-code { width: 72px; flex: none; }
+.menu-form .mono { overflow-wrap: anywhere; }
+.menu-form .facts { grid-template-columns: 1fr; gap: 0; }
+.menu-form .facts dd { margin-bottom: 4px; }
+.menu-form .btn { white-space: normal; text-align: left; height: auto; }
+.menu-form .check { margin-top: 2px; }
+.menu-form .issue { display: flex; gap: 6px; align-items: flex-start; overflow-wrap: anywhere; }

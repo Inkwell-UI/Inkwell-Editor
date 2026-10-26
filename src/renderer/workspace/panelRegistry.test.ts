@@ -34,6 +34,18 @@ describe('panel registry', () => {
     expect(WORKSPACE_IDS.every((i) => has(i, 'preview') && has(i, 'inspector') && has(i, 'lintBudget'))).toBe(true)
   })
 
+  it('the Menu settings panel is registered, a tab in the left group of Layout and Behaviour only (the target pill opens the same form in a dialog)', () => {
+    expect(panelRegistry.menuSettings.title).toBe('Menu')
+    expect(typeof panelRegistry.menuSettings.useTabInfo).toBe('function')
+    const left = (id: (typeof WORKSPACE_IDS)[number]): string[] => {
+      const row = (WORKSPACES[id].layout as { children: LayoutNode[] }).children[0] as { children: { kind: string; tabs?: { panel: string }[] }[] }
+      return row.children[0]!.tabs!.map((t) => t.panel)
+    }
+    expect(left('layout')).toEqual(['navigator', 'assets', 'menuSettings'])
+    expect(left('behaviour')).toEqual(['navigator', 'contracts', 'variables', 'menuSettings'])
+    expect(layoutPanelIds(WORKSPACES.localization.layout)).not.toContain('menuSettings')
+  })
+
   it('Behaviour: the graph owns the centre column, the right column is [fixed preview, inspector] with no splitter between', () => {
     const main = (WORKSPACES.behaviour.layout as { children: LayoutNode[] }).children[0] as { children: LayoutNode[] }
     expect(main.children).toHaveLength(3)

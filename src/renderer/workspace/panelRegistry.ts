@@ -5,6 +5,7 @@ import { GraphPanel } from '../panels/GraphPanel'
 import { InspectorPanel } from '../panels/InspectorPanel'
 import { LintBudgetPanel, useLintTab } from '../panels/LintBudgetPanel'
 import { LocalizationPanel } from '../panels/LocalizationPanel'
+import { MenuSettingsPanel, useMenuSettingsTab } from '../panels/MenuSettingsPanel'
 import { MockDataPanel } from '../panels/MockDataPanel'
 import { NavigatorPanel } from '../panels/NavigatorPanel'
 import { PlayPanel } from '../panels/PlayPanel'
@@ -41,6 +42,7 @@ export const panelRegistry = {
   navigator: { title: strings.nav.title, component: NavigatorPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
   contracts: { title: strings.contracts.title, component: ContractsPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 }, useTabInfo: useContractsTab },
   assets: { title: strings.assets.title, component: AssetsPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
+  menuSettings: { title: strings.menuCfg.title, component: MenuSettingsPanel, defaultSize: { width: 300, height: 500 }, minSize: { width: 220, height: 120 }, useTabInfo: useMenuSettingsTab },
   preview: { title: strings.panelPreview, component: PreviewPanel, defaultSize: { width: 640, height: 420 }, minSize: { width: 240, height: 150 } },
   graph: { title: strings.graph.title, component: GraphPanel, defaultSize: { width: 640, height: 320 }, minSize: { width: 320, height: 90 } },
   inspector: { title: strings.insp.title, component: InspectorPanel, defaultSize: { width: 320, height: 500 }, minSize: { width: 240, height: 120 } },

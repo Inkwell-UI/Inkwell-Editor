@@ -5,7 +5,7 @@ import type { LayoutNode } from './layout'
  * it needs, so a panel may be absent from a mode but is in at least one (checked by a test). Sizes are shares (flex-grow) along each split;
  * the user's own sizes are stored per mode by `state/workspaceStore.ts` and applied on top.
  *
- *   Layout:       [ left tabs | preview | inspector ] / dock
+ *   Layout:       [ left tabs (Navigator, Assets, Menu) | preview | inspector ] / dock
  *   Behaviour:    [ left tabs | graph | column [ preview (fixed size) / inspector ] ] / dock
  *   Localization: [ left tabs | preview | inspector ] / dock (Localization first and large)
  *   Zone 1 (top bar) and Zone 6B (status bar) are shell chrome around the layout, not layout panels.
@@ -44,12 +44,12 @@ export const WORKSPACE_IDS: readonly WorkspaceId[] = ['layout', 'behaviour', 'lo
 
 export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
   // Layout: the stage is the whole centre; assets and the lint dock support it.
-  layout: { id: 'layout', layout: frame(tabs(['navigator', 'assets']), preview, tabs(['lintBudget']), { main: 5, dock: 1.1 }) },
+  layout: { id: 'layout', layout: frame(tabs(['navigator', 'assets', 'menuSettings']), preview, tabs(['lintBudget']), { main: 5, dock: 1.1 }) },
   // Behaviour: the graph takes the whole centre; the preview is a small FIXED slot above the inspector (not resizable: its toolbar goes compact, the stage scales to fit); contracts and variables (left tabs), play, trace, mock data and data binding (dock tabs) are the supporting views.
   behaviour: {
     id: 'behaviour',
     layout: frame(
-      tabs(['navigator', 'contracts', 'variables']),
+      tabs(['navigator', 'contracts', 'variables', 'menuSettings']),
       { kind: 'panel', panel: 'graph' },
       tabs(['play', 'trace', 'mockData', 'dataBinding', 'lintBudget'], 'trace'),
       { main: 5, dock: 1.4 },

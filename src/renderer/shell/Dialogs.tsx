@@ -4,6 +4,8 @@ import { useDialogStore } from '../state/dialogStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Dialog } from '../ui/Dialog'
+import { MenuSettingsForm } from '../menu/MenuSettingsForm'
+import { useActiveSwf } from '../hooks/useProject'
 
 /** Approve-on-connect (protocol 4): the plugin's version, Figma file and origin. Escape or closing = Deny. */
 function FigmaApproval() {
@@ -33,6 +35,13 @@ function FigmaApproval() {
 function StubDialog() {
   const open = useDialogStore((s) => s.open)
   const close = useDialogStore((s) => s.close)
+  const kind = useActiveSwf()?.ir.target.kind
+  if (open === 'configOwnership' && kind === 'customMenu')
+    return (
+      <Dialog title={strings.dialogs.config.title} onClose={close} wide>
+        <MenuSettingsForm />
+      </Dialog>
+    )
   if (open === 'configOwnership')
     return (
       <Dialog title={strings.dialogs.config.title} onClose={close}>
