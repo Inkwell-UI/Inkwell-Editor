@@ -6,7 +6,7 @@ import { useSyncState } from '../hooks/useSyncState'
 import { buildLayerTree, filterTree, flattenTree, type Badge, type LayerRow } from '../model/layerTree'
 import { computeOrphans } from '../model/orphans'
 import { inkwell } from '../hooks/api'
-import { discardOverlayOrphan, relinkOverlayOrphan } from '../state/orphanActions'
+import { discardOrphanSwf, discardOverlayOrphan, relinkOverlayOrphan } from '../state/orphanActions'
 import { useSelectionStore } from '../state/selectionStore'
 import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
@@ -149,10 +149,7 @@ export function NavigatorPanel() {
                     reason={notActive}
                     onClick={() => {
                       if (o.kind === 'overlay') return void (window.confirm(strings.nav.discardConfirm(o.nodeId)) && discardOverlayOrphan(o.swfId, o.nodeId))
-                      if (!inkwell || !window.confirm(strings.nav.discardSwfConfirm(o.swfName))) return
-                      void inkwell.discardSwf(o.swfId).then((r) =>
-                        useToastStore.getState().push(r.ok ? { tone: 'info', title: strings.nav.discardedSwf(o.swfName), text: r.trash } : { tone: 'error', title: strings.nav.discardSwfFailed, text: r.error })
-                      )
+                      void discardOrphanSwf({ id: o.swfId, name: o.swfName })
                     }}
                   >
                     {strings.nav.discard}

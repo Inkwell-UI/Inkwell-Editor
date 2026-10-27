@@ -1,11 +1,21 @@
+import { inkwell } from '../hooks/api'
+import { strings } from '../strings'
 import { loadSwfGraphs, useGraphDocs } from './graphDocs'
 import { findGraphStore } from './graphStore'
 import { editOverlay, getOverlayDoc } from './overlayStore'
+import { useToastStore } from './toastStore'
 
 type Api = Parameters<typeof loadSwfGraphs>[1]
 interface SwfRef {
   id: string
   name: string
+}
+
+/** Asks, then moves an orphaned SWF's folder to `.trash` in the project (nothing is deleted); a toast says where it went or why not. The Navigator and the SWF switcher share it. */
+export async function discardOrphanSwf(swf: SwfRef): Promise<void> {
+  if (!inkwell || !window.confirm(strings.nav.discardSwfConfirm(swf.name))) return
+  const r = await inkwell.discardSwf(swf.id)
+  useToastStore.getState().push(r.ok ? { tone: 'info', title: strings.nav.discardedSwf(swf.name), text: r.trash } : { tone: 'error', title: strings.nav.discardSwfFailed, text: r.error })
 }
 
 /** Discards the overlay entry of a layer that no longer exists (one undoable overlay edit). */
