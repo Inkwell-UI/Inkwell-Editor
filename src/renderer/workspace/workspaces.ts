@@ -6,7 +6,7 @@ import type { LayoutNode } from './layout'
  * the user's own sizes are stored per mode by `state/workspaceStore.ts` and applied on top.
  *
  *   Layout:       [ left tabs (Navigator, Assets, Menu) | preview | inspector ] / dock
- *   Behaviour:    [ left tabs | graph | column [ preview (fixed size) / inspector ] ] / dock
+ *   Behaviour:    [ column [ left tabs (Navigator) / variables ] | column [ [ graph | column [ preview (fixed size) / inspector ] ] / dock ] ]
  *   Localization: [ left tabs | preview | inspector ] / dock (Localization first and large)
  *   Zone 1 (top bar) and Zone 6B (status bar) are shell chrome around the layout, not layout panels.
  */
@@ -48,13 +48,23 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
   // Behaviour: the graph takes the whole centre; the preview is a small FIXED slot above the inspector (not resizable: its toolbar goes compact, the stage scales to fit); contracts and variables (left tabs), play, trace, mock data and data binding (dock tabs) are the supporting views.
   behaviour: {
     id: 'behaviour',
-    layout: frame(
-      tabs(['navigator', 'contracts', 'variables', 'menuSettings']),
-      { kind: 'panel', panel: 'graph' },
-      tabs(['play', 'trace', 'mockData', 'dataBinding', 'lintBudget'], 'trace'),
-      { main: 5, dock: 1.4 },
-      { kind: 'split', direction: 'column', children: [{ ...preview, fixed: BEHAVIOUR_PREVIEW_HEIGHT }, { ...inspector, size: 1 }] }
-    )
+    layout: {
+      kind: 'split',
+      direction: 'row',
+      children: [
+        // the left column runs the full height: navigator (with contracts and menu settings as tabs) above the variables
+        { kind: 'split', direction: 'column', size: 1.3, children: [{ ...tabs(['navigator', 'contracts', 'menuSettings']), size: 3 }, { kind: 'panel', panel: 'variables', size: 2 }] },
+        {
+          kind: 'split',
+          direction: 'column',
+          size: 6.7,
+          children: [
+            { kind: 'split', direction: 'row', size: 5, children: [{ kind: 'panel', panel: 'graph', size: 5 }, { kind: 'split', direction: 'column', size: 1.7, children: [{ ...preview, fixed: BEHAVIOUR_PREVIEW_HEIGHT }, { ...inspector, size: 1 }] }] },
+            { ...tabs(['play', 'trace', 'mockData', 'dataBinding', 'lintBudget'], 'trace'), size: 1.4 }
+          ]
+        }
+      ]
+    }
   },
   // Localization: the string table gets the room; the preview next to it (Locale and Pseudo-Loc toggles) shows the effect.
   localization: { id: 'localization', layout: frame(tabs(['navigator']), preview, tabs(['localization', 'lintBudget']), { main: 3, dock: 3 }) }

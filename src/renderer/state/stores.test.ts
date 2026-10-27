@@ -77,11 +77,11 @@ describe('workspace store', () => {
     expect(p.tabs.localization).toEqual({ k: 'p' })
     expect(sanitizePersisted(42).active).toBe('layout')
   })
-  it('sizes stored for the old Behaviour layout (preview strip over graph, inspector at the right) do not touch the new one', () => {
+  it('sizes stored for the old Behaviour layouts (preview strip over graph; full-width dock under the left tabs) do not touch the new one', () => {
     const p = sanitizePersisted({
-      sizes: { behaviour: { 'navigator|preview|inspector': [1, 5, 2], 'preview|graph': [3, 2], 'navigator|play': [5, 1.4] }, layout: { 'navigator|preview|inspector': [1, 5, 2] } }
+      sizes: { behaviour: { 'navigator|preview|inspector': [1, 5, 2], 'preview|graph': [3, 2], 'navigator|play': [5, 1.4], 'graph|play': [5, 1.4] }, layout: { 'navigator|preview|inspector': [1, 5, 2] } }
     })
-    expect(p.sizes.behaviour).toEqual({ 'navigator|play': [5, 1.4] }) // main/dock split still exists, the two moved ones are gone
+    expect(p.sizes.behaviour).toEqual({ 'graph|play': [5, 1.4] }) // the graph/dock split exists in the new layout; the keys of the old structures are gone
     expect(p.sizes.layout).toEqual({ 'navigator|preview|inspector': [1, 5, 2] }) // other modes untouched
     const layout = applyOverrides(WORKSPACES.behaviour.layout, { sizes: p.sizes.behaviour })
     expect(JSON.stringify(layout)).toContain('"fixed":' + BEHAVIOUR_PREVIEW_HEIGHT)
