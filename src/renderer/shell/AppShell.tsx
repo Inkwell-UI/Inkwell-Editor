@@ -11,6 +11,7 @@ import { applyOverrides, removePanel } from '../workspace/layout'
 import { WORKSPACE_IDS, WORKSPACES } from '../workspace/workspaces'
 import { inkwell } from '../hooks/api'
 import { useDialogStore } from '../state/dialogStore'
+import { flushGraphSaves } from '../state/graphStore'
 import { Toasts } from '../ui/Toasts'
 import { Dialogs } from './Dialogs'
 import { SettingsView } from './SettingsView'
@@ -70,6 +71,8 @@ export function AppShell() {
 
   // Edit > Settings in the application menu
   useEffect(() => inkwell?.onOpenSettings(() => useDialogStore.getState().show('settings')), [])
+  // File > Save: only graph edits are debounced; everything else is written as it changes
+  useEffect(() => inkwell?.onSaveNow(flushGraphSaves), [])
 
   // a selection whose node vanished (IR changed, other SWF) is dropped
   useEffect(() => {

@@ -39,6 +39,7 @@ export const IPC = {
   uiEvent: 'ui:event',
   figmaSelection: 'figma:selection',
   menuSettings: 'menu:settings',
+  menuSaveNow: 'menu:save-now',
   menuSave: 'menu:save',
   swfTarget: 'swf:target',
   previewTheme: 'preview:theme',
@@ -160,6 +161,8 @@ export interface InkwellApi {
   onFigmaSelection(cb: (ids: string[]) => void): () => void
   /** Edit > Settings in the application menu. */
   onOpenSettings(cb: () => void): () => void
+  /** File > Save in the application menu: writes the edits still waiting for their debounce. */
+  onSaveNow(cb: () => void): () => void
 
   /** Answers the pending Figma plugin prompt (`SyncUiState.approval.id`). */
   answerFigmaApproval(id: number, allow: boolean): Promise<void>

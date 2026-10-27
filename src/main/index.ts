@@ -95,7 +95,16 @@ const pickFolder = async (title: string): Promise<string | undefined> => {
   return r.canceled ? undefined : r.filePaths[0]
 }
 const cancelled: OpenResult = { ok: false, cancelled: true }
-const attempt = async (fn: () => Promise<OpenResult>): Promise<OpenResult> => fn().catch((e: unknown) => ({ ok: false, error: e instanceof Error ? e.message : String(e) }))
+// the File menu's Open Recent list follows every open
+const attempt = async (fn: () => Promise<OpenResult>): Promise<OpenResult> =>
+  fn()
+    .catch((e: unknown): OpenResult => ({ ok: false, error: e instanceof Error ? e.message : String(e) }))
+    .finally(() => void buildMenu())
+/** A File menu open: the renderer follows through the project update; a failure has no start screen to show it, so it gets a dialog. */
+const fromMenu = (fn: () => Promise<OpenResult>): void =>
+  void attempt(fn).then((r) => {
+    if (!r.ok && 'error' in r) dialog.showErrorBox(strings.menu.openFailed, r.error)
+  })
 
 ipcMain.handle(IPC.syncGet, () => session.getSync())
 ipcMain.handle(IPC.previewFonts, (): PreviewFontBlob[] =>
@@ -252,11 +261,43 @@ ipcMain.on(IPC.previewRendered, (_e, r: PreviewRendered) => {
   }
 })
 
-/** The default menu with Settings added to Edit; every other menu keeps its Electron role. */
-function buildMenu(): void {
+/** The default menu with project entries added to File and Settings to Edit; every other menu keeps its Electron role. */
+async function buildMenu(): Promise<void> {
+  const recent = await session.recent().catch(() => [])
+  const openDir = (dir: string | undefined, title: string): void => fromMenu(async () => {
+    const d = dir ?? (await pickFolder(title))
+    return d ? session.open(d) : cancelled
+  })
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([
-      { role: 'fileMenu' },
+      {
+        label: strings.menu.file,
+        submenu: [
+          {
+            label: strings.start.newProject, accelerator: 'CmdOrCtrl+N',
+            click: () => fromMenu(async () => {
+              const d = await pickFolder(strings.start.newDialog)
+              if (!d) return cancelled
+              await createProject(d)
+              return session.open(d)
+            })
+          },
+          { label: strings.start.openProject, accelerator: 'CmdOrCtrl+O', click: () => openDir(undefined, strings.start.openDialog) },
+          { label: strings.menu.openRecent, enabled: recent.length > 0, submenu: recent.map((r) => ({ label: r.name, sublabel: r.dir, click: () => openDir(r.dir, strings.start.openDialog) })) },
+          { type: 'separator' },
+          { label: strings.menu.save, accelerator: 'CmdOrCtrl+S', enabled: session.getProject() !== null, click: () => win?.webContents.send(IPC.menuSaveNow) },
+          {
+            label: strings.menu.showFolder,
+            enabled: session.getProject() !== null,
+            click: () => {
+              const p = session.getProject()
+              if (p) void shell.openPath(p.dir)
+            }
+          },
+          { type: 'separator' },
+          { role: 'quit' }
+        ]
+      },
       {
         label: strings.menu.edit,
         submenu: [
@@ -264,15 +305,13 @@ function buildMenu(): void {
           { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }, { type: 'separator' },
           { label: strings.menu.settings, accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) }
         ]
-      },
-      { role: 'viewMenu' },
-      { role: 'windowMenu' }
+      }
     ])
   )
 }
 
 void app.whenReady().then(async () => {
-  buildMenu()
+  await buildMenu()
   createWindow()
   // INKWELL_PROJECT: open this project at start (otherwise the start screen shows)
   const dir = process.env['INKWELL_PROJECT']

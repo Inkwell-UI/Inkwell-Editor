@@ -625,7 +625,7 @@ export const strings = {
   },
 
   /** The application menu (built in the main process). */
-  menu: { edit: 'Edit', settings: 'Settings...' },
+  menu: { file: 'File', edit: 'Edit', settings: 'Settings...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project' },
 
   settings: {
     title: 'Settings',
