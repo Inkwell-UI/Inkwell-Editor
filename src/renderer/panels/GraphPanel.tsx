@@ -28,12 +28,18 @@ export function GraphPanel() {
   const swf = useActiveSwf()
   const { activeId, store, loaded } = useSwfGraphs()
   const actions = useGraphActions()
+  const defs = usePacks()
   const [split, setSplit] = useState(false)
   const [tidied, setTidied] = useState(0) // bumps the canvas to fit the view after a tidy
   const tidy = (): void => {
     if (!store) return
     const s = store.getState()
-    s.moveNodes(tidyPositions(s.nodes, s.edges)) // one update = one undo entry
+    // an exec wire leaves an Exec output pin of its source node's definition (a pin of a node from a missing pack, or a dynamic one, counts as data)
+    const isExec = (e: (typeof s.edges)[number]): boolean => {
+      const src = s.nodes.find((n) => n.id === e.source)
+      return defs.get(src?.data.kind ?? '')?.outputs.find((p) => p.name === e.data?.from.pin)?.type === 'Exec'
+    }
+    s.moveNodes(tidyPositions(s.nodes, s.edges, isExec)) // one update = one undo entry
     setTidied((n) => n + 1)
   }
   return (
