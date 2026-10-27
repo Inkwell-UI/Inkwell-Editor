@@ -33,6 +33,14 @@ export function emptyGraph(id: string, name: string, scope: Graph['scope']): Gra
   return { specVersion: SPEC_VERSION, id, name, scope, nodes: [], edges: [], variables: [], comments: [], groups: [] }
 }
 
+/**
+ * What `+ Graph` creates: an empty graph with one unconnected On Load, so there is an event to wire from (like a new script's `Start`). On Load has no required pin and works
+ * in every target, so a new graph is lint-clean; On Widget Call (it would replace a HUD widget's built-in Show/SetTexts/Hide) and On Click (needs a target) are never seeded.
+ */
+export function newGraph(id: string, name: string, scope: Graph['scope']): Graph {
+  return { ...emptyGraph(id, name, scope), nodes: [{ id: crypto.randomUUID(), kind: 'core/OnLoad@1', fields: {}, pos: { x: 0, y: 0 } }] }
+}
+
 /** One loaded pack: its manifest and node definitions (the renderer only ever sees data, never code). */
 export interface LoadedPack {
   manifest: PackManifest
