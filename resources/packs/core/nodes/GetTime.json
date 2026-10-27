@@ -1,0 +1,21 @@
+{
+  "kind": "GetTime",
+  "major": 1,
+  "title": "Get Time",
+  "category": "Logic",
+  "milestone": "0.5",
+  "pure": true,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/GetTime.as2",
+  "extra": {
+    "volatile": true
+  }
+}

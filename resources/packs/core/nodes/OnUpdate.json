@@ -1,0 +1,37 @@
+{
+  "kind": "OnUpdate",
+  "major": 1,
+  "title": "On Update",
+  "category": "Events",
+  "milestone": "0.5",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "delta",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "seconds": {
+      "type": "number",
+      "minimum": 0.05,
+      "default": 0.1,
+      "description": "Time between two updates; not per frame (a custom menu runs about 700 frames a second while the game is paused)"
+    },
+    "name": {
+      "type": "string",
+      "default": "",
+      "description": "Optional name, so Stop Timer can find this node (the node id is used when empty)"
+    }
+  },
+  "as2Template": "templates/OnUpdate.as2",
+  "extra": {
+    "entry": true
+  }
+}

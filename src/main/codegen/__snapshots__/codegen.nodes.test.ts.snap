@@ -43,3 +43,24 @@ exports[`Delay retriggers; Cancel Delay and Stop Timer find timers by name > gol
         if (__g.tm == undefined) __g.tm = {};
         __g.tm["tick" == "" ? "tm" : "tick"] = __g.t_tm;"
 `;
+
+exports[`Get Time and On Update (V13.4: time from getTimer, no per-frame event) > On Update ticks from setInterval with the measured delta and registers for Stop Timer; no onEnterFrame 1`] = `
+"        var __g = this;
+        // [u] core/OnUpdate@1
+        __g.s_u = getTimer();
+        __g.t_u = setInterval(function() {
+            var now = getTimer();
+            var u_delta = (now - __g.s_u) / 1000;
+            __g.s_u = now;
+            try {
+                // [a] core/SetText@1
+                __g.base.title.text = String(u_delta);
+                // [st] core/StopTimer@1
+                if (__g.tm != undefined) clearInterval(__g.tm["clock"]);
+            } catch (e) {
+                __g.fail("u", e);
+            }
+        }, 0.25 * 1000);
+        if (__g.tm == undefined) __g.tm = {};
+        __g.tm["clock" == "" ? "u" : "clock"] = __g.t_u;"
+`;

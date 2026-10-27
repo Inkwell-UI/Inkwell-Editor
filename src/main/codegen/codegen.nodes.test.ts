@@ -114,3 +114,41 @@ describe('untyped items', () => {
     expect(body(r.classes[0]!.source)).toContain('}).f([][0], "Number")')
   })
 })
+
+describe('keyed Set Text in a menu (V13.2)', () => {
+  const genMenu = (g: Parameters<typeof generateGraphClasses>[0]['graphs'][number], menu = true) =>
+    generateGraphClasses({ modId: 'M', swfCls: 'T', graphs: [g], packs, layerPath: (id) => (id === 'L' ? 'title' : undefined), ...(menu ? { menu: true } : {}) })
+  it('a $KEY literal and a wired text go through __g.tr; a plain literal does not; a widget never', () => {
+    const g = graph('k', [entry, node('a', 'core/SetText@1', { target: 'L', text: '$Inkwell_M_Start' }), node('b', 'core/SetText@1', { target: 'L', text: 'plain' }), node('c', 'core/SetText@1', { target: 'L' }), node('s', 'core/Concat@1')],
+      [wire('e', 'then', 'a', 'in'), wire('a', 'then', 'b', 'in'), wire('b', 'then', 'c', 'in'), wire('s', 'value', 'c', 'text')])
+    const r = genMenu(g)
+    expect(r.issues).toEqual([])
+    const src = r.classes[0]!.source
+    expect(src).toContain('__g.base.title.text = __g.tr("$Inkwell_M_Start");')
+    expect(src).toContain('__g.base.title.text = "plain";')
+    expect(count(src, '__g.tr(')).toBe(2)
+    expect(src).toContain('    function tr(s) {')
+    expect(genMenu(g, false).classes[0]!.source).not.toContain('__g.tr(')
+  })
+})
+
+describe('Get Time and On Update (V13.4: time from getTimer, no per-frame event)', () => {
+  it('Get Time is volatile: two consumers read the clock twice, never a cached temp', () => {
+    const g = graph('t', [entry, node('t', 'core/GetTime@1'), setText('a'), setText('b')], [wire('e', 'then', 'a', 'in'), wire('a', 'then', 'b', 'in'), wire('t', 'value', 'a', 'text'), wire('t', 'value', 'b', 'text')])
+    const out = body(gen(g).classes[0]!.source)
+    expect(out).not.toContain('var t_')
+    expect(count(out, 'getTimer() / 1000')).toBe(2)
+  })
+  it('On Update ticks from setInterval with the measured delta and registers for Stop Timer; no onEnterFrame', () => {
+    const g = graph('u', [node('u', 'core/OnUpdate@1', { seconds: 0.25, name: 'clock' }), setText('a'), node('st', 'core/StopTimer@1', { name: 'clock' })], [wire('u', 'then', 'a', 'in'), wire('u', 'delta', 'a', 'text'), wire('a', 'then', 'st', 'in')])
+    const r = gen(g)
+    expect(r.issues).toEqual([])
+    const out = body(r.classes[0]!.source)
+    expect(out).toMatchSnapshot()
+    expect(out).toContain('var u_delta = (now - __g.s_u) / 1000;')
+    expect(out).toContain('}, 0.25 * 1000);')
+    expect(out).toContain('__g.tm["clock" == "" ? "u" : "clock"] = __g.t_u;')
+    expect(out).toContain('clearInterval(__g.tm["clock"]);')
+    expect(out).not.toContain('onEnterFrame')
+  })
+})

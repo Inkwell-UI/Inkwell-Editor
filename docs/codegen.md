@@ -40,12 +40,20 @@ Placeholders are the ones in `templates.md`. Rules the renderer adds:
 - **Entries.** The entry's block is the registration statement from its template, placed in `init()`. `{{params}}` is `<uid>_<name>:String|Number|Boolean`. For an On Widget Call, codegen adds `__g.base.<name> = function(a) {...}`: Papyrus passes all arguments as one `String[]` (UI.Invoke* cannot mix types), and this method converts them to the typed parameters with the pin defaults (`""`, `0`, `false`). A call without parameters arrives through `UI.InvokeBool`.
 - **Cycles.** Exec cycles are cut at the second visit with an issue (validation already blocks them); a data cycle between pure nodes skips the consumer.
 
+### Keyed Set Text (custom menus, 0.5)
+
+In a menu class the `text` input of Set Text is wrapped in `__g.tr(...)` when it is a `$KEY` literal or a wire; `tr(s)` returns `bridge.translate(s)` for a string starting with `$`, else `s`. The member is emitted only when a Set Text uses it, so graphs without keys compile as before. Details: `docs/localization.md`, Keyed Set Text in graphs.
+
+### Time (0.5, SPEC-CHANGES V13.4)
+
+No generated code counts frames: a custom menu runs `onEnterFrame` about 700 times a second while the game is paused. Get Time is `getTimer() / 1000` (pure, volatile) and On Update is a `setInterval` every `seconds` (default 0.1) whose `delta` output is measured with `getTimer()`; Stop Timer stops it by its `name`. Templates: Core-Pack `docs/templates.md`.
+
 ### Pure nodes: inline, temp, volatile
 
 - Used by one consumer: inlined.
 - Used by several (edges counted in the whole graph): `var t_<uid> = <expr>;` before the first consumer, reused by later consumers.
 - A template that repeats `{{in.x}}` gets a non-trivial argument hoisted into `var t_<uid>_<pin>` (trivial = name path or literal).
-- **Volatile** (`extra.volatile`: Get Variable, Get Text, Get Alpha, Get Visible, Random) and everything that depends on one are never cached, so a write between two reads is seen (and two consumers of one Random get two numbers). Counter, Toggle and Get Position are exec nodes: their outputs are locals of the run (`<uid>_value`, `<uid>_x`), so a pure node reading them is cached normally, after the statement that made them.
+- **Volatile** (`extra.volatile`: Get Variable, Get Text, Get Alpha, Get Visible, Random, Get Time) and everything that depends on one are never cached, so a write between two reads is seen (and two consumers of one Random get two numbers). Counter, Toggle and Get Position are exec nodes: their outputs are locals of the run (`<uid>_value`, `<uid>_x`), so a pure node reading them is cached normally, after the statement that made them.
 - **Scope.** A temp lives in the block where it was first needed. Branch arms, Sequence outputs, `guarded` closures and For Each bodies are child blocks: they see the temps of the enclosing blocks but their own temps are not reused by siblings or by code after them (Flash 8 has no block scope, so reuse would read an unset variable on the other path). A node that depends on `{{out.item}}` or `{{out.index}}` of a loop is therefore evaluated inside the body function, once per iteration. Temp names are unique per class (`t_p`, `t_p_2`).
 - shortcut: a loop-independent pure node first used inside a loop body is evaluated once per iteration (correct, but not hoisted before the loop); an exec node reachable by two exec wires is emitted twice with the same local names.
 

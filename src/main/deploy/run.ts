@@ -14,7 +14,7 @@ import { isUnmodifiedVanilla } from '../vanilla/cache'
 import { compileWidget, type WidgetOptions } from '../widget/compileWidget'
 import { compileRuntimeCheck } from '../runtime/runtimeCheck'
 import { devIniText, devReloadPaths, RUNTIME_INI_REL } from '../runtime/devIni'
-import { localizationLint } from '../lint/localization'
+import { keyedTexts, localizationLint, type LocSwf } from '../lint/localization'
 import { planDeploy, projectMinRuntime, safeJoin, translationFilePath, type DeployPlan, type SwfLike } from './plan'
 import { readManifest, staleFiles, writeDeploy } from './write'
 
@@ -72,8 +72,9 @@ export interface DeployInput {
 const menuFeatures = (s: DeploySwf): string[] => [
   ...(s.graphs?.some((g) => g.variables?.some((v) => v.scope === 'saved')) ? ['savedVariables'] : []),
   ...(Object.values(s.overlay ?? {}).some((o) => o['role'] === 'list') ? ['list'] : []),
-  ...(Object.entries(s.overlay ?? {}).some(([id, o]) => typeof o['locKey'] === 'string' && o['locKey'] && s.ir.nodes[id]?.type === 'text') ? ['translation'] : [])
+  ...(keyedTexts([locSwf(s)]).length ? ['translation'] : [])
 ]
+const locSwf = (x: DeploySwf): LocSwf => ({ name: x.name, kind: x.kind, ir: x.ir, ...(x.overlay ? { overlay: x.overlay as Record<string, Record<string, unknown>> } : {}), ...(x.graphs ? { graphs: x.graphs } : {}) })
 
 /** Why a menu mod has no runtime check and what to do (S3 rule 5). */
 const CHECK_MISSING = 'The runtime check (the in-game message when Inkwell Runtime is missing or too old) was not generated because no Papyrus compiler is set. Set the compiler path in Settings (or INKWELL_PAPYRUS), then deploy again.'
@@ -118,7 +119,7 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
   const menuSources: MenuSource[] = i.swfs.filter((x) => !x.orphaned && x.kind === 'customMenu').map((x) => ({ swf: x.name, settings: x.menu ?? defaultMenuSettings(), ...(x.features ? { features: x.features } : {}) }))
   const menuRows = menuLint(i.modId, menuSources)
   if (i.swfs.some((x) => x.kind === 'customMenu' && !x.orphaned && (!i.only || x.name === i.only))) issues.push(...menuRows.filter((r) => !r.swf)) // project-level rows (menu-limit)
-  const locIssues = localizationLint(i.swfs.filter((x) => !x.orphaned && (!i.only || x.name === i.only)).map((x) => ({ name: x.name, kind: x.kind, ir: x.ir, ...(x.overlay ? { overlay: x.overlay as Record<string, Record<string, unknown>> } : {}) })), i.localization)
+  const locIssues = localizationLint(i.swfs.filter((x) => !x.orphaned && (!i.only || x.name === i.only)).map(locSwf), i.localization)
   issues.push(...locIssues)
   timer.start('compile')
   try {

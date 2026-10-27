@@ -6,6 +6,8 @@ import { keyedTexts, type LocSwf } from '../../main/lint/localization'
 import { addLanguage, removeLanguage, setCell } from '../../shared/localizationOps'
 import { RUNTIME_FEATURE_SINCE } from '../../shared/runtimeFeatures'
 import { getOverlayDoc } from '../state/overlayStore'
+import { loadSwfGraphs, useGraphDocs } from '../state/graphDocs'
+import { findGraphStore, toGraph } from '../state/graphStore'
 import { useLocalizationStore } from '../state/localizationStore'
 import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
@@ -21,10 +23,16 @@ export function LocalizationPanel() {
   const dir = project?.dir
 
   useEffect(() => void (dir && load()), [dir, load])
+  // keyed Set Text nodes of graphs are rows too (V13.2), so every SWF's graphs are loaded (once; the Graph panel shares them)
+  useEffect(() => void (project?.swfs ?? []).forEach((s) => inkwell && void loadSwfGraphs(s, inkwell)), [project])
+  const graphIds = useGraphDocs((s) => s.ids)
 
   const swfs: LocSwf[] = useMemo(
-    () => (project?.swfs ?? []).map((s) => ({ name: s.name, kind: s.ir.target.kind, orphaned: s.orphaned, ir: s.ir as Swf, overlay: (getOverlayDoc(s.id)?.nodes ?? s.overlay.nodes ?? {}) as Record<string, Record<string, unknown>> })),
-    [project]
+    () => (project?.swfs ?? []).map((s) => ({
+      name: s.name, kind: s.ir.target.kind, orphaned: s.orphaned, ir: s.ir as Swf, overlay: (getOverlayDoc(s.id)?.nodes ?? s.overlay.nodes ?? {}) as Record<string, Record<string, unknown>>,
+      graphs: (graphIds[s.id] ?? []).flatMap((id) => { const g = findGraphStore(s.id, id); return g ? [toGraph(g.getState())] : [] })
+    })),
+    [project, graphIds]
   )
   const texts = useMemo(() => keyedTexts(swfs), [swfs])
 
@@ -41,8 +49,8 @@ export function LocalizationPanel() {
   }
 
   const langs = [localization.source, ...localization.languages.filter((l) => l !== localization.source)]
-  const rows = new Map<string, { key: string; layer: string; text: string }>()
-  for (const t of texts) if (!rows.has(t.key.toLowerCase())) rows.set(t.key.toLowerCase(), { key: t.key, layer: t.layer, text: t.text })
+  const rows = new Map<string, { key: string; layer: string; text: string; graph?: boolean }>()
+  for (const t of texts) if (!rows.has(t.key.toLowerCase())) rows.set(t.key.toLowerCase(), { key: t.key, layer: t.layer, text: t.text, ...(t.graph ? { graph: true } : {}) })
   for (const k of Object.keys(localization.entries)) if (!rows.has(k.toLowerCase())) rows.set(k.toLowerCase(), { key: k, layer: '', text: '' })
   const cell = (key: string, lang: string): string => Object.entries(localization.entries).find(([k]) => k.toLowerCase() === key.toLowerCase())?.[1][lang] ?? ''
   const shown = [...rows.values()].filter((r) => !missingOnly || langs.some((l) => l !== localization.source && cell(r.key, l) === ''))
@@ -93,7 +101,7 @@ export function LocalizationPanel() {
               <td>{r.layer || <span className="dim">—</span>}</td>
               <td className="mono">{r.key}</td>
               {langs.map((l) =>
-                l === localization.source ? (
+                l === localization.source && !r.graph ? (
                   <td key={l} title={strings.loc.cellTitle(r.key, l)}>{r.text || cell(r.key, l)}</td>
                 ) : (
                   <td key={l}>

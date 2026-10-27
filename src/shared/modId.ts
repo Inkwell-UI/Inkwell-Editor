@@ -4,6 +4,15 @@
  */
 export const MOD_ID = /^[A-Za-z][A-Za-z0-9]*$/
 
+/** Why `s` is not a valid mod id (the Mod id field's live check), or undefined when it is. */
+export function modIdProblem(s: string): string | undefined {
+  if (s === '') return 'The mod id cannot be empty.'
+  if (!/^[A-Za-z]/.test(s)) return 'The mod id must start with a letter.'
+  const bad = [...new Set(s.replace(/[A-Za-z0-9]/g, ''))]
+  if (bad.length) return `Letters and digits only; remove ${bad.map((c) => (c === ' ' ? 'the space' : `"${c}"`)).join(', ')}.`
+  return undefined
+}
+
 export function cleanModId(s: string): string {
   const t = s.replace(/[^A-Za-z0-9]/g, '')
   return MOD_ID.test(t) ? t : `Mod${t}` // empty, or it starts with a digit

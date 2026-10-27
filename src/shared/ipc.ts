@@ -34,6 +34,7 @@ export const IPC = {
   graphsAs2: 'graphs:as2',
   packsGet: 'packs:get',
   strictSet: 'project:strict',
+  modIdSet: 'project:modId',
   buildAll: 'build:all',
   previewDetach: 'preview:detach',
   previewDetached: 'preview:detached',
@@ -151,6 +152,8 @@ export interface InkwellApi {
   getPacks(): Promise<PackSet>
   /** Strict Mode, stored in project.json; rebuilds every SWF so the build status follows. */
   setStrictMode(on: boolean): Promise<void>
+  /** The project's mod id (Settings > Project), stored in project.json; refused unless letters and digits starting with a letter. Rebuilds every SWF. */
+  setModId(id: string): Promise<{ ok: true } | { ok: false; error: string }>
   /** Queues a build of every SWF that has a Figma frame; resolves with how many. */
   buildAll(): Promise<number>
 

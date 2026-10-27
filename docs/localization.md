@@ -16,6 +16,15 @@ A text layer has a **Localization key** field in the overlay section: type a key
 
 The **Localization tab** (bottom dock) lists every keyed text layer of the project, one column per language, the source first. Translation cells save as you leave them; an empty cell shows `[missing]` and that language then falls back to the source text. Buttons: Add language, Import CSV (shows what it will change and asks first; never deletes), Export CSV (UTF-8 with BOM), Export Skyrim .txt (one UTF-16 LE file per language into a folder you choose).
 
+## Keyed Set Text in graphs (0.5)
+
+A **Set Text** whose `text` field is a `$KEY` (the whole text, same rule as a layer key) is a keyed text too, so a graph can change a label and keep it translated (a Start/Stop button: two Set Text nodes with `$Inkwell_<modId>_Start` and `$Inkwell_<modId>_Stop`).
+- **Codegen** (custom menus only): the node writes `field.text = __g.tr("$KEY")`; `tr` (a member of the menu graph class, emitted only when used) asks `bridge.translate` and shows the answer, or the key itself when the runtime has no entry. A **wired** text goes through `tr` as well and is translated at run time when it starts with `$`; any other text is shown as is. A plain literal is not wrapped. HUD widgets never translate (`loc-needs-runtime`).
+- **Table:** the Localization tab lists the key with the layer column `<graph> > Set Text`; there is no Figma text, so the source cell is editable there (typing it creates the row, and the CSV export then contains it). Only an unwired Set Text literal is found; a key that reaches Set Text through a wire (Select, Format) is translated but must be added to the table by hand (Import CSV).
+- **Lint:** `loc-translation-missing` warns when a graph key has no source text in the table (the runtime file then lacks it and the player sees the key), and per language like layer keys; a graph key counts as used for `loc-key-orphan`; a widget gets `loc-needs-runtime`. No `loc-source-changed` or `loc-key-duplicate` for graph keys (they have no own text).
+- **Runtime:** a graph key alone puts `translations` and `minRuntime` 0.4.0 into the menu JSON, like a keyed layer.
+- **Preview:** in the source language the mock bridge now answers the source text (it answered the key before), so a graph's keyed Set Text shows it; the answers are delivered after the movie starts, so a Set Text that runs before that (On Load) shows the key until the menu is reopened.
+
 ## Compile and deploy
 
 - A keyed text compiles with its **source text**; the menu class (`menuGlue.ts`) calls `tx(field, key)` for every keyed field in `begin()`, before the graphs start: `bridge.translate(key)`; if the answer differs from the key the field shows it. No runtime, no table, no entry: the player sees the source text.
@@ -33,4 +42,4 @@ For a custom menu the stage toolbar has a **Locale** select (the source language
 
 ## Not done yet
 
-Keyed texts set by a graph (Set Text with a `$KEY`) are not translated: only the field's compiled text is. The editor UI itself stays English. A font replacer, CJK and right-to-left text are untested.
+A key that reaches Set Text through a wire is not found for the table. The editor UI itself stays English. A font replacer, CJK and right-to-left text are untested.

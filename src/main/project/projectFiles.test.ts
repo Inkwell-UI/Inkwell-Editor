@@ -66,6 +66,13 @@ describe('project settings', () => {
     await writeProjectSetting(dir, 'strictMode', true)
     expect(JSON.parse(await readFile(join(dir, 'project.json'), 'utf8'))).toMatchObject({ strictMode: true, 'x-unknown': 1, name: 'n' })
   })
+  it('sets the mod id (the Mod id field) and keeps the rest', async () => {
+    const dir = await tmp()
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, 'project.json'), JSON.stringify({ name: 'n', modId: 'm', version: '1', deploy: { preset: 'mo2', path: 'p' }, strictMode: true }))
+    await writeProjectSetting(dir, 'modId', 'NewName2')
+    expect(JSON.parse(await readFile(join(dir, 'project.json'), 'utf8'))).toMatchObject({ modId: 'NewName2', strictMode: true, name: 'n' })
+  })
 })
 
 describe('recent projects', () => {

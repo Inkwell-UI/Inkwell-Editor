@@ -16,17 +16,18 @@ const snapshot = (): string => `${language}|${pseudo}`
 /** What the mock bridge answers: key -> text. A key with no change answers with the key itself (the glue then keeps the compiled source text). Pure. */
 export function previewTranslations(loc: Localization, lang: string, pseudoOn: boolean): Record<string, string> {
   const texts = lang && lang !== loc.source ? entriesFor(loc, lang).entries : Object.fromEntries(Object.entries(loc.entries).map(([k, row]) => [k, row[loc.source] ?? '']))
-  return Object.fromEntries(Object.entries(texts).map(([k, v]) => [k, lang || pseudoOn ? (pseudoOn ? pseudoLocalize(v) : v) : k]))
+  // source language: the source text, so a graph's Set Text of a key shows it (a keyed layer keeps its compiled text either way); the key when the cell is empty
+  return Object.fromEntries(Object.entries(texts).map(([k, v]) => [k, lang || pseudoOn ? (pseudoOn ? pseudoLocalize(v) : v) : v || k]))
 }
 
 export const localeStore = {
   get: (): { language: string; pseudo: boolean } => ({ language, pseudo }),
   subscribe: (cb: () => void): (() => void) => (subs.add(cb), () => void subs.delete(cb)),
   /** Sets the mock answers in the running movie and reopens the menu so `begin()` translates again (false = nothing is running). */
-  apply(loc: Localization | null): boolean {
+  apply(loc: Localization | null, reopen = true): boolean {
     if (!loc) return false
     for (const [k, v] of Object.entries(previewTranslations(loc, language, pseudo))) previewBus.call('inkwellMock', `tr.${k}`, v)
-    return previewBus.call('inkwellMenuReopen')
+    return reopen ? previewBus.call('inkwellMenuReopen') : true
   },
   set(next: { language?: string; pseudo?: boolean }, loc: Localization | null): void {
     if (next.language !== undefined) language = next.language
@@ -36,7 +37,7 @@ export const localeStore = {
   },
   /** After a rebuild restarted the movie (and mock data was delivered): only a changed locale needs applying. */
   reapply(loc: Localization | null): void {
-    if (language || pseudo) localeStore.apply(loc)
+    localeStore.apply(loc, !!(language || pseudo)) // the source answers too (graph Set Text of a key), but only a changed locale reopens the menu
   },
   reset(): void {
     language = ''

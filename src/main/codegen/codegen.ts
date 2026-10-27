@@ -1,8 +1,9 @@
-import { pinCompat, SAVED_TYPES, type Graph, type GraphNode, type NodeDef, type PinType } from '@inkwell-ui/spec'
+import { LOC_KEY, pinCompat, SAVED_TYPES, type Graph, type GraphNode, type NodeDef, type PinType } from '@inkwell-ui/spec'
 import { resolvePins, type ResolvedPin } from '../../shared/graphValidate'
 import { parseBindings, type BindProp } from '../../shared/graphBinding'
 import { FLOW_RUN_PIN, FLOW_TIMER_PIN } from '../../shared/devLink'
 import { ident } from '../../shared/overlay'
+import { SET_TEXT } from '../lint/localization'
 import type { CodegenPacks } from './packs'
 
 /** Template format: Inkwell-Core-Pack `docs/templates.md`. The renderer and its decisions: `docs/codegen.md`. */
@@ -180,6 +181,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   for (const v of g.variables) varNames.set(v.id, uniq(ident(v.name), vtaken))
   const names = new Set<string>() // generated locals; node uids are prefixes, so keep the namespaces apart with `t_`
   const temp = (base: string): string => uniq(`t_${base}`, names)
+  let usesTr = false // a Set Text went through __g.tr: the class gets tr()
 
   const dataIn = new Map<string, { node: string; pin: string }>() // node\0input pin -> source output
   const execTo = new Map<string, string[]>() // node\0exec output pin -> target nodes
@@ -385,6 +387,12 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     try {
       const lines = bodyOf(n, d)
       const { args } = argsOf(n, d, lines.join('\n'), ctx, new Set())
+      // V13.2: in a menu, Set Text asks the runtime translator for a $KEY literal and for any wired text (`tr` checks for a leading "$" at run time); plain literals stay as they are
+      const tx = i.menu && SET_TEXT.test(n.kind) ? args.get('text') : undefined
+      if (tx !== undefined && (!/^"/.test(tx) || LOC_KEY.test(JSON.parse(tx) as string))) {
+        args.set('text', `__g.tr(${tx})`)
+        usesTr = true
+      }
       const outs = new Set((pinsOf.get(n.id)?.outputs ?? []).filter((p) => p.type !== 'Exec').map((p) => p.name))
       const out: Line[] = [...ctx.pre]
       for (const raw of lines) {
@@ -531,7 +539,19 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '        } else {' },
           { t: '            trace("[Inkwell] " + level + " " + nodeId + ": " + text);' },
           { t: '        }' },
-          { t: '    }' }
+          { t: '    }' },
+          // V13.2: Set Text of a $KEY; the runtime answers the key itself when it has no entry (so does the stub bridge), then the key is shown
+          ...(usesTr
+            ? [
+                { t: '    function tr(s) {' },
+                { t: '        if (typeof (s) == "string" && s.charAt(0) == "$") {' },
+                { t: '            var t = this.bridge.translate(s);' },
+                { t: '            if (t != undefined) return String(t);' },
+                { t: '        }' },
+                { t: '        return s;' },
+                { t: '    }' }
+              ]
+            : [])
         ]
       : [
           { t: '        var line = "[Inkwell] error " + nodeId + ": " + msg;' },

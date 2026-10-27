@@ -1,0 +1,2 @@
+// [{{node.id}}] core/GetTime@1
+getTimer() / 1000

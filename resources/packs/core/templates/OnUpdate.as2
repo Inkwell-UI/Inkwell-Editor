@@ -1,0 +1,10 @@
+// [{{node.id}}] core/OnUpdate@1
+__g.s_{{node.uid}} = getTimer();
+__g.t_{{node.uid}} = setInterval(function() {
+    var now = getTimer();
+    var {{out.delta}} = (now - __g.s_{{node.uid}}) / 1000;
+    __g.s_{{node.uid}} = now;
+    {{guarded.then}}
+}, {{field.seconds}} * 1000);
+if (__g.tm == undefined) __g.tm = {};
+__g.tm[{{field.name}} == "" ? "{{node.id}}" : {{field.name}}] = __g.t_{{node.uid}};

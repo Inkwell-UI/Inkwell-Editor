@@ -41,6 +41,7 @@ const api: InkwellApi = {
   graphAs2: (swf, graph) => ipcRenderer.invoke(IPC.graphsAs2, swf, graph),
   getPacks: () => ipcRenderer.invoke(IPC.packsGet),
   setStrictMode: (on) => ipcRenderer.invoke(IPC.strictSet, on),
+  setModId: (id) => ipcRenderer.invoke(IPC.modIdSet, id),
   buildAll: () => ipcRenderer.invoke(IPC.buildAll),
   setPreviewDetached: (d) => ipcRenderer.invoke(IPC.previewDetach, d),
   getPreviewDetached: () => ipcRenderer.invoke(IPC.previewDetached),

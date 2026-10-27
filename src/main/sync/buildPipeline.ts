@@ -193,5 +193,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     }
   }
 
-  return { onChange, getFfdec, stop: (): void => ffdec?.stop?.() }
+  // the Mod id field renamed the project (project.json is already written): the cached project builds with the new id from now on
+  const setModId = (id: string): void => void project?.then((p) => void (p.meta.modId = id))
+  return { onChange, getFfdec, setModId, stop: (): void => ffdec?.stop?.() }
 }

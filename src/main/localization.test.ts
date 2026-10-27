@@ -2,7 +2,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { BRIDGE_MEMBERS, Localization, parseTranslationFile, type Swf } from '@inkwell-ui/spec'
+import { BRIDGE_MEMBERS, Localization, parseTranslationFile, type Graph, type Swf } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
 import { menuClassSource } from './codegen/menuGlue'
 import { commitDeploy, prepareDeploy, type DeployInput, type DeploySwf } from './deploy/run'
@@ -130,6 +130,40 @@ describe('localization lint', () => {
   })
 })
 
+describe('keyed Set Text in graphs (V13.2)', () => {
+  const setText = (id: string, text: string) => ({ id, kind: 'core/SetText@1', fields: { target: 't', text }, pos: { x: 0, y: 0 } })
+  const gr = (nodes: unknown[], edges: unknown[] = []) => ({ specVersion: 5, id: 'g1', name: 'Main', scope: 'menu', nodes, edges, variables: [], comments: [], groups: [] }) as unknown as Graph
+  const sw = (graphs: Graph[], kind: LocSwf['kind'] = 'customMenu'): LocSwf => ({ name: 'menu', kind, ir: menuIr(kind), overlay: {}, graphs })
+
+  it('a Set Text whose unwired text is a $KEY is a keyed text; plain text and wired text are not', () => {
+    const g = gr([setText('a', '$Inkwell_M_Start'), setText('b', 'plain'), setText('c', '$Inkwell_M_Wired'), setText('d', '$ 5')], [{ from: { node: 'x', pin: 'value' }, to: { node: 'c', pin: 'text' } }])
+    expect(keyedTexts([sw([g])])).toEqual([{ swf: 'menu', nodeId: 'a', layer: 'Main > Set Text', key: '$Inkwell_M_Start', text: '', kind: 'customMenu', graph: 'g1' }])
+  })
+  it('lint: quiet with a source text, warns without one, counts in missing translations, and needs the runtime in a widget', () => {
+    const g = gr([setText('a', '$Inkwell_M_Start')])
+    const codes = (l: ReturnType<typeof localizationLint>): string[] => l.map((x) => `${x.severity}:${x.code}`)
+    expect(localizationLint([sw([g])], loc({ entries: { $Inkwell_M_Start: { ENGLISH: 'Start', GERMAN: 'Starten' } } }))).toEqual([])
+    const noSource = localizationLint([sw([g])], loc({ entries: {} }))
+    expect(noSource.find((x) => x.nodeId === 'a')?.message).toMatch(/no ENGLISH text.*players see the key/)
+    expect(codes(localizationLint([sw([g])], loc({ entries: { $Inkwell_M_Start: { ENGLISH: 'Start' } } })))).toEqual(['warning:loc-translation-missing']) // GERMAN missing
+    expect(codes(localizationLint([sw([g], 'hudWidget')], loc({ entries: { $Inkwell_M_Start: { ENGLISH: 'Start', GERMAN: 'S' } } })))).toEqual(['warning:loc-needs-runtime'])
+    // a layer and a graph sharing a key: one row, no duplicate error, no source-changed for the graph
+    const both: LocSwf = { ...sw([g]), overlay: { t: { locKey: '$Inkwell_M_Start' } } }
+    expect(localizationLint([both], loc({ entries: { $Inkwell_M_Start: { ENGLISH: 'Hello', GERMAN: 'Hallo' } } }))).toEqual([])
+  })
+  it('deploy: a graph key alone raises the menu to 0.4.0 and writes the translation files', async () => {
+    const root = join(mkdtempSync(join(tmpdir(), 'inkwell-locgraph-')), 'mod')
+    const buildDir = mkdtempSync(join(tmpdir(), 'inkwell-build-'))
+    writeFileSync(join(buildDir, 'wheel.swf'), 'FWS-mine')
+    const i: DeployInput = { modId: 'M', swfs: [{ name: 'wheel', orphaned: false, kind: 'customMenu', ir: menuIr(), build: { state: 'done', lint: [] }, overlay: {}, graphs: [gr([setText('a', '$Inkwell_M_Start')])] }], root, gameDirs: [], buildDir, ffdec: noFfdec, vanillaHashes: new Set(), localization: loc({ entries: { $Inkwell_M_Start: { ENGLISH: 'Start', GERMAN: 'Starten' } } }) }
+    const r = await prepareDeploy(i)
+    if (!r.ok) throw new Error(r.error)
+    expect(r.prepared.info.map((f) => f.rel)).toContain('Interface/Translations/M_GERMAN.txt')
+    expect((await commitDeploy(i, r.prepared)).ok).toBe(true)
+    expect(JSON.parse(readFileSync(join(root, 'SKSE', 'Plugins', 'Inkwell', 'menus', 'M_Wheel.json'), 'utf8'))).toMatchObject({ minRuntime: '0.4.0', translations: 'M' })
+  })
+})
+
 describe('codegen of keyed texts', () => {
   it('a custom menu translates its keyed text in begin(); the compiled text stays the source language', () => {
     const g = generate(menuIr(), { modId: 'M', locKeys: { t: '$Inkwell_M_Start' } })
@@ -213,9 +247,10 @@ describe('deploy', () => {
 })
 
 describe('preview locale', () => {
-  it('answers the key itself for the source language (the glue keeps the compiled text), the translation for another, and pseudo-localized text on top', () => {
+  it('answers the source text for the source language (a graph Set Text of a key shows it), the translation for another, and pseudo-localized text on top', () => {
     const l = loc()
-    expect(previewTranslations(l, '', false)).toEqual({ $Inkwell_M_Start: '$Inkwell_M_Start', $Inkwell_M_Reset: '$Inkwell_M_Reset' })
+    expect(previewTranslations(l, '', false)).toEqual({ $Inkwell_M_Start: 'Hello', $Inkwell_M_Reset: 'Reset' })
+    expect(previewTranslations(loc({ entries: { $A: {} } }), '', false)).toEqual({ $A: '$A' }) // no source text: the key
     expect(previewTranslations(l, 'GERMAN', false)).toEqual({ $Inkwell_M_Start: 'Hallo', $Inkwell_M_Reset: 'Zurücksetzen' })
     expect(previewTranslations(l, 'ENGLISH', false)).toEqual({ $Inkwell_M_Start: 'Hello', $Inkwell_M_Reset: 'Reset' }) // the source language named explicitly: its own texts
     expect(previewTranslations(l, '', true).$Inkwell_M_Start).toBe('[Héllö··]')

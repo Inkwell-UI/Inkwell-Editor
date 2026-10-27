@@ -41,6 +41,7 @@ import { deleteGraph, readGraph, writeGraph } from './project/graphFiles'
 import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
 import { writeProjectSetting } from './project/settings'
+import { MOD_ID, modIdProblem } from '../shared/modId'
 import { readSnapshot, staleSwfs, type FigmaSnapshot, type SnapshotSource } from './project/snapshot'
 import { generate } from './swf/generate'
 import { loadCodegenPacks } from './codegen/packs'
@@ -795,6 +796,18 @@ export function createSession(deps: SessionDeps) {
       menus.delete(info.name)
       server!.forget(swfId) // its 'swfs' event refreshes the counts, lint and the project push
       return { ok: true, trash }
+    },
+    /** The Mod id field (Settings > Project): letters and digits, starting with a letter (shared/modId.ts). Refused, not cleaned: the field shows why. */
+    async setModId(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+      if (!projectDir || !meta) return { ok: false, error: 'No project is open.' }
+      if (typeof id !== 'string' || !MOD_ID.test(id)) return { ok: false, error: modIdProblem(String(id)) ?? 'Invalid mod id.' }
+      if (id === meta.modId) return { ok: true }
+      await writeProjectSetting(projectDir, 'modId', id)
+      meta = { ...meta, modId: id }
+      pipeline?.setModId(id)
+      server?.rebuildAll()
+      pushProjectNow()
+      return { ok: true }
     },
     async setStrictMode(on: boolean): Promise<void> {
       if (!projectDir) return

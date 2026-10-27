@@ -51,6 +51,6 @@ describe.skipIf(!can)('every core template compiles with FFDec', () => {
       ffdec.stop()
     }
     expect(failures).toEqual([])
-    expect(compiled).toBe(113) // the 116 nodes of core pack 0.4.0 minus the 3 editor-only ones
+    expect(compiled).toBe(115) // the 118 nodes of core pack 0.5.0 minus the 3 editor-only ones
   }, 300_000)
 })

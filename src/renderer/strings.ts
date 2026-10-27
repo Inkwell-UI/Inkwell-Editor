@@ -642,6 +642,16 @@ export const strings = {
     search: 'Search settings',
     searchPlaceholder: 'Search settings...',
     general: 'General',
+    project: {
+      title: 'Project',
+      modId: 'Mod id',
+      modIdHelp: 'Letters and digits only, starting with a letter. It names the deployed files, the AS2 classes and the Papyrus scripts.',
+      renameWarning: (from: string, to: string) =>
+        `Renaming changes the deployed file names (${from}.ini, ${from}_<Menu>.json, Interface/Inkwell/${from}/, ${from}_<LANGUAGE>.txt and the scripts become ${to}...). The next deploy removes the old files it wrote, but players keep the old INI and the values saved under ${from}. Translation keys keep their names.`,
+      rename: 'Rename',
+      unchanged: 'Type a new mod id first',
+      saved: (id: string) => `Mod id is now ${id}. Every SWF is rebuilt; deploy again to update the mod folder.`
+    },
     figmaPlugins: {
       title: 'Figma plugins',
       none: 'No Figma plugin is approved yet. The first plugin that connects asks for your permission.',
