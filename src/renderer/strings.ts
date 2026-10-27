@@ -632,7 +632,7 @@ export const strings = {
   },
 
   /** The application menu (built in the main process). */
-  menu: { file: 'File', edit: 'Edit', settings: 'Settings...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project' },
+  menu: { file: 'File', edit: 'Edit', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All', quit: 'Exit', label: 'Application menu', settings: 'Settings...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project' },
 
   settings: {
     title: 'Settings',

@@ -17,6 +17,7 @@ import { Dialogs } from './Dialogs'
 import { SettingsView } from './SettingsView'
 import { StartScreen } from './StartScreen'
 import { StatusBar } from './StatusBar'
+import { TitleBar } from './TitleBar'
 import { TopBar } from './TopBar'
 
 const isTyping = (t: EventTarget | null): boolean => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))
@@ -79,10 +80,11 @@ export function AppShell() {
     useSelectionStore.getState().prune((id) => !!swf?.ir.nodes[id])
   }, [swf])
 
-  if (project === undefined) return <div className="loading" role="status">{strings.loading}</div>
+  if (project === undefined) return <><TitleBar /><div className="loading" role="status">{strings.loading}</div></>
   if (project === null)
     return (
       <>
+        <TitleBar />
         {settingsOpen ? <SettingsView /> : <StartScreen />}
         <Dialogs />
         <Toasts />
@@ -90,6 +92,7 @@ export function AppShell() {
     )
   return (
     <div className="shell">
+      <TitleBar />
       <TopBar />
       <main className="shell-main">{settingsOpen ? <SettingsView /> : <WorkspaceView />}</main>
       <StatusBar />

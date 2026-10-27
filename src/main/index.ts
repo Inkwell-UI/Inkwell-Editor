@@ -1,7 +1,8 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell, type MenuItemConstructorOptions } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { IPC } from '../shared/ipc'
+import type { AppMenu } from '../shared/appMenu'
 import type { DeployScope, DeployTargetId } from '../shared/deploy'
 import type { CheckId, PathSettingKey, SetSettingResult, SettingKey } from '../shared/doctor'
 import type { OverlayDoc } from '../shared/overlay'
@@ -12,6 +13,7 @@ import { strings } from '../renderer/strings'
 import type { AddFontOutcome } from '../shared/fonts'
 import type { LocFileResult } from '../shared/ipc'
 import { exportCsvFile, exportTranslationFiles, readCsvImport } from './localizationIo'
+import { appMenuModel, type RoleEntry } from './appMenuModel'
 import { copyExample, createProject } from './project/lifecycle'
 import { runDoctorDriver } from './screenshotDoctor'
 import { runFigmaShots } from './screenshotFigma'
@@ -56,8 +58,12 @@ function createWindow(): void {
     minHeight: 600,
     title: PRODUCT_NAME,
     backgroundColor: '#14161a',
+    // the renderer draws the title bar (menus + title, `shell/TitleBar.tsx`); Windows paints the min/max/close buttons over it. Colors = theme.css --surface-1 / --fg, height = .titlebar
+    titleBarStyle: 'hidden',
+    titleBarOverlay: { color: '#202024', symbolColor: '#e4e4e7', height: 36 },
     webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true }
   })
+  win.setMenuBarVisibility(false) // the native menu stays set (its accelerators work) but is never drawn
   win.on('closed', () => {
     win = undefined
     previewWin?.close() // the popped-out preview does not outlive the editor
@@ -261,6 +267,21 @@ ipcMain.on(IPC.previewRendered, (_e, r: PreviewRendered) => {
   }
 })
 
+/** The application menu as data for the title bar, and what each entry does (by template path). Rebuilt with the menu. */
+let appMenu: AppMenu = []
+const menuActions = new Map<string, () => void>()
+const ROLES: Record<string, RoleEntry> = {
+  undo: { label: strings.menu.undo, key: 'Ctrl+Z', run: () => win?.webContents.undo() },
+  redo: { label: strings.menu.redo, key: 'Ctrl+Y', run: () => win?.webContents.redo() },
+  cut: { label: strings.menu.cut, key: 'Ctrl+X', run: () => win?.webContents.cut() },
+  copy: { label: strings.menu.copy, key: 'Ctrl+C', run: () => win?.webContents.copy() },
+  paste: { label: strings.menu.paste, key: 'Ctrl+V', run: () => win?.webContents.paste() },
+  selectAll: { label: strings.menu.selectAll, key: 'Ctrl+A', run: () => win?.webContents.selectAll() },
+  quit: { label: strings.menu.quit, run: () => app.quit() }
+}
+ipcMain.handle(IPC.menuModel, () => appMenu)
+ipcMain.handle(IPC.menuInvoke, (_e, id: string) => void menuActions.get(String(id))?.())
+
 /** The default menu with project entries added to File and Settings to Edit; every other menu keeps its Electron role. */
 async function buildMenu(): Promise<void> {
   const recent = await session.recent().catch(() => [])
@@ -268,46 +289,48 @@ async function buildMenu(): Promise<void> {
     const d = dir ?? (await pickFolder(title))
     return d ? session.open(d) : cancelled
   })
-  Menu.setApplicationMenu(
-    Menu.buildFromTemplate([
-      {
-        label: strings.menu.file,
-        submenu: [
-          {
-            label: strings.start.newProject, accelerator: 'CmdOrCtrl+N',
-            click: () => fromMenu(async () => {
-              const d = await pickFolder(strings.start.newDialog)
-              if (!d) return cancelled
-              await createProject(d)
-              return session.open(d)
-            })
-          },
-          { label: strings.start.openProject, accelerator: 'CmdOrCtrl+O', click: () => openDir(undefined, strings.start.openDialog) },
-          { label: strings.menu.openRecent, enabled: recent.length > 0, submenu: recent.map((r) => ({ label: r.name, sublabel: r.dir, click: () => openDir(r.dir, strings.start.openDialog) })) },
-          { type: 'separator' },
-          { label: strings.menu.save, accelerator: 'CmdOrCtrl+S', enabled: session.getProject() !== null, click: () => win?.webContents.send(IPC.menuSaveNow) },
-          {
-            label: strings.menu.showFolder,
-            enabled: session.getProject() !== null,
-            click: () => {
-              const p = session.getProject()
-              if (p) void shell.openPath(p.dir)
-            }
-          },
-          { type: 'separator' },
-          { role: 'quit' }
-        ]
-      },
-      {
-        label: strings.menu.edit,
-        submenu: [
-          { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
-          { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }, { type: 'separator' },
-          { label: strings.menu.settings, accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) }
-        ]
-      }
-    ])
-  )
+  const template: MenuItemConstructorOptions[] = [
+    {
+      label: strings.menu.file,
+      submenu: [
+        {
+          label: strings.start.newProject, accelerator: 'CmdOrCtrl+N',
+          click: () => fromMenu(async () => {
+            const d = await pickFolder(strings.start.newDialog)
+            if (!d) return cancelled
+            await createProject(d)
+            return session.open(d)
+          })
+        },
+        { label: strings.start.openProject, accelerator: 'CmdOrCtrl+O', click: () => openDir(undefined, strings.start.openDialog) },
+        { label: strings.menu.openRecent, enabled: recent.length > 0, submenu: recent.map((r) => ({ label: r.name, sublabel: r.dir, click: () => openDir(r.dir, strings.start.openDialog) })) },
+        { type: 'separator' },
+        { label: strings.menu.save, accelerator: 'CmdOrCtrl+S', enabled: session.getProject() !== null, click: () => win?.webContents.send(IPC.menuSaveNow) },
+        {
+          label: strings.menu.showFolder,
+          enabled: session.getProject() !== null,
+          click: () => {
+            const p = session.getProject()
+            if (p) void shell.openPath(p.dir)
+          }
+        },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: strings.menu.edit,
+      submenu: [
+        { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+        { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }, { type: 'separator' },
+        { label: strings.menu.settings, accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) }
+      ]
+    }
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+  menuActions.clear()
+  appMenu = appMenuModel(template, '', ROLES, menuActions)
+  broadcast(IPC.menuChanged, appMenu)
 }
 
 void app.whenReady().then(async () => {

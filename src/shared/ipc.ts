@@ -1,3 +1,4 @@
+import type { AppMenu } from './appMenu'
 import type { DevEvent, DevReloadResult, DevState } from './devLink'
 import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, PrepareResult } from './deploy'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, PathSettingKey, ResolvedSettings, SetSettingResult, SettingKey } from './doctor'
@@ -41,6 +42,9 @@ export const IPC = {
   menuSettings: 'menu:settings',
   menuSaveNow: 'menu:save-now',
   menuSave: 'menu:save',
+  menuModel: 'menu:model',
+  menuInvoke: 'menu:invoke',
+  menuChanged: 'menu:changed',
   swfTarget: 'swf:target',
   previewTheme: 'preview:theme',
   locLoad: 'loc:load',
@@ -163,6 +167,10 @@ export interface InkwellApi {
   onOpenSettings(cb: () => void): () => void
   /** File > Save in the application menu: writes the edits still waiting for their debounce. */
   onSaveNow(cb: () => void): () => void
+  /** The application menu as data (the title bar draws it), its change (Open Recent, enabled entries) and running an entry by its id. */
+  getAppMenu(): Promise<AppMenu>
+  onAppMenuChanged(cb: (menu: AppMenu) => void): () => void
+  invokeAppMenu(id: string): Promise<void>
 
   /** Answers the pending Figma plugin prompt (`SyncUiState.approval.id`). */
   answerFigmaApproval(id: number, allow: boolean): Promise<void>
