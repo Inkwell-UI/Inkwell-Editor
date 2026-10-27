@@ -42,15 +42,23 @@ describe('panel registry', () => {
       return row.children[0]!.tabs!.map((t) => t.panel)
     }
     expect(left('layout')).toEqual(['navigator', 'assets', 'menuSettings'])
-    expect(left('behaviour')).toEqual(['navigator', 'contracts', 'variables', 'menuSettings'])
+    const col = (WORKSPACES.behaviour.layout as { children: LayoutNode[] }).children[0] as { children: { tabs?: { panel: string }[]; panel?: string }[] }
+    expect(col.children[0]!.tabs!.map((t) => t.panel)).toEqual(['navigator', 'contracts', 'menuSettings']) // Behaviour: the left column is [tabs, variables]
+    expect(col.children[1]!.panel).toBe('variables')
     expect(layoutPanelIds(WORKSPACES.localization.layout)).not.toContain('menuSettings')
   })
 
-  it('Behaviour: the graph owns the centre column, the right column is [fixed preview, inspector] with no splitter between', () => {
-    const main = (WORKSPACES.behaviour.layout as { children: LayoutNode[] }).children[0] as { children: LayoutNode[] }
-    expect(main.children).toHaveLength(3)
-    expect(main.children[1]).toMatchObject({ kind: 'panel', panel: 'graph' })
-    const right = main.children[2] as { kind: string; direction: string; children: LayoutNode[] }
+  it('Behaviour: the left column (navigator, variables) runs the full height; beside it the graph owns the centre, the right column is [fixed preview, inspector] with no splitter between, and the dock sits under graph and right column', () => {
+    const root = (WORKSPACES.behaviour.layout as { children: LayoutNode[] }).children
+    expect(root).toHaveLength(2)
+    expect(root[0]).toMatchObject({ kind: 'split', direction: 'column' })
+    const area = root[1] as { direction: string; children: LayoutNode[] }
+    expect(area.direction).toBe('column')
+    expect(area.children[1]).toMatchObject({ kind: 'tabs' }) // the dock
+    const main = area.children[0] as { children: LayoutNode[] }
+    expect(main.children).toHaveLength(2)
+    expect(main.children[0]).toMatchObject({ kind: 'panel', panel: 'graph' })
+    const right = main.children[1] as { kind: string; direction: string; children: LayoutNode[] }
     expect(right).toMatchObject({ kind: 'split', direction: 'column' })
     expect(right.children[0]).toMatchObject({ kind: 'panel', panel: 'preview', fixed: BEHAVIOUR_PREVIEW_HEIGHT })
     expect(right.children[1]).toMatchObject({ kind: 'panel', panel: 'inspector' })
