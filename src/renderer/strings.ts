@@ -545,6 +545,7 @@ export const strings = {
     noSwfs: 'No SWFs yet',
     orphanedDivider: 'Retained / Orphaned SWFs',
     orphanedTag: '(orphaned)',
+    discardSwf: (name: string) => `Discard "${name}": its folder moves to .trash in the project`,
     noTarget: 'No target',
     targetLabel: (kind?: string) => `Target: ${kind ?? 'none'}. Opens the Config Ownership dialog`,
     targetField: {

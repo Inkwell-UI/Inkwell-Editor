@@ -1,10 +1,11 @@
 
 import { useEffect } from 'react'
-import { ChevronDown, Hammer, Settings2, FileStack } from 'lucide-react'
+import { ChevronDown, Hammer, Settings2, FileStack, Trash2 } from 'lucide-react'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import { useDialogStore } from '../state/dialogStore'
+import { discardOrphanSwf } from '../state/orphanActions'
 import { useProjectStore } from '../state/projectStore'
 import { useWorkspaceStore } from '../state/workspaceStore'
 import { strings } from '../strings'
@@ -43,8 +44,11 @@ function SwfSwitcher() {
             <>
               <li role="separator" className="menu-divider">{strings.top.orphanedDivider}</li>
               {orphaned.map((s) => (
-                <li key={s.id} role="option" aria-selected={s.id === active?.id}>
+                <li key={s.id} role="option" aria-selected={s.id === active?.id} className="menu-row">
                   <button type="button" className={s.id === active?.id ? 'is-selected' : undefined} onClick={() => { setActive(s.id); close() }}>{s.name} <span className="dim">{strings.top.orphanedTag}</span></button>
+                  <button type="button" className="menu-del" title={strings.top.discardSwf(s.name)} aria-label={strings.top.discardSwf(s.name)} data-testid={`discard-swf-${s.name}`} onClick={() => { close(); void discardOrphanSwf(s) }}>
+                    <Trash2 size={13} aria-hidden="true" />
+                  </button>
                 </li>
               ))}
             </>
