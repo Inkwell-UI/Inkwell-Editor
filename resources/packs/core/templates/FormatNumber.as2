@@ -1,2 +1,2 @@
 // [{{node.id}}] core/FormatNumber@1
-String(Math.round({{in.value}} * Math.pow(10, {{field.decimals}})) / Math.pow(10, {{field.decimals}}))
+((Math.round({{in.value}} * Math.pow(10, {{field.decimals}})) / Math.pow(10, {{field.decimals}})) < 0 ? "-" : "") + "000000".substr(0, Math.max(0, {{field.digits}} - String(Math.floor(Math.abs((Math.round({{in.value}} * Math.pow(10, {{field.decimals}})) / Math.pow(10, {{field.decimals}}))))).length)) + String(Math.abs((Math.round({{in.value}} * Math.pow(10, {{field.decimals}})) / Math.pow(10, {{field.decimals}}))))

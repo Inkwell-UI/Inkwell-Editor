@@ -691,7 +691,7 @@ exports[`golden AS2 per node kind > core/FormatNumber@1 1`] = `
         __g.Run = function() {
             try {
                 // [l] core/Log@1
-                trace("[Inkwell] info l: " + String(Math.round(0 * Math.pow(10, 0)) / Math.pow(10, 0)));
+                trace("[Inkwell] info l: " + (((Math.round(0 * Math.pow(10, 0)) / Math.pow(10, 0)) < 0 ? "-" : "") + "000000".substr(0, Math.max(0, 0 - String(Math.floor(Math.abs((Math.round(0 * Math.pow(10, 0)) / Math.pow(10, 0))))).length)) + String(Math.abs((Math.round(0 * Math.pow(10, 0)) / Math.pow(10, 0))))));
             } catch (e) {
                 __g.fail("e", e);
             }

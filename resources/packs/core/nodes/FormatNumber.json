@@ -20,6 +20,13 @@
     }
   ],
   "fields": {
+    "digits": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 6,
+      "default": 0,
+      "description": "Pad the whole-number part with leading zeros to at least this many digits (2 turns 9 into 09)"
+    },
     "decimals": {
       "type": "integer",
       "minimum": 0,
