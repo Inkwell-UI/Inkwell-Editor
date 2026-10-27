@@ -24,6 +24,8 @@ body.dragging-row { cursor: row-resize; user-select: none; }
 /* focus: always visible */
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .btn:focus-visible, .tab:focus-visible, .splitter:focus-visible { outline-offset: -2px; }
+/* a dropdown matches :focus-visible on every click: a 1px border change instead of the 2px ring (still visible) */
+select:focus-visible { outline: none; border-color: var(--accent); }
 
 /* buttons */
 .btn { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; font: inherit; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 4px; cursor: pointer; white-space: nowrap; min-height: 26px; }
