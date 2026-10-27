@@ -29,4 +29,4 @@ One rule, `shared/theme.ts` `bindingMode`, drives the lint, the Inspector chips 
 
 ## Not done / not verified
 
-The runtime table has not run in Skyrim yet (test in `TEST-IN-GAME-0.4.md` section 10). A colour variable's alpha is ignored at runtime; `overlay.themable` flags are not read (every runtime-capable binding is themable); the plugin polls variables every 3 seconds because Figma has no event for them.
+**Verified in game by the owner (2026-10-27)** with the Stopwatch of Phase 6: the INI `Theme=` switches the colours. Test T (`TEST-IN-GAME-0.4.md` section 10) is the longer checklist. A colour variable's alpha is ignored at runtime; `overlay.themable` flags are not read (every runtime-capable binding is themable); the plugin polls variables every 3 seconds because Figma has no event for them.

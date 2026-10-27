@@ -1,6 +1,6 @@
 # Localization (milestone 0.4)
 
-Texts of a custom menu can be translated. Formats and rules: SPEC-CHANGES section V (V2 to V4) and V13 (the runtime reads the translation files itself); the pure functions are in `Inkwell-Spec/src/localization.ts`. In-game status: the spikes (`TEST-IN-GAME-0.4.md` section 6) showed that the engine's translator works in a custom menu but loads translation files only for loaded plugins, which an Inkwell mod does not have. So the runtime (0.4.0) reads `Interface/Translations/<modId>_<LANGUAGE>.txt` itself. **Nothing in this document has been run in game yet** except what that section 6 lists; the in-game test is S-B2 in `TEST-IN-GAME-0.4.md`.
+Texts of a custom menu can be translated. Formats and rules: SPEC-CHANGES section V (V2 to V4) and V13 (the runtime reads the translation files itself); the pure functions are in `Inkwell-Spec/src/localization.ts`. In-game status: the spikes (`TEST-IN-GAME-0.4.md` section 6) showed that the engine's translator works in a custom menu but loads translation files only for loaded plugins, which an Inkwell mod does not have. So the runtime (0.4.0) reads `Interface/Translations/<modId>_<LANGUAGE>.txt` itself. **Verified in game by the owner (2026-10-27):** English and German in a custom menu (S-B2 and test E, `TEST-IN-GAME-0.4.md`), including the umlauts; the Stopwatch of Phase 6 runs with it. Untested: other languages, a font replacer, a game language the table lacks beyond the source fallback.
 
 ## Data
 
