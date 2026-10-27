@@ -282,6 +282,11 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .preview-panel.is-compact .stage-toolbar select { max-width: 84px; min-width: 0; }
 .preview-panel.is-compact .stage-toolbar .btn { padding-left: 6px; padding-right: 6px; }
 .stage-more { position: absolute; z-index: 20; left: 0; right: 0; top: 38px; display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: 6px; box-shadow: 0 8px 24px var(--shadow); }
+.stage-sep { width: 1px; align-self: stretch; min-height: 18px; background: var(--line-strong); margin: 0 2px; }
+.stage-spacer { flex: 1; }
+.stage-pop { position: relative; display: inline-flex; }
+.stage-pop-panel { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 260px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px; background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: 6px; box-shadow: 0 8px 24px var(--shadow); }
+.stage-pop-panel.right { left: auto; right: 0; }
 .preview-panel.is-compact .stage-toolbar { position: static; }
 
 .stage-empty { inset: 0; left: 0; top: 0; max-width: none; display: flex; align-items: center; justify-content: center; text-align: center; padding: 44px 16px 8px; }

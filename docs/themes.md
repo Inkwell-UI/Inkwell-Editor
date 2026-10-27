@@ -22,7 +22,7 @@ One rule, `shared/theme.ts` `bindingMode`, drives the lint, the Inspector chips 
 
 ## Editor
 
-- **Stage toolbar > Theme:** a select of the modes; rebuilds the preview SWF with that mode (the game SWF keeps the default). Not saved.
+- **Stage toolbar > Preview settings:** theme, language, UI scale and Pseudo-Loc sit in one panel behind a button that shows the current "theme · language" (the compact toolbar keeps them in its More panel). The Theme select lists the modes and rebuilds the preview SWF with that mode (the game SWF keeps the default). Not saved. Occupied HUD, Focus Graph and Prompts (disabled until 0.5 or later) sit in the "..." panel at the right.
 - **Inspector > Theme bindings:** the layer's bindings with the variable name and a `runtime` or `compile-time only` chip.
 - **Menu settings > Default Theme:** a dropdown of the modes (a text field when the SWF has no collection).
 - **Lint:** `theme-default-unknown` (error), `theme-variable-missing` (warning), `theme-binding-not-runtime` (warning, custom menus only).
