@@ -253,6 +253,19 @@ describe('syncServer', () => {
     expect([...r.ids].sort()).toEqual(['gone', 's'])
   })
 
+  it('hashTree: a node the plugin lacks and no root reaches (deleted while it was disconnected) is dropped with its subtree; one the plugin still lists is kept', async () => {
+    const ir = swf([frame('f', ['s']), rectShape('s'), rectShape('stale1'), frame('ghost', ['stale2']), { ...rectShape('stale2'), parent: 'ghost' }], { id: 'hud' })
+    const onChange = vi.fn(() => ({ issues: [] }))
+    const s = await start({ initial: { hud: ir }, onChange })
+    const c = await ready(s)
+    expect(unreachableNodes(ir).sort()).toEqual(['ghost', 'stale1', 'stale2'])
+    c.ws.send(JSON.stringify({ type: 'hashTree', swfId: 'hud', nodeHashes: { f: hashNode(ir.nodes['f']), s: hashNode(ir.nodes['s']), stale1: 'x' } }))
+    const r = await c.next()
+    expect(r).toMatchObject({ type: 'resend', swfId: 'hud', ids: ['stale1'] })
+    expect(Object.keys(s.ir('hud')!.nodes).sort()).toEqual(['f', 's', 'stale1'])
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalled()) // the rebuild saves the IR without the dropped nodes
+  })
+
   it('reconnect after an offline session: a plugin with the same tree as the saved IR (the snapshot root) gets an empty resend', async () => {
     const saved = sample()
     const s = await start({ initial: { hud: saved } })
@@ -365,7 +378,9 @@ describe('syncServer images (protocol 3)', () => {
     expect(assets.get(A.hash)).toEqual(A.image)
     expect(all.filter((m) => m.type === 'needAssets')).toHaveLength(1)
     // a new connection's hash tree asks for a hash that is still missing, never for the stored one
-    s.ir('hud')!.nodes['img2'] = { ...withImage(B.hash), id: 'img2' } as never
+    const nodes = s.ir('hud')!.nodes
+    nodes['img2'] = { ...withImage(B.hash), id: 'img2' } as never
+    nodes['f'] = { ...nodes['f']!, children: [...nodes['f']!.children, 'img2'] } // reachable: an unreachable node the plugin lacks is dropped (next test)
     const c2 = await ready(s)
     c2.ws.send(JSON.stringify({ type: 'hashTree', swfId: 'hud', nodeHashes: {} }))
     expect(await until(c2, 'needAssets')).toEqual({ type: 'needAssets', hashes: [B.hash] })

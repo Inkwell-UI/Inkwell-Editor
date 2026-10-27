@@ -250,6 +250,14 @@ export async function startSyncServer(opts: SyncServerOptions) {
       selection = m.ids
       events.emit('selection', selection)
     } else if (m.type === 'hashTree') {
+      const e = store.get(m.swfId)
+      // A layer deleted in Figma while the plugin was not connected never got its `remove` (the plugin starts with an empty cache), and the resend below only covers ids the
+      // plugin lists. So a node the plugin does not have and no root reaches is gone: drop it (a reachable node the plugin lacks is resent as a remove by the plugin on request).
+      const stale = e ? unreachableNodes(e.ir).filter((id) => !Object.hasOwn(m.nodeHashes, id)) : []
+      if (e && stale.length) {
+        e.ir = applyPatch(e.ir, { ops: stale.map((id) => ({ op: 'remove' as const, id })) })
+        if (!e.orphaned) schedule(m.swfId) // the rebuild saves the IR without them
+      }
       const nodes = store.get(m.swfId)?.ir.nodes ?? {}
       const ids = Object.entries(m.nodeHashes)
         .filter(([id, h]) => !nodes[id] || hashNode(nodes[id]) !== h)
