@@ -528,7 +528,7 @@ export const strings = {
   mock: {
     title: 'Mock Data',
     presets: ['Empty', 'Typical', 'Stress'],
-    later: `${BY} presets that fit a list's item shape (0.5, with contracts)`,
+    later: `${BY} contract data shapes (0.5): presets need a list's item shape`,
     add: 'Add field',
     key: 'Mock data key',
     type: 'Mock data type',
