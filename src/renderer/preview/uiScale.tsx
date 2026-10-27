@@ -27,16 +27,17 @@ export const uiScaleStore = {
 
 export const useUiScale = (): number => useSyncExternalStore(uiScaleStore.subscribe, uiScaleStore.get)
 
-/** Number field in the stage toolbar / Play panel (custom menus only). */
+/** Slider in the stage toolbar / Play panel (custom menus only); the value is shown next to it, double-click the value for 1. */
 export function UiScaleControl({ testId }: { testId: string }) {
   const v = useUiScale()
   return (
     <label className="inline" title={strings.stage.uiScaleTip}>
       <span>{strings.stage.uiScale}</span>{' '}
       <input
-        type="number" className="gn-input ui-scale-input" min={UI_SCALE_RANGE.min} max={UI_SCALE_RANGE.max} step={0.05} value={v}
+        type="range" className="ui-scale-input" min={UI_SCALE_RANGE.min} max={UI_SCALE_RANGE.max} step={0.05} value={v}
         onChange={(e) => e.target.value !== '' && uiScaleStore.set(Number(e.target.value))} aria-label={strings.stage.uiScale} data-testid={testId}
-      />
+      />{' '}
+      <output className="ui-scale-value" onDoubleClick={() => uiScaleStore.set(1)} title={strings.stage.uiScaleReset}>{v.toFixed(2)}</output>
     </label>
   )
 }
