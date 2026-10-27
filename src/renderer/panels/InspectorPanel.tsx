@@ -130,6 +130,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
         <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
         <ThemeBindingsField node={node} />
+        <DataBindingNote value={(entry as { dataBinding?: string }).dataBinding} />
         {node.type === 'text' && <LocKeyField swfId={swfId} node={node} value={(entry as { locKey?: string }).locKey} />}
         {EMBEDDED_FONTS_UI && node.type === 'text' && <EmbeddedFontField swfId={swfId} nodeId={node.id} value={(entry as { font?: string }).font} />}
         {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
@@ -347,6 +348,18 @@ function EmbeddedFontField({ swfId, nodeId, value }: { swfId: string; nodeId: st
           <p className="dim">{t.facts(chosen.glyphCount, Math.round(chosen.bytes / 1024))}</p>
         </>
       ) : <p className="dim">{t.help}</p>}
+    </div>
+  )
+}
+
+/** The layer's data binding (overlay `dataBinding`, e.g. `text=var:score`): read-only here, the Data Binding panel edits it. */
+function DataBindingNote({ value }: { value: string | undefined }) {
+  const t = strings.insp.dataBinding
+  return (
+    <div className="field" data-testid="data-binding-note">
+      <span className="field-label">{t.label}</span>
+      {value ? <code className="mono">{value}</code> : null}
+      <p className="dim">{value ? t.set : t.none}</p>
     </div>
   )
 }

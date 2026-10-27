@@ -315,6 +315,11 @@ export const strings = {
     truncateNote: 'Needs the runtime helper, which is not generated yet',
     font: 'FONT RESOLUTION',
     fontNone: 'No font report for this layer yet. Build the SWF first.',
+    dataBinding: {
+      label: 'Data binding',
+      none: 'None. Edit data bindings in the Data Binding panel (Behaviour workspace, bottom tabs).',
+      set: 'Edit it in the Data Binding panel (Behaviour workspace, bottom tabs).'
+    },
     themeBindings: {
       label: 'Theme bindings (from Figma variables)',
       runtime: 'runtime',
@@ -382,8 +387,6 @@ export const strings = {
     debugHotkeyHelp: 'Empty = off. A DirectInput scan code 1-255 (65 = F7) that shows the popup with sample texts in game. Turn it off before a release.',
     disabledControls: [
       { label: 'Anchor override', value: 'Override Figma constraints', reason: `${BY} anchoring codegen` },
-      { label: 'Loc key ($)', value: '$Inkwell_...', reason: `${BY} localization pipeline (0.4)` },
-      { label: 'Bindings', value: 'Theme and data bindings', reason: `${BY} data binding panel (0.2)` },
       { label: 'Focus', value: 'Gamepad focus order', reason: `${BY} gamepad focus graph (0.5)` }
     ],
     source: 'FIGMA SOURCE (read-only)',
