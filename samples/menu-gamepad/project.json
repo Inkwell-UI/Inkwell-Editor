@@ -1,0 +1,10 @@
+{
+  "author": "Inkwell",
+  "deploy": {
+    "path": "C:/Modding/MO2/mods/Inkwell Menu Gamepad Test",
+    "preset": "mo2"
+  },
+  "modId": "InkwellMenuGamepad",
+  "name": "Inkwell Menu Gamepad Test",
+  "version": "0.5.0"
+}

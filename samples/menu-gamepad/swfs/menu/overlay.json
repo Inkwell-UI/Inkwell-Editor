@@ -1,0 +1,70 @@
+{
+  "nodes": {
+    "2:11": {
+      "focus": {
+        "order": 1,
+        "overrides": {
+          "down": "2:13",
+          "left": "2:14"
+        }
+      },
+      "instanceName": "btn1",
+      "role": "button",
+      "scripts": [
+        "main"
+      ]
+    },
+    "2:12": {
+      "focus": {
+        "order": 2,
+        "overrides": {
+          "down": "2:14",
+          "right": "2:13"
+        }
+      },
+      "instanceName": "btn2",
+      "role": "button"
+    },
+    "2:13": {
+      "focus": {
+        "order": 3,
+        "overrides": {
+          "up": "2:11"
+        }
+      },
+      "instanceName": "btn3",
+      "role": "button"
+    },
+    "2:14": {
+      "focus": {
+        "order": 4,
+        "overrides": {
+          "up": "2:12"
+        }
+      },
+      "instanceName": "btn4",
+      "role": "button"
+    },
+    "2:5": {
+      "instanceName": "status"
+    },
+    "2:6": {
+      "instanceName": "focusText"
+    },
+    "2:7": {
+      "instanceName": "promptSelect",
+      "prompt": {
+        "action": "Accept"
+      },
+      "role": "prompt"
+    },
+    "2:8": {
+      "instanceName": "promptBack",
+      "prompt": {
+        "action": "Cancel"
+      },
+      "role": "prompt"
+    }
+  },
+  "specVersion": 8
+}

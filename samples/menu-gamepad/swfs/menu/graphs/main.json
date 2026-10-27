@@ -1,0 +1,277 @@
+{
+  "comments": [],
+  "edges": [
+    {
+      "from": {
+        "node": "click1",
+        "pin": "then"
+      },
+      "to": {
+        "node": "press1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "focus1",
+        "pin": "then"
+      },
+      "to": {
+        "node": "show1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "click2",
+        "pin": "then"
+      },
+      "to": {
+        "node": "press2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "focus2",
+        "pin": "then"
+      },
+      "to": {
+        "node": "show2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "click3",
+        "pin": "then"
+      },
+      "to": {
+        "node": "press3",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "focus3",
+        "pin": "then"
+      },
+      "to": {
+        "node": "show3",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "click4",
+        "pin": "then"
+      },
+      "to": {
+        "node": "press4",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "focus4",
+        "pin": "then"
+      },
+      "to": {
+        "node": "show4",
+        "pin": "in"
+      }
+    }
+  ],
+  "groups": [],
+  "id": "main",
+  "name": "Main",
+  "nodes": [
+    {
+      "fields": {
+        "target": "2:11"
+      },
+      "id": "click1",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "target": "2:5",
+        "text": "Pressed Button 1"
+      },
+      "id": "press1",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 260,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "target": "2:11"
+      },
+      "id": "focus1",
+      "kind": "core/OnFocus@1",
+      "pos": {
+        "x": 0,
+        "y": 110
+      }
+    },
+    {
+      "fields": {
+        "target": "2:6",
+        "text": "Focus: Button 1"
+      },
+      "id": "show1",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 260,
+        "y": 110
+      }
+    },
+    {
+      "fields": {
+        "target": "2:12"
+      },
+      "id": "click2",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": 0,
+        "y": 220
+      }
+    },
+    {
+      "fields": {
+        "target": "2:5",
+        "text": "Pressed Button 2"
+      },
+      "id": "press2",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 260,
+        "y": 220
+      }
+    },
+    {
+      "fields": {
+        "target": "2:12"
+      },
+      "id": "focus2",
+      "kind": "core/OnFocus@1",
+      "pos": {
+        "x": 0,
+        "y": 330
+      }
+    },
+    {
+      "fields": {
+        "target": "2:6",
+        "text": "Focus: Button 2"
+      },
+      "id": "show2",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 260,
+        "y": 330
+      }
+    },
+    {
+      "fields": {
+        "target": "2:13"
+      },
+      "id": "click3",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": 0,
+        "y": 440
+      }
+    },
+    {
+      "fields": {
+        "target": "2:5",
+        "text": "Pressed Button 3"
+      },
+      "id": "press3",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 260,
+        "y": 440
+      }
+    },
+    {
+      "fields": {
+        "target": "2:13"
+      },
+      "id": "focus3",
+      "kind": "core/OnFocus@1",
+      "pos": {
+        "x": 0,
+        "y": 550
+      }
+    },
+    {
+      "fields": {
+        "target": "2:6",
+        "text": "Focus: Button 3"
+      },
+      "id": "show3",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 260,
+        "y": 550
+      }
+    },
+    {
+      "fields": {
+        "target": "2:14"
+      },
+      "id": "click4",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": 0,
+        "y": 660
+      }
+    },
+    {
+      "fields": {
+        "target": "2:5",
+        "text": "Pressed Button 4"
+      },
+      "id": "press4",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 260,
+        "y": 660
+      }
+    },
+    {
+      "fields": {
+        "target": "2:14"
+      },
+      "id": "focus4",
+      "kind": "core/OnFocus@1",
+      "pos": {
+        "x": 0,
+        "y": 770
+      }
+    },
+    {
+      "fields": {
+        "target": "2:6",
+        "text": "Focus: Button 4"
+      },
+      "id": "show4",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 260,
+        "y": 770
+      }
+    }
+  ],
+  "scope": "menu",
+  "specVersion": 8,
+  "variables": []
+}

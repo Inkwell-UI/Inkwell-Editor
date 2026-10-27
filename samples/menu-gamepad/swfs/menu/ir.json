@@ -1,0 +1,1001 @@
+{
+  "id": "menu",
+  "name": "Inkwell Menu Gamepad Test",
+  "nodes": {
+    "1:1": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [
+        "2:1",
+        "2:2",
+        "2:11",
+        "2:12",
+        "2:13",
+        "2:14",
+        "2:5",
+        "2:6",
+        "2:7",
+        "2:8",
+        "2:9"
+      ],
+      "clipContent": false,
+      "id": "1:1",
+      "name": "stage",
+      "opacity": 1,
+      "parent": null,
+      "transform": {
+        "height": 1080,
+        "rotation": 0,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "2:1": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "fills": [
+        {
+          "color": {
+            "b": 0.12,
+            "g": 0.07,
+            "r": 0.05
+          },
+          "opacity": 0.92,
+          "type": "solid"
+        }
+      ],
+      "id": "2:1",
+      "name": "panel",
+      "opacity": 1,
+      "parent": "1:1",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 640,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 640,
+            "y": 620
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 620
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "strokes": [],
+      "transform": {
+        "height": 620,
+        "rotation": 0,
+        "width": 640,
+        "x": 640,
+        "y": 220
+      },
+      "type": "shape",
+      "visible": true
+    },
+    "2:11": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [
+        "3:1a",
+        "3:1b"
+      ],
+      "clipContent": false,
+      "id": "2:11",
+      "name": "btn1",
+      "opacity": 1,
+      "parent": "1:1",
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 690,
+        "y": 320
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "2:12": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [
+        "3:2a",
+        "3:2b"
+      ],
+      "clipContent": false,
+      "id": "2:12",
+      "name": "btn2",
+      "opacity": 1,
+      "parent": "1:1",
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 970,
+        "y": 320
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "2:13": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [
+        "3:3a",
+        "3:3b"
+      ],
+      "clipContent": false,
+      "id": "2:13",
+      "name": "btn3",
+      "opacity": 1,
+      "parent": "1:1",
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 690,
+        "y": 420
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "2:14": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [
+        "3:4a",
+        "3:4b"
+      ],
+      "clipContent": false,
+      "id": "2:14",
+      "name": "btn4",
+      "opacity": 1,
+      "parent": "1:1",
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 970,
+        "y": 420
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "2:2": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "GAMEPAD FOCUS TEST",
+      "id": "2:2",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "title",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 18,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 32,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 50,
+        "rotation": 0,
+        "width": 600,
+        "x": 660,
+        "y": 240
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:5": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "Press A or Enter on a button",
+      "id": "2:5",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "status",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 28,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 44,
+        "rotation": 0,
+        "width": 580,
+        "x": 670,
+        "y": 510
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:6": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "Focus: none yet",
+      "id": "2:6",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "focusText",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 15,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 44,
+        "rotation": 0,
+        "width": 580,
+        "x": 670,
+        "y": 555
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:7": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [
+        "2:7t"
+      ],
+      "clipContent": false,
+      "id": "2:7",
+      "name": "promptSelect",
+      "opacity": 1,
+      "parent": "1:1",
+      "transform": {
+        "height": 48,
+        "rotation": 0,
+        "width": 290,
+        "x": 670,
+        "y": 640
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "2:7t": {
+      "align": "left",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "Select",
+      "id": "2:7t",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "promptSelect_label",
+      "opacity": 1,
+      "parent": "2:7",
+      "runs": [
+        {
+          "end": 6,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 26,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 48,
+        "rotation": 0,
+        "width": 160,
+        "x": 130,
+        "y": 0
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:8": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [
+        "2:8t"
+      ],
+      "clipContent": false,
+      "id": "2:8",
+      "name": "promptBack",
+      "opacity": 1,
+      "parent": "1:1",
+      "transform": {
+        "height": 48,
+        "rotation": 0,
+        "width": 290,
+        "x": 960,
+        "y": 640
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "2:8t": {
+      "align": "left",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "Back",
+      "id": "2:8t",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "promptBack_label",
+      "opacity": 1,
+      "parent": "2:8",
+      "runs": [
+        {
+          "end": 4,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 26,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 48,
+        "rotation": 0,
+        "width": 160,
+        "x": 130,
+        "y": 0
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:9": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "Pad glyph style: mod INI [Prompts] Gamepad=xbox or playstation",
+      "id": "2:9",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "hint",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 62,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 20,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 90,
+        "rotation": 0,
+        "width": 600,
+        "x": 660,
+        "y": 720
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "3:1a": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "fills": [
+        {
+          "color": {
+            "b": 0.45,
+            "g": 0.55,
+            "r": 0.1
+          },
+          "type": "solid"
+        }
+      ],
+      "id": "3:1a",
+      "name": "btn1_bg",
+      "opacity": 1,
+      "parent": "2:11",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 260,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 260,
+            "y": 70
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 70
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "strokes": [],
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 0,
+        "y": 0
+      },
+      "type": "shape",
+      "visible": true
+    },
+    "3:1b": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "Button 1",
+      "id": "3:1b",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "btn1_label",
+      "opacity": 1,
+      "parent": "2:11",
+      "runs": [
+        {
+          "end": 8,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 0,
+        "y": 0
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "3:2a": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "fills": [
+        {
+          "color": {
+            "b": 0.45,
+            "g": 0.55,
+            "r": 0.1
+          },
+          "type": "solid"
+        }
+      ],
+      "id": "3:2a",
+      "name": "btn2_bg",
+      "opacity": 1,
+      "parent": "2:12",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 260,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 260,
+            "y": 70
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 70
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "strokes": [],
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 0,
+        "y": 0
+      },
+      "type": "shape",
+      "visible": true
+    },
+    "3:2b": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "Button 2",
+      "id": "3:2b",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "btn2_label",
+      "opacity": 1,
+      "parent": "2:12",
+      "runs": [
+        {
+          "end": 8,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 0,
+        "y": 0
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "3:3a": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "fills": [
+        {
+          "color": {
+            "b": 0.45,
+            "g": 0.55,
+            "r": 0.1
+          },
+          "type": "solid"
+        }
+      ],
+      "id": "3:3a",
+      "name": "btn3_bg",
+      "opacity": 1,
+      "parent": "2:13",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 260,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 260,
+            "y": 70
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 70
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "strokes": [],
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 0,
+        "y": 0
+      },
+      "type": "shape",
+      "visible": true
+    },
+    "3:3b": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "Button 3",
+      "id": "3:3b",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "btn3_label",
+      "opacity": 1,
+      "parent": "2:13",
+      "runs": [
+        {
+          "end": 8,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 0,
+        "y": 0
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "3:4a": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "fills": [
+        {
+          "color": {
+            "b": 0.45,
+            "g": 0.55,
+            "r": 0.1
+          },
+          "type": "solid"
+        }
+      ],
+      "id": "3:4a",
+      "name": "btn4_bg",
+      "opacity": 1,
+      "parent": "2:14",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 260,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 260,
+            "y": 70
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 70
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "strokes": [],
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 0,
+        "y": 0
+      },
+      "type": "shape",
+      "visible": true
+    },
+    "3:4b": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "Button 4",
+      "id": "3:4b",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "btn4_label",
+      "opacity": 1,
+      "parent": "2:14",
+      "runs": [
+        {
+          "end": 8,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 70,
+        "rotation": 0,
+        "width": 260,
+        "x": 0,
+        "y": 0
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    }
+  },
+  "root": "1:1",
+  "specVersion": 8,
+  "stage": {
+    "height": 1080,
+    "width": 1920
+  },
+  "target": {
+    "kind": "customMenu"
+  }
+}
