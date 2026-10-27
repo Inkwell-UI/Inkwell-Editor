@@ -1,5 +1,7 @@
 # Debugging graphs: AS2 split view, Play mode, trace (Phase 6 of 0.2)
 
+**Toolbar (since 0.4):** the Inspect / Play switch is one **Interact** toggle (off = Inspect, clicks select layers; on = mouse and keyboard reach the movie) (mouse and keyboard reach the movie; `data-testid` is still `mode-play`, the Play *tab* keeps its name). A Pause/Resume toggle next to the mode switch freezes the Ruffle movie (`PreviewBackend.setPaused`: timers, tweens, timeline); a new load (build or Reload) always starts playing.
+
 Everything here runs in the **Ruffle preview, not the game**. In-game trace logs and live inspection come from the Inkwell Runtime's dev connection (`docs/dev-mode.md`: the Trace & Watch source switch `Game (Dev Mode)`, game pin badges, hot reload); the Ruffle source says it is not the game. Graph format and codegen: `docs/graphs.md`, `docs/codegen.md`; panel reference: `docs/ui-panels.md`.
 
 ## What a graph edit does

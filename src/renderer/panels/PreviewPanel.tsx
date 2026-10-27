@@ -57,6 +57,7 @@ export function PreviewPanel() {
   const [aspect, setAspect] = useState<AspectId>('16:9')
   const [safe, setSafe] = useState(true)
   const [zoom, setZoom] = useState(1)
+  const [paused, setPaused] = useState(false)
   const [ctl, setCtl] = useState<PreviewController>()
   const [rootRef, rootSize] = useElementSize<HTMLDivElement>()
 
@@ -77,6 +78,9 @@ export function PreviewPanel() {
     }
   }, [ctl, build])
   const state = useSyncExternalStore(ctl?.subscribe ?? (() => () => {}), ctl?.getState ?? (() => idle))
+  useEffect(() => {
+    if (state.status === 'loading') setPaused(false) // every load (build, reload) creates a playing movie
+  }, [state.status])
   // Mock data feeds the running movie, never a build: after every load (a rebuild restarts the movie) and whenever the data changes.
   const mockJson = JSON.stringify(mockDataOf(useActiveOverlay()))
   useEffect(() => {
@@ -149,6 +153,8 @@ export function PreviewPanel() {
         <StageToolbar
           mode={mode}
           onMode={setMode}
+          paused={paused}
+          onPaused={(v) => (ctl?.backend.setPaused(v), setPaused(v))}
           aspect={aspect}
           onAspect={setAspect}
           safeZones={safe}

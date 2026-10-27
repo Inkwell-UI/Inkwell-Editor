@@ -36,13 +36,13 @@ export const strings = {
 
   stage: {
     toolbar: 'Stage controls',
-    modeLabel: 'Stage mode',
-    inspect: 'Inspect',
-    play: 'Play',
-    inspectTip: 'Inspect: clicks select components, input does not reach the SWF (Tab toggles while the stage has focus)',
-    playTip: 'Play: mouse and keyboard go to the SWF (Tab toggles while the stage has focus)',
+    interactTip: 'Interact: mouse and keyboard go to the SWF. Off: clicks select components and input does not reach the SWF (Tab toggles while the stage has focus)',
     modeInspect: 'Inspect mode',
-    modePlay: 'Play mode',
+    modePlay: 'Interact mode',
+    play: 'Play',
+    pause: 'Pause',
+    pauseTip: 'Pause the preview movie: timers, tweens and animations stop (a reload or a new build starts it again)',
+    resumeTip: 'Resume the preview movie',
     stageLabel: 'Preview stage',
     aspect: 'Aspect ratio',
     aspectNames: { '16:9': '16:9', '16:10': '16:10', '21:9': '21:9', '32:9': '32:9', '4K': '4K (3840x2160)' },
@@ -230,7 +230,7 @@ export const strings = {
       return [...groups, [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Y']]]
     },
     breadcrumbLabel: 'Graph location',
-    crumbRoot: 'GRAPH:',
+    pickGraph: 'Open another graph',
     eventsTitle: 'Events',
     eventsFilter: 'Filter',
     spawnTitle: 'Add node',
@@ -273,7 +273,7 @@ export const strings = {
   bind: {
     title: 'Data Binding',
     none: 'Select a layer to bind its properties to a variable or mock data.',
-    help: 'A bound property takes its value from a graph variable or a mock data field. Mock data feeds Ruffle Play mode only.',
+    help: 'A bound property takes its value from a graph variable or a mock data field. Mock data feeds the Ruffle preview only.',
     props: { text: 'Text', visible: 'Visible', alpha: 'Alpha', tint: 'Tint' } as Record<string, string>,
     unbound: '(not bound)',
     variables: 'Graph variables',
@@ -534,7 +534,7 @@ export const strings = {
     type: 'Mock data type',
     value: 'Mock data value',
     remove: (k: string) => `Remove ${k}`,
-    empty: 'No mock data. Add fields that data bindings can use; they feed Ruffle Play mode only and are never shipped.'
+    empty: 'No mock data. Add fields that data bindings can use; they feed the Ruffle preview only and are never shipped.'
   },
 
   top: {

@@ -11,15 +11,16 @@ import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
 import { eventNodes } from '../model/graphModel'
 import { tidyPositions } from '../model/graphLayout'
 import { ownersOfGraph } from '../model/graphNav'
-import { menuGraphId, setActiveGraph } from '../state/graphDocs'
+import { menuGraphId, openGraphs, setActiveGraph, useGraphDocs } from '../state/graphDocs'
 import type { GraphStore } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { Popover } from '../ui/Popover'
 import { Panel } from './Panel'
 
 /**
- * Zone 4: the Knotwork graph of the active SWF's open graph (UX 4.4): breadcrumb (SWF > graph > layer > node; the segments are links), the event jump
+ * Zone 4: the Knotwork graph of the active SWF's open graph (UX 4.4): breadcrumb (SWF > layer > graph > node; the graph is a dropdown of the SWF's graphs, the others are links), the event jump
  * list, the canvas, and the AS2 split view (`graph/As2View.tsx`: generated class, selected node's lines highlighted, click a line to select its node). Which graph is open is `state/graphDocs`:
  * the Navigator's Graphs section sets it, and selecting a component that has a graph opens that graph (bridge).
  */
@@ -84,13 +85,33 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
   const node = selectedNode ? nodeIndex(nodes).get(selectedNode) : undefined
   const nodeTitle = node ? (defs.get(node.data.kind)?.title ?? node.data.kind) : undefined
   const menu = menuGraphId(swf.id)
+  const ids = useGraphDocs((s) => s.ids[swf.id]) ?? [graphId]
+  const names = new Map(openGraphs(swf.id).map((g) => [g.id, g.name])) // the open graph's own name is live (`name`); siblings update on the next render
   return (
     <>
       <nav className="breadcrumb" aria-label={strings.graph.breadcrumbLabel}>
-        <span>{strings.graph.crumbRoot}</span>
         <button type="button" className="row-link" onClick={() => menu && setActiveGraph(swf.id, menu)} disabled={!menu} data-testid="crumb-swf">{swf.name}</button>
-        <span aria-hidden="true">&gt;</span><span data-testid="crumb-graph">{name}</span>
         {owner && <><span aria-hidden="true">&gt;</span><button type="button" className="row-link" onClick={() => selectComponent(owner, 'navigator')}>{swf.ir.nodes[owner]?.name}</button></>}
+        <span aria-hidden="true">&gt;</span>
+        <Popover
+          label={strings.graph.pickGraph}
+          trigger={(p, open) => (
+            <button type="button" className="btn btn-quiet crumb-trigger" {...p} title={strings.graph.pickGraph} aria-label={`${strings.graph.pickGraph}: ${name}`} data-testid="crumb-graph">
+              <span className="btn-label">{name}</span>
+              <ChevronDown size={13} aria-hidden="true" className={open ? 'flip' : undefined} />
+            </button>
+          )}
+        >
+          {(close) => (
+            <ul className="menu" role="listbox" aria-label={strings.graph.pickGraph}>
+              {ids.map((id) => (
+                <li key={id} role="option" aria-selected={id === graphId}>
+                  <button type="button" className={id === graphId ? 'is-selected' : undefined} onClick={() => { setActiveGraph(swf.id, id); close() }}>{id === graphId ? name : (names.get(id) ?? id)}</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Popover>
         {nodeTitle && <><span aria-hidden="true">&gt;</span><span>{nodeTitle}</span></>}
       </nav>
       <div className={`graph-body${split ? ' is-split' : ''}`}>

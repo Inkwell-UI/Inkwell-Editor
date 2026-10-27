@@ -4,6 +4,8 @@ import { inkwell } from '../hooks/api'
 
 // The slice of Ruffle's self-hosted API used here (https://github.com/ruffle-rs/ruffle/wiki/Using-Ruffle#javascript-api).
 interface RufflePlayerElement extends HTMLElement {
+  pause?(): void
+  play?(): void
   ruffle(): { load(opts: Record<string, unknown>): Promise<void>; destroy?(): void }
 }
 interface RuffleGlobal {
@@ -54,6 +56,15 @@ export class RuffleBackend implements PreviewBackend {
     const f = (this.player as unknown as Record<string, unknown> | undefined)?.[fn]
     if (typeof f !== 'function') return false
     return f.apply(this.player, args) !== false // the shim's callbacks answer false only for "no such method"
+  }
+
+  setPaused(paused: boolean): void {
+    const p = this.player
+    if (!p) return
+    if (paused) p.pause?.()
+    else p.play?.()
+    // Ruffle's own big play button would resume behind our toggle's back; the toolbar button is the one control
+    ;(p.shadowRoot?.getElementById('play-button') as HTMLElement | null | undefined)?.style.setProperty('display', 'none')
   }
 
   on<E extends keyof PreviewBackendEvents>(event: E, cb: (value: PreviewBackendEvents[E]) => void): () => void {

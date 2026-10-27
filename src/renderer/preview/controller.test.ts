@@ -12,6 +12,7 @@ function fakeBackend(loadImpl: (b: PreviewBuild) => Promise<void> = async () => 
     load: (b) => (loads.push(b.seq), loadImpl(b)),
     on: (e, cb) => (subs[e].add(cb as never), () => subs[e].delete(cb as never)),
     call: () => false,
+    setPaused: () => {},
     dispose: () => (disposed = true)
   }
   const emit = <E extends keyof PreviewBackendEvents>(e: E, v: PreviewBackendEvents[E]): void => subs[e].forEach((cb) => (cb as (v: unknown) => void)(v))

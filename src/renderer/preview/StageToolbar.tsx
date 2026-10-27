@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Crosshair, Ellipsis, Keyboard, Languages, MousePointer2, Palette, PictureInPicture2, Play, RefreshCw, ScanLine, Sparkles, Waypoints, ZoomIn, ZoomOut } from 'lucide-react'
+import { Crosshair, Ellipsis, Keyboard, Languages, MousePointerClick, Palette, Pause, PictureInPicture2, Play, RefreshCw, ScanLine, Sparkles, Waypoints, ZoomIn, ZoomOut } from 'lucide-react'
 import { themeModes } from '@inkwell-ui/spec'
 import { ASPECTS, type AspectId } from '../../shared/preview'
 import { strings } from '../strings'
@@ -14,6 +14,9 @@ export type StageMode = 'inspect' | 'play'
 export interface StageToolbarProps {
   mode: StageMode
   onMode(m: StageMode): void
+  /** The movie is frozen (timers, tweens, timeline). */
+  paused: boolean
+  onPaused(paused: boolean): void
   aspect: AspectId
   onAspect(a: AspectId): void
   safeZones: boolean
@@ -25,7 +28,7 @@ export interface StageToolbarProps {
   zoom: number
   onZoom(dir: 1 | -1): void
   onZoomReset(): void
-  /** A small slot (the fixed preview of the Behaviour mode): icon-only essentials (Inspect/Play, SWF, aspect, reload, pop out); zoom and the long toggles sit in a "More" popover. */
+  /** A small slot (the fixed preview of the Behaviour mode): essentials (Interact, Pause, SWF, aspect, reload, pop out); zoom and the long toggles sit in a "More" popover. */
   compact: boolean
   /** SWF picker (the detached window has no top bar). */
   swfPicker?: ReactNode
@@ -86,14 +89,8 @@ export function StageToolbar(p: StageToolbarProps) {
   const close = (): void => (setMore(false), setPreview(false), setLater(false))
   return (
     <div className="stage-toolbar" role="toolbar" aria-label={strings.stage.toolbar} onKeyDown={(e) => e.key === 'Escape' && (more || preview || later) && close()}>
-      <div className="seg" role="group" aria-label={strings.stage.modeLabel}>
-        <button type="button" className="btn btn-seg" aria-pressed={p.mode === 'inspect'} onClick={() => p.onMode('inspect')} title={strings.stage.inspectTip} data-testid="mode-inspect">
-          <MousePointer2 size={14} aria-hidden="true" /> {p.compact ? <span className="sr-only">{strings.stage.inspect}</span> : strings.stage.inspect}
-        </button>
-        <button type="button" className="btn btn-seg" aria-pressed={p.mode === 'play'} onClick={() => p.onMode('play')} title={strings.stage.playTip} data-testid="mode-play">
-          <Play size={14} aria-hidden="true" /> {p.compact ? <span className="sr-only">{strings.stage.play}</span> : strings.stage.play}
-        </button>
-      </div>
+      <Btn icon={p.paused ? Play : Pause} label={p.paused ? strings.stage.resumeTip : strings.stage.pauseTip} pressed={p.paused} onClick={() => p.onPaused(!p.paused)} testId="stage-pause" className="icon-filled">{p.paused ? strings.stage.play : strings.stage.pause}</Btn>
+      <Btn icon={MousePointerClick} label={strings.stage.interactTip} pressed={p.mode === 'play'} onClick={() => p.onMode(p.mode === 'play' ? 'inspect' : 'play')} testId="mode-play" />
       {!p.compact && <span className="stage-sep" aria-hidden="true" />}
       {p.swfPicker}
       <label className="inline">

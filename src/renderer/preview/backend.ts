@@ -22,6 +22,8 @@ export interface PreviewBackend {
   on<E extends keyof PreviewBackendEvents>(event: E, cb: (value: PreviewBackendEvents[E]) => void): () => void
   /** Calls an `ExternalInterface` callback of the running movie (the preview shims in swf/generate.ts: `inkwellCall`, `inkwellMock`...). False when nothing is running, it has no such callback, or the callback answered false (`inkwellCall`: no such clip method). */
   call(fn: string, ...args: unknown[]): boolean
+  /** Freezes (true) or continues (false) the running movie: timers, tweens and the timeline. A new `load` always starts playing. */
+  setPaused(paused: boolean): void
   /** Stops the movie and releases everything; the backend is unusable afterwards. */
   dispose(): void
 }

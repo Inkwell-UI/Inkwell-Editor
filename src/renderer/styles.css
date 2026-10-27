@@ -200,6 +200,7 @@ details.source summary { cursor: pointer; display: flex; align-items: center; ga
 
 /* preview stage */
 .preview-panel { display: flex; flex-direction: column; height: 100%; gap: 6px; min-height: 0; }
+.icon-filled svg { fill: currentColor; } /* Pause/Play read as solid shapes, not outlines */
 .stage-toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .inline { display: inline-flex; align-items: center; gap: 4px; }
 .zoom { display: inline-flex; align-items: center; }
@@ -364,6 +365,8 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 
 /* graph panel header, Navigator graphs list, Variables, Data binding, Mock data */
 .graph-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+.crumb-trigger { padding: 1px 6px; min-height: 22px; color: var(--fg); gap: 4px; }
+.breadcrumb .popover { min-width: 180px; padding: 4px; }
 .breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .event-list { position: absolute; left: 8px; top: 8px; z-index: 6; width: 200px; max-height: calc(100% - 16px); display: flex; flex-direction: column; gap: 4px; padding: 6px; background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: 6px; box-shadow: 0 4px 10px var(--shadow); }
 .event-list-head { display: flex; align-items: center; gap: 4px; background: none; border: 0; color: var(--fg); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; }
