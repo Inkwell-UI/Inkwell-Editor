@@ -1,4 +1,5 @@
-import type { Graph, MergedContract, Swf } from '@inkwell-ui/spec'
+import { FOCUS_DIRS, type FocusGraph, type Graph, type MergedContract, type PromptDevice, type Swf } from '@inkwell-ui/spec'
+import { glyphId, glyphOwner, isGlyphNode, PROMPT_DEVICE_ORDER, withPromptGlyphs } from './promptGlyphs'
 import { ddsRel, isAssetHash, type ImageMode } from '../images/assets'
 import type { Rgba } from '../images/png'
 import { ident } from '../../shared/overlay'
@@ -65,6 +66,10 @@ export interface GenerateOptions {
   images?: (hash: string) => Rgba | undefined
   /** Menu replacement only: the merged contract (`lint/contract.ts` `contractFor`); the SWF gets the engine glue built from it (`codegen/replacementGlue.ts`). */
   contract?: MergedContract
+  /** Custom menu: the SWF's focus graph (Spec `focusGraph`, W3); the menu class moves focus on On Input Up/Down/Left/Right by it. Empty order = GFx's own focus handling. */
+  focus?: Pick<FocusGraph, 'order' | 'moves'>
+  /** Custom menu: role-`prompt` frames (W4) and their glyph per device (Spec `resolvePrompt`); the glyphs are compiled in and the menu class shows the active device's. */
+  prompts?: Record<string, Partial<Record<PromptDevice, string>>>
 }
 
 export interface Generated {
@@ -375,8 +380,12 @@ function imagesClass(modId: string, cls: string, swfId: string, loads: ImageLoad
 }
 
 /** IR -> SWF skeleton tags + SVGs + AS2 sources. Pure: no files, no FFDec. */
-export function generate(ir: Swf, opts: GenerateOptions): Generated {
+export function generate(source: Swf, opts: GenerateOptions): Generated {
   const lint: LintIssue[] = []
+  // W4: prompt glyphs are compiled from synthetic layers added to this build's copy of the IR (never saved); their lint is reported on the prompt
+  const withGlyphs = source.target.kind === 'customMenu' && !opts.widget && opts.prompts && Object.keys(opts.prompts).length ? withPromptGlyphs(source, opts.prompts) : undefined
+  const ir = withGlyphs?.ir ?? source
+  if (withGlyphs) lint.push(...withGlyphs.lint)
   const defs: Buffer[] = []
   const shapes: Generated['shapes'] = []
   const embedded = new Map<string, { charId: number; chars: Set<string> }>() // preview: font name -> placeholder DefineFont3
@@ -714,7 +723,15 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     const pathOf = (id: string): string | undefined => (layerPaths.get(id)?.startsWith('root.') ? layerPaths.get(id)!.slice('root.'.length) : undefined)
     const themed = tOps.flatMap((o) => { const p = pathOf(o.nodeId); return p ? [{ path: o.target === 'fill' ? `${p}.fill` : p, kind: o.kind, values: o.values }] : [] })
     const byRole = (...r: string[]): string[] => Object.entries(opts.roles ?? {}).filter(([, role]) => r.includes(role)).flatMap(([id]) => pathOf(id) ?? [])
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
+    // W3: the focus graph by clip path; a member that was not compiled (hidden) is left out and moves to it stay put
+    const fOrder = (opts.focus?.order ?? []).filter((id) => pathOf(id) !== undefined)
+    for (const id of opts.focus?.order ?? []) if (pathOf(id) === undefined) lint.push(issue('warning', 'focus-not-compiled', id, 'This focusable layer is not compiled (hidden?), so the focus graph skips it.'))
+    const focusGlue = fOrder.length ? { paths: fOrder.map((id) => pathOf(id)!), moves: fOrder.map((id, k) => FOCUS_DIRS.map((d) => { const t = fOrder.indexOf(opts.focus!.moves[id]?.[d] ?? id); return t < 0 ? k : t })) } : undefined
+    const promptGlue = Object.keys(opts.prompts ?? {}).flatMap((pid) => {
+      const ps = PROMPT_DEVICE_ORDER.map((d) => (opts.prompts![pid]![d] ? pathOf(glyphId(pid, d)) ?? null : null))
+      return ps.some((x) => x) ? [ps] : []
+    })
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
       frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, listInfos.map((l) => listAttachCode(mod, l, '_root'))))
@@ -737,7 +754,9 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     ...[...embedded].map(([name, e]) => ({ charId: e.charId, name, chars: [...e.chars].join('') })),
     ...[...custom].map(([hash, c]) => ({ charId: c.charId, name: c.family, chars: c.chars, hash }))
   ]
-  return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls, layerPaths: Object.fromEntries(layerPaths), contractProvided: glue?.provided ?? {} }
+  // synthetic glyph layers: their findings belong to the prompt, their font rows are not the author's text
+  const lintOut = withGlyphs ? lint.map((l) => (isGlyphNode(l.nodeId) ? { ...l, nodeId: glyphOwner(l.nodeId), ...(l.nodeName !== undefined ? { nodeName: ir.nodes[glyphOwner(l.nodeId)]?.name ?? l.nodeName } : {}) } : l)) : lint
+  return { tags, shapes, as2, lint: lintOut, fonts: withGlyphs ? fontRows.filter((f) => !isGlyphNode(f.nodeId)) : fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls, layerPaths: Object.fromEntries(layerPaths), contractProvided: glue?.provided ?? {} }
 }
 
 /** `node-off-stage`: a visible layer whose box lies entirely outside the frame (the stage), so it never shows. One warning per subtree. */

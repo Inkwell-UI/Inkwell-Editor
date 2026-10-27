@@ -14,6 +14,7 @@ import { isUnmodifiedVanilla } from '../vanilla/cache'
 import { compileWidget, type WidgetOptions } from '../widget/compileWidget'
 import { compileRuntimeCheck } from '../runtime/runtimeCheck'
 import { devIniText, devReloadPaths, RUNTIME_INI_REL } from '../runtime/devIni'
+import { hasFocusGraph } from '../lint/focus'
 import { keyedTexts, localizationLint, type LocSwf } from '../lint/localization'
 import { planDeploy, projectMinRuntime, safeJoin, translationFilePath, type DeployPlan, type SwfLike } from './plan'
 import { readManifest, staleFiles, writeDeploy } from './write'
@@ -72,6 +73,7 @@ export interface DeployInput {
 const menuFeatures = (s: DeploySwf): string[] => [
   ...(s.graphs?.some((g) => g.variables?.some((v) => v.scope === 'saved')) ? ['savedVariables'] : []),
   ...(Object.values(s.overlay ?? {}).some((o) => o['role'] === 'list') ? ['list'] : []),
+  ...(hasFocusGraph(s.overlay ?? {}) ? ['focusGraph'] : []),
   ...(keyedTexts([locSwf(s)]).length ? ['translation'] : [])
 ]
 const locSwf = (x: DeploySwf): LocSwf => ({ name: x.name, kind: x.kind, ir: x.ir, ...(x.overlay ? { overlay: x.overlay as Record<string, Record<string, unknown>> } : {}), ...(x.graphs ? { graphs: x.graphs } : {}) })

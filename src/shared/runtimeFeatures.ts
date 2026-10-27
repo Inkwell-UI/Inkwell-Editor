@@ -6,6 +6,7 @@ export const RUNTIME_FEATURE_SINCE = {
   menu: FIRST_RUNTIME_VERSION, // the menu glue, On Open/Close/Click/Focus/Input/Mod Event nodes, Game bridge nodes, UI scale and offset
   savedVariables: FIRST_RUNTIME_VERSION,
   list: FIRST_RUNTIME_VERSION,
+  focusGraph: FIRST_RUNTIME_VERSION, // W3: needs only On Input (Up/Down/Left/Right) and menuMode, both in the first runtime
   translation: '0.4.0' // `inkwell.translate` / `inkwell.language` and the translation files the runtime reads itself (SPEC-CHANGES V13.2)
 } as const
 export type RuntimeFeature = keyof typeof RUNTIME_FEATURE_SINCE

@@ -79,6 +79,9 @@ export function menuLint(modId: string, menus: readonly MenuSource[]): DeployLin
     const first = seen.get(r.name.toLowerCase())
     if (first !== undefined) out.push({ severity: 'error', code: 'menu-name-duplicate', message: `"${m.swf}": the menu name "${r.name}" is already used by "${first}" (names are unique, ignoring case).`, swf: m.swf })
     else seen.set(r.name.toLowerCase(), m.swf)
+    // S-A (owner, 2026-10-27): the pad reaches a menu only in menuMode, so a focus graph needs it
+    if (m.features?.includes('focusGraph') && effectiveInputContext({ inputContext: m.settings.inputContext, flags: m.settings.flags }) !== 'menuMode')
+      out.push({ severity: 'error', code: 'focus-input-context', message: `"${m.swf}" has a gamepad focus graph, but its Input Context is None: the pad reaches a menu only in MenuMode. Set Input Context to MenuMode (or make the menu modal).`, swf: m.swf })
   }
   if (menus.length > MENU_SLOTS)
     out.push({ severity: 'error', code: 'menu-limit', message: `The project has ${menus.length} custom menus; the runtime has ${MENU_SLOTS} slots in total, shared by every installed mod.` })

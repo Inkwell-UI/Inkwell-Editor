@@ -18,6 +18,7 @@ import { snapshotContent, writeSnapshot, type FigmaSnapshot, type SnapshotSource
 import type { PreviewFontSet } from '../previewFonts'
 import { applyTheme, themeModes } from '@inkwell-ui/spec'
 import { themeLint } from '../lint/theme'
+import { focusOptions } from '../lint/focus'
 import { contractFor, contractLint, loadContracts } from '../lint/contract'
 import { compileSwf } from '../swf/compile'
 import type { ChangeResult } from './syncServer'
@@ -157,8 +158,12 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     const fontOpts = emb?.option ? { embeddedFonts: emb.option, embeddedFontBytes: emb.bytes } : {}
     const contractLayers = ir.target.kind === 'menuReplacement' && cfg.contractsDir ? await (contracts ??= loadContracts(cfg.contractsDir)) : []
     const contract = contractFor(ir, contractLayers)
-    const r = await compileSwf(gameIr, { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+    // W3/W4: the focus graph and prompts of a custom menu (overlay), with their lint
+    const fo = focusOptions(ir, overlayNodes)
+    const inputOpts = { ...(fo.focus ? { focus: fo.focus } : {}), ...(fo.prompts ? { prompts: fo.prompts } : {}) }
+    const r = await compileSwf(gameIr, { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
     if (emb) r.lint.push(...emb.issues)
+    r.lint.push(...fo.lint)
     if (ir.target.kind === 'menuReplacement') r.lint.push(...contractLint(ir, r.layerPaths, contractLayers, r.contractProvided))
     r.lint.push(...themeLint(ir, want?.default).map((l) => ({ ...l, nodeName: l.nodeName ?? ir.nodes[l.nodeId]?.name ?? l.nodeId })))
     // Dev SWF (Dev deploy only): the game SWF plus the hooks that stream pin and variable values to the editor. Never part of the normal build or Package Mod.
@@ -167,7 +172,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     if (cfg.devBuild?.() && ir.target.kind === 'customMenu') {
       devBuilt = true
       dt.start('dev-build')
-      await compileSwf(gameIr, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+      await compileSwf(gameIr, { modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
       dt.end('dev-build')
       cfg.onDevBuild?.(name)
     }
@@ -177,7 +182,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     pt.start('preview-build')
     const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: ir.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
     try {
-      const pr = await compileSwf(previewIr, { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
+      const pr = await compileSwf(previewIr, { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
       const buf = await readFile(pr.swfPath)
       preview.bytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
       preview.notes = {

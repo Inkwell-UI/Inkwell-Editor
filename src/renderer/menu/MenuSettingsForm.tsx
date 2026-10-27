@@ -4,7 +4,8 @@ import { DEPTH_RANGE, HOTKEY_RANGE, INPUT_CONTEXTS, MenuSettings, OFFSET_X_RANGE
 import { defaultMenuSettings, menuLint, minRuntimeOf, modIniPath, resolveMenuNames, type MenuSource } from '../../shared/menu'
 import { SCAN_KEYS } from '../../shared/scanCodes'
 import { inkwell } from '../hooks/api'
-import { useActiveSwf, useProject } from '../hooks/useProject'
+import { useActiveOverlay, useActiveSwf, useProject } from '../hooks/useProject'
+import { hasFocusGraph } from '../../main/lint/focus'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 
@@ -62,11 +63,12 @@ export function MenuSettingsForm() {
 
   const source: MenuSource | undefined = swf ? { swf: swf.name, settings: doc } : undefined
   const names = source ? resolveMenuNames(modId, source) : undefined
+  const focus = hasFocusGraph(useActiveOverlay()?.nodes ?? {})
   const rows = useMemo(() => {
     if (!project || !swf) return []
-    const all: MenuSource[] = project.swfs.filter((s) => !s.orphaned && s.ir.target.kind === 'customMenu').map((s) => (s.id === swf.id ? { swf: s.name, settings: doc } : { swf: s.name, settings: s.menu ?? defaultMenuSettings() }))
+    const all: MenuSource[] = project.swfs.filter((s) => !s.orphaned && s.ir.target.kind === 'customMenu').map((s) => (s.id === swf.id ? { swf: s.name, settings: doc, ...(focus ? { features: ['focusGraph'] } : {}) } : { swf: s.name, settings: s.menu ?? defaultMenuSettings() }))
     return menuLint(project.modId, all).filter((r) => !r.swf || r.swf === swf.name)
-  }, [project, swf, doc])
+  }, [project, swf, doc, focus])
 
   if (!swf || !source || !names) return <p className="empty">{S.noSwf}</p>
   const kind = swf.ir.target.kind
