@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import { Crosshair, Ellipsis, Keyboard, Languages, MousePointer2, Palette, PictureInPicture2, Play, RefreshCw, ScanLine, Sparkles, Waypoints, ZoomIn, ZoomOut } from 'lucide-react'
+import { Crosshair, Ellipsis, Keyboard, Languages, MousePointer2, PictureInPicture2, Play, RefreshCw, ScanLine, Sparkles, Waypoints, ZoomIn, ZoomOut } from 'lucide-react'
 import { ASPECTS, type AspectId } from '../../shared/preview'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { ThemeControl } from './ThemeControl'
 
 export type StageMode = 'inspect' | 'play'
 
@@ -47,7 +48,7 @@ export function StageToolbar(p: StageToolbarProps) {
       <Btn icon={Crosshair} reason={strings.stage.occupiedReason}>{strings.stage.occupied}</Btn>
       <Btn icon={Waypoints} reason={strings.stage.focusReason}>{strings.stage.focus}</Btn>
       <Btn icon={Keyboard} reason={strings.stage.promptsReason}>{strings.stage.prompts}</Btn>
-      <Btn icon={Palette} reason={strings.stage.themeReason}>{strings.stage.theme}</Btn>
+      <ThemeControl />
       {!p.menuControls && <Btn icon={Languages} reason={strings.stage.localeReason}>{strings.stage.locale}</Btn>}
       {!p.menuControls && <Btn icon={Sparkles} reason={strings.stage.pseudoReason}>{strings.stage.pseudo}</Btn>}
     </>

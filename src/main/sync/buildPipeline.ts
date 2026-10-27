@@ -16,6 +16,8 @@ import { readGraphs } from '../project/graphFiles'
 import { exclusive } from '../project/lock'
 import { snapshotContent, writeSnapshot, type FigmaSnapshot, type SnapshotSource } from '../project/snapshot'
 import type { PreviewFontSet } from '../previewFonts'
+import { applyTheme, themeModes } from '@inkwell-ui/spec'
+import { themeLint } from '../lint/theme'
 import { compileSwf } from '../swf/compile'
 import type { ChangeResult } from './syncServer'
 
@@ -44,6 +46,8 @@ export interface PipelineConfig {
   devBuild?: () => boolean
   /** After a dev SWF was written. */
   onDevBuild?: (name: string) => void
+  /** The theme names of one SWF: the menu's default (Menu settings, baked into the game SWF) and the one the stage toolbar previews. */
+  themeFor?: (name: string, swfId: string) => { default?: string; preview?: string }
   /** After figma/snapshot.json was checked (written only when its content changed). */
   onSnapshot?: (s: FigmaSnapshot) => void
 }
@@ -137,19 +141,26 @@ export function createBuildPipeline(cfg: PipelineConfig) {
       const gs = (await readGraphs(cfg.projectDir, name)).graphs
       if (gs.length) graphs = { graphs: gs, packs: (await (codegenPacks ??= loadCodegenPacks(cfg.packDirs))).packs }
     }
+    // themes (V6.3): the default theme is baked into the SWFs the game gets; the preview may show another mode
+    const want = cfg.themeFor?.(name, swfId)
+    const modes = themeModes(ir)
+    const defaultMode = want?.default && modes.includes(want.default) ? want.default : modes[0]
+    const gameIr = applyTheme(ir, defaultMode)
+    const previewIr = applyTheme(ir, want?.preview && modes.includes(want.preview) ? want.preview : defaultMode)
     const images = cfg.assets ? (h: string) => cfg.assets!.get(h) : undefined
     // embedded custom fonts (V5): the layers' fonts, the characters to embed and the licence/glyph/size findings
     const emb = cfg.projectDir ? await embeddedFontsFor(cfg.projectDir, name, ir, overlayNodes) : undefined
     const fontOpts = emb?.option ? { embeddedFonts: emb.option, embeddedFontBytes: emb.bytes } : {}
-    const r = await compileSwf(ir, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+    const r = await compileSwf(gameIr, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
     if (emb) r.lint.push(...emb.issues)
+    r.lint.push(...themeLint(ir, want?.default).map((l) => ({ ...l, nodeName: l.nodeName ?? ir.nodes[l.nodeId]?.name ?? l.nodeId })))
     // Dev SWF (Dev deploy only): the game SWF plus the hooks that stream pin and variable values to the editor. Never part of the normal build or Package Mod.
     const dt = createStageTimer()
     let devBuilt = false
     if (cfg.devBuild?.() && ir.target.kind === 'customMenu') {
       devBuilt = true
       dt.start('dev-build')
-      await compileSwf(ir, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+      await compileSwf(gameIr, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
       dt.end('dev-build')
       cfg.onDevBuild?.(name)
     }
@@ -159,7 +170,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     pt.start('preview-build')
     const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: ir.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
     try {
-      const pr = await compileSwf(ir, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
+      const pr = await compileSwf(previewIr, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
       const buf = await readFile(pr.swfPath)
       preview.bytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
       preview.notes = {

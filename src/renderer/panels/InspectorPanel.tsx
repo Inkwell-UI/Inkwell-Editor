@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import { CircleX, Lock, Redo2, TriangleAlert, Undo2, Info } from 'lucide-react'
-import { LOC_KEY, suggestKey, uniqueKey, type Node } from '@inkwell-ui/spec'
+import { isThemeBindingKey, LOC_KEY, suggestKey, uniqueKey, type Node } from '@inkwell-ui/spec'
+import { bindingMode, themeVariable } from '../../shared/theme'
 import { describeTextMapping } from '../../main/swf/text'
 import { CHARSETS } from '../../shared/fonts'
 import { keyedTexts } from '../../main/lint/localization'
@@ -128,6 +129,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
         {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
         <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
+        <ThemeBindingsField node={node} />
         {node.type === 'text' && <LocKeyField swfId={swfId} node={node} value={(entry as { locKey?: string }).locKey} />}
         {node.type === 'text' && <EmbeddedFontField swfId={swfId} nodeId={node.id} value={(entry as { font?: string }).font} />}
         {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
@@ -345,6 +347,31 @@ function EmbeddedFontField({ swfId, nodeId, value }: { swfId: string; nodeId: st
           <p className="dim">{t.facts(chosen.glyphCount, Math.round(chosen.bytes / 1024))}</p>
         </>
       ) : <p className="dim">{t.help}</p>}
+    </div>
+  )
+}
+
+/** The node's Figma variable bindings (SPEC-CHANGES V6): read-only, they come from Figma. `runtime` = the INI Theme key changes it in game; `compile-time only` = the default theme is baked in. */
+function ThemeBindingsField({ node }: { node: Node }) {
+  const swf = useActiveSwf()
+  const rows = Object.entries(node.bindings ?? {}).filter(([k]) => isThemeBindingKey(k))
+  if (!swf || !rows.length) return null
+  const t = strings.insp.themeBindings
+  return (
+    <div className="field" data-testid="theme-bindings">
+      <span className="field-label">{t.label}</span>
+      <ul className="plain">
+        {rows.map(([key, ref]) => {
+          const v = themeVariable(swf.ir, ref.id)
+          const runtime = swf.ir.target.kind === 'customMenu' && bindingMode(key, node) === 'runtime'
+          return (
+            <li key={key}>
+              <span className="mono">{key}</span> {v ? v.name : <span className="tone-warn">{t.missing}</span>}{' '}
+              <span className={`chip ${runtime ? 'chip-ok' : ''}`}>{runtime ? t.runtime : t.compile}</span>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

@@ -76,6 +76,7 @@ export function createSession(deps: SessionDeps) {
   const overlays = new Map<string, OverlayDoc>() // swf id -> overlay (the renderer is the source of truth once it saves)
   const graphs = new Map<string, Map<string, Graph>>() // swf name -> graph id -> graph (the renderer saves; main validates)
   let localization: { localization?: Localization; error?: string } = {} // localization.json (V2.3): the tab is the writer; main keeps the saved copy for deploy
+  const previewThemes = new Map<string, string>() // swf id -> theme mode the stage toolbar previews (not saved)
   const menus = new Map<string, { settings?: MenuSettings; error?: string }>() // swf name -> swfs/<name>/menu.json (the panel is the writer; main keeps the saved copy for deploy)
   let packs: Promise<PackSet> | undefined
   const getPacks = (): Promise<PackSet> => (packs ??= loadPacks([corePackDir(deps.appPath)]))
@@ -171,7 +172,7 @@ export function createSession(deps: SessionDeps) {
       .swfs()
       .flatMap((i) => {
         const ir = server!.ir(i.id)
-        return ir ? [{ id: i.id, name: i.name, orphaned: i.orphaned, ir, overlay: overlays.get(i.id) ?? normalizeOverlay({}), ...(menus.get(i.name)?.settings ? { menu: menus.get(i.name)!.settings! } : {}), ...(menus.get(i.name)?.error ? { menuError: menus.get(i.name)!.error! } : {}) }] : []
+        return ir ? [{ id: i.id, name: i.name, orphaned: i.orphaned, ir, overlay: overlays.get(i.id) ?? normalizeOverlay({}), ...(menus.get(i.name)?.settings ? { menu: menus.get(i.name)!.settings! } : {}), ...(menus.get(i.name)?.error ? { menuError: menus.get(i.name)!.error! } : {}), ...(previewThemes.has(i.id) ? { previewTheme: previewThemes.get(i.id)! } : {}) }] : []
       })
       .sort((a, b) => a.name.localeCompare(b.name))
     return { dir: projectDir, name: meta.name, modId: meta.modId, strictMode: strict, swfs, ...(snapshot ? { snapshot } : {}) }
@@ -245,6 +246,7 @@ export function createSession(deps: SessionDeps) {
       ...cfg,
       assets,
       previewFonts: fonts(),
+      themeFor: (name, swfId) => ({ ...(menus.get(name)?.settings?.userDefaults?.theme ? { default: menus.get(name)!.settings!.userDefaults!.theme! } : {}), ...(previewThemes.has(swfId) ? { preview: previewThemes.get(swfId)! } : {}) }),
       devBuild: () => link().deploy === true,
       onDevBuild: (n) => void devFresh.add(n),
       packDirs: [corePackDir(deps.appPath)],
@@ -650,6 +652,15 @@ export function createSession(deps: SessionDeps) {
       }
       return r
     },
+    /** Theme mode the stage toolbar previews ('' = the menu's default); rebuilds that SWF. */
+    setPreviewTheme(swfName: string, mode: string): { ok: boolean } {
+      const info = server?.swfs().find((i) => i.name === swfName)
+      if (!info) return { ok: false }
+      if (mode) previewThemes.set(info.id, mode)
+      else previewThemes.delete(info.id)
+      server!.rebuild(info.id)
+      return { ok: true }
+    },
     /** Target of one swf (Target dialog); the build rewrites ir.json. */
     async setTarget(swfName: string, kind: 'hudWidget' | 'customMenu'): Promise<{ ok: true } | { ok: false; error: string }> {
       const info = server?.swfs().find((i) => i.name === swfName)
@@ -664,6 +675,8 @@ export function createSession(deps: SessionDeps) {
       const r = await writeMenuSettings(projectDir, swfName, doc)
       if (!r.ok) return r
       menus.set(swfName, { settings: r.settings })
+      const info = server.swfs().find((i) => i.name === swfName)
+      if (info && prev?.settings?.userDefaults?.theme !== r.settings.userDefaults?.theme) server.rebuild(info.id) // the default theme is baked into the SWF
       pushProject()
       return { ok: true }
     },

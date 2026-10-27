@@ -41,6 +41,7 @@ export const IPC = {
   menuSettings: 'menu:settings',
   menuSave: 'menu:save',
   swfTarget: 'swf:target',
+  previewTheme: 'preview:theme',
   locLoad: 'loc:load',
   projectFonts: 'fonts:project',
   projectFontAdd: 'fonts:projectAdd',
@@ -118,6 +119,7 @@ export interface InkwellApi {
   saveOverlay(swfName: string, overlay: OverlayDoc): Promise<SaveOverlayResult>
   /** Writes `swfs/<swfName>/menu.json` (the Spec's MenuSettings; validated, unknown keys kept as sent). The project state follows. */
   saveMenuSettings(swfName: string, settings: MenuSettings): Promise<SaveOverlayResult>
+  setPreviewTheme(swfName: string, mode: string): Promise<{ ok: boolean }>
   setSwfTarget(swfName: string, kind: 'hudWidget' | 'customMenu'): Promise<{ ok: true } | { ok: false; error: string }>
   /** Embedded custom fonts of the project (`fonts.json`, `fonts/<hash>.ttf`): the list with licence verdicts, add a TrueType file (a file dialog), change charsets and extra characters (rebuilds). Never reject. */
   getProjectFonts(): Promise<ProjectFontsState>

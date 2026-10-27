@@ -64,7 +64,8 @@ export const strings = {
     prompts: 'Prompts',
     promptsReason: `${BY} button prompts (0.5)`,
     theme: 'Theme',
-    themeReason: `${BY} Figma variable themes (0.4)`,
+    themeNone: 'No Figma variable collection with two or more modes in this SWF. Make one in Figma (Local variables) and bind layers to it',
+    themeDefault: 'Default theme',
     locale: 'Locale',
     localeReason: 'Custom menus only: a HUD widget has no Inkwell Runtime to translate its texts',
     localeSource: 'Source language',
@@ -169,7 +170,9 @@ export const strings = {
     gamepadReason: 'Gamepad open combos: planned 0.5 (not in 0.3)',
     layoutTheme: 'Layout and theme defaults',
     theme: 'Default Theme',
-    themeHelp: 'Reserved: passed to the menu as inkwell.theme; themes arrive in 0.4.',
+    themeHelp: 'The theme the menu starts with, baked into the SWF and written to the default INI as Theme=. The player changes it in the INI. Empty = the first mode.',
+    themeNoCollection: 'No Figma variable collection with two or more modes: the name is passed to the menu as inkwell.theme only.',
+    themeUnknown: (n: string) => `${n} (not a mode of the collection)`,
     uiScale: 'UI Scale Factor',
     uiScaleHelp: '0.50 to 2.00; scales the whole menu.',
     offsetX: 'Offset X (px)',
@@ -312,6 +315,12 @@ export const strings = {
     truncateNote: 'Needs the runtime helper, which is not generated yet',
     font: 'FONT RESOLUTION',
     fontNone: 'No font report for this layer yet. Build the SWF first.',
+    themeBindings: {
+      label: 'Theme bindings (from Figma variables)',
+      runtime: 'runtime',
+      compile: 'compile-time only',
+      missing: 'variable not in the themed collection'
+    },
     embeddedFont: {
       label: 'Embedded font',
       none: 'None (Skyrim font alias)',

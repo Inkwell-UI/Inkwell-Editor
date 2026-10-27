@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import { CircleX, TriangleAlert } from 'lucide-react'
-import { DEPTH_RANGE, HOTKEY_RANGE, INPUT_CONTEXTS, MenuSettings, OFFSET_X_RANGE, OFFSET_Y_RANGE, UI_SCALE_RANGE, effectiveInputContext, type UserDefaults } from '@inkwell-ui/spec'
+import { DEPTH_RANGE, HOTKEY_RANGE, INPUT_CONTEXTS, MenuSettings, OFFSET_X_RANGE, OFFSET_Y_RANGE, UI_SCALE_RANGE, effectiveInputContext, themeModes, type UserDefaults } from '@inkwell-ui/spec'
 import { defaultMenuSettings, menuLint, minRuntimeOf, modIniPath, resolveMenuNames, type MenuSource } from '../../shared/menu'
 import { SCAN_KEYS } from '../../shared/scanCodes'
 import { inkwell } from '../hooks/api'
@@ -72,6 +72,7 @@ export function MenuSettingsForm() {
   const kind = swf.ir.target.kind
   if (kind !== 'customMenu') return <p className="empty" data-testid="menu-not-custom"><strong>{S.notMenu}</strong><br />{S.notMenuBody(kind)}</p>
   const locked = swf.menuError !== undefined
+  const themes = themeModes(swf.ir)
 
   const edit = (f: (d: MenuSettings) => MenuSettings): void => {
     const p = MenuSettings.safeParse(f(doc))
@@ -167,7 +168,18 @@ export function MenuSettingsForm() {
           </div>
           <div className="field">
             <label className="field-label" htmlFor="menu-theme">{S.theme}</label>
-            <input id="menu-theme" key={u.theme ?? ''} defaultValue={u.theme ?? ''} spellCheck={false} data-testid="menu-theme" onBlur={(e) => e.target.value !== (u.theme ?? '') && user('theme', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
+            {themes.length >= 2 ? (
+              <select id="menu-theme" value={u.theme ?? ''} onChange={(e) => user('theme', e.target.value)} data-testid="menu-theme">
+                <option value="">{themes[0]}</option>
+                {u.theme && !themes.includes(u.theme) && <option value={u.theme}>{S.themeUnknown(u.theme)}</option>}
+                {themes.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            ) : (
+              <>
+                <input id="menu-theme" key={u.theme ?? ''} defaultValue={u.theme ?? ''} spellCheck={false} data-testid="menu-theme" onBlur={(e) => e.target.value !== (u.theme ?? '') && user('theme', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
+                <p className="dim">{S.themeNoCollection}</p>
+              </>
+            )}
             <p className="dim">{S.themeHelp}</p>
           </div>
           <NumField label={S.uiScale} value={u.uiScale} min={UI_SCALE_RANGE.min} max={UI_SCALE_RANGE.max} step={0.05} onCommit={(v) => user('uiScale', v)} help={S.uiScaleHelp} testId="menu-scale" />

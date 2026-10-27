@@ -15,6 +15,8 @@ export interface SwfDoc {
   menu?: MenuSettings
   /** menu.json exists but could not be read: the panel shows it and does not write. */
   menuError?: string
+  /** The theme mode the stage toolbar previews (a mode of the themed collection); absent = the menu's default. Not saved: it is a view setting. */
+  previewTheme?: string
 }
 
 /** The open project, main -> renderer. `null` in the API means no project is open (start screen). */
