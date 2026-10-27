@@ -64,7 +64,7 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .shell { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .shell-main { flex: 1; min-height: 0; display: flex; }
 /* title bar: the main window's own frame; Windows draws min/max/close over the right end (env(titlebar-area-*)), the empty parts drag the window */
-.titlebar { flex: none; display: flex; align-items: center; gap: 8px; height: env(titlebar-area-height, 36px); padding: 0 calc(100% - env(titlebar-area-x, 0px) - env(titlebar-area-width, calc(100% - 140px))) 0 8px; background: var(--surface-1); border-bottom: 1px solid var(--line); -webkit-app-region: drag; user-select: none; }
+.titlebar { flex: none; display: flex; align-items: center; gap: 8px; height: calc(env(titlebar-area-height, 36px) + 1px); /* +1: the border line sits below the OS-drawn buttons, so it runs the full width */ padding: 0 calc(100% - env(titlebar-area-x, 0px) - env(titlebar-area-width, calc(100% - 140px))) 0 8px; background: var(--surface-1); border-bottom: 1px solid var(--line); -webkit-app-region: drag; user-select: none; }
 .titlebar-menus { display: flex; gap: 2px; -webkit-app-region: no-drag; }
 .titlebar-menu { padding: 2px 10px; min-height: 26px; }
 .titlebar-title { flex: 1; min-width: 0; text-align: center; color: var(--fg-dim); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
