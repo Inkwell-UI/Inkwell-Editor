@@ -1,6 +1,6 @@
 import { cp, mkdir, readdir, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { ident } from '../../shared/overlay'
+import { cleanModId } from '../../shared/modId'
 import { loadProject, saveProject } from './index'
 
 /** Folder must not exist or be empty: a project is never created on top of other files. */
@@ -9,11 +9,11 @@ async function assertEmpty(dir: string): Promise<void> {
   if (entries.length) throw new Error(`"${dir}" is not empty. Choose an empty folder.`)
 }
 
-/** An empty project (no SWFs; they appear when the Figma plugin sends frames). The mod id is the folder name as an identifier. */
+/** An empty project (no SWFs; they appear when the Figma plugin sends frames). The mod id is the folder name without anything but letters and digits. */
 export async function createProject(dir: string, name = basename(dir)): Promise<void> {
   await assertEmpty(dir)
   await mkdir(dir, { recursive: true })
-  await saveProject(dir, { meta: { name, modId: ident(name), version: '0.1.0', deploy: { preset: 'folder', path: '' } }, swfs: {} })
+  await saveProject(dir, { meta: { name, modId: cleanModId(name), version: '0.1.0', deploy: { preset: 'folder', path: '' } }, swfs: {} })
   await writeFile(join(dir, '.gitignore'), PROJECT_GITIGNORE)
 }
 

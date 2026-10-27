@@ -122,7 +122,7 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
   const plan: DeployPlan = { root: o.root, files: [], lint: [], notes: [], errors: [], widgets: {} }
   if (!isAbsolute(o.root)) plan.errors.push(`The target folder "${o.root}" is not an absolute path.`)
   if (isGameData(o.root, o.gameDirs)) plan.errors.push(`Refusing to deploy into the game's Data folder (${o.root}). Deploy to an MO2 mod folder or the overwrite folder; MO2's virtual file system puts the files in the game.`)
-  if (!o.modId || !isPapyrusName(o.modId)) plan.errors.push(`The mod id "${o.modId}" is not usable for file and script names.`)
+  if (!o.modId || !isPapyrusName(o.modId)) plan.errors.push(`The mod id "${o.modId}" is not usable for file and script names (letters and digits only, starting with a letter).`)
   const swfs = o.swfs.filter((s) => !s.orphaned && (!o.only || s.name === o.only))
   if (swfs.length === 0) plan.errors.push(o.only ? `The SWF "${o.only}" cannot be deployed (missing or orphaned).` : 'The project has no SWF to deploy.')
   let espDone = false

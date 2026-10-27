@@ -3,7 +3,7 @@ import { mkdtemp, readFile, readdir, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { loadProject } from './index'
+import { loadProject, saveProject } from './index'
 import { copyExample, createProject, PROJECT_GITIGNORE } from './lifecycle'
 import { writeOverlay } from './overlayFile'
 import { addRecent, loadRecent, saveRecent } from './recent'
@@ -17,9 +17,19 @@ describe('new and example projects', () => {
     const dir = join(await tmp(), 'My Mod')
     await createProject(dir)
     const p = await loadProject(dir)
-    expect(p.meta).toMatchObject({ name: 'My Mod', modId: 'My_Mod', version: '0.1.0' })
+    expect(p.meta).toMatchObject({ name: 'My Mod', modId: 'MyMod', version: '0.1.0' })
     expect(p.swfs).toEqual({})
     expect(await readFile(join(dir, '.gitignore'), 'utf8')).toBe('build/\ndist/\n') // build output and Package Mod zips are never committed
+  })
+  it('cleans a bad mod id when it loads and writes the clean one back on save', async () => {
+    const dir = join(await tmp(), 'Skyrim Stopwatch')
+    await createProject(dir)
+    const file = join(dir, 'project.json')
+    await writeFile(file, (await readFile(file, 'utf8')).replace('SkyrimStopwatch', 'Skyrim_Stopwatch'))
+    const p = await loadProject(dir)
+    expect(p.meta.modId).toBe('SkyrimStopwatch')
+    await saveProject(dir, p)
+    expect(JSON.parse(await readFile(file, 'utf8')).modId).toBe('SkyrimStopwatch')
   })
   it('refuses a folder that already has files', async () => {
     const dir = await tmp()

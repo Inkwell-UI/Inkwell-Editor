@@ -2,13 +2,15 @@ import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { migrate, SPEC_VERSION, type Graph, type MenuSettings } from '@inkwell-ui/spec'
 import { z } from 'zod'
+import { cleanModId } from '../../shared/modId'
 import { readGraphs, writeGraphLocked } from './graphFiles'
 import { readMenuSettings, writeMenuLocked } from './menuFile'
 
 // project.json is editor-owned. Unknown keys are kept (looseObject) so they survive load -> save.
 export const ProjectMetaSchema = z.looseObject({
   name: z.string(),
-  modId: z.string(),
+  /** Letters and digits only (shared/modId.ts): every load and save cleans it, so a project never keeps an id the deploy would refuse. */
+  modId: z.string().transform(cleanModId),
   version: z.string(),
   author: z.string().optional(),
   strictMode: z.boolean().optional(),
