@@ -41,6 +41,14 @@ export function newGraph(id: string, name: string, scope: Graph['scope']): Graph
   return { ...emptyGraph(id, name, scope), nodes: [{ id: crypto.randomUUID(), kind: 'core/OnLoad@1', fields: {}, pos: { x: 0, y: 0 } }] }
 }
 
+/** The `name` of a node (handler or message name): the field when the node has it, else the pack's default. The editor shows that default in the field without storing it, so an untouched On Widget Call is "Show" without having a `name` field. */
+export function nodeName(n: { fields: Record<string, unknown> }, def: NodeDef | undefined): string {
+  const v = n.fields['name']
+  if (typeof v === 'string') return v
+  const d = (def?.fields['name'] as { default?: unknown } | undefined)?.default
+  return typeof d === 'string' ? d : ''
+}
+
 /** One loaded pack: its manifest and node definitions (the renderer only ever sees data, never code). */
 export interface LoadedPack {
   manifest: PackManifest

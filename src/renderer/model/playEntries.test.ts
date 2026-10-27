@@ -3,6 +3,7 @@ import type { Graph } from '@inkwell-ui/spec'
 import { callArgs, playEntries } from './playEntries'
 
 const n = (id: string, kind: string, fields: Record<string, unknown>) => ({ id, kind, fields, pos: { x: 0, y: 0 } })
+const defs = new Map([['core/OnWidgetCall@1', { fields: { name: { default: 'Show' } } }]]) as never
 const g = (id: string, nodes: ReturnType<typeof n>[]) => ({ id, name: id.toUpperCase(), nodes }) as unknown as Graph
 
 describe('playEntries', () => {
@@ -15,8 +16,13 @@ describe('playEntries', () => {
         n('d', 'core/OnWidgetCall@1', { name: 'Hide', params: [{ name: 'x', type: 'Array' }] })
       ]),
       g('second', [n('e', 'core/OnWidgetCall@1', { name: 'Ping' })])
-    ])
+    ], defs)
     expect(list.map((e) => [e.key, e.name, e.params.length])).toEqual([['main/a', 'Show', 2], ['second/e', 'Ping', 0]])
+  })
+  it('a node whose name is still the pack default has no name field and is listed under that default', () => {
+    const list = playEntries([g('main', [n('a', 'core/OnWidgetCall@1', { params: [] }), n('b', 'core/OnWidgetCall@1', { name: 'Hide', params: [] })])], defs)
+    expect(list.map((e) => e.name)).toEqual(['Show', 'Hide'])
+    expect(playEntries([g('main', [n('a', 'core/OnWidgetCall@1', {})])], new Map())).toEqual([]) // packs not loaded yet: nothing to list
   })
   it('sends all arguments as strings like Papyrus, with the pin defaults for missing values', () => {
     const params = [{ name: 't', type: 'String' }, { name: 'h', type: 'Number' }, { name: 's', type: 'Bool' }] as const

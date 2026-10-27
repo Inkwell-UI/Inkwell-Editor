@@ -1,4 +1,5 @@
-import type { Graph } from '@inkwell-ui/spec'
+import type { Graph, NodeDef } from '@inkwell-ui/spec'
+import { nodeName } from '../../shared/graphs'
 
 /** An On Widget Call entry the Play panel can fire: the method name and its typed parameters (what Papyrus would call in game). */
 export interface PlayParam {
@@ -19,11 +20,11 @@ const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/
 const isCall = (kind: string): boolean => /^[^/]+\/OnWidgetCall@\d+$/.test(kind)
 
 /** Every On Widget Call of the graphs, in graph and node order. An entry whose name or parameters codegen would refuse is left out. */
-export function playEntries(graphs: readonly Pick<Graph, 'id' | 'name' | 'nodes'>[]): PlayEntry[] {
+export function playEntries(graphs: readonly Pick<Graph, 'id' | 'name' | 'nodes'>[], defs: ReadonlyMap<string, NodeDef>): PlayEntry[] {
   return graphs.flatMap((g) =>
     g.nodes.flatMap((n) => {
       if (!isCall(n.kind)) return []
-      const name = n.fields['name']
+      const name = nodeName(n, defs.get(n.kind))
       const raw = n.fields['params']
       const list = Array.isArray(raw) ? raw : []
       if (typeof name !== 'string' || !IDENT.test(name)) return []

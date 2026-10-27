@@ -3,6 +3,7 @@ import { DoorClosed, DoorOpen, MousePointerClick, Play, RotateCcw, Send } from '
 import { INPUT_ACTIONS } from '@inkwell-ui/spec'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
+import { usePacks } from '../hooks/usePacks'
 import { callArgs, playEntries, type PlayEntry } from '../model/playEntries'
 import { previewBus } from '../preview/previewBus'
 import { UiScaleControl } from '../preview/uiScale'
@@ -66,18 +67,19 @@ const memory: { pick: string | undefined; values: Record<string, Record<string, 
 function useEntries(): PlayEntry[] {
   const swf = useActiveSwf()
   const ids = useGraphDocs((s) => (swf ? s.ids[swf.id] : undefined))
+  const defs = usePacks()
   const [entries, setEntries] = useState<PlayEntry[]>([])
   useEffect(() => {
     if (!swf) return setEntries([])
     const stores = (ids ?? []).flatMap((id) => findGraphStore(swf.id, id) ?? [])
     const read = (): void => {
-      const next = playEntries(stores.map((s) => toGraph(s.getState())))
+      const next = playEntries(stores.map((s) => toGraph(s.getState())), defs)
       setEntries((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
     }
     read()
     const offs = stores.map((s) => s.subscribe(read))
     return () => offs.forEach((off) => off())
-  }, [swf, ids])
+  }, [swf, ids, defs])
   return entries
 }
 

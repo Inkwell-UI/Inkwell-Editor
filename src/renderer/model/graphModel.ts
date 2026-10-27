@@ -1,5 +1,6 @@
 import { pinCompat, type Graph, type NodeDef, type PinType, type Swf } from '@inkwell-ui/spec'
 import { composeRules, incoming, noSelfLink, outgoing, pinField, spawnOptions, SPAWN_NEW, type NodeDef as SpawnDef, type Rule, type SpawnOption } from '@nicklaj/knotwork'
+import { nodeName } from '../../shared/graphs'
 import { resolvePins, type ResolvedPin } from '../../shared/graphValidate'
 import type { OverlayDoc } from '../../shared/overlay'
 import { pinName, type FlowEdge, type FlowNode } from '../state/graphStore'
@@ -255,7 +256,7 @@ export function eventNodes(defs: Defs, nodes: FlowNode[]): { id: string; title: 
   return nodes.flatMap((n) => {
     const d = defs.get(n.data.kind)
     if (!d || (d.extra as { entry?: boolean } | undefined)?.entry !== true) return []
-    const name = typeof n.data.fields['name'] === 'string' ? n.data.fields['name'] : ''
+    const name = nodeName(n.data, d)
     return [{ id: n.id, title: d.title, detail: name }]
   })
 }
