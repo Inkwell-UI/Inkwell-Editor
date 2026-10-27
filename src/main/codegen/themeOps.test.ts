@@ -14,7 +14,7 @@ const col: Theme = {
   name: 'Colors', modes: ['Vanilla', 'Nordic'],
   variables: {
     A: { name: 'accent', type: 'color', values: { Vanilla: { r: 1, g: 1, b: 1 }, Nordic: { r: 0, g: 0, b: 1 } } },
-    O: { name: 'alpha', type: 'number', values: { Vanilla: 1, Nordic: 0.5 } },
+    O: { name: 'alpha', type: 'number', values: { Vanilla: 100, Nordic: 50 } },
     W: { name: 'wide', type: 'number', values: { Vanilla: 100, Nordic: 300 } }
   }
 }
@@ -27,7 +27,7 @@ const ir = (kind = 'customMenu') => swf([
 ], { target: { kind }, themes: [col] })
 
 describe('themeOps', () => {
-  it('lists the runtime bindings with a value per mode: colours as 0xRRGGBB, opacity as percent; frame size, text size, strokes and a stroked shape fill are compile time only', () => {
+  it('lists the runtime bindings with a value per mode: colours as 0xRRGGBB, opacity as percent (a Figma opacity variable is 0 to 100); frame size, text size, strokes and a stroked shape fill are compile time only', () => {
     const ops = themeOps(ir()).map((o) => `${o.nodeId}.${o.target}.${o.kind}`).sort()
     expect(ops).toEqual(['card.fill.c', 'label.self.t', 'panel.self.a', 'panel.self.c', 'panel.self.w'])
     const panel = themeOps(ir()).filter((o) => o.nodeId === 'panel')

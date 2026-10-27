@@ -33,7 +33,7 @@ export function themeOps(ir: Swf): ThemeOp[] {
       for (const m of col.modes) {
         const v = boundValue(col, key, ref.id, m)
         if (v === undefined) continue
-        values[m] = kind === 'c' || kind === 't' ? rgb(v as { r: number; g: number; b: number }) : kind === 'a' ? Math.round((v as number) * 100) : (v as number | boolean)
+        values[m] = kind === 'c' || kind === 't' ? rgb(v as { r: number; g: number; b: number }) : kind === 'a' ? Math.min(100, Math.max(0, Math.round(v as number))) : (v as number | boolean)
       }
       if (Object.keys(values).length) out.push({ nodeId: n.id, target: kind === 'c' && n.type === 'frame' ? 'fill' : 'self', kind, values })
     }

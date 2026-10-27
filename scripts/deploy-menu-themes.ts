@@ -26,7 +26,7 @@ void runMenuDeploy({
         'V:status': v('colors/status', 'color', c(200, 200, 200), c(255, 200, 80)),
         'V:button': v('colors/button', 'color', c(31, 144, 112), c(40, 90, 200)),
         'V:panel': v('colors/panel', 'color', c(16, 18, 42), c(60, 20, 20)),
-        'V:panelAlpha': v('alpha/panel', 'number', 1, 0.5)
+        'V:panelAlpha': v('alpha/panel', 'number', 100, 50)
       }
     }]
     const bind = (id: string, b: Record<string, { id: string }>, over: Record<string, unknown> = {}): void => { ir.nodes[id] = { ...ir.nodes[id], ...over, bindings: b } }
