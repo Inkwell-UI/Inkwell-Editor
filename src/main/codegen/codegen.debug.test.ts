@@ -89,10 +89,26 @@ describe('preview build (debug traces)', () => {
     const s = src(t, { preview: true })
     expect(s).toContain('__g.wt("d", "slow", 1 * 1000);')
     expect(s).toContain('__g.wt("d2", "d2", 1 * 1000);') // unnamed: the node id is the key
-    expect(s).toContain('__g.wx("slow");')
+    expect(s).toContain('__g.wx("x", "slow");')
     expect(s).toMatch(/try \{\s+__g\.wf\("d"\);/) // the continuation reports first
     expect(s).toContain('function wt(nodeId, key, ms) {')
     expect(src(t)).not.toMatch(/__g\.w[tfx]\(/)
+  })
+  it('On Timer, Tween, Fade and Stop Timer report their timer too (seconds from the pin or the field; a repeating On Timer arms again on every tick)', () => {
+    const t = graph('t', [
+      node('ot', 'core/OnTimer@1', { seconds: 2, repeat: true, name: 'tick' }), node('once', 'core/OnTimer@1', { seconds: 3, repeat: false, name: '' }), node('st', 'core/StopTimer@1', { name: 'tick' }),
+      node('tw', 'core/Tween@1', { kind: 'Clip', target: 'L', property: 'alpha', easing: 'linear' }), node('f', 'core/Fade@1', { kind: 'Clip', target: 'L' })
+    ], [wire('ot', 'then', 'st', 'in'), wire('st', 'then', 'tw', 'in'), wire('tw', 'done', 'f', 'in')])
+    const s = src(t, { preview: true })
+    expect(s).toContain('__g.wt("ot", "tick", 2 * 1000);') // armed at start ...
+    expect(s).toMatch(/__g\.rn\("ot"\);\s+__g\.wt\("ot", "tick", 2 \* 1000\);/) // ... and again at every tick, after the run
+    expect(s).toContain('__g.wt("once", "once", 3 * 1000);')
+    expect(s).toMatch(/__g\.rn\("once"\);\s+__g\.wf\("once"\);/) // a single shot is done at its tick
+    expect(s).toContain('__g.wx("st", "tick");')
+    expect(s).toMatch(/\/\/ \[tw\] core\/Tween@1\s+__g\.rn\("tw"\);\s+__g\.wt\("tw", "tw", /)
+    expect(s).toMatch(/__g\.wf\("tw"\);/)
+    expect(s).toMatch(/__g\.wt\("f", "f", /)
+    expect(src(t)).not.toMatch(/__g\.(wt|wf|wx|rn)\(/)
   })
   it('the game build has none of it', () => {
     const s = src(g)

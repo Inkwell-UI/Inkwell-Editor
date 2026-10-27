@@ -30,6 +30,9 @@
   },
   "as2Template": "templates/OnTimer.as2",
   "extra": {
-    "entry": true
+    "entry": true,
+    "timer": "seconds",
+    "timerKey": "name",
+    "timerRepeat": "repeat"
   }
 }

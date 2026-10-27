@@ -1,6 +1,7 @@
 import { pinCompat, SAVED_TYPES, type Graph, type GraphNode, type NodeDef, type PinType } from '@inkwell-ui/spec'
 import { resolvePins, type ResolvedPin } from '../../shared/graphValidate'
 import { parseBindings, type BindProp } from '../../shared/graphBinding'
+import { FLOW_RUN_PIN, FLOW_TIMER_PIN } from '../../shared/devLink'
 import { ident } from '../../shared/overlay'
 import type { CodegenPacks } from './packs'
 
@@ -155,7 +156,8 @@ const key = (node: string, pin: string): string => `${node}\u0000${pin}`
 function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssue[], first: boolean): GraphClass {
   const file = `__Packages/mods/${ident(i.modId)}/${cls}.as`
   const dev = i.menu === true && i.dev === true
-  const issue = (message: string, nodeId?: string): void => void issues.push({ graphId: g.id, ...(nodeId ? { nodeId } : {}), code: 'graph-codegen', message })
+  const flow = i.preview === true || dev // flow trace calls (rn/wt/wf/wx): the preview traces them, a dev build sends them as pins
+  const issue =(message: string, nodeId?: string): void => void issues.push({ graphId: g.id, ...(nodeId ? { nodeId } : {}), code: 'graph-codegen', message })
   const nodes = new Map(g.nodes.map((n) => [n.id, n]))
   const defOf = (n: GraphNode): NodeDef | undefined => i.packs.defs.get(n.kind)
   const pinsOf = new Map<string, ReturnType<typeof resolvePins>>()
@@ -351,7 +353,20 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   const chain = (from: GraphNode, pin: string, ctx: Ctx): Line[] =>
     (execTo.get(key(from.id, pin)) ?? []).flatMap((id) => emit(nodes.get(id)!, { ...ctx, cache: new Cache(ctx.cache) }))
 
-  const timerOf = (d: NodeDef): { timer?: string; timerKey?: string; cancelsTimer?: string } | undefined => d.extra as { timer?: string; timerKey?: string; cancelsTimer?: string } | undefined
+  type TimerMeta = { timer?: string; timerKey?: string; timerRepeat?: string; cancelsTimer?: string }
+  const timerOf = (d: NodeDef): TimerMeta | undefined => d.extra as TimerMeta | undefined
+
+  /**
+   * The flow trace call for a timer node (extra.timer names the seconds input pin, or the field when there is no such pin; timerKey the field holding the name that Cancel Delay /
+   * Stop Timer use, else the node id). shortcut: the seconds expression is evaluated a second time for the trace, a volatile input (Random) may differ.
+   */
+  const waitCall = (n: GraphNode, d: NodeDef, args: ReadonlyMap<string, string>): string | undefined => {
+    const tm = timerOf(d)
+    if (!tm?.timer) return undefined
+    const key = tm.timerKey ? String(fieldOf(n, d, tm.timerKey) ?? '') : ''
+    const secs = args.get(tm.timer) ?? (Number(fieldOf(n, d, tm.timer)) || 0)
+    return `__g.wt("${safeId(n.id)}", ${as2Literal(key === '' ? n.id : key)}, ${secs} * 1000);`
+  }
 
   /** An exec node (or entry) as statements. A node that cannot be compiled becomes a comment and an issue; the rest of the graph still compiles. */
   const emit = (n: GraphNode, parent: Ctx): Line[] => {
@@ -379,8 +394,13 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           const sub = chain(n, own[3]!, ctx)
           if (own[2] === 'guarded' && isEntry && (i.preview || dev) && lines.some((l) => l.includes('{{params}}')))
             for (const p of [...outs].reverse()) sub.unshift({ t: `__g.pv("${safeId(n.id)}", "${safeId(p)}", ${uids.get(n.id)}_${p});`, n: n.id })
-          if (own[2] === 'guarded' && isEntry && i.preview) sub.unshift({ t: `__g.rn("${safeId(n.id)}");`, n: n.id })
-          if (own[2] === 'guarded' && !isEntry && i.preview && timerOf(d)?.timer) sub.unshift({ t: `__g.wf("${safeId(n.id)}");`, n: n.id }) // the timer fired
+          if (own[2] === 'guarded' && flow && timerOf(d)?.timer) {
+            // the timer fired: a repeating entry (On Timer) arms again for the next tick, anything else is done
+            const rep = timerOf(d)?.timerRepeat
+            const again = isEntry && !!rep && fieldOf(n, d, rep) === true
+            sub.unshift({ t: again ? waitCall(n, d, args)! : `__g.wf("${safeId(n.id)}");`, n: n.id })
+          }
+          if (own[2] === 'guarded' && isEntry && flow) sub.unshift({ t: `__g.rn("${safeId(n.id)}");`, n: n.id })
           // the field named by `extra.writesVariable` holds the variable this node assigns (Set Variable, Toggle); the kind test covers a pack copy that predates the flag
           const wv = (d.extra as { writesVariable?: unknown } | undefined)?.writesVariable
           const boundVar = typeof wv === 'string' ? String(n.fields[wv]) : /^core\/(SetVariable|Toggle)@/.test(n.kind) ? String(n.fields['variable']) : undefined
@@ -401,15 +421,11 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         } else {
           if (/\{\{(next|guarded)\./.test(raw)) throw new Skip('a continuation placeholder must be alone on its line.')
           out.push({ t: i.menu ? toBridgeLog(fill(raw, n, d, args, outs)) : fill(raw, n, d, args, outs), n: n.id })
-          if (i.preview && !isEntry && raw === lines[0]) {
-            out.push({ t: `__g.rn("${safeId(n.id)}");`, n: n.id }) // the line after the header comment
-            // timer metadata of the definition (extra.timer / timerKey / cancelsTimer): shortcut: the seconds expression is evaluated a second time for the trace, a volatile input (Random) may differ
+          if (flow && raw === lines[0]) {
+            if (!isEntry) out.push({ t: `__g.rn("${safeId(n.id)}");`, n: n.id }) // the line after the header comment (an entry reports in its handler)
             const tm = timerOf(d)
-            if (tm?.timer) {
-              const key = String(fieldOf(n, d, tm.timerKey ?? '') ?? '')
-              out.push({ t: `__g.wt("${safeId(n.id)}", ${as2Literal(key === '' ? n.id : key)}, ${args.get(tm.timer) ?? 0} * 1000);`, n: n.id })
-            }
-            if (tm?.cancelsTimer) out.push({ t: `__g.wx(${as2Literal(String(fieldOf(n, d, tm.cancelsTimer) ?? ''))});`, n: n.id })
+            if (tm?.timer) out.push({ t: waitCall(n, d, args)!, n: n.id })
+            if (tm?.cancelsTimer && !isEntry) out.push({ t: `__g.wx("${safeId(n.id)}", ${as2Literal(String(fieldOf(n, d, tm.cancelsTimer) ?? ''))});`, n: n.id })
           }
         }
       }
@@ -536,6 +552,31 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '        }' },
           { t: '        return v;' },
           { t: '    }' },
+          // flow trace: an exec node ran / a timer node was armed, fired or cancelled. Sent as the reserved pins $run (a count) and $timer ("<seq> wait <ms> <key>" | "<seq> waited" | "<seq> cancel <key>"); the runtime keeps the latest value per pin
+          { t: '    function rn(nodeId) {' },
+          { t: '        try {' },
+          { t: '            if (this.rc == undefined) this.rc = {};' },
+          { t: '            this.rc[nodeId] = (this.rc[nodeId] | 0) + 1;' },
+          { t: `            this.bridge.pin(nodeId, "${FLOW_RUN_PIN}", this.rc[nodeId]);` },
+          { t: '        } catch (e) {' },
+          { t: '        }' },
+          { t: '    }' },
+          { t: '    function tm(nodeId, what) {' },
+          { t: '        try {' },
+          { t: '            this.tq = (this.tq | 0) + 1;' },
+          { t: `            this.bridge.pin(nodeId, "${FLOW_TIMER_PIN}", this.tq + " " + what);` },
+          { t: '        } catch (e) {' },
+          { t: '        }' },
+          { t: '    }' },
+          { t: '    function wt(nodeId, key, ms) {' },
+          { t: '        this.tm(nodeId, "wait " + Number(ms) + " " + key);' },
+          { t: '    }' },
+          { t: '    function wf(nodeId) {' },
+          { t: '        this.tm(nodeId, "waited");' },
+          { t: '    }' },
+          { t: '    function wx(nodeId, key) {' },
+          { t: '        this.tm(nodeId, "cancel " + key);' },
+          { t: '    }' },
           { t: '    function dumpVariables() {' },
           ...g.variables.map((v) => ({ t: `        this.bridge.watch(${as2Literal(g.id)}, ${as2Literal(v.name)}, "${v.scope}", this.v_${varNames.get(v.id)});` })),
           { t: '    }' }
@@ -560,7 +601,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '    function wf(nodeId) {' },
           { t: '        trace("[Inkwell] waited " + nodeId);' },
           { t: '    }' },
-          { t: '    function wx(key) {' },
+          { t: '    function wx(nodeId, key) {' },
           { t: '        trace("[Inkwell] cancel " + key);' },
           { t: '    }' }
         ]

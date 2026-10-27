@@ -85,6 +85,19 @@ export function formatDevValue(v: DevValue): string {
   return String(v)
 }
 
+/** Flow trace of a dev build (docs/dev-mode.md): reserved pin names the generated AS2 sends through `bridge.pin`, so the runtime needs no extra message. */
+export const FLOW_RUN_PIN = '$run'
+export const FLOW_TIMER_PIN = '$timer'
+
+/** A flow pin as the preview's trace line (`[Inkwell] run <node>`, `wait`, `waited`, `cancel`), or undefined for any other pin. */
+export function flowLine(node: string, pin: string, value: DevValue): string | undefined {
+  if (pin === FLOW_RUN_PIN) return `[Inkwell] run ${node}`
+  if (pin !== FLOW_TIMER_PIN) return undefined
+  const m = /^\d+ (wait|waited|cancel)(?: (.*))?$/s.exec(String(value))
+  if (!m) return undefined
+  return m[1] === 'waited' ? `[Inkwell] waited ${node}` : m[1] === 'cancel' ? `[Inkwell] cancel ${m[2] ?? ''}` : `[Inkwell] wait ${node} ${m[2] ?? ''}`
+}
+
 /** The hot reload line for the deploy status and the toast. */
 export function reloadSummary(r: DevReloadResult): string {
   if (!r.ok) return `hot reload failed: ${r.error ?? 'unknown error'}`

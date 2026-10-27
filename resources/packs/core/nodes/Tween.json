@@ -76,5 +76,8 @@
       "default": "linear"
     }
   },
-  "as2Template": "templates/Tween.as2"
+  "as2Template": "templates/Tween.as2",
+  "extra": {
+    "timer": "seconds"
+  }
 }

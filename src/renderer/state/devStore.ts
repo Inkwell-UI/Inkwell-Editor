@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { formatDevValue, initialDevState, type DevEvent, type DevScope, type DevState } from '../../shared/devLink'
+import { FLOW_RUN_PIN, FLOW_TIMER_PIN, flowLine, formatDevValue, initialDevState, type DevEvent, type DevScope, type DevState } from '../../shared/devLink'
 import { strings } from '../strings'
 import { useTraceStore } from './traceStore'
 
@@ -46,7 +46,7 @@ export interface DevStore {
 export const MAX_GAME_LINES = 500
 let next = 1
 
-export const useDevStore = create<DevStore>()((set) => ({
+export const useDevStore = create<DevStore>()((set, get) => ({
   dev: initialDevState(),
   source: 'ruffle',
   lines: [],
@@ -54,14 +54,22 @@ export const useDevStore = create<DevStore>()((set) => ({
   pins: {},
   seen: false,
   setSource: (source) => set({ source }),
-  setState: (dev) =>
+  setState: (dev) => {
+    if (dev.phase === 'connected' && dev.session !== get().dev.session) useTraceStore.getState().newBuild() // the marks of the last run of the game are stale
     set((s) => {
       if (dev.session === s.dev.session || dev.phase !== 'connected') return { dev }
       // a new session: the old values are from another run of the game
       const note: GameLine = { id: next++, at: Date.now(), level: 'info', source: 'runtime', text: strings.dev.sessionStart(dev.runtime?.versionString ?? '?', dev.runtime?.gameVersion ?? '?'), note: true }
       return { dev, watch: {}, pins: {}, seen: true, lines: [...s.lines.slice(-(MAX_GAME_LINES - 1)), note] }
-    }),
-  apply: (events) =>
+    })
+  },
+  apply: (all) => {
+    // flow pins ($run, $timer) light the canvas through the same store as the preview's trace; they are not pin values
+    const events = all.filter((e) => {
+      const f = e.k === 'pin' ? flowLine(e.node, e.pin, e.value) : undefined
+      if (f) useTraceStore.getState().push(f)
+      return !f && !(e.k === 'pin' && (e.pin === FLOW_RUN_PIN || e.pin === FLOW_TIMER_PIN))
+    })
     set((s) => {
       let lines = s.lines
       let watch = s.watch
@@ -78,7 +86,8 @@ export const useDevStore = create<DevStore>()((set) => ({
         } else if (e.k === 'pin') pins = { ...pins, [`${e.node}.${e.pin}`]: formatDevValue(e.value) }
       }
       return { lines, watch, pins, seen: true }
-    }),
+    })
+  },
   clear: () => set({ lines: [], watch: {}, pins: {} })
 }))
 

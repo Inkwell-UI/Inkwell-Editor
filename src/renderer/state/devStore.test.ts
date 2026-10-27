@@ -104,6 +104,22 @@ describe('dev store', () => {
     useDevStore.getState().apply([{ k: 'error', at: 5, code: 'unknown-menu', message: 'no menu X' }])
     expect(useDevStore.getState().lines[0]).toMatchObject({ level: 'warn', text: '[unknown-menu] no menu X' })
   })
+  it('the flow pins ($run, $timer) light the canvas through the Trace store and are no pin values', () => {
+    useTraceStore.getState().clear()
+    useDevStore.getState().apply([
+      { k: 'pin', menu: 'M', node: 'n1', pin: '$run', value: 1 }, { k: 'pin', menu: 'M', node: 'n1', pin: '$run', value: 2 },
+      { k: 'pin', menu: 'M', node: 'd', pin: '$timer', value: '3 wait 2500 slow' }, { k: 'pin', menu: 'M', node: 'x', pin: '$timer', value: '4 cancel slow' },
+      { k: 'pin', menu: 'M', node: 'a', pin: 'value', value: 7 }
+    ])
+    expect(useTraceStore.getState().runs).toEqual({ n1: 2 })
+    expect(useTraceStore.getState().waits['d']).toMatchObject({ key: 'slow', ms: 2500, state: 'cancelled' })
+    expect(useDevStore.getState().pins).toEqual({ 'a.value': '7' })
+  })
+  it('a new game session clears the marks of the last one', () => {
+    useTraceStore.getState().push('[Inkwell] run old')
+    useDevStore.getState().setState(connected({ session: 9 }))
+    expect(useTraceStore.getState().runs).toEqual({})
+  })
   it('Clear empties lines, watch and pins', () => {
     const s = useDevStore.getState()
     s.apply([{ k: 'pin', menu: 'M', node: 'a', pin: 'o', value: 1 }, { k: 'trace', at: 1, ts: 1, level: 'info', source: 'as2', text: 'x' }])

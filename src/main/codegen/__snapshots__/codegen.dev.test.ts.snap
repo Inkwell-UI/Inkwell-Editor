@@ -41,6 +41,30 @@ class mods.M.TGraph_main {
         }
         return v;
     }
+    function rn(nodeId) {
+        try {
+            if (this.rc == undefined) this.rc = {};
+            this.rc[nodeId] = (this.rc[nodeId] | 0) + 1;
+            this.bridge.pin(nodeId, "$run", this.rc[nodeId]);
+        } catch (e) {
+        }
+    }
+    function tm(nodeId, what) {
+        try {
+            this.tq = (this.tq | 0) + 1;
+            this.bridge.pin(nodeId, "$timer", this.tq + " " + what);
+        } catch (e) {
+        }
+    }
+    function wt(nodeId, key, ms) {
+        this.tm(nodeId, "wait " + Number(ms) + " " + key);
+    }
+    function wf(nodeId) {
+        this.tm(nodeId, "waited");
+    }
+    function wx(nodeId, key) {
+        this.tm(nodeId, "cancel " + key);
+    }
     function dumpVariables() {
         this.bridge.watch("main", "count", "menu", this.v_count);
         this.bridge.watch("main", "total", "saved", this.v_total);
@@ -87,15 +111,19 @@ class mods.M.TGraph_main {
         // [e] core/OnOpen@1
         __g.onOpen = function() {
             try {
+                __g.rn("e");
                 var t_a = __g.pv("a", "value", (isFinite(1 + 2) ? (1 + 2) : 0));
                 // [s] core/SetVariable@1
+                __g.rn("s");
                 __g.v_count = t_a;
                 __g.bridge.watch("main", "count", "menu", __g.v_count);
                 // [t] core/SetVariable@1
+                __g.rn("t");
                 __g.v_total = t_a;
                 __g.bridge.setSaved("total", __g.v_total);
                 __g.bridge.watch("main", "total", "saved", __g.v_total);
                 // [l] core/Log@1
+                __g.rn("l");
                 __g.log("info", "l", "");
             } catch (e) {
                 __g.fail("e", e);

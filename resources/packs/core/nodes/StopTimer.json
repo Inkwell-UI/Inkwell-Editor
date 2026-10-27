@@ -24,5 +24,8 @@
       "description": "Name of the On Timer node, or its node id when it has no name"
     }
   },
-  "as2Template": "templates/StopTimer.as2"
+  "as2Template": "templates/StopTimer.as2",
+  "extra": {
+    "cancelsTimer": "name"
+  }
 }

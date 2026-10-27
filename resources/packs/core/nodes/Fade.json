@@ -55,5 +55,8 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/Fade.as2"
+  "as2Template": "templates/Fade.as2",
+  "extra": {
+    "timer": "seconds"
+  }
 }

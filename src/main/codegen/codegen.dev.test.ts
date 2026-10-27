@@ -47,6 +47,17 @@ describe('dev flavour of the graph class', () => {
     expect(s).toMatchSnapshot()
     expect(gen({ dev: true })).toBe(gen({})) // dev without the menu flavour does nothing: HUD widgets are byte-identical
   })
+  it('flow trace: exec nodes and timers go to the editor as the reserved pins $run and $timer', () => {
+    const t = graph('t', [node('e', 'core/OnOpen@1'), node('d', 'core/Delay@1', { name: 'slow' }), node('x', 'core/CancelDelay@1', { name: 'slow' }), node('l', 'core/Log@1', { level: 'info' })], [wire('e', 'then', 'd', 'in'), wire('d', 'then', 'x', 'in'), wire('x', 'then', 'l', 'in')])
+    const s = generateGraphClasses({ modId: 'M', swfCls: 'T', graphs: [t], packs, layerPath: () => undefined, menu: true, dev: true }).classes[0]!.source
+    expect(s).toContain('this.bridge.pin(nodeId, "$run", this.rc[nodeId]);')
+    expect(s).toContain('this.bridge.pin(nodeId, "$timer", this.tq + " " + what);')
+    expect(s).toMatch(/__g\.onOpen = function\(\) \{\s+try \{\s+__g\.rn\("e"\);/)
+    expect(s).toContain('__g.wt("d", "slow", 1 * 1000);')
+    expect(s).toContain('__g.wx("x", "slow");')
+    expect(s).not.toContain('trace("[Inkwell] run')
+    for (const w of ['__g.rn(', '__g.wt(', 'function rn', '$run', '$timer']) expect(generateGraphClasses({ modId: 'M', swfCls: 'T', graphs: [t], packs, layerPath: () => undefined, menu: true }).classes[0]!.source).not.toContain(w)
+  })
   it('the preview keeps its trace based pins', () => {
     const s = gen({ menu: true, preview: true })
     expect(s).toContain('trace("[Inkwell] pin "')
