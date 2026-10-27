@@ -44,6 +44,10 @@ describe('graph validation', () => {
     expect(widget(graph([entry, c('Nope', 'c1')], [wire('m', 'then', 'c1', 'in')]))).toEqual(['c1']) // no such handler
     expect(widget(graph([entry, h('Go', 'go'), c('Go', 'c1', [{ name: 'a', type: 'Number' }])], [wire('m', 'then', 'c1', 'in')]))).toEqual(['c1']) // types differ
     expect(widget(graph([h('Go', 'go'), c('Go', 'c1')], [wire('go', 'then', 'c1', 'in')]))).toEqual(['c1']) // calls itself
+    // an untouched On Widget Call has no `name` field: it is the pack default "Show", for the call and for the duplicate check
+    const bare = node('OnWidgetCall', { params: p }, 'bare')
+    expect(widget(graph([entry, bare, c('Show', 'c1')], [wire('m', 'then', 'c1', 'in')]))).toEqual([])
+    expect(codes(graph([bare, h('Show', 'second')]))).toContain('graph-duplicate-handler')
     const ab = graph([h('A', 'a'), c('B', 'cb'), h('B', 'b'), c('A', 'ca')], [wire('a', 'then', 'cb', 'in'), wire('b', 'then', 'ca', 'in')])
     expect(widget({ ...ab, nodes: ab.nodes.map((n) => ({ ...n, fields: { ...n.fields, params: [] } })) })).toEqual(['cb', 'ca']) // A calls B calls A
   })

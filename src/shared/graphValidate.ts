@@ -1,5 +1,6 @@
 import { pinCompat, PinType, SAVED_LIMITS, SAVED_TYPES, type Graph, type GraphNode, type NodeDef } from '@inkwell-ui/spec'
 import type { Issue } from '@nicklaj/knotwork'
+import { nodeName } from './graphs'
 
 /** Codes of graph issues; the Lint dock, the export gate and Strict Mode show them like compiler lint. */
 export type GraphCode =
@@ -69,7 +70,7 @@ const widgetParams = (n: GraphNode): string => (Array.isArray(n.fields['params']
 /** Key that makes two entry nodes handle the same event: kind, handler name (On Widget Call) and target layer. */
 const handlerKey = (n: GraphNode, d: NodeDef): string => {
   const target = d.inputs.find((p) => component(p.type))?.name
-  return [n.kind, typeof n.fields['name'] === 'string' ? n.fields['name'] : '', target && typeof n.fields[target] === 'string' ? n.fields[target] : ''].join('|')
+  return [n.kind, nodeName(n, d), target && typeof n.fields[target] === 'string' ? n.fields[target] : ''].join('|')
 }
 
 /**
@@ -209,7 +210,8 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
  * lead back into its own handler (an exec cycle through two handlers would never finish). Reachability follows the exec wires, so a Delay counts as a step.
  */
 function widgetCalls(g: Graph, defOf: ReadonlyMap<string, NodeDef>, execOut: ReadonlyMap<string, string[]>, add: (nodeId: string, code: GraphCode, level: 'error' | 'warning', message: string) => void): void {
-  const handlers = new Map(g.nodes.filter((n) => defOf.has(n.id) && kindOf(n).startsWith('OnWidgetCall@')).map((n) => [String(n.fields['name'] ?? ''), n]))
+  const nm = (n: GraphNode): string => nodeName(n, defOf.get(n.id)) // the pack default counts: an untouched On Widget Call is "Show" without a stored name
+  const handlers = new Map(g.nodes.filter((n) => defOf.has(n.id) && kindOf(n).startsWith('OnWidgetCall@')).map((n) => [nm(n), n]))
   const byId = new Map(g.nodes.map((n) => [n.id, n]))
   const callsIn = new Map<string, GraphNode[]>() // handler name -> Call Widget nodes its flow reaches
   for (const [name, h] of handlers) {
@@ -225,16 +227,16 @@ function widgetCalls(g: Graph, defOf: ReadonlyMap<string, NodeDef>, execOut: Rea
       }
   }
   const leadsTo = (from: string, to: string, seen = new Set<string>()): boolean =>
-    from === to || (!seen.has(from) && (seen.add(from), (callsIn.get(from) ?? []).some((c) => leadsTo(String(c.fields['name']), to, seen))))
+    from === to || (!seen.has(from) && (seen.add(from), (callsIn.get(from) ?? []).some((c) => leadsTo(nm(c), to, seen))))
   for (const c of g.nodes) {
     if (!defOf.has(c.id) || !kindOf(c).startsWith('CallWidget@')) continue
-    const name = String(c.fields['name'] ?? '')
+    const name = nm(c)
     const target = handlers.get(name)
     if (!target) add(c.id, 'graph-widget-call', 'error', `This graph has no On Widget Call named "${name}" to call.`)
     else if (widgetParams(target) !== widgetParams(c)) add(c.id, 'graph-widget-call', 'error', `The parameters of "${name}" differ from its On Widget Call node (same types in the same order are needed).`)
   }
   for (const [name, calls] of callsIn)
-    for (const c of calls) if (leadsTo(String(c.fields['name']), name)) add(c.id, 'graph-widget-call', 'error', `Calling "${String(c.fields['name'])}" from "${name}" leads back into "${name}"; the call would never finish.`)
+    for (const c of calls) if (leadsTo(nm(c), name)) add(c.id, 'graph-widget-call', 'error', `Calling "${nm(c)}" from "${name}" leads back into "${name}"; the call would never finish.`)
 }
 
 /** Graph nodes whose targeted Figma layer is gone: the orphans of a graph (they stay in the file; the same rule as overlay entries). */
