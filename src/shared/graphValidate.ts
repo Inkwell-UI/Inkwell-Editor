@@ -11,6 +11,7 @@ export type GraphCode =
   | 'graph-unknown-node'
   | 'graph-duplicate-handler'
   | 'graph-bad-wire'
+  | 'graph-widget-call'
   | 'runtime-required'
   | 'saved-variable-invalid'
 
@@ -45,7 +46,7 @@ const component = (t: PinType): boolean => t === 'Text' || t === 'Button' || t =
 
 /**
  * Effective pins of a node. `typeFrom: "<field>"` takes the type from the field (a pin type name) or from the graph variable whose id is in the field
- * (`connection` stays at the declared type); `extra.dynamicOutputs: "<field>"` appends one data output per `{name, type}` entry of that array field.
+ * (`connection` stays at the declared type); `extra.dynamicOutputs` / `extra.dynamicInputs: "<field>"` append one data output / input per `{name, type}` entry of that array field (On Widget Call params / Call Widget args).
  */
 export function resolvePins(def: NodeDef, node: Pick<GraphNode, 'fields'>, vars: Graph['variables']): { inputs: ResolvedPin[]; outputs: ResolvedPin[] } {
   const typed = (p: NodeDef['inputs'][number]): ResolvedPin => {
@@ -54,13 +55,16 @@ export function resolvePins(def: NodeDef, node: Pick<GraphNode, 'fields'>, vars:
     const t = isPinType(v) ? v : (vars.find((x) => x.id === v)?.type ?? p.type)
     return { name: p.name, type: t, hasDefault: Object.hasOwn(p, 'default') }
   }
-  const dyn = (def.extra as { dynamicOutputs?: unknown } | undefined)?.dynamicOutputs
-  const params = typeof dyn === 'string' && Array.isArray(node.fields[dyn]) ? (node.fields[dyn] as { name?: unknown; type?: unknown }[]) : []
-  return {
-    inputs: def.inputs.map(typed),
-    outputs: [...def.outputs.map(typed), ...params.flatMap((p) => (typeof p?.name === 'string' && isPinType(p.type) ? [{ name: p.name, type: p.type, hasDefault: true }] : []))]
+  const dynamic = (key: 'dynamicOutputs' | 'dynamicInputs'): ResolvedPin[] => {
+    const f = (def.extra as Record<string, unknown> | undefined)?.[key]
+    const list = typeof f === 'string' && Array.isArray(node.fields[f]) ? (node.fields[f] as { name?: unknown; type?: unknown }[]) : []
+    return list.flatMap((p) => (typeof p?.name === 'string' && isPinType(p.type) ? [{ name: p.name, type: p.type, hasDefault: true }] : []))
   }
+  return { inputs: [...def.inputs.map(typed), ...dynamic('dynamicInputs')], outputs: [...def.outputs.map(typed), ...dynamic('dynamicOutputs')] }
 }
+
+const kindOf = (n: GraphNode): string => n.kind.split('/')[1] ?? ''
+const widgetParams = (n: GraphNode): string => (Array.isArray(n.fields['params']) ? (n.fields['params'] as { type?: unknown }[]).map((p) => String(p?.type)).join(',') : '')
 
 /** Key that makes two entry nodes handle the same event: kind, handler name (On Widget Call) and target layer. */
 const handlerKey = (n: GraphNode, d: NodeDef): string => {
@@ -176,6 +180,7 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
       add(n.id, 'graph-dangling-exec', 'warning', `${d.title} is not reached by any event: its exec input has no wire, so it never runs.`)
     }
   }
+  widgetCalls(g, defOf, execOut, add)
   // cycle in exec flow: iterative DFS, reports the node that closes each loop
   const state = new Map<string, 1 | 2>()
   for (const root of execOut.keys()) {
@@ -197,6 +202,39 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
     }
   }
   return out
+}
+
+/**
+ * Call Widget runs the On Widget Call of the same graph (`__g.<name>`), so the handler must exist with the same parameter types, and the call must not
+ * lead back into its own handler (an exec cycle through two handlers would never finish). Reachability follows the exec wires, so a Delay counts as a step.
+ */
+function widgetCalls(g: Graph, defOf: ReadonlyMap<string, NodeDef>, execOut: ReadonlyMap<string, string[]>, add: (nodeId: string, code: GraphCode, level: 'error' | 'warning', message: string) => void): void {
+  const handlers = new Map(g.nodes.filter((n) => defOf.has(n.id) && kindOf(n).startsWith('OnWidgetCall@')).map((n) => [String(n.fields['name'] ?? ''), n]))
+  const byId = new Map(g.nodes.map((n) => [n.id, n]))
+  const callsIn = new Map<string, GraphNode[]>() // handler name -> Call Widget nodes its flow reaches
+  for (const [name, h] of handlers) {
+    const seen = new Set([h.id])
+    const stack = [h.id]
+    for (let id = stack.pop(); id !== undefined; id = stack.pop())
+      for (const next of execOut.get(id) ?? []) {
+        if (seen.has(next)) continue
+        seen.add(next)
+        stack.push(next)
+        const c = byId.get(next)
+        if (c && kindOf(c).startsWith('CallWidget@')) callsIn.set(name, [...(callsIn.get(name) ?? []), c])
+      }
+  }
+  const leadsTo = (from: string, to: string, seen = new Set<string>()): boolean =>
+    from === to || (!seen.has(from) && (seen.add(from), (callsIn.get(from) ?? []).some((c) => leadsTo(String(c.fields['name']), to, seen))))
+  for (const c of g.nodes) {
+    if (!defOf.has(c.id) || !kindOf(c).startsWith('CallWidget@')) continue
+    const name = String(c.fields['name'] ?? '')
+    const target = handlers.get(name)
+    if (!target) add(c.id, 'graph-widget-call', 'error', `This graph has no On Widget Call named "${name}" to call.`)
+    else if (widgetParams(target) !== widgetParams(c)) add(c.id, 'graph-widget-call', 'error', `The parameters of "${name}" differ from its On Widget Call node (same types in the same order are needed).`)
+  }
+  for (const [name, calls] of callsIn)
+    for (const c of calls) if (leadsTo(String(c.fields['name']), name)) add(c.id, 'graph-widget-call', 'error', `Calling "${String(c.fields['name'])}" from "${name}" leads back into "${name}"; the call would never finish.`)
 }
 
 /** Graph nodes whose targeted Figma layer is gone: the orphans of a graph (they stay in the file; the same rule as overlay entries). */

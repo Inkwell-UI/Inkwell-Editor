@@ -1,0 +1,3 @@
+// [{{node.id}}] core/CallWidget@1
+if (__g.{{raw.name}} != undefined) __g.{{raw.name}}({{args}});
+{{next.then}}

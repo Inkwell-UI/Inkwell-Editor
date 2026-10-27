@@ -22,6 +22,16 @@ describe('golden AS2 per node kind', () => {
   }
 })
 
+describe('Call Widget', () => {
+  it('calls the handler of the same graph with its inputs in parameter order, and an unconnected input takes the default', () => {
+    const params = [{ name: 'title', type: 'String' }, { name: 'hold', type: 'Number' }]
+    const g = graph('main', [call('Show', params), node('go', 'core/OnClick@1', { target: 'L' }), node('c', 'core/CallWidget@1', { name: 'Show', params }), node('t', 'core/ToString@1')], [wire('go', 'then', 'c', 'in'), wire('t', 'value', 'c', 'title')])
+    const r = gen(g)
+    expect(r.issues).toEqual([])
+    expect(r.classes[0]!.source).toContain('if (__g.Show != undefined) __g.Show(String(0), 0);') // wired title, defaulted hold
+  })
+})
+
 describe('class scaffolding', () => {
   const r = gen(graph('main', [call('Show', [{ name: 'title', type: 'String' }, { name: 'hold', type: 'Number' }, { name: 'on', type: 'Bool' }])], []))
   it('is a class (dynamic in practice: members are added freely) under mods.<modId> with fail and addInputHandler, and never uses Error', () => {

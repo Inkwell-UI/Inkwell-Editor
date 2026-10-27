@@ -11,7 +11,7 @@ describe('pack loader', () => {
   it('reads the manifest and node definitions, validated with the Spec schemas', async () => {
     const r = await loadPack(fixture)
     expect(r.pack!.manifest).toMatchObject({ id: 'core', version: '0.2.0', extra: { note: expect.any(String) } })
-    expect(r.pack!.nodes.map((n) => n.kind)).toEqual(['Add', 'Branch', 'Comment', 'Log', 'OnClick', 'OnWidgetCall', 'SetText'])
+    expect(r.pack!.nodes.map((n) => n.kind)).toEqual(['Add', 'Branch', 'CallWidget', 'Comment', 'Log', 'OnClick', 'OnWidgetCall', 'SetText'])
     expect(r.pack!.nodes.find((n) => n.kind === 'OnWidgetCall')!.extra).toMatchObject({ entry: true })
   })
 

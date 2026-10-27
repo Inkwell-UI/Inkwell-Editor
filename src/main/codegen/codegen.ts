@@ -284,6 +284,10 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           const dyn = (d.extra as { dynamicOutputs?: string } | undefined)?.dynamicOutputs
           return paramsOf(n, dyn).map((p) => `${uids.get(n.id)}_${p.name}:${AS2_TYPE[p.type]}`).join(', ')
         }
+        case 'args': {
+          const dyn = (d.extra as { dynamicInputs?: string } | undefined)?.dynamicInputs
+          return paramsOf(n, dyn).map((p) => args.get(p.name) ?? 'undefined').join(', ')
+        }
         default: throw new Skip(`unknown placeholder {{${k}${name ? '.' + name : ''}}}.`)
       }
     })

@@ -34,6 +34,20 @@ describe('graph validation', () => {
     expect(codes(graph(base, [wire('e', 'then', 'a', 'a')]))).toContain('graph-type-mismatch') // exec into a data pin
   })
 
+  it('Call Widget needs an On Widget Call of the same graph with the same parameter types, and may not call back into itself', () => {
+    const p = [{ name: 'a', type: 'String' }]
+    const h = (name: string, id: string, params = p) => node('OnWidgetCall', { name, params }, id)
+    const c = (name: string, id: string, params = p) => node('CallWidget', { name, params }, id)
+    const widget = (g: Graph) => validateGraph(g, { defs }).filter((i) => i.code === 'graph-widget-call').map((i) => i.nodeId)
+    const entry = h('Main', 'm', [])
+    expect(widget(graph([entry, h('Go', 'go'), c('Go', 'c1')], [wire('m', 'then', 'c1', 'in')]))).toEqual([]) // the unconnected arg takes its default
+    expect(widget(graph([entry, c('Nope', 'c1')], [wire('m', 'then', 'c1', 'in')]))).toEqual(['c1']) // no such handler
+    expect(widget(graph([entry, h('Go', 'go'), c('Go', 'c1', [{ name: 'a', type: 'Number' }])], [wire('m', 'then', 'c1', 'in')]))).toEqual(['c1']) // types differ
+    expect(widget(graph([h('Go', 'go'), c('Go', 'c1')], [wire('go', 'then', 'c1', 'in')]))).toEqual(['c1']) // calls itself
+    const ab = graph([h('A', 'a'), c('B', 'cb'), h('B', 'b'), c('A', 'ca')], [wire('a', 'then', 'cb', 'in'), wire('b', 'then', 'ca', 'in')])
+    expect(widget({ ...ab, nodes: ab.nodes.map((n) => ({ ...n, fields: { ...n.fields, params: [] } })) })).toEqual(['cb', 'ca']) // A calls B calls A
+  })
+
   it('an unconnected required pin is an error; a pin with a default or a target field is not', () => {
     expect(validateGraph(graph([node('SetText', {}, 's')]), { defs }).map((i) => [i.code, i.pin])).toContainEqual(['graph-required-pin', 'target'])
     expect(codes(graph([node('SetText', { target: 'L' }, 's')]))).not.toContain('graph-required-pin')
