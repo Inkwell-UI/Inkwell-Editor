@@ -8,7 +8,7 @@ import { categoryVar, fieldRows, nodePins, PIN_STYLE, type FieldRow, type LayerO
 import { inHandle, outHandle, pinName, type FlowNode, type GraphStore } from '../state/graphStore'
 import type { createGraphValidation } from '../state/graphValidation'
 import { usePinBadge } from '../state/devStore'
-import { useRunCount } from '../state/traceStore'
+import { useRunCount, useTraceStore } from '../state/traceStore'
 import { strings } from '../strings'
 import { FieldEditor } from './FieldEditors'
 
@@ -25,6 +25,16 @@ const useCtx = (): GraphCtx => useContext(GraphContext)!
 
 const pinLabel = (p: { name: string; type: string }, def: NodeDef | undefined, side: 'inputs' | 'outputs'): string =>
   ((def?.[side].find((x) => x.name === p.name) as { label?: string } | undefined)?.label) ?? p.name
+
+/** The progress of a timer node (Delay) armed in the preview: the fill grows over its duration and goes when the continuation ran or Cancel Delay cleared it. shortcut: it follows the clock, not the movie, so a paused preview keeps filling. */
+function TimerBar({ node }: { node: string }) {
+  const w = useTraceStore((s) => s.waits[node])
+  return (
+    <div className="gn-timer" aria-hidden="true">
+      {w?.state === 'running' && <span key={w.n} className="gn-timer-fill" style={{ animationDuration: `${w.ms}ms` }} />}
+    </div>
+  )
+}
 
 function Pin({ side, name, type, label, bad, node }: { side: 'in' | 'out'; name: string; type: keyof typeof PIN_STYLE | 'unknown'; label: string; bad?: boolean; node?: string }) {
   const style = type === 'unknown' ? undefined : PIN_STYLE[type]
@@ -136,6 +146,7 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
           </span>
         )}
       </div>
+      {(def.extra as { timer?: string } | undefined)?.timer && <TimerBar node={id} />}
       <div className="gn-pins">
         <div className="gn-col">{pinRows(pins.inputs, 'inputs')}</div>
         <div className="gn-col gn-col-out">

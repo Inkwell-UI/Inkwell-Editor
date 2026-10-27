@@ -13,10 +13,19 @@ export interface TraceEntry {
   at: number
   line: TraceLine
 }
+export interface Wait {
+  key: string
+  at: number
+  ms: number
+  n: number
+  state: 'running' | 'done' | 'cancelled'
+}
 export interface TraceStore {
   lines: TraceEntry[]
   pins: Record<string, string>
   runs: Record<string, number>
+  /** Timer nodes (Delay): when it was armed, for how long, under which key, and how it ended. `n` counts the arms of the node (restarts the bar). */
+  waits: Record<string, Wait>
   push(raw: string, at?: number): void
   clear(): void
   newBuild(): void
@@ -28,17 +37,22 @@ export const useTraceStore = create<TraceStore>()((set) => ({
   lines: [],
   pins: {},
   runs: {},
+  waits: {},
   push: (raw, at = Date.now()) => {
     const line = parseTrace(raw)
     if (!line) return
     if (line.kind === 'run') return set((s) => ({ runs: { ...s.runs, [line.node]: (s.runs[line.node] ?? 0) + 1 } }))
+    if (line.kind === 'wait') return set((s) => ({ waits: { ...s.waits, [line.node]: { key: line.key, at, ms: line.ms, n: (s.waits[line.node]?.n ?? 0) + 1, state: 'running' } } }))
+    if (line.kind === 'waited') return set((s) => (s.waits[line.node] ? { waits: { ...s.waits, [line.node]: { ...s.waits[line.node]!, state: 'done' } } } : s))
+    if (line.kind === 'cancel')
+      return set((s) => ({ waits: Object.fromEntries(Object.entries(s.waits).map(([id, w]) => [id, w.key === line.key && w.state === 'running' ? { ...w, state: 'cancelled' as const } : w])) }))
     set((s) => ({
       lines: line.kind === 'pin' ? s.lines : [...s.lines.slice(-(MAX_TRACE_LINES - 1)), { id: next++, at, line }],
       pins: line.kind === 'pin' ? { ...s.pins, [`${line.node}.${line.pin}`]: line.value } : s.pins
     }))
   },
-  clear: () => set({ lines: [], pins: {}, runs: {} }),
-  newBuild: () => set({ pins: {}, runs: {} })
+  clear: () => set({ lines: [], pins: {}, runs: {}, waits: {} }),
+  newBuild: () => set({ pins: {}, runs: {}, waits: {} })
 }))
 
 /** How often one exec node ran in the preview since the last build (0 = never). */

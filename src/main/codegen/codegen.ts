@@ -351,6 +351,8 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   const chain = (from: GraphNode, pin: string, ctx: Ctx): Line[] =>
     (execTo.get(key(from.id, pin)) ?? []).flatMap((id) => emit(nodes.get(id)!, { ...ctx, cache: new Cache(ctx.cache) }))
 
+  const timerOf = (d: NodeDef): { timer?: string; timerKey?: string; cancelsTimer?: string } | undefined => d.extra as { timer?: string; timerKey?: string; cancelsTimer?: string } | undefined
+
   /** An exec node (or entry) as statements. A node that cannot be compiled becomes a comment and an issue; the rest of the graph still compiles. */
   const emit = (n: GraphNode, parent: Ctx): Line[] => {
     const d = defOf(n)
@@ -378,6 +380,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           if (own[2] === 'guarded' && isEntry && (i.preview || dev) && lines.some((l) => l.includes('{{params}}')))
             for (const p of [...outs].reverse()) sub.unshift({ t: `__g.pv("${safeId(n.id)}", "${safeId(p)}", ${uids.get(n.id)}_${p});`, n: n.id })
           if (own[2] === 'guarded' && isEntry && i.preview) sub.unshift({ t: `__g.rn("${safeId(n.id)}");`, n: n.id })
+          if (own[2] === 'guarded' && !isEntry && i.preview && timerOf(d)?.timer) sub.unshift({ t: `__g.wf("${safeId(n.id)}");`, n: n.id }) // the timer fired
           // the field named by `extra.writesVariable` holds the variable this node assigns (Set Variable, Toggle); the kind test covers a pack copy that predates the flag
           const wv = (d.extra as { writesVariable?: unknown } | undefined)?.writesVariable
           const boundVar = typeof wv === 'string' ? String(n.fields[wv]) : /^core\/(SetVariable|Toggle)@/.test(n.kind) ? String(n.fields['variable']) : undefined
@@ -398,7 +401,16 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         } else {
           if (/\{\{(next|guarded)\./.test(raw)) throw new Skip('a continuation placeholder must be alone on its line.')
           out.push({ t: i.menu ? toBridgeLog(fill(raw, n, d, args, outs)) : fill(raw, n, d, args, outs), n: n.id })
-          if (i.preview && !isEntry && raw === lines[0]) out.push({ t: `__g.rn("${safeId(n.id)}");`, n: n.id }) // the line after the header comment
+          if (i.preview && !isEntry && raw === lines[0]) {
+            out.push({ t: `__g.rn("${safeId(n.id)}");`, n: n.id }) // the line after the header comment
+            // timer metadata of the definition (extra.timer / timerKey / cancelsTimer): shortcut: the seconds expression is evaluated a second time for the trace, a volatile input (Random) may differ
+            const tm = timerOf(d)
+            if (tm?.timer) {
+              const key = String(fieldOf(n, d, tm.timerKey ?? '') ?? '')
+              out.push({ t: `__g.wt("${safeId(n.id)}", ${as2Literal(key === '' ? n.id : key)}, ${args.get(tm.timer) ?? 0} * 1000);`, n: n.id })
+            }
+            if (tm?.cancelsTimer) out.push({ t: `__g.wx(${as2Literal(String(fieldOf(n, d, tm.cancelsTimer) ?? ''))});`, n: n.id })
+          }
         }
       }
       return out
@@ -540,6 +552,16 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '    // preview only: an exec node ran (traced as "[Inkwell] run <node>"); the graph canvas lights the node and the wire into it' },
           { t: '    function rn(nodeId) {' },
           { t: '        trace("[Inkwell] run " + nodeId);' },
+          { t: '    }' },
+          { t: '    // preview only: a timer node (Delay) was armed for ms milliseconds under `key`, its continuation ran, or Cancel Delay cleared `key`: the canvas draws a progress bar' },
+          { t: '    function wt(nodeId, key, ms) {' },
+          { t: '        trace("[Inkwell] wait " + nodeId + " " + Number(ms) + " " + key);' },
+          { t: '    }' },
+          { t: '    function wf(nodeId) {' },
+          { t: '        trace("[Inkwell] waited " + nodeId);' },
+          { t: '    }' },
+          { t: '    function wx(key) {' },
+          { t: '        trace("[Inkwell] cancel " + key);' },
           { t: '    }' }
         ]
       : []),

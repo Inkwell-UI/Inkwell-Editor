@@ -38,6 +38,23 @@ describe('trace store', () => {
     s.clear()
     expect(useTraceStore.getState().runs).toEqual({})
   })
+  it('follows a timer node: armed (a re-arm restarts it), fired, cancelled by its key', () => {
+    const s = useTraceStore.getState()
+    s.push('[Inkwell] wait d1 500 slow', 100)
+    expect(useTraceStore.getState().waits['d1']).toEqual({ key: 'slow', at: 100, ms: 500, n: 1, state: 'running' })
+    s.push('[Inkwell] wait d1 500 slow', 200)
+    expect(useTraceStore.getState().waits['d1']).toMatchObject({ at: 200, n: 2, state: 'running' })
+    s.push('[Inkwell] waited d1')
+    expect(useTraceStore.getState().waits['d1']!.state).toBe('done')
+    s.push('[Inkwell] wait d1 500 slow', 300)
+    s.push('[Inkwell] wait d2 500 other', 300)
+    s.push('[Inkwell] cancel slow')
+    expect(useTraceStore.getState().waits['d1']!.state).toBe('cancelled')
+    expect(useTraceStore.getState().waits['d2']!.state).toBe('running') // another key
+    expect(useTraceStore.getState().lines).toHaveLength(0)
+    s.newBuild()
+    expect(useTraceStore.getState().waits).toEqual({})
+  })
   it('is capped', () => {
     for (let i = 0; i < MAX_TRACE_LINES + 20; i++) useTraceStore.getState().push(`[Inkwell] info n: ${i}`)
     const { lines } = useTraceStore.getState()

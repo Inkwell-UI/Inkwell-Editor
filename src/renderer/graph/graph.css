@@ -27,6 +27,9 @@
 .react-flow__edge.gw-exec .react-flow__edge-path { stroke-linecap: round; }
 /* flow trace: a node and the exec wire into it light up when the node ran in the preview; the node keeps a mark until the next build */
 .gn.has-run { border-color: color-mix(in srgb, var(--ok) 55%, var(--line-strong)); }
+.gn-timer { height: 3px; background: var(--sunken); overflow: hidden; }
+.gn-timer-fill { display: block; height: 100%; width: 0; background: var(--ok); animation: gn-timer linear forwards; }
+@keyframes gn-timer { to { width: 100%; } }
 .gn-run { position: absolute; inset: -3px; border-radius: 8px; pointer-events: none; box-shadow: 0 0 0 2px var(--ok), 0 0 16px var(--ok); animation: gn-run 0.9s ease-out forwards; }
 @keyframes gn-run { from { opacity: 1; } to { opacity: 0; } }
 .react-flow__edge.gw-run-0 .react-flow__edge-path { animation: gw-run-a 0.9s ease-out; }

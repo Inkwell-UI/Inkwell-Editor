@@ -82,6 +82,18 @@ describe('preview build (debug traces)', () => {
     const lines = c.source.split('\n')
     expect(c.map.lines[String(lines.findIndex((l) => l.includes('__g.rn("br")')) + 1)]).toBe('br')
   })
+  it('Delay and Cancel Delay report their timer (the definition names the input and the key field)', () => {
+    const t = graph('t', [call, node('d', 'core/Delay@1', { name: 'slow' }), node('d2', 'core/Delay@1', {}), node('x', 'core/CancelDelay@1', { name: 'slow' }), node('log', 'core/Log@1', { level: 'info', message: 'late' })], [
+      wire('e', 'then', 'd', 'in'), wire('d', 'then', 'x', 'in'), wire('x', 'then', 'd2', 'in'), wire('d2', 'then', 'log', 'in')
+    ])
+    const s = src(t, { preview: true })
+    expect(s).toContain('__g.wt("d", "slow", 1 * 1000);')
+    expect(s).toContain('__g.wt("d2", "d2", 1 * 1000);') // unnamed: the node id is the key
+    expect(s).toContain('__g.wx("slow");')
+    expect(s).toMatch(/try \{\s+__g\.wf\("d"\);/) // the continuation reports first
+    expect(s).toContain('function wt(nodeId, key, ms) {')
+    expect(src(t)).not.toMatch(/__g\.w[tfx]\(/)
+  })
   it('the game build has none of it', () => {
     const s = src(g)
     expect(s).not.toContain('rn(')
