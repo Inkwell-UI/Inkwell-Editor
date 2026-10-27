@@ -1,6 +1,6 @@
 // yarn spike:05b [--mods <MO2 mods folder>] -> spike S-B of PLAN-0.5: a modded InventoryMenu.swf built from the draft engine contract only
-// (Inkwell-Spec/spikes/inventory-contract/inventory.contract.draft.json), as 7 MO2 mod folders "Inkwell Spike 05B - <n> <what>": a baseline with every
-// contract name, and 6 variants that each leave out one group, so the owner learns which names the engine needs. Owner steps: TEST-IN-GAME-0.5.md, S-B.
+// (Inkwell-Spec/spikes/inventory-contract/inventory.contract.draft.json), as 8 MO2 mod folders "Inkwell Spike 05B - <n> <what>": a baseline with every
+// contract name, 6 variants that each leave out one group and a SkyUI 5.2 check (7), so the owner learns which names the engine needs. Owner steps: TEST-IN-GAME-0.5.md, S-B.
 // Built from scratch with the editor's tag writer + FFDec: no vanilla bytes are copied. The vanilla cache is read only for the stage header, and every
 // output is checked against the cache's hashes (an unmodified vanilla SWF is never written). Nothing here is product code. Needs Java, FFDec, the wrapper jar.
 // Trace: an engine menu gets no Inkwell bridge (the runtime only bridges its own menus), so lines go to skse64.log through skse.Log
@@ -24,8 +24,8 @@ const userData = process.env['INKWELL_USERDATA'] ?? join(process.env['APPDATA'] 
 const PREFIX = 'Inkwell Spike 05B - '
 
 type Group = 'GetInventoryItemList' | 'init' | 'Menu_mc' | 'itemCard' | 'bridge' | 'listMembers'
-interface Variant { n: number; folder: string; omit?: Group; desc: string; absent: string[] }
-// absent: strings that must not occur in that variant's SWF (self-check); every other variant must contain them.
+interface Variant { n: number; folder: string; omit?: Group; skyui?: boolean; desc: string; absent: string[]; present?: string[] }
+// absent: strings that must not occur in that variant's SWF (self-check); every other variant must contain them. present: the reverse (only that variant has them).
 const VARIANTS: Variant[] = [
   { n: 0, folder: '0 baseline', desc: 'baseline, every contract name', absent: [] },
   { n: 1, folder: '1 no item list', omit: 'GetInventoryItemList', desc: 'root item-list function removed', absent: ['GetInventoryItemList'] },
@@ -33,10 +33,20 @@ const VARIANTS: Variant[] = [
   { n: 3, folder: '3 no Menu_mc', omit: 'Menu_mc', desc: 'menu clip renamed to Spike_mc', absent: ['Menu_mc'] },
   { n: 4, folder: '4 no item card', omit: 'itemCard', desc: 'item card handler and request removed', absent: ['UpdateItemCardInfo', 'RequestItemCardInfo'] },
   { n: 5, folder: '5 no bridge', omit: 'bridge', desc: 'ExternalInterface call/respond not registered', absent: ['addCallback'] },
-  { n: 6, folder: '6 bare list', omit: 'listMembers', desc: 'list object has entryList only', absent: ['selectedIndex', 'selectedEntry', 'scrollPosition', 'InvalidateData'] }
+  { n: 6, folder: '6 bare list', omit: 'listMembers', desc: 'list object has entryList only', absent: ['selectedIndex', 'selectedEntry', 'scrollPosition', 'InvalidateData'] },
+  { n: 7, folder: '7 skyui52 check', skyui: true, desc: 'baseline plus the _global version statics SkyUI 5.2 checks', absent: [], present: ['SKYUI_RELEASE_IDX', 'SKYUI_VERSION_STRING'] }
 ]
 
 const has = (v: Variant, o: Group): boolean => v.omit !== o
+
+// SkyUI 5.2 SKI_Main reads _global.<Class>.SKYUI_RELEASE_IDX / SKYUI_VERSION_STRING for these four classes
+const SKYUI_CLASSES = ['InventoryMenu', 'ItemCard', 'BottomBar', 'InventoryLists']
+const SKYUI_BLOCK = `${SKYUI_CLASSES.map((x) => `_global.${x} = function() {};
+_global.${x}.SKYUI_RELEASE_IDX = 2018;
+_global.${x}.SKYUI_VERSION_STRING = "5.2 SE";
+`).join('')}L("SkyUI 5.2 globals defined: ${SKYUI_CLASSES.join(', ')}");
+${SKYUI_CLASSES.map((x) => `L("read back _global.${x}: idx=" + _global.${x}.SKYUI_RELEASE_IDX + " ver=" + _global.${x}.SKYUI_VERSION_STRING);`).join('\n')}
+`
 
 function as2(v: Variant): string {
   const MENU = has(v, 'Menu_mc') ? 'Menu_mc' : 'Spike_mc'
@@ -252,7 +262,7 @@ var okResp = flash.external.ExternalInterface.addCallback("respond", this, onRes
   } else out.push('var okCall = "left out";\nvar okResp = "left out";\n')
   out.push(`M.title.text = "Inkwell Spike " + VID + ": ${v.desc}.   Up/Down select, Enter use, Tab or Esc close";
 L("frame 1 ran: menu clip ${MENU}, bridge call=" + okCall + " respond=" + okResp + ", skse=" + typeof(GL.skse) + ", stage " + Stage.width + "x" + Stage.height);
-this.onEnterFrame = function() {
+${v.skyui ? SKYUI_BLOCK : ''}this.onEnterFrame = function() {
   if (!sk && typeof(GL.skse) == "object") { sk = true; L("skse object present"); }
   flush();
 };
@@ -311,6 +321,9 @@ async function main(): Promise<void> {
     ffdecDir: process.env['INKWELL_FFDEC'] ?? 'C:\\Program Files (x86)\\FFDec',
     jarPath: resolve(root, 'tools/ffdec-wrapper/build/ffdec-wrapper.jar')
   })
+  // variant 7 differs from the baseline script only by the SkyUI block (variant number and description aside)
+  const v7 = VARIANTS[7]!
+  if (as2(v7).replace(SKYUI_BLOCK, '') !== as2({ ...VARIANTS[0]!, n: v7.n, desc: v7.desc })) throw new Error('variant 7 differs from the baseline by more than the SkyUI block')
   try {
     for (const v of VARIANTS) {
       const menu = has(v, 'Menu_mc') ? 'Menu_mc' : 'Spike_mc'
@@ -328,6 +341,9 @@ async function main(): Promise<void> {
       const text = plain(bytes).toString('latin1')
       for (const o of VARIANTS) for (const s of o.absent) {
         if ((o === v) === text.includes(s)) throw new Error(`variant ${v.n}: "${s}" ${o === v ? 'is still in' : 'is missing from'} the SWF`)
+      }
+      for (const o of VARIANTS) for (const s of o.present ?? []) {
+        if ((o === v) !== text.includes(s)) throw new Error(`variant ${v.n}: "${s}" ${o === v ? 'is missing from' : 'is in'} the SWF`)
       }
       const dest = resolve(modsRoot, PREFIX + v.folder)
       const out = resolve(dest, 'Interface', 'inventorymenu.swf')
