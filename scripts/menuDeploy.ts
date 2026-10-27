@@ -8,7 +8,7 @@ import { copyFileSync, createReadStream, cpSync, existsSync, mkdirSync, mkdtempS
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
-import { Swf } from '@inkwell-ui/spec'
+import { applyTheme, Swf, themeModes } from '@inkwell-ui/spec'
 import { createFfdecWrapper } from '../src/main/build/ffdecWrapper'
 import { loadCodegenPacks } from '../src/main/codegen/packs'
 import { commitDeploy, prepareDeploy, type DeployInput, type DeploySwf } from '../src/main/deploy/run'
@@ -78,7 +78,10 @@ async function main(o: MenuDeployOptions): Promise<void> {
     const locKeys = locKeysOf(nodes as Record<string, { locKey?: unknown }>)
     const localization = (await readLocalization(projectDir)).localization
     const buildDir = mkdtempSync(resolve(tmpdir(), 'inkwell-deploy-'))
-    const ir = Swf.parse(s.ir)
+    // the menu's default theme (Menu settings, else the first mode) is baked in, as the build pipeline does
+    const parsed = Swf.parse(s.ir)
+    const modes = themeModes(parsed)
+    const ir = applyTheme(parsed, base.userDefaults?.theme && modes.includes(base.userDefaults.theme) ? base.userDefaults.theme : modes[0])
     const built = await compileSwf(ir, {
       modId, buildDir, outPath: resolve(buildDir, 'menu.swf'), ffdec, ...fontOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}),
       instanceNames: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : []))),

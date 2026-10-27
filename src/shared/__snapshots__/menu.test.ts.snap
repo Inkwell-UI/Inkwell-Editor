@@ -12,7 +12,7 @@ UIScale=1.25
 ; Move the menu, in pixels of a 1920x1080 screen.
 OffsetX=10
 ;OffsetY=0
-; Theme name (reserved; themes arrive in a later version).
+; Theme name: a mode of the menu's Figma variable collection (for example Vanilla). Empty = the menu's default.
 Theme=Dark
 
 [Menu.MyMod_List]
@@ -23,7 +23,7 @@ Theme=Dark
 ; Move the menu, in pixels of a 1920x1080 screen.
 ;OffsetX=0
 ;OffsetY=0
-; Theme name (reserved; themes arrive in a later version).
+; Theme name: a mode of the menu's Figma variable collection (for example Vanilla). Empty = the menu's default.
 ;Theme=
 "
 `;

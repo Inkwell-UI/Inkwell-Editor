@@ -5,15 +5,20 @@ import { themedCollection } from '@inkwell-ui/spec'
 
 export type BindingMode = 'runtime' | 'compile'
 
-/** Runtime: opacity, visibility, size, the colour of a text run, and the colour of a shape or frame with exactly one solid fill and no stroke (a tint recolours the whole clip). Compile time only: gradients, images, strokes, text size. */
+/**
+ * Runtime: opacity and visibility, the size of a shape or text (a frame resized at runtime would stretch its children), the colour of a text run, and the colour of a shape
+ * or of the background of a non-root frame when it is exactly one solid fill and, for a shape, no stroke (a tint recolours the whole clip). Compile time only: gradients,
+ * images, strokes, frame size, text size.
+ */
 export function bindingMode(key: string, node: Node): BindingMode {
-  if (key === 'opacity' || key === 'visible' || key === 'transform/width' || key === 'transform/height') return 'runtime'
+  if (key === 'opacity' || key === 'visible') return 'runtime'
+  if (key === 'transform/width' || key === 'transform/height') return node.type === 'shape' || node.type === 'text' ? 'runtime' : 'compile'
   if (key === 'runs/0/fill/color') return node.type === 'text' && node.runs[0]?.fill?.type === 'solid' ? 'runtime' : 'compile'
   const m = /^fills\/(\d+)\/color$/.exec(key)
   if (m && (node.type === 'shape' || node.type === 'frame')) {
     const fills = node.fills ?? []
     const strokes = node.type === 'shape' ? node.strokes : []
-    return fills.length === 1 && fills[0]?.type === 'solid' && strokes.length === 0 && m[1] === '0' ? 'runtime' : 'compile'
+    return fills.length === 1 && fills[0]?.type === 'solid' && strokes.length === 0 && m[1] === '0' && !(node.type === 'frame' && node.parent === null) ? 'runtime' : 'compile'
   }
   return 'compile'
 }

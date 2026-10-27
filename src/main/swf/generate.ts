@@ -8,9 +8,10 @@ import * as T from './tags'
 import { mapText, previewDeviceFont, type FontInfo, type GlyphLookup, type TextScript } from './text'
 import { HUD_SCALE, widgetFrame } from '../widget/frame'
 import { widgetContractClass } from '../widget/widgetAs2'
-import { packVersion, FIRST_RUNTIME_VERSION } from '@inkwell-ui/spec'
+import { packVersion, FIRST_RUNTIME_VERSION, themeModes } from '@inkwell-ui/spec'
 import { generateGraphClasses, type GraphClass, type WidgetCall } from '../codegen/codegen'
 import { menuClassName, menuClassSource, menuFrameCode } from '../codegen/menuGlue'
+import { themeOps } from '../codegen/themeOps'
 import type { CodegenPacks } from '../codegen/packs'
 import { listAttachCode, listClassName, listClassSource, type ListInfo } from './listAs2'
 
@@ -386,6 +387,15 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   const keyed: { nodeId: string; here: string; key: string }[] = []
   const layerPaths = new Map<string, string>() // figma node id -> clip path from _root (graph targets)
   const listInfos: ListInfo[] = [] // frames with overlay role `list` (S8)
+  // runtime theming (V6.4): a custom menu's bound properties the INI theme changes; a shape is only addressable from AS2 inside a sprite, so those are wrapped
+  const tOps = ir.target.kind === 'customMenu' && !opts.widget ? themeOps(ir) : []
+  const wrapShape = new Set(tOps.filter((o) => o.target === 'self' && ir.nodes[o.nodeId]?.type === 'shape').map((o) => o.nodeId))
+  const wrapFill = new Set(tOps.filter((o) => o.target === 'fill').map((o) => o.nodeId))
+  const inSprite = (shapeId: number): number => {
+    const sid = alloc()
+    defs.push(T.sprite(sid, [T.placeObject2({ depth: 1, charId: shapeId, x: 0, y: 0 })]))
+    return sid
+  }
 
   /** One clip (sprite) showing image `hash` in a w x h box; undefined (with lint) when it cannot be drawn. */
   const imageClip = (hash: string, scaleMode: string | undefined, w: number, h: number, nodeId: string, layer: string, path: string): number | undefined => {
@@ -447,7 +457,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
         shapes.push({ charId: id, nodeId: n.id, svg })
         defs.push(T.defineShapePlaceholder(id, n.transform.width, n.transform.height))
         names.push(name)
-        bg.push(T.placeObject2({ depth, charId: id, name, x: 0, y: 0 }))
+        bg.push(T.placeObject2({ depth, charId: name === 'fill' && wrapFill.has(n.id) ? inSprite(id) : id, name, x: 0, y: 0 }))
         continue
       }
       const name = images++ ? `imageFill_${images}` : 'imageFill'
@@ -528,7 +538,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
         const id = alloc()
         shapes.push({ charId: id, nodeId: cid, svg: r.svg })
         defs.push(T.defineShapePlaceholder(id, n.transform.width, n.transform.height))
-        out.push(T.placeObject2({ ...base, charId: id }))
+        out.push(T.placeObject2({ ...base, charId: wrapShape.has(cid) ? inSprite(id) : id }))
       } else {
         const hash = opts.embeddedFonts?.byNode[cid]
         const face = hash ? opts.embeddedFonts?.fonts[hash] : undefined
@@ -689,8 +699,9 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
   if (menu) {
     // the menu class creates and init()s the graphs once the runtime bridge is ready (S7); the runtime waits for its glueReady()
     const pathOf = (id: string): string | undefined => (layerPaths.get(id)?.startsWith('root.') ? layerPaths.get(id)!.slice('root.'.length) : undefined)
+    const themed = tOps.flatMap((o) => { const p = pathOf(o.nodeId); return p ? [{ path: o.target === 'fill' ? `${p}.fill` : p, kind: o.kind, values: o.values }] : [] })
     const byRole = (...r: string[]): string[] => Object.entries(opts.roles ?? {}).filter(([, role]) => r.includes(role)).flatMap(([id]) => pathOf(id) ?? [])
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
       frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, listInfos.map((l) => listAttachCode(mod, l, '_root'))))
