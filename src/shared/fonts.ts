@@ -41,6 +41,9 @@ export const installedFileName = (f: { family: string; style: string }): string 
 export const registryName = (f: { family: string; style: string }): string => `${f.family} ${f.style} (TrueType)`
 
 /** An embedded custom font of the project (SPEC-CHANGES V5), as the Inspector shows it. */
+/** Owner decision 2026-10-27: only Skyrim's own fonts are offered until after 1.0. The embedded-font pipeline stays built and tested; this hides its Inspector field. */
+export const EMBEDDED_FONTS_UI = false
+
 export interface ProjectFontInfo {
   hash: string
   family: string

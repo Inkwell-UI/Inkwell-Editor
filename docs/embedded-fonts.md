@@ -1,4 +1,6 @@
-# Embedded custom fonts (milestone 0.4)
+# Embedded custom fonts (built in 0.4, hidden: deferred past 1.0)
+
+**Owner decision 2026-10-27: only Skyrim's own fonts are offered for now.** The pipeline below is built and was verified in game (test E), but the Inspector's Embedded font field is hidden (`EMBEDDED_FONTS_UI = false` in `shared/fonts.ts`). A project whose overlay already has a `font` still builds with it.
 
 A text layer of a custom menu can be drawn with a font that travels inside the SWF instead of a Skyrim font alias. Rules: SPEC-CHANGES section V5 (and V13.1); the in-game spike S-A (`TEST-IN-GAME-0.4.md` section 6) showed that a `DefineFont3` with outlines draws in a custom menu, accents included, and that a character outside the embedded set draws as an **empty box**. The editor never touches `fontconfig.txt`. **The end-to-end menu built by the editor has not been run in game yet** (test E in `TEST-IN-GAME-0.4.md` section 8).
 

@@ -3,7 +3,7 @@ import { CircleX, Lock, Redo2, TriangleAlert, Undo2, Info } from 'lucide-react'
 import { isThemeBindingKey, LOC_KEY, suggestKey, uniqueKey, type Node } from '@inkwell-ui/spec'
 import { bindingMode, themeVariable } from '../../shared/theme'
 import { describeTextMapping } from '../../main/swf/text'
-import { CHARSETS } from '../../shared/fonts'
+import { CHARSETS, EMBEDDED_FONTS_UI } from '../../shared/fonts'
 import { keyedTexts } from '../../main/lint/localization'
 import { widgetFrame } from '../../main/widget/frame'
 import { ensureKey, renameKey } from '../../shared/localizationOps'
@@ -131,7 +131,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
         <ThemeBindingsField node={node} />
         {node.type === 'text' && <LocKeyField swfId={swfId} node={node} value={(entry as { locKey?: string }).locKey} />}
-        {node.type === 'text' && <EmbeddedFontField swfId={swfId} nodeId={node.id} value={(entry as { font?: string }).font} />}
+        {EMBEDDED_FONTS_UI && node.type === 'text' && <EmbeddedFontField swfId={swfId} nodeId={node.id} value={(entry as { font?: string }).font} />}
         {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
         {isWidgetFrame && <DebugHotkeyField swfId={swfId} nodeId={node.id} value={debugHotkeyOf(entry)} />}
         <p className="dim contract">{strings.insp.contractLine}</p>
