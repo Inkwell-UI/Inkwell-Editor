@@ -1,6 +1,7 @@
 import { ArrowLeft, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { FONTS_TEXT, FontsForFigma } from '../doctor/FontsForFigma'
+import { STARTER_TEXT, StarterKit } from '../doctor/StarterKit'
 import { SetupDoctorPanel } from '../doctor/SetupDoctorPanel'
 import { useDialogStore } from '../state/dialogStore'
 import { useSettingsStore } from '../state/settingsStore'
@@ -47,6 +48,7 @@ export function SettingsView() {
         )}
         {(!query.trim() || FIGMA_PLUGINS_TEXT.includes(query.trim().toLowerCase())) && <FigmaPlugins />}
         <SetupDoctorPanel query={query} />
+        {(!query.trim() || STARTER_TEXT.includes(query.trim().toLowerCase())) && <StarterKit />}
         {(!query.trim() || FONTS_TEXT.includes(query.trim().toLowerCase())) && <FontsForFigma />}
        </div>
       </div>

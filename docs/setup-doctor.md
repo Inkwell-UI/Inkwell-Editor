@@ -62,3 +62,5 @@ IPC: `runDoctor(only?)`, `runBenchmark`, `buildVanillaCache`, `doctorFirstLaunch
 - A truly unwritable folder is not unit-tested (Windows cannot make one portably); the write probe's failure path is covered with a path below a file.
 - Creation Kit sources are stored and shown but nothing consumes them yet (only the Creation Kit compiler needs them).
 - The runtime table needs new versions added by hand.
+
+**Starter kit section (milestone 0.4).** Settings shows a text-only "Starter kit" section above "Fonts for Figma" (`doctor/StarterKit.tsx`): the checklist of `docs/starter-kit.md`. Nothing runs; it is searchable like the other sections.

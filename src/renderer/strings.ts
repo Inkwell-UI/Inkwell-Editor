@@ -735,6 +735,18 @@ export const strings = {
     nothingToClear: 'No saved value to clear'
   },
 
+  starterKit: {
+    title: 'Starter kit',
+    intro: 'A Figma file you build once and duplicate for every mod, so your design maps to Skyrim fonts without warnings, uses the layer roles the generator understands and carries two themes. Only fonts from Skyrim itself are offered. Full structure: docs/starter-kit.md in the editor repository.',
+    steps: [
+      'Install Skyrim fonts for Figma (the section below).',
+      'Create text styles named Family / Style / Size, for example Everywhere / Bold / 48 (title), Everywhere / Medium / 24 (button), Everywhere / Light / 24 (body).',
+      'Build a Button (frame btn: shape btn_bg, text btn_label), a List (frame list with one template row), a Panel (one solid rectangle), a Title and a body Text, as plain frames.',
+      'Create a variable collection with two modes (for example Vanilla and Nordic), colour variables, and bind the Panel, Title and Button to them. Opacity variables are numbers from 0 to 100.',
+      'Sync a frame: the Lint dock should show no font-fallback, font-unmapped or theme-variable-missing.',
+      'Set the roles in the Inspector (Button, List) and try both themes in the stage toolbar.'
+    ]
+  },
   fonts: {
     title: 'Fonts for Figma',
     intro:
