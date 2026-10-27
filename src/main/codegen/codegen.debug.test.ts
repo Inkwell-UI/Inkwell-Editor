@@ -70,8 +70,21 @@ describe('preview build (debug traces)', () => {
     expect(s).toMatch(/__g\.pv\("c", "value", \(?e_title != ""\)?\)/)
     expect(s).toContain('__g.pv("e", "title", e_title);')
   })
+  it('every exec node reports that it ran: the entry at the start of its handler, the others right after their header', () => {
+    const s = src(g, { preview: true })
+    expect(s).toContain('function rn(nodeId) {')
+    expect(s).toContain('trace("[Inkwell] run " + nodeId);')
+    expect(s).toMatch(/__g\.Show = function\(e_title:String\) \{\s+try \{\s+__g\.rn\("e"\);/)
+    expect(s).toMatch(/\/\/ \[br\] core\/Branch@1\s+__g\.rn\("br"\);/)
+    expect(s).toMatch(/\/\/ \[log\] core\/Log@1\s+__g\.rn\("log"\);/)
+    expect(s).not.toContain('__g.rn("c")') // a pure node has no run, its value badge is its trace
+    const c = gen(g, { preview: true }).classes[0]!
+    const lines = c.source.split('\n')
+    expect(c.map.lines[String(lines.findIndex((l) => l.includes('__g.rn("br")')) + 1)]).toBe('br')
+  })
   it('the game build has none of it', () => {
     const s = src(g)
+    expect(s).not.toContain('rn(')
     expect(s).not.toContain('pv(')
     expect(s).not.toContain('mock')
     expect(s).toBe(src(g, { preview: false }))

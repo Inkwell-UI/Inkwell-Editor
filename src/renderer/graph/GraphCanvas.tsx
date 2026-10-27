@@ -19,6 +19,7 @@ import { droppedVariable, VARIABLE_DRAG } from '../model/variables'
 import { menuGraphId, openGraphs } from '../state/graphDocs'
 import { graphEditorBlurred } from '../state/hotReload'
 import { useSelectionStore } from '../state/selectionStore'
+import { useTraceStore } from '../state/traceStore'
 import { strings } from '../strings'
 import { GraphContext, InkwellNode, type GraphCtx } from './NodeView'
 import './graph.css'
@@ -53,6 +54,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   const variables = useStore(store, (s) => s.variables)
   const picked = useStore(store, (s) => s.nodes.filter((n) => n.selected).length)
   const wires = useStore(store, (s) => s.edges.filter((e) => e.selected).length)
+  const runs = useTraceStore((s) => s.runs)
   const keysRef = useRef<HTMLDivElement>(null)
   const [keysBacked, setKeysBacked] = useState(false)
   const view = useViewport()
@@ -194,9 +196,11 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
       const pin = n && nodePins(defs, n, variables)?.outputs.find((p) => p.name === pinName(e.sourceHandle))
       const exec = pin ? pin.type === 'Exec' : false
       const color = pin ? PIN_STYLE[pin.type].color : 'var(--fg-faint)'
-      return { ...e, className: exec ? 'gw-exec' : 'gw-data', style: { stroke: color, strokeWidth: exec ? 3 : 1.5 } }
+      // an exec wire lights up (restarting its animation: the two classes alternate) each time the node it leads to ran in the preview
+      const ran = exec ? runs[e.target] ?? 0 : 0
+      return { ...e, className: `${exec ? 'gw-exec' : 'gw-data'}${ran ? ` gw-run-${ran % 2}` : ''}`, style: { stroke: color, strokeWidth: exec ? 3 : 1.5 } }
     })
-  }, [nodes, edges, defs, variables])
+  }, [nodes, edges, defs, variables, runs])
 
   const select = useSelectionStore((s) => s.selectGraphNode)
   const onSelectionChange = useCallback(

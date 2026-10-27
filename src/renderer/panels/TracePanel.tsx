@@ -129,7 +129,7 @@ export function TracePanel() {
                     <span className="mono dim">[{clockTime(at)}]</span>{' '}
                     <span className="mono">{level === 'text' ? 'TRACE' : level.toUpperCase()}</span>{' '}
                     {line.kind === 'log' && <span className="mono">{hit ? `${hit.title} ` : ''}#{line.node}</span>}{' '}
-                    <span>{line.kind === 'pin' ? '' : line.message}</span>
+                    <span>{line.kind === 'pin' || line.kind === 'run' ? '' : line.message}</span>
                   </li>
                 )
               })}

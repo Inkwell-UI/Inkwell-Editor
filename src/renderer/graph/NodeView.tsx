@@ -8,6 +8,7 @@ import { categoryVar, fieldRows, nodePins, PIN_STYLE, type FieldRow, type LayerO
 import { inHandle, outHandle, pinName, type FlowNode, type GraphStore } from '../state/graphStore'
 import type { createGraphValidation } from '../state/graphValidation'
 import { usePinBadge } from '../state/devStore'
+import { useRunCount } from '../state/traceStore'
 import { strings } from '../strings'
 import { FieldEditor } from './FieldEditors'
 
@@ -54,6 +55,7 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
   const def = ctx.defs.get(data.kind)
   const status = parseNodeStatus(ctx.issues((s) => s.byNode[id]))
   const badPins = ctx.issues((s) => s.pinsByNode[id])
+  const ran = useRunCount(id) // an exec node of the preview ran this often since the last build: a flash on every run, a mark after
   const wired = useStore(ctx.store, (s) => wiredKey(s.edges, id))
   const outs = useStore(ctx.store, (s) => outgoing(s.edges, id).map((e) => pinName(e.sourceHandle)).join(','))
   const bad = new Set(badPins ? badPins.split(',') : [])
@@ -122,7 +124,8 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
   const volatile = (def.extra as { volatile?: boolean } | undefined)?.volatile === true
   const own = rows.filter((r) => !pinNames.has(r.key))
   return (
-    <div className={`gn${selected ? ' is-selected' : ''}`} data-status={status.level ?? 'ok'} data-testid={`node-${data.kind}`} style={{ ['--gn-accent' as string]: categoryVar(def.category) }}>
+    <div className={`gn${selected ? ' is-selected' : ''}${ran ? ' has-run' : ''}`} data-status={status.level ?? 'ok'} data-testid={`node-${data.kind}`} style={{ ['--gn-accent' as string]: categoryVar(def.category) }}>
+      {ran > 0 && <span key={ran} className="gn-run" aria-hidden="true" />}
       <div className="gn-head">
         {entry && <Zap size={13} aria-hidden="true" />}
         <span className="gn-title">{def.title}</span>

@@ -25,10 +25,19 @@
 
 /* wires: Exec thick and white, data thin and in the colour of the type it carries */
 .react-flow__edge.gw-exec .react-flow__edge-path { stroke-linecap: round; }
+/* flow trace: a node and the exec wire into it light up when the node ran in the preview; the node keeps a mark until the next build */
+.gn.has-run { border-color: color-mix(in srgb, var(--ok) 55%, var(--line-strong)); }
+.gn-run { position: absolute; inset: -3px; border-radius: 8px; pointer-events: none; box-shadow: 0 0 0 2px var(--ok), 0 0 16px var(--ok); animation: gn-run 0.9s ease-out forwards; }
+@keyframes gn-run { from { opacity: 1; } to { opacity: 0; } }
+.react-flow__edge.gw-run-0 .react-flow__edge-path { animation: gw-run-a 0.9s ease-out; }
+.react-flow__edge.gw-run-1 .react-flow__edge-path { animation: gw-run-b 0.9s ease-out; }
+@keyframes gw-run-a { from { stroke: var(--ok); stroke-width: 5px; } }
+@keyframes gw-run-b { from { stroke: var(--ok); stroke-width: 5px; } }
+@media (prefers-reduced-motion: reduce) { .gn-run { animation: none; opacity: 0; } .react-flow__edge.gw-run-0 .react-flow__edge-path, .react-flow__edge.gw-run-1 .react-flow__edge-path { animation: none; } }
 .react-flow__edge.gw-data .react-flow__edge-path { stroke-dasharray: none; }
 
 /* nodes */
-.gn { min-width: 220px; max-width: 288px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 6px; font-size: 12px; color: var(--fg); box-shadow: 0 4px 10px var(--shadow); }
+.gn { position: relative; min-width: 220px; max-width: 288px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 6px; font-size: 12px; color: var(--fg); box-shadow: 0 4px 10px var(--shadow); }
 .gn.is-selected { border-color: var(--fg); box-shadow: 0 0 0 3px var(--kw-select-soft), 0 0 16px var(--kw-select-soft); } /* soft white glow = selection; the border is status only */
 .gn[data-status="error"] { border: 2px solid var(--err); }
 .gn[data-status="warning"] { border: 2px solid var(--warn); }

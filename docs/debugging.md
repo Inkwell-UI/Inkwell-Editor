@@ -2,6 +2,8 @@
 
 **Toolbar (since 0.4):** the Inspect / Play switch is one **Interact** toggle (off = Inspect, clicks select layers; on = mouse and keyboard reach the movie) (mouse and keyboard reach the movie; `data-testid` is still `mode-play`, the Play *tab* keeps its name). A Pause/Resume toggle next to the mode switch freezes the Ruffle movie (`PreviewBackend.setPaused`: timers, tweens, timeline); a new load (build or Reload) always starts playing.
 
+**Flow trace (since 0.4):** a preview build also traces `[Inkwell] run <nodeId>` when an exec node runs (`rn()`, the first statement of an entry's handler, the line after every other exec node's header; pure nodes keep their pin value). The Trace store counts the runs per node (`runs`, cleared by a new build; the lines are not shown in the Trace panel) and the canvas lights the node (a green flash on every run, a green border after) and the exec wire into it. The game build and the Dev build have none of it yet.
+
 Everything here runs in the **Ruffle preview, not the game**. In-game trace logs and live inspection come from the Inkwell Runtime's dev connection (`docs/dev-mode.md`: the Trace & Watch source switch `Game (Dev Mode)`, game pin badges, hot reload); the Ruffle source says it is not the game. Graph format and codegen: `docs/graphs.md`, `docs/codegen.md`; panel reference: `docs/ui-panels.md`.
 
 ## What a graph edit does

@@ -377,6 +377,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           const sub = chain(n, own[3]!, ctx)
           if (own[2] === 'guarded' && isEntry && (i.preview || dev) && lines.some((l) => l.includes('{{params}}')))
             for (const p of [...outs].reverse()) sub.unshift({ t: `__g.pv("${safeId(n.id)}", "${safeId(p)}", ${uids.get(n.id)}_${p});`, n: n.id })
+          if (own[2] === 'guarded' && isEntry && i.preview) sub.unshift({ t: `__g.rn("${safeId(n.id)}");`, n: n.id })
           // the field named by `extra.writesVariable` holds the variable this node assigns (Set Variable, Toggle); the kind test covers a pack copy that predates the flag
           const wv = (d.extra as { writesVariable?: unknown } | undefined)?.writesVariable
           const boundVar = typeof wv === 'string' ? String(n.fields[wv]) : /^core\/(SetVariable|Toggle)@/.test(n.kind) ? String(n.fields['variable']) : undefined
@@ -397,6 +398,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         } else {
           if (/\{\{(next|guarded)\./.test(raw)) throw new Skip('a continuation placeholder must be alone on its line.')
           out.push({ t: i.menu ? toBridgeLog(fill(raw, n, d, args, outs)) : fill(raw, n, d, args, outs), n: n.id })
+          if (i.preview && !isEntry && raw === lines[0]) out.push({ t: `__g.rn("${safeId(n.id)}");`, n: n.id }) // the line after the header comment
         }
       }
       return out
@@ -534,6 +536,10 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '        var s = typeof (v) == "string" ? "\\"" + v.split("\\n").join("\\\\n") + "\\"" : String(v);' },
           { t: '        trace("[Inkwell] pin " + nodeId + "." + pin + " = " + s);' },
           { t: '        return v;' },
+          { t: '    }' },
+          { t: '    // preview only: an exec node ran (traced as "[Inkwell] run <node>"); the graph canvas lights the node and the wire into it' },
+          { t: '    function rn(nodeId) {' },
+          { t: '        trace("[Inkwell] run " + nodeId);' },
           { t: '    }' }
         ]
       : []),

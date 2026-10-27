@@ -11,6 +11,9 @@ describe('parseTrace', () => {
     expect(parseTrace('[Inkwell] pin notempty.value = true')).toEqual({ kind: 'pin', node: 'notempty', pin: 'value', value: 'true' })
     expect(parseTrace('[Inkwell] pin a.b.out = "x = y"')).toEqual({ kind: 'pin', node: 'a.b', pin: 'out', value: '"x = y"' })
   })
+  it('reads the run line of an exec node', () => {
+    expect(parseTrace('[Inkwell] run 325f49ba-c166')).toEqual({ kind: 'run', node: '325f49ba-c166' })
+  })
   it('finds the marker behind a console prefix; other trace lines are plain text', () => {
     expect(parseTrace('avm_trace: [Inkwell] warn n: careful')).toMatchObject({ kind: 'log', level: 'warn', node: 'n' })
     expect(parseTrace('[Inkwell] preview bridge unavailable')).toEqual({ kind: 'text', message: 'preview bridge unavailable' })
