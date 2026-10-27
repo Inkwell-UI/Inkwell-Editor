@@ -22,6 +22,7 @@ import { defaultMenuSettings, flatMenuSettings } from '../src/shared/menu'
 import { listSettings, locKeysOf } from '../src/shared/overlay'
 import { embeddedFontsFor } from '../src/main/fonts/embedBuild'
 import { readLocalization } from '../src/main/project/localizationFile'
+import { focusOptions } from '../src/main/lint/focus'
 
 const root = resolve(__dirname, '..')
 const arg = (k: string): string | undefined => {
@@ -82,14 +83,17 @@ async function main(o: MenuDeployOptions): Promise<void> {
     const parsed = Swf.parse(s.ir)
     const modes = themeModes(parsed)
     const ir = applyTheme(parsed, base.userDefaults?.theme && modes.includes(base.userDefaults.theme) ? base.userDefaults.theme : modes[0])
+    // W3/W4: the focus graph and prompts, as the build pipeline passes them
+    const fo = focusOptions(ir, nodes as Record<string, Record<string, unknown>>)
+    const inputOpts = { ...(fo.focus ? { focus: fo.focus } : {}), ...(fo.prompts ? { prompts: fo.prompts } : {}) }
     const built = await compileSwf(ir, {
-      modId, buildDir, outPath: resolve(buildDir, 'menu.swf'), ffdec, ...fontOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}),
+      modId, buildDir, outPath: resolve(buildDir, 'menu.swf'), ffdec, ...fontOpts, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}),
       instanceNames: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : []))),
       roles: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.role ? [[id, o.role]] : []))),
       lists: listSettings(nodes),
       graphs: { graphs: Object.values(s.graphs ?? {}), packs }
     })
-    const common = { ...fontOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), modId, instanceNames: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : []))), roles: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.role ? [[id, o.role]] : []))), lists: listSettings(nodes), graphs: { graphs: Object.values(s.graphs ?? {}), packs }, ffdec }
+    const common = { ...fontOpts, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), modId, instanceNames: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : []))), roles: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.role ? [[id, o.role]] : []))), lists: listSettings(nodes), graphs: { graphs: Object.values(s.graphs ?? {}), packs }, ffdec }
     let dev: DeployInput['dev']
     if (devDeploy) {
       await compileSwf(ir, { ...common, buildDir: resolve(buildDir, 'dev'), outPath: resolve(buildDir, 'menu.dev.swf'), dev: true })
@@ -105,7 +109,7 @@ async function main(o: MenuDeployOptions): Promise<void> {
       ...(dev ? { dev } : {}), ...(localization ? { localization } : {}), modId, modName: project.meta.name, root: dest, gameDirs: [], buildDir, ffdec, vanillaHashes: new Set(), packs,
       ...(papyrusExe && existsSync(papyrusExe) ? { papyrusExe, stubsDir: resolve(root, 'resources/papyrus-stubs') } : {}),
       swfs: [{
-        name: 'menu', orphaned: false, kind: 'customMenu', ir, graphs: Object.values(s.graphs ?? {}), overlay: nodes as DeploySwf['overlay'], build: { state: 'done', lint: [...built.lint, ...emb.issues] },
+        name: 'menu', orphaned: false, kind: 'customMenu', ir, graphs: Object.values(s.graphs ?? {}), overlay: nodes as DeploySwf['overlay'], build: { state: 'done', lint: [...built.lint, ...emb.issues, ...fo.lint] },
         menu: flat ? flatMenuSettings(modId, 'menu', base) : base
       }]
     }
