@@ -8,6 +8,7 @@ import { computeOrphans } from '../model/orphans'
 import { inkwell } from '../hooks/api'
 import { discardOverlayOrphan, relinkOverlayOrphan } from '../state/orphanActions'
 import { useSelectionStore } from '../state/selectionStore'
+import { useWorkspaceStore } from '../state/workspaceStore'
 import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
@@ -55,6 +56,7 @@ export function NavigatorPanel() {
   const sync = useSyncState()
   const selected = useSelectionStore((s) => s.component)
   const select = useSelectionStore((s) => s.selectComponent)
+  const workspace = useWorkspaceStore((s) => s.active) // Layout mode is about the layers: the graphs belong to Behaviour
   const [query, setQuery] = useState('')
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
 
@@ -85,7 +87,7 @@ export function NavigatorPanel() {
           <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={strings.nav.search} aria-label={strings.nav.search} />
         </label>
 
-        <GraphsList />
+        {workspace !== 'layout' && <GraphsList />}
 
         <section aria-labelledby="nav-layers">
           <header className="section-title"><h3 id="nav-layers">{strings.nav.layers}</h3></header>
