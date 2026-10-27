@@ -1,0 +1,28 @@
+{
+  "kind": "InventoryOnSetCategories",
+  "major": 1,
+  "title": "Inventory: On Set Categories",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "The engine sends the category list (engine callback SetCategoriesList): one object {text, flag, dontHide} per category; flag 0 marks a divider.",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "categories",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventoryOnSetCategories.as2",
+  "extra": {
+    "entry": true,
+    "contract": "InventoryMenu",
+    "contractCallback": "SetCategoriesList"
+  }
+}

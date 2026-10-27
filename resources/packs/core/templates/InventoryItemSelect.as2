@@ -1,0 +1,4 @@
+// [{{node.id}}] core/InventoryItemSelect@1
+_root.inkwellContract.select({{in.index}});
+_root.inkwellContract.send("ItemSelect", {{in.slot}} >= 0 ? [{{in.slot}}] : []);
+{{next.then}}

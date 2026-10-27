@@ -1,0 +1,23 @@
+{
+  "kind": "InventoryOnDropItem",
+  "major": 1,
+  "title": "Inventory: On Drop Item",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "The player pressed the drop key (engine callback DropItem); answer with Inventory: Item Drop.",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventoryOnDropItem.as2",
+  "extra": {
+    "entry": true,
+    "contract": "InventoryMenu",
+    "contractCallback": "DropItem"
+  }
+}

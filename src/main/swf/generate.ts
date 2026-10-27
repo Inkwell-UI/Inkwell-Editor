@@ -1,4 +1,4 @@
-import type { Graph, Swf } from '@inkwell-ui/spec'
+import type { Graph, MergedContract, Swf } from '@inkwell-ui/spec'
 import { ddsRel, isAssetHash, type ImageMode } from '../images/assets'
 import type { Rgba } from '../images/png'
 import { ident } from '../../shared/overlay'
@@ -11,6 +11,7 @@ import { widgetContractClass } from '../widget/widgetAs2'
 import { packVersion, FIRST_RUNTIME_VERSION, themeModes } from '@inkwell-ui/spec'
 import { generateGraphClasses, type GraphClass, type WidgetCall } from '../codegen/codegen'
 import { menuClassName, menuClassSource, menuFrameCode } from '../codegen/menuGlue'
+import { replacementClassName, replacementFrameCode, replacementGlue } from '../codegen/replacementGlue'
 import { themeOps } from '../codegen/themeOps'
 import type { CodegenPacks } from '../codegen/packs'
 import { listAttachCode, listClassName, listClassSource, type ListInfo } from './listAs2'
@@ -62,6 +63,8 @@ export interface GenerateOptions {
   imageMode?: ImageMode
   /** Decoded pixels by image hash (the project's assets/<hash>.png); undefined = missing (lint `image-missing-asset`). */
   images?: (hash: string) => Rgba | undefined
+  /** Menu replacement only: the merged contract (`lint/contract.ts` `contractFor`); the SWF gets the engine glue built from it (`codegen/replacementGlue.ts`). */
+  contract?: MergedContract
 }
 
 export interface Generated {
@@ -91,6 +94,8 @@ export interface Generated {
   graphCalls: WidgetCall[]
   /** Compiled clip path of every placed layer (`root.a.b`, figma node id -> path): what contract validation checks. */
   layerPaths: Record<string, string>
+  /** Menu replacement: what the engine glue defines (contract path -> AS2 type), checked with `layerPaths` by the contract lint. Empty otherwise. */
+  contractProvided: Record<string, string>
 }
 
 export interface SettableText {
@@ -693,6 +698,12 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     addClass('InkwellList', listClassSource(mod))
     frameCode.push(...listInfos.map((l) => listAttachCode(mod, l)))
   }
+  // W5: the engine glue of a menu replacement, installed before the graphs register their contract-node handlers
+  const glue = ir.target.kind === 'menuReplacement' && opts.contract && !opts.widget ? replacementGlue(opts.contract, mod, swfCls, opts.preview === true) : undefined
+  if (glue) {
+    addClass(replacementClassName(swfCls), glue.source)
+    frameCode.push(...replacementFrameCode(mod, swfCls))
+  }
   gen?.classes.forEach((c, k) => {
     addClass(c.cls, c.source)
     if (!menu) frameCode.push(`${baseExpr}.inkwellGraph${k} = new mods.${mod}.${c.cls}(${baseExpr});`, `${baseExpr}.inkwellGraph${k}.init();`)
@@ -726,7 +737,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     ...[...embedded].map(([name, e]) => ({ charId: e.charId, name, chars: [...e.chars].join('') })),
     ...[...custom].map(([hash, c]) => ({ charId: c.charId, name: c.family, chars: c.chars, hash }))
   ]
-  return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls, layerPaths: Object.fromEntries(layerPaths) }
+  return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls, layerPaths: Object.fromEntries(layerPaths), contractProvided: glue?.provided ?? {} }
 }
 
 /** `node-off-stage`: a visible layer whose box lies entirely outside the frame (the stage), so it never shows. One warning per subtree. */

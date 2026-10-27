@@ -1,0 +1,33 @@
+{
+  "kind": "InventoryOnInvalidateList",
+  "major": 1,
+  "title": "Inventory: On Invalidate List",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "The engine (re)filled the item list (engine callback InvalidateListData): items are the entries {text, count, enabled, equipState, filterFlag, favorite, ...}.",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "items",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "count",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventoryOnInvalidateList.as2",
+  "extra": {
+    "entry": true,
+    "contract": "InventoryMenu",
+    "contractCallback": "InvalidateListData"
+  }
+}

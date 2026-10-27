@@ -1,0 +1,31 @@
+{
+  "kind": "InventoryRequestItemCard",
+  "major": 1,
+  "title": "Inventory: Request Item Card",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "Ask the engine for the card of the item at index (-1: the current selection); the answer fires Inventory: On Item Card.",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": -1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventoryRequestItemCard.as2",
+  "extra": {
+    "contract": "InventoryMenu"
+  }
+}

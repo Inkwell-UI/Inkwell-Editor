@@ -47,6 +47,7 @@ export const IPC = {
   menuInvoke: 'menu:invoke',
   menuChanged: 'menu:changed',
   swfTarget: 'swf:target',
+  contractsList: 'contracts:list',
   previewTheme: 'preview:theme',
   locLoad: 'loc:load',
   projectFonts: 'fonts:project',
@@ -126,7 +127,10 @@ export interface InkwellApi {
   /** Writes `swfs/<swfName>/menu.json` (the Spec's MenuSettings; validated, unknown keys kept as sent). The project state follows. */
   saveMenuSettings(swfName: string, settings: MenuSettings): Promise<SaveOverlayResult>
   setPreviewTheme(swfName: string, mode: string): Promise<{ ok: boolean }>
-  setSwfTarget(swfName: string, kind: 'hudWidget' | 'customMenu'): Promise<{ ok: true } | { ok: false; error: string }>
+  /** Target of a SWF; a menu replacement also takes `contract` and `layers` (W5; empty removes them). */
+  setSwfTarget(swfName: string, kind: 'hudWidget' | 'customMenu' | 'menuReplacement', more?: { contract?: string; layers?: string[] }): Promise<{ ok: true } | { ok: false; error: string }>
+  /** The shipped contracts (menu name, layer names). */
+  listContracts(): Promise<{ menu: string; layers: string[] }[]>
   /** Embedded custom fonts of the project (`fonts.json`, `fonts/<hash>.ttf`): the list with licence verdicts, add a TrueType file (a file dialog), change charsets and extra characters (rebuilds). Never reject. */
   getProjectFonts(): Promise<ProjectFontsState>
   addProjectFont(): Promise<AddFontOutcome>

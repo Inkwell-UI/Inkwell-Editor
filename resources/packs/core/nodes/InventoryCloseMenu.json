@@ -1,0 +1,31 @@
+{
+  "kind": "InventoryCloseMenu",
+  "major": 1,
+  "title": "Inventory: Close Menu",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "Close the Inventory (engine call CloseMenu; with tween also CloseTweenMenu, as Tab does). Not the Inkwell Runtime Close Menu.",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "tween",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventoryCloseMenu.as2",
+  "extra": {
+    "contract": "InventoryMenu"
+  }
+}

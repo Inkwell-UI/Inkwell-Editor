@@ -51,3 +51,20 @@ export function kindGraph(packId: string, d: NodeDef): Graph | null {
   }
   return graph(`k-${d.kind}`, nodes, edges, [{ id: 'v1', name: 'count', type: 'Number', scope: 'menu', default: 0 }] as Graph['variables'])
 }
+
+/** Every Inventory contract node once: the events log, the actions run in a chain from On Widget Call (a test entry; a replacement has no runtime input yet). */
+export const inventoryGraph = (): Graph => {
+  const ev = ['OnSetCategories', 'OnInvalidateList', 'OnPlayerInfo', 'OnRestoreIndices', 'OnDropItem', 'OnItemCard']
+  const acts = ['ItemSelect', 'ItemDrop', 'SaveIndices', 'PlaySound', 'RequestItemCard', 'CloseMenu']
+  const nodes = [
+    ...ev.flatMap((k) => [node(k, `core/Inventory${k}@1`), node(`log_${k}`, 'core/Log@1', { level: 'info', message: k })]),
+    node('run', 'core/OnWidgetCall@1', { name: 'Run', params: [] }),
+    ...acts.map((k) => node(k, `core/Inventory${k}@1`, k === 'CloseMenu' ? { tween: true } : {}))
+  ]
+  const edges = [
+    ...ev.map((k) => wire(k, 'then', `log_${k}`, 'in')),
+    wire('OnInvalidateList', 'count', 'log_OnInvalidateList', 'message'),
+    ...['run', ...acts].slice(0, -1).map((k, i) => wire(k, 'then', acts[i]!, 'in'))
+  ]
+  return graph('inv', nodes, edges)
+}

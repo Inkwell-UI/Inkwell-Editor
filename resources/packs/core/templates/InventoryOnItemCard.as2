@@ -1,0 +1,5 @@
+// [{{node.id}}] core/InventoryOnItemCard@1
+_root.inkwellContract.on("UpdateItemCardInfo", function() {
+    var {{out.info}} = typeof (arguments[0]) == "object" ? arguments[0] : {};
+    {{guarded.then}}
+});

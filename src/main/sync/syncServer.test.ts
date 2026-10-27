@@ -212,6 +212,11 @@ describe('syncServer', () => {
     await sleep(80)
     expect(s.ir('hud')!.target.kind).toBe('customMenu')
     expect(onChange).toHaveBeenCalled()
+    // a menu replacement's contract and layers (W5); an empty value removes them, an omitted one is kept
+    expect(s.setTarget('hud', 'menuReplacement', { contract: 'InventoryMenu', layers: ['engine', 'skyui52'] })).toBe(true)
+    expect(s.ir('hud')!.target).toEqual({ kind: 'menuReplacement', contract: 'InventoryMenu', layers: ['engine', 'skyui52'] })
+    s.setTarget('hud', 'menuReplacement', { layers: [] })
+    expect(s.ir('hud')!.target).toEqual({ kind: 'menuReplacement', contract: 'InventoryMenu' })
   })
 
   it('a node no root reaches gets an unreachable-node warning on that swf', async () => {

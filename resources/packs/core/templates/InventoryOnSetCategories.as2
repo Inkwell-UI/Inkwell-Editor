@@ -1,0 +1,6 @@
+// [{{node.id}}] core/InventoryOnSetCategories@1
+_root.inkwellContract.on("SetCategoriesList", function() {
+    var {{out.categories}} = [];
+    for (var k = 0; k + 2 < arguments.length; k += 3) {{out.categories}}.push({ text: String(arguments[k]), flag: Number(arguments[k + 1]) || 0, dontHide: arguments[k + 2] == true });
+    {{guarded.then}}
+});

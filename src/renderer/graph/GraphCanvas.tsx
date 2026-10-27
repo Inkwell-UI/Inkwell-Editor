@@ -75,7 +75,8 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
         defs,
         layers: new Set(Object.keys(swf.ir.nodes)),
         siblings: openGraphs(swf.id),
-        target: swf.ir.target.kind
+        target: swf.ir.target.kind,
+        ...(swf.ir.target.contract ? { contract: swf.ir.target.contract } : {})
       })),
     [store, defs, swf.ir, swf.id]
   )

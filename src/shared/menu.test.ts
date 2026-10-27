@@ -34,7 +34,7 @@ describe('MenuDef', () => {
     const r = buildMenuDef('MyMod', src('wheel', { flags: { modal: true, cursor: true }, triggers: { hotkey: 37, modEvent: 'MyMod_OpenWheel' }, depth: 6, userDefaults: { uiScale: 1.5 } }))
     expect(r.problems).toEqual([])
     expect(r.def).toEqual({
-      specVersion: 7, name: 'MyMod_Wheel', swf: 'Interface/Inkwell/MyMod/Wheel.swf', minRuntime: '0.3.0',
+      specVersion: 8, name: 'MyMod_Wheel', swf: 'Interface/Inkwell/MyMod/Wheel.swf', minRuntime: '0.3.0',
       flags: { pausesGame: false, cursor: true, modal: true, closeOnEscape: true }, inputContext: 'menuMode', depth: 6, triggers: { hotkey: 37, papyrus: true, modEvent: 'MyMod_OpenWheel' }
     })
     expect(MenuDef.safeParse(r.def).success).toBe(true)
@@ -43,7 +43,7 @@ describe('MenuDef', () => {
     expect(buildMenuDef('M', src('x', { inputContext: 'menuMode' })).def!.inputContext).toBe('menuMode')
   })
   it('the defaults of a new menu', () => {
-    expect(defaultMenuSettings()).toMatchObject({ specVersion: 7, flags: { pausesGame: false, cursor: false, modal: false, closeOnEscape: true }, depth: 3, triggers: { papyrus: true } })
+    expect(defaultMenuSettings()).toMatchObject({ specVersion: 8, flags: { pausesGame: false, cursor: false, modal: false, closeOnEscape: true }, depth: 3, triggers: { papyrus: true } })
   })
   it('reports the S9 codes: a name that does not fit, a hotkey outside 2..255, a mod event with spaces', () => {
     expect(buildMenuDef('M', { swf: 'x'.repeat(70), settings: defaultMenuSettings() }).problems.map((p) => p.code)).toEqual(['menu-name-invalid'])

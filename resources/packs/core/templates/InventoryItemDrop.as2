@@ -1,0 +1,4 @@
+// [{{node.id}}] core/InventoryItemDrop@1
+_root.inkwellContract.select({{in.index}});
+_root.inkwellContract.send("ItemDrop", [{{in.amount}}]);
+{{next.then}}

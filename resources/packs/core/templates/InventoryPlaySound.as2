@@ -1,0 +1,3 @@
+// [{{node.id}}] core/InventoryPlaySound@1
+_root.inkwellContract.send("PlaySound", [String({{in.sound}})]);
+{{next.then}}

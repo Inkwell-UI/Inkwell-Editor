@@ -1,0 +1,7 @@
+// [{{node.id}}] core/InventoryOnInvalidateList@1
+_root.inkwellContract.on("InvalidateListData", function() {
+    var {{out.items}} = _root.inkwellContract.list.entryList;
+    if (!({{out.items}} instanceof Array)) {{out.items}} = [];
+    var {{out.count}} = {{out.items}}.length;
+    {{guarded.then}}
+});

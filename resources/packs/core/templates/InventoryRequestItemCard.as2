@@ -1,0 +1,4 @@
+// [{{node.id}}] core/InventoryRequestItemCard@1
+_root.inkwellContract.select({{in.index}});
+_root.inkwellContract.send("RequestItemCardInfo", [], "UpdateItemCardInfo");
+{{next.then}}

@@ -347,12 +347,19 @@ export async function startSyncServer(opts: SyncServerOptions) {
       projectStatus()
       return true
     },
-    /** Editor-side target of one swf: Figma never sends one, a new frame starts as hudWidget. The next patch keeps it (only a plugin-sent target replaces it). */
-    setTarget: (swfId: string, kind: 'hudWidget' | 'customMenu'): boolean => {
+    /**
+     * Editor-side target of one swf: Figma never sends one, a new frame starts as hudWidget. The next patch keeps it (only a plugin-sent target replaces it).
+     * `contract`/`layers` (a menu replacement, W5) replace the stored ones when given; an empty string or list removes them.
+     */
+    setTarget: (swfId: string, kind: Swf['target']['kind'], more: { contract?: string; layers?: string[] } = {}): boolean => {
       const e = store.get(swfId)
       if (!e) return false
-      if (e.ir.target.kind !== kind) {
-        e.ir = { ...e.ir, target: { ...e.ir.target, kind } }
+      const { contract: c0, layers: l0, ...keep } = e.ir.target
+      const contract = more.contract ?? c0
+      const layers = more.layers ?? l0
+      const next = { ...keep, kind, ...(contract ? { contract } : {}), ...(layers?.length ? { layers } : {}) }
+      if (JSON.stringify(next) !== JSON.stringify(e.ir.target)) {
+        e.ir = { ...e.ir, target: next }
         swfsChanged()
         schedule(swfId)
       }

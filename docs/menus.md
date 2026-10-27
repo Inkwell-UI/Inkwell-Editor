@@ -4,7 +4,7 @@ The `customMenu` target: a SWF that the Inkwell Runtime opens in game (hotkey, P
 
 ## The target
 
-The target is per SWF (`ir.target.kind`: `hudWidget`, `customMenu`, `menuReplacement`), not a project kind: a project may hold both. Figma never sends it (a new frame starts as `hudWidget`); the author sets it in the editor: the Target pill in the top bar opens a dialog with a **Target of this SWF** select (`hudWidget` or `customMenu`; `menuReplacement` is shown but not changeable). The choice is written to `ir.json` by the next build and a later Figma sync keeps it (`syncServer.setTarget`). For a `customMenu` the dialog also holds the Menu settings. Menu-only controls on another target are disabled with a reason ("Menu settings are for custom menus").
+The target is per SWF (`ir.target.kind`: `hudWidget`, `customMenu`, `menuReplacement`), not a project kind: a project may hold both. Figma never sends it (a new frame starts as `hudWidget`); the author sets it in the editor: the Target pill in the top bar opens a dialog with a **Target of this SWF** select (`hudWidget`, `customMenu` or `menuReplacement`; for a menu replacement also a **Contract** select (the shipped contracts, from main's `listContracts`) and **Built for** checkboxes for the contract's layers: the game (`engine`, always first) plus SkyUI 5.2 / 6, written as IR `target.contract` and `target.layers`; main checks the names, W5). The choice is written to `ir.json` by the next build and a later Figma sync keeps it (`syncServer.setTarget`). For a `customMenu` the dialog also holds the Menu settings. Menu-only controls on another target are disabled with a reason ("Menu settings are for custom menus").
 
 ## `swfs/<name>/menu.json` (Menu settings panel)
 

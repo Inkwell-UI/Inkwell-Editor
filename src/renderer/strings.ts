@@ -192,7 +192,7 @@ export const strings = {
   contracts: {
     title: 'Contracts',
     onlyReplacements: 'Only for menu replacements',
-    later: 'Contract checks run on every build (target.contract in ir.json); findings are in the Lint dock'
+    later: 'Contract checks run on every build (contract and layers: the Target dialog); findings are in the Lint dock'
   },
 
   assets: {
@@ -553,7 +553,12 @@ export const strings = {
       hudWidget: 'HUD widget (SkyUI loads it)',
       customMenu: 'Custom menu (Inkwell Runtime opens it)',
       help: 'Figma does not set this. A HUD widget has no runtime: no translations, saved variables or open triggers. Changing it rebuilds the SWF; check the graphs afterwards.',
-      menuReplacement: 'This SWF targets a menu replacement, which cannot be changed here.',
+      menuReplacement: 'Menu replacement (replaces a game menu SWF)',
+      contract: 'Contract (game menu it replaces)',
+      contractNone: 'None (not checked)',
+      layers: 'Built for',
+      layerNames: { engine: 'The game (always)', skyui52: 'SkyUI 5.2 players (adds its version check globals)', skyui6: 'SkyUI 6 players' } as Record<string, string>,
+      layersHelp: 'The contract check and the generated engine glue follow these layers. Menu replacements are not deployed yet.',
       error: (e: string) => `Could not change the target: ${e}`
     },
     kindNames: { hudWidget: 'hudWidget', customMenu: 'customMenu', menuReplacement: 'menuReplacement' } as Record<string, string>,

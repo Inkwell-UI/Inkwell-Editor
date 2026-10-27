@@ -1,0 +1,5 @@
+// [{{node.id}}] core/InventoryOnPlayerInfo@1
+_root.inkwellContract.on("UpdatePlayerInfo", function() {
+    var {{out.info}} = typeof (arguments[0]) == "object" ? arguments[0] : {};
+    {{guarded.then}}
+});

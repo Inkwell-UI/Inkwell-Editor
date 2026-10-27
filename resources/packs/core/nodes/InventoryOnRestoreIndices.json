@@ -1,0 +1,28 @@
+{
+  "kind": "InventoryOnRestoreIndices",
+  "major": 1,
+  "title": "Inventory: On Restore Indices",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "The engine hands back what Inventory: Save Indices stored when the menu last closed (engine callback RestoreIndices).",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "indices",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventoryOnRestoreIndices.as2",
+  "extra": {
+    "entry": true,
+    "contract": "InventoryMenu",
+    "contractCallback": "RestoreIndices"
+  }
+}

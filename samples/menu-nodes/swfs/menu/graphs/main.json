@@ -619,7 +619,7 @@
     }
   ],
   "scope": "menu",
-  "specVersion": 7,
+  "specVersion": 8,
   "variables": [
     {
       "default": 0,

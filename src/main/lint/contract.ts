@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { checkContract, ContractLayer, mergeContract, type ContractLayerName, type Swf } from '@inkwell-ui/spec'
+import { CONTRACT_LAYERS, checkContract, ContractLayer, mergeContract, type ContractLayerName, type MergedContract, type Swf } from '@inkwell-ui/spec'
 import type { LintIssue } from '../swf/lint'
 
 /** The contract layers the editor ships (`resources/contracts`, a copy of the Spec's `contracts/`: `yarn sync:contracts`). */
@@ -16,28 +16,44 @@ export async function loadContracts(dir: string): Promise<ContractLayer[]> {
   return out
 }
 
-/**
- * Layers a menu replacement is checked against (SPEC-CHANGES W5): always the engine; `base: "skyui"` also SkyUI 5.2 and 6 (the replacement must work for
- * players who have SkyUI). Mod layers are not picked yet.
- */
-export const targetLayers = (target: Swf['target']): ContractLayerName[] => ['engine', ...(target.base === 'skyui' ? (['skyui52', 'skyui6'] as const) : [])]
+/** Layers a menu replacement is built for (IR `target.layers`, spec 8; SPEC-CHANGES W5): engine first; absent = engine only. */
+export const targetLayers = (target: Swf['target']): string[] => target.layers ?? ['engine']
+
+/** What is wrong with `target.layers`, or undefined: known names only, no duplicates, `engine` first. Mod layers are not picked yet. */
+export function layersProblem(layers: readonly string[]): string | undefined {
+  const bad = layers.filter((l) => !(CONTRACT_LAYERS as readonly string[]).includes(l) || l === 'mod')
+  if (bad.length) return `unknown layer ${bad.map((l) => `"${l}"`).join(', ')} (known: ${CONTRACT_LAYERS.filter((l) => l !== 'mod').join(', ')})`
+  if (new Set(layers).size !== layers.length) return 'a layer is listed twice'
+  if (layers[0] !== 'engine') return 'the list must start with "engine"'
+  return undefined
+}
+
+/** The merged contract of a menu replacement, or undefined (another target, no or an unknown contract, bad layers). The codegen builds the glue from it. */
+export function contractFor(ir: Swf, layers: readonly ContractLayer[]): MergedContract | undefined {
+  const name = ir.target.contract
+  if (ir.target.kind !== 'menuReplacement' || !name || layersProblem(targetLayers(ir.target))) return undefined
+  const own = layers.filter((l) => l.menu === name)
+  return own.some((l) => l.layer === 'engine') ? mergeContract(own, targetLayers(ir.target) as ContractLayerName[]) : undefined
+}
 
 /** AS2 type of a compiled layer (shapes are not addressable clips). */
 const layerType = (type: string): string => (type === 'frame' || type === 'image' ? 'MovieClip' : type === 'text' ? 'TextField' : 'Shape')
 
 /**
  * Contract findings of one menu replacement (errors, so they block export): `contract-none` (warning: no contract named), `contract-unknown`,
- * `contract-missing` and `contract-wrong-type`. `layerPaths` are the compiled clip paths (`root.a.b`); functions, members and globals come from
- * the menu's glue, which does not exist yet, so they are reported missing until it does.
+ * `contract-layers`, `contract-missing` and `contract-wrong-type`. `layerPaths` are the compiled clip paths (`root.a.b`); `glue` is what the generated
+ * replacement glue defines (functions, members, globals: `Generated.contractProvided`).
  */
-export function contractLint(ir: Swf, layerPaths: Readonly<Record<string, string>>, layers: readonly ContractLayer[]): LintIssue[] {
+export function contractLint(ir: Swf, layerPaths: Readonly<Record<string, string>>, layers: readonly ContractLayer[], glue: Readonly<Record<string, string>> = {}): LintIssue[] {
   if (ir.target.kind !== 'menuReplacement') return []
   const name = ir.target.contract
   if (!name) return [{ severity: 'warning', code: 'contract-none', nodeId: ir.root, message: 'This menu replacement names no contract (target.contract in ir.json, e.g. "InventoryMenu"), so it is not checked against what the game needs.' }]
   const own = layers.filter((l) => l.menu === name)
   if (!own.some((l) => l.layer === 'engine')) return [{ severity: 'error', code: 'contract-unknown', nodeId: ir.root, message: `No contract "${name}" is known (known: ${[...new Set(layers.map((l) => l.menu))].join(', ') || 'none'}).` }]
-  const merged = mergeContract(own, targetLayers(ir.target))
-  const provided: Record<string, string> = {}
+  const bad = layersProblem(targetLayers(ir.target))
+  if (bad) return [{ severity: 'error', code: 'contract-layers', nodeId: ir.root, message: `target.layers of this menu replacement: ${bad}.` }]
+  const merged = mergeContract(own, targetLayers(ir.target) as ContractLayerName[])
+  const provided: Record<string, string> = { ...glue }
   const byPath: Record<string, string> = {}
   for (const [id, p] of Object.entries(layerPaths)) {
     const n = ir.nodes[id]

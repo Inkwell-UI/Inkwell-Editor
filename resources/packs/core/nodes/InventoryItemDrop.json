@@ -1,0 +1,36 @@
+{
+  "kind": "InventoryItemDrop",
+  "major": 1,
+  "title": "Inventory: Item Drop",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "Drop amount of the item at index (-1: the current selection) through the engine call ItemDrop.",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": -1
+    },
+    {
+      "name": "amount",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventoryItemDrop.as2",
+  "extra": {
+    "contract": "InventoryMenu"
+  }
+}

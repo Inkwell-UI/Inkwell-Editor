@@ -20,7 +20,7 @@ describe('pure message handling', () => {
     expect(parseServerMessage('{"type":"ping","id":4,"extra":true}')).toMatchObject({ type: 'ping', id: 4 })
   })
   it('hello carries the token and both versions', () => {
-    expect(helloMessage(TOKEN, '1.2.3')).toEqual({ type: 'hello', token: TOKEN, editorVersion: '1.2.3', protocolVersion: 1, specVersion: 7 })
+    expect(helloMessage(TOKEN, '1.2.3')).toEqual({ type: 'hello', token: TOKEN, editorVersion: '1.2.3', protocolVersion: 1, specVersion: 8 })
   })
   it('helloAck ok connects and subscribes to every menu with watch and pins', () => {
     const s = reduce(freshCore('connecting'), parseServerMessage(JSON.stringify(ack))!, 0)

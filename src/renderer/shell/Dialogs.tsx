@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { inkwell } from '../hooks/api'
 import { useSyncState } from '../hooks/useSyncState'
 import { useDialogStore } from '../state/dialogStore'
@@ -33,24 +33,51 @@ function FigmaApproval() {
   )
 }
 
-/** The target of the active SWF (hudWidget or customMenu): editor-side, Figma never sends one. */
+type TargetKind = 'hudWidget' | 'customMenu' | 'menuReplacement'
+
+/** The target of the active SWF: editor-side, Figma never sends one. A menu replacement also picks its contract and layers (IR `target.contract`, `target.layers`; W5). */
 function TargetField() {
   const swf = useActiveSwf()
   const [err, setErr] = useState<string>()
+  const [contracts, setContracts] = useState<{ menu: string; layers: string[] }[]>([])
+  useEffect(() => void inkwell?.listContracts().then(setContracts), [])
   const t = strings.top.targetField
   if (!swf) return null
-  const kind = swf.ir.target.kind
+  const { kind, contract = '', layers = ['engine'] } = swf.ir.target
+  const set = (k: TargetKind, more?: { contract?: string; layers?: string[] }): void =>
+    void inkwell?.setSwfTarget(swf.name, k, more).then((r) => setErr(r.ok ? undefined : t.error(r.error)))
+  const known = contracts.find((c) => c.menu === contract)?.layers ?? []
+  // engine first, then the others in the Spec's order (CONTRACT_LAYERS), as the contract merge reads them
+  const toggle = (l: string, on: boolean): void => set(kind, { layers: ['engine', 'skyui52', 'skyui6'].filter((x) => x === 'engine' || (x === l ? on : layers.includes(x))) })
   return (
     <div className="field">
       <label className="field-label" htmlFor="swf-target">{t.label}</label>
-      {kind === 'menuReplacement' ? <p className="dim">{t.menuReplacement}</p> : (
-        <select
-          id="swf-target" value={kind} data-testid="swf-target"
-          onChange={(e) => void inkwell?.setSwfTarget(swf.name, e.target.value as 'hudWidget' | 'customMenu').then((r) => setErr(r.ok ? undefined : t.error(r.error)))}
-        >
-          <option value="hudWidget">{t.hudWidget}</option>
-          <option value="customMenu">{t.customMenu}</option>
-        </select>
+      <select id="swf-target" value={kind} data-testid="swf-target" onChange={(e) => set(e.target.value as TargetKind)}>
+        <option value="hudWidget">{t.hudWidget}</option>
+        <option value="customMenu">{t.customMenu}</option>
+        <option value="menuReplacement">{t.menuReplacement}</option>
+      </select>
+      {kind === 'menuReplacement' && (
+        <>
+          <label className="field-label" htmlFor="swf-contract">{t.contract}</label>
+          <select id="swf-contract" value={contract} data-testid="swf-contract" onChange={(e) => set(kind, { contract: e.target.value })}>
+            <option value="">{t.contractNone}</option>
+            {contracts.map((c) => <option key={c.menu} value={c.menu}>{c.menu}</option>)}
+            {contract && !contracts.some((c) => c.menu === contract) && <option value={contract}>{contract}</option>}
+          </select>
+          {contract && (
+            <fieldset data-testid="swf-layers">
+              <legend className="field-label">{t.layers}</legend>
+              {['engine', ...known.filter((l) => l !== 'engine' && l !== 'mod')].map((l) => (
+                <label key={l} className="check">
+                  <input type="checkbox" checked={l === 'engine' || layers.includes(l)} disabled={l === 'engine'} onChange={(e) => toggle(l, e.target.checked)} />
+                  {t.layerNames[l] ?? l}
+                </label>
+              ))}
+            </fieldset>
+          )}
+          <p className="dim">{t.layersHelp}</p>
+        </>
       )}
       <p className="dim">{t.help}</p>
       {err && <p className="tone-error">{err}</p>}

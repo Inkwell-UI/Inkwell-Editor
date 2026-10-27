@@ -1,0 +1,31 @@
+{
+  "kind": "InventorySaveIndices",
+  "major": 1,
+  "title": "Inventory: Save Indices",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "Store indices with the engine (engine call SaveIndices); they come back through Inventory: On Restore Indices when the menu opens again.",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "indices",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventorySaveIndices.as2",
+  "extra": {
+    "contract": "InventoryMenu"
+  }
+}

@@ -15,6 +15,7 @@ export type GraphCode =
   | 'graph-widget-call'
   | 'runtime-required'
   | 'saved-variable-invalid'
+  | 'contract-node-target'
 
 /** A Knotwork Issue pinned to a graph node id, plus where it lives. `targetId` is the Figma node id for `graph-target-missing`. */
 export type GraphIssue = Issue<{ code: GraphCode; graphId: string; targetId?: string; pin?: string }>
@@ -35,10 +36,18 @@ export interface ValidateCtx {
   siblings?: readonly Graph[]
   /** The SWF's target kind (S7, S9): a HUD widget runs without the Inkwell Runtime (lint `runtime-required`), `saved` variables belong to a custom menu. Absent = those checks are skipped. */
   target?: 'hudWidget' | 'customMenu' | 'menuReplacement'
+  /** A menu replacement's `target.contract` (W5): contract nodes (`extra.contract`) are only allowed in a replacement of that contract. */
+  contract?: string
 }
 
 /** S7/S8: the node only works in a custom menu served by the Inkwell Runtime (the definition's `requiresRuntime`; core pack 0.3.0 sets it on all 20 such nodes). */
 export const needsRuntime = (d: NodeDef): boolean => d.requiresRuntime === true
+
+/** W5: the contract (engine menu) a contract node talks to (`extra.contract`, core pack 0.5.1 Inventory nodes); undefined for every other node. */
+export const nodeContract = (d: NodeDef): string | undefined => {
+  const c = (d.extra as { contract?: unknown } | undefined)?.contract
+  return typeof c === 'string' ? c : undefined
+}
 
 const isPinType = (v: unknown): v is PinType => PinType.safeParse(v).success
 const isEntry = (d: NodeDef): boolean => (d.extra as { entry?: unknown } | undefined)?.entry === true
@@ -126,11 +135,20 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
       add(b.id, 'graph-type-mismatch', 'error', `${pa.type} cannot be wired to ${pb.type} (use a To String / To Number node).`, { pin: e.to.pin })
     }
   }
-  // S5/S7: runtime-only nodes in a HUD widget, and the rules of `saved` variables
-  if (ctx.target === 'hudWidget')
+  // S5/S7: runtime-only nodes outside a custom menu (a HUD widget and a menu replacement have no Inkwell bridge), and the rules of `saved` variables
+  if (ctx.target === 'hudWidget' || ctx.target === 'menuReplacement')
     for (const n of g.nodes) {
       const d = defOf.get(n.id)
-      if (d && needsRuntime(d)) add(n.id, 'runtime-required', 'warning', `${d.title} needs the Inkwell Runtime and does nothing in a HUD widget (only a custom menu is served by the runtime).`)
+      const where = ctx.target === 'hudWidget' ? 'a HUD widget' : 'a menu replacement'
+      if (d && needsRuntime(d)) add(n.id, 'runtime-required', 'warning', `${d.title} needs the Inkwell Runtime and does nothing in ${where} (only a custom menu is served by the runtime).`)
+    }
+  // W5: a contract node talks to one engine menu, so it is an error anywhere but a replacement of that menu
+  if (ctx.target !== undefined)
+    for (const n of g.nodes) {
+      const d = defOf.get(n.id)
+      const c = d ? nodeContract(d) : undefined
+      if (c && (ctx.target !== 'menuReplacement' || ctx.contract !== c))
+        add(n.id, 'contract-node-target', 'error', `${d!.title} only works in a menu replacement whose contract is "${c}" (this SWF: ${ctx.target === 'menuReplacement' ? `contract "${ctx.contract ?? 'none'}"` : ctx.target}).`)
     }
   const saved = g.variables.filter((v) => v.scope === 'saved')
   if (saved.length && g.nodes.length) {

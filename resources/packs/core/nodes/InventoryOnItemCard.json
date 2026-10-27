@@ -1,0 +1,28 @@
+{
+  "kind": "InventoryOnItemCard",
+  "major": 1,
+  "title": "Inventory: On Item Card",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "Item card info: the answer to Inventory: Request Item Card (or the engine callback UpdateItemCardInfo): name, type, value, weight, count, armor, damage, effects, ...",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "info",
+      "type": "Object",
+      "default": {}
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventoryOnItemCard.as2",
+  "extra": {
+    "entry": true,
+    "contract": "InventoryMenu",
+    "contractCallback": "UpdateItemCardInfo"
+  }
+}

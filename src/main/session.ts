@@ -46,7 +46,7 @@ import { readSnapshot, staleSwfs, type FigmaSnapshot, type SnapshotSource } from
 import { generate } from './swf/generate'
 import { loadCodegenPacks } from './codegen/packs'
 import { createBuildPipeline } from './sync/buildPipeline'
-import { contractsDir } from './lint/contract'
+import { contractsDir, layersProblem, loadContracts } from './lint/contract'
 import { startSyncServer, type Layer, type SwfInfo } from './sync/syncServer'
 
 export interface SessionDeps {
@@ -190,7 +190,7 @@ export function createSession(deps: SessionDeps) {
       const all = [...(graphs.get(i.name)?.values() ?? [])]
       if (!ir || !all.length) continue
       const layers = new Set(Object.keys(ir.nodes))
-      graphIssues.set(i.name, all.flatMap((g) => validateGraph(g, { defs, layers, siblings: all, target: ir.target.kind }).map((x) => {
+      graphIssues.set(i.name, all.flatMap((g) => validateGraph(g, { defs, layers, siblings: all, target: ir.target.kind, ...(ir.target.contract ? { contract: ir.target.contract } : {}) }).map((x) => {
         const layerName = x.targetId ? (ir.nodes[x.targetId]?.name ?? x.targetId) : ''
         const row: LintRow = { swfName: i.name, nodeId: x.targetId ?? '', layerName, severity: x.level, code: x.code, message: `${g.name}: ${x.message}`, graphId: g.id, graphNodeId: x.nodeId! }
         return { row, item: { severity: x.level, code: x.code, message: row.message, ...(x.targetId ? { nodeId: x.targetId, layerName } : {}) } }
@@ -665,11 +665,22 @@ export function createSession(deps: SessionDeps) {
       server!.rebuild(info.id)
       return { ok: true }
     },
-    /** Target of one swf (Target dialog); the build rewrites ir.json. */
-    async setTarget(swfName: string, kind: 'hudWidget' | 'customMenu'): Promise<{ ok: true } | { ok: false; error: string }> {
+    /** Target of one swf (Target dialog); the build rewrites ir.json. A menu replacement also takes its contract and layers (W5), checked here (IPC input). */
+    async setTarget(swfName: string, kind: unknown, more: { contract?: unknown; layers?: unknown } = {}): Promise<{ ok: true } | { ok: false; error: string }> {
+      if (kind !== 'hudWidget' && kind !== 'customMenu' && kind !== 'menuReplacement') return { ok: false, error: `Unknown target ${String(kind)}` }
+      const { contract, layers } = more ?? {}
+      if (contract !== undefined && (typeof contract !== 'string' || !/^[A-Za-z0-9_]{0,64}$/.test(contract))) return { ok: false, error: 'A contract name is letters, digits and _' }
+      if (layers !== undefined && (!Array.isArray(layers) || !layers.every((l) => typeof l === 'string'))) return { ok: false, error: 'Layers must be a list of names' }
+      const bad = Array.isArray(layers) && layers.length ? layersProblem(layers as string[]) : undefined
+      if (bad) return { ok: false, error: bad }
       const info = server?.swfs().find((i) => i.name === swfName)
-      if (!info || !server?.setTarget(info.id, kind)) return { ok: false, error: 'No such swf in the open project' }
+      if (!info || !server?.setTarget(info.id, kind, { ...(contract !== undefined ? { contract: contract as string } : {}), ...(layers !== undefined ? { layers: layers as string[] } : {}) })) return { ok: false, error: 'No such swf in the open project' }
       return { ok: true }
+    },
+    /** The contracts the editor ships (menu name and its layer names), for the target dialog's menu replacement fields. */
+    async listContracts(): Promise<{ menu: string; layers: string[] }[]> {
+      const all = await loadContracts(contractsDir(deps.appPath)).catch(() => [])
+      return [...new Set(all.map((l) => l.menu))].sort().map((menu) => ({ menu, layers: all.filter((l) => l.menu === menu).map((l) => l.layer) }))
     },
     /** menu.json of a custom menu (Menu settings panel). Refused while an unreadable file sits there. */
     async saveMenuSettings(swfName: string, doc: unknown): Promise<SaveOverlayResult> {

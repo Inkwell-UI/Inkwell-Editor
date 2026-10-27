@@ -1,0 +1,6 @@
+// [{{node.id}}] core/InventoryOnRestoreIndices@1
+_root.inkwellContract.on("RestoreIndices", function() {
+    var {{out.indices}} = [];
+    for (var k = 0; k < arguments.length; k++) {{out.indices}}.push(arguments[k]);
+    {{guarded.then}}
+});
