@@ -245,6 +245,15 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .inspect-outline { position: absolute; box-sizing: border-box; pointer-events: none; }
 .inspect-outline.is-hover { border: 1px solid var(--inspect-hover); background: var(--inspect-hover-bg); }
 .inspect-outline.is-selected { border: 2px solid var(--inspect-selected); background: var(--inspect-selected-bg); }
+.focus-overlay { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.focus-overlay.is-active { pointer-events: auto; cursor: crosshair; }
+.focus-svg { position: absolute; inset: 0; overflow: visible; }
+.focus-arrow { stroke: var(--focus-graph); stroke-width: 2; }
+.focus-arrow.is-drag { stroke-dasharray: 4 3; }
+.focus-head { fill: var(--focus-graph); }
+.focus-dir { fill: var(--focus-graph); font-size: 11px; text-anchor: middle; }
+.focus-badge { position: absolute; transform: translate(-40%, -40%); min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; background: var(--focus-graph); color: var(--focus-graph-text); font-size: 11px; line-height: 18px; text-align: center; font-weight: 600; }
+.focus-badge.is-error { background: var(--err); }
 .safe-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 .safe-rect { position: absolute; box-sizing: border-box; border: 1px dashed; }
 .safe-rect span { position: absolute; bottom: 1px; font-size: 10px; background: var(--safe-label-bg); color: var(--safe-label-fg); padding: 0 2px; }

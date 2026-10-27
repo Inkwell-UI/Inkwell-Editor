@@ -54,6 +54,8 @@
   --inspect-hover-bg: rgba(108, 180, 255, 0.12);
   --inspect-selected: #ffd166;
   --inspect-selected-bg: rgba(255, 209, 102, 0.14);
+  --focus-graph: #c084fc;
+  --focus-graph-text: #14061f;
 
   /* graph pin colors (Zone 4). Each type also has its own shape (graph.css), so colour is never the only cue. */
   --pin-exec: #ffffff;

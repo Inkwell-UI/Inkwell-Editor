@@ -7,6 +7,7 @@ import { Btn } from '../ui/Btn'
 import { useActiveSwf } from '../hooks/useProject'
 import { useLocale } from './locale'
 import { ThemeControl } from './ThemeControl'
+import { PromptsControl } from './prompts'
 
 export type StageMode = 'inspect' | 'play'
 
@@ -34,6 +35,8 @@ export interface StageToolbarProps {
   swfPicker?: ReactNode
   /** Custom menu only: the UI Scale control (S9); sits in the More popover of the compact toolbar. */
   menuControls?: ReactNode
+  /** Custom menu only (W3/W4): the Focus Graph mode toggle; the Prompts preview toggle shows with it. Absent = both disabled with a reason. */
+  focusGraph?: { on: boolean; onToggle(): void }
 }
 
 /** A button that opens a small panel under it; the toolbar's two panels (preview settings, later tools) share it. With `text` the button shows it, otherwise it is icon-only. */
@@ -79,11 +82,17 @@ export function StageToolbar(p: StageToolbarProps) {
     </span>
   )
   const safe = <Btn icon={ScanLine} label={strings.stage.safeZones} pressed={p.safeZones} onClick={() => p.onSafeZones(!p.safeZones)} testId="stage-safe" />
+  const tools = p.focusGraph ? (
+    <>
+      <span title={strings.stage.focusTip}><Btn icon={Waypoints} pressed={p.focusGraph.on} onClick={p.focusGraph.onToggle} testId="stage-focus">{strings.stage.focus}</Btn></span>
+      <PromptsControl />
+    </>
+  ) : undefined
   const unbuilt = (
     <>
       <Btn icon={Crosshair} reason={strings.stage.occupiedReason}>{strings.stage.occupied}</Btn>
-      <Btn icon={Waypoints} reason={strings.stage.focusReason}>{strings.stage.focus}</Btn>
-      <Btn icon={Keyboard} reason={strings.stage.promptsReason}>{strings.stage.prompts}</Btn>
+      {!p.focusGraph && <Btn icon={Waypoints} reason={strings.stage.focusReason}>{strings.stage.focus}</Btn>}
+      {!p.focusGraph && <Btn icon={Keyboard} reason={strings.stage.promptsReason}>{strings.stage.prompts}</Btn>}
     </>
   )
   const close = (): void => (setMore(false), setPreview(false), setLater(false))
@@ -106,7 +115,7 @@ export function StageToolbar(p: StageToolbarProps) {
       {p.compact ? (
         <>
           <Btn icon={Ellipsis} label={strings.stage.more} pressed={more} onClick={() => setMore(!more)} testId="stage-more" />
-          {more && <div className="stage-more" role="group" aria-label={strings.stage.more}>{settings}{zoom}{safe}{unbuilt}</div>}
+          {more && <div className="stage-more" role="group" aria-label={strings.stage.more}>{settings}{zoom}{safe}{tools}{unbuilt}</div>}
         </>
       ) : (
         <>
@@ -114,6 +123,7 @@ export function StageToolbar(p: StageToolbarProps) {
           <Pop open={preview} onToggle={() => (setLater(false), setPreview(!preview))} icon={Palette} label={strings.stage.previewSettings} tip={strings.stage.previewSettingsTip} testId="stage-preview" text={previewSummary(theme, lang)}>
             {settings}
           </Pop>
+          {tools}
           <span className="stage-spacer" />
           <Pop open={later} onToggle={() => (setPreview(false), setLater(!later))} icon={Ellipsis} label={strings.stage.moreTools} testId="stage-later" right>
             {unbuilt}

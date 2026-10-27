@@ -10,7 +10,7 @@ export const ident = (s: string): string => {
 export type OverlayDoc = Record<string, unknown> & { specVersion?: number; nodes?: Record<string, Record<string, unknown>> }
 
 /** Roles offered by the Inspector (design spec: "button, list, progress, text..."). An existing role outside the list is kept and shown. */
-export const ROLES = ['button', 'list', 'progress', 'text', 'image', 'clip'] as const
+export const ROLES = ['button', 'list', 'progress', 'text', 'image', 'clip', 'prompt'] as const
 
 /** Instance names must already be identifiers (what `ident` would produce). Returns an error id, or undefined when fine. */
 export function instanceNameError(name: string): 'empty' | 'invalid' | undefined {
@@ -74,6 +74,10 @@ export interface NodeOverlayPatch {
   font?: string | null
   /** Translation key of a text layer (V2.1): `$` + letters, digits, `_`. */
   locKey?: string | null
+  /** W3: gamepad focus order and up/down/left/right overrides (other keys of the entry's `focus` are the caller's to keep). */
+  focus?: { order?: number; overrides?: Record<string, string> } | null
+  /** W4, role `prompt`: the action and optional glyph per device. */
+  prompt?: Record<string, string> | null
 }
 
 /** Immutable edit of one node's overlay entry. Unknown keys of the entry and of the document survive; an entry left empty is removed. */

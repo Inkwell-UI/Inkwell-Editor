@@ -15,6 +15,9 @@ import { deliverMock } from '../preview/mockDelivery'
 import { previewBus } from '../preview/previewBus'
 import { stepZoom } from '../preview/geometry'
 import { InspectOverlay } from '../preview/InspectOverlay'
+import { FocusGraphOverlay } from '../preview/FocusGraphOverlay'
+import { promptPreviewStore } from '../preview/prompts'
+import { hasFocusGraph } from '../../main/lint/focus'
 import { RuffleBackend } from '../preview/RuffleBackend'
 import { SafeZoneOverlay } from '../preview/SafeZoneOverlay'
 import { StageToolbar, type StageMode } from '../preview/StageToolbar'
@@ -58,6 +61,7 @@ export function PreviewPanel() {
   const [safe, setSafe] = useState(true)
   const [zoom, setZoom] = useState(1)
   const [paused, setPaused] = useState(false)
+  const [focusOn, setFocusOn] = useState(false)
   const [ctl, setCtl] = useState<PreviewController>()
   const [rootRef, rootSize] = useElementSize<HTMLDivElement>()
 
@@ -97,6 +101,14 @@ export function PreviewPanel() {
     if (ctl && state.status === 'ready' && swf?.ir.target.kind === 'customMenu') localeStore.reapply(table)
   }, [ctl, state.status, state.seq, swf?.ir.target.kind, table])
 
+  // W4: the Prompts preview choice lives in the mock data too
+  useEffect(() => {
+    if (ctl && state.status === 'ready' && swf?.ir.target.kind === 'customMenu') promptPreviewStore.reapply()
+  }, [ctl, state.status, state.seq, swf?.ir.target.kind])
+  const isMenu = swf?.ir.target.kind === 'customMenu'
+  const overlayNodes = useActiveOverlay()?.nodes
+  const padKeys = isMenu && hasFocusGraph(overlayNodes ?? {})
+
   const failed = sync?.build === 'error' || !!entry?.stale
   const err = firstError(dock)
   const jumpToError = (): void => {
@@ -118,6 +130,14 @@ export function PreviewPanel() {
     ) : undefined
 
   const onStageKey = (e: React.KeyboardEvent): void => {
+    // W3 pad emulation: in Play mode a menu with a focus graph gets arrows and Enter as the d-pad and A (the runtime's On Input plus GFx's press), not as Ruffle's own keys
+    const pad = { ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right', Enter: 'Accept' }[e.key]
+    if (pad && mode === 'play' && padKeys && !e.ctrlKey && !e.altKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      previewBus.call('inkwellPad', pad)
+      return
+    }
     if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
       e.preventDefault() // Tab toggles Inspect/Play while the stage has focus; Shift+Tab leaves it
       setMode((m) => (m === 'inspect' ? 'play' : 'inspect'))
@@ -167,7 +187,7 @@ export function PreviewPanel() {
           onZoomReset={() => setZoom(1)}
           compact={compact}
           swfPicker={picker}
-          {...(swf?.ir.target.kind === 'customMenu' ? { menuControls: <><UiScaleControl testId="stage-ui-scale" /><LocaleControls /></> } : {})}
+          {...(isMenu ? { menuControls: <><UiScaleControl testId="stage-ui-scale" /><LocaleControls /></>, focusGraph: { on: focusOn, onToggle: () => setFocusOn(!focusOn) } } : {})}
         />
         {!compact && banners}
         <div className="preview-stage" tabIndex={0} role="group" aria-label={strings.stage.stageLabel} onKeyDownCapture={onStageKey} data-mode={mode} data-testid="stage">
@@ -177,7 +197,8 @@ export function PreviewPanel() {
               {ctl && build?.bytes ? (
                 <AspectFrame aspect={aspect}>
                   <SwfViewport backend={ctl.backend} stage={build.stage} />
-                  {swf && <InspectOverlay ir={swf.ir} stage={build.stage} active={mode === 'inspect'} selected={selected} onSelect={(id) => select(id, 'stage')} />}
+                  {swf && <InspectOverlay ir={swf.ir} stage={build.stage} active={mode === 'inspect' && !(isMenu && focusOn)} selected={selected} onSelect={(id) => select(id, 'stage')} />}
+                  {swf && isMenu && focusOn && <FocusGraphOverlay ir={swf.ir} swfId={swf.id} swfName={swf.name} stage={build.stage} active={mode === 'inspect'} onSelect={(id) => select(id, 'stage')} />}
                   <SafeZoneOverlay visible={safe} />
                 </AspectFrame>
               ) : (

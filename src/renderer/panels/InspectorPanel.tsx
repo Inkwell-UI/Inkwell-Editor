@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import { CircleX, Lock, Redo2, TriangleAlert, Undo2, Info } from 'lucide-react'
-import { isThemeBindingKey, LOC_KEY, suggestKey, uniqueKey, type Node } from '@inkwell-ui/spec'
+import { FOCUS_DIRS, focusGraph, isThemeBindingKey, KEY_LABEL, LOC_KEY, PROMPT_ACTIONS, PROMPT_DEFAULTS, PS_GLYPHS, suggestKey, uniqueKey, XBOX_GLYPHS, type Node } from '@inkwell-ui/spec'
 import { bindingMode, themeVariable } from '../../shared/theme'
 import { describeTextMapping } from '../../main/swf/text'
 import { CHARSETS, EMBEDDED_FONTS_UI } from '../../shared/fonts'
@@ -128,6 +128,8 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         <p className="dim">{strings.insp.overlayNote}</p>
         <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
         {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
+        {entry.role === 'prompt' && <PromptField swfId={swfId} nodeId={node.id} value={(entry as { prompt?: Record<string, string> }).prompt} />}
+        {swf?.ir.target.kind === 'customMenu' && <FocusField swfId={swfId} nodeId={node.id} value={(entry as { focus?: FocusValue }).focus} />}
         <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
         <ThemeBindingsField node={node} />
         <DataBindingNote value={(entry as { dataBinding?: string }).dataBinding} />
@@ -489,6 +491,113 @@ function DebugHotkeyField({ swfId, nodeId, value }: { swfId: string; nodeId: str
         data-testid="debug-hotkey"
       />
       <p id="debug-hotkey-help" className="dim">{strings.insp.debugHotkeyHelp}</p>
+    </div>
+  )
+}
+
+type FocusValue = { order?: number; overrides?: Record<string, string> } & Record<string, unknown>
+
+/** Overlay `focus` (W3): the order and the four overrides; the default target of each direction comes from the Spec's `focusGraph`. Lint shows on the layer (Issues above). */
+function FocusField({ swfId, nodeId, value }: { swfId: string; nodeId: string; value: FocusValue | undefined }) {
+  const overlay = useActiveOverlay()
+  const swf = useActiveSwf()
+  const t = strings.insp.focus
+  if (!swf) return null
+  const nodes = (overlay?.nodes ?? {}) as Record<string, { focus?: unknown }>
+  const g = focusGraph(nodes, (id) => id in swf.ir.nodes)
+  const name = (id: string): string => swf.ir.nodes[id]?.name ?? id
+  const set = (next: FocusValue | null): void => editNode(swfId, nodeId, { focus: next })
+  if (typeof value?.order !== 'number') {
+    const max = Math.max(0, ...g.order.map((id) => (nodes[id]?.focus as { order: number }).order))
+    return (
+      <div className="field">
+        <span className="field-label">{t.label}</span>
+        <span className="row-actions"><Btn onClick={() => set({ ...value, order: max + 1 })} testId="focus-add">{t.add}</Btn></span>
+        <p className="dim">{t.help}</p>
+      </div>
+    )
+  }
+  const setOverride = (d: string, target: string): void => {
+    const o = { ...value.overrides }
+    if (target) o[d] = target
+    else delete o[d]
+    const { overrides: _o, ...rest } = value
+    set(Object.keys(o).length ? { ...rest, overrides: o } : rest)
+  }
+  const remove = (): void => {
+    const { order: _a, overrides: _b, ...rest } = value
+    set(Object.keys(rest).length ? rest : null)
+  }
+  return (
+    <div className="field" data-testid="focus-field">
+      <span className="field-label">{t.label}</span>
+      <div className="field-row">
+        <label className="field-label">
+          {t.order}
+          <input key={value.order} type="number" defaultValue={value.order} data-testid="focus-order"
+            onBlur={(e) => { const n = Number(e.target.value); if (e.target.value.trim() !== '' && Number.isFinite(n) && n !== value.order) set({ ...value, order: n }) }}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
+        </label>
+        <Btn onClick={remove} testId="focus-remove">{t.remove}</Btn>
+      </div>
+      {FOCUS_DIRS.map((d) => (
+        <label key={d} className="field-label">
+          {t.dirs[d]}
+          <select value={value.overrides?.[d] ?? ''} onChange={(e) => setOverride(d, e.target.value)} data-testid={`focus-${d}`}>
+            <option value="">{t.dflt(name(g.moves[nodeId]?.[d] ?? nodeId))}</option>
+            {value.overrides?.[d] && !g.order.includes(value.overrides[d]!) && <option value={value.overrides[d]}>{name(value.overrides[d]!)}</option>}
+            {g.order.filter((id) => id !== nodeId).map((id) => <option key={id} value={id}>{name(id)}</option>)}
+          </select>
+        </label>
+      ))}
+      <p className="dim">{t.help}</p>
+    </div>
+  )
+}
+
+/** Overlay `prompt` of a role-`prompt` frame (W4): the action and optional glyph overrides per device (default: the action's glyph, Spec `PROMPT_DEFAULTS`). */
+function PromptField({ swfId, nodeId, value }: { swfId: string; nodeId: string; value: Record<string, string> | undefined }) {
+  const t = strings.insp.prompt
+  const [key, setKey] = useState<string>()
+  const action = value?.['action'] ?? ''
+  const dflt = (PROMPT_DEFAULTS as Record<string, Record<string, string>>)[action]
+  const set = (k: string, v: string): void => {
+    const next = { ...value }
+    if (v) next[k] = v
+    else delete next[k]
+    editNode(swfId, nodeId, { prompt: Object.keys(next).length ? next : null })
+  }
+  const keyErr = key !== undefined && key !== '' && !KEY_LABEL.test(key)
+  const glyphSelect = (d: 'xbox' | 'playstation', list: readonly string[]) => (
+    <label className="field-label">
+      {t.glyph(strings.stage.promptDevices[d]!)}
+      <select value={value?.[d] ?? ''} onChange={(e) => set(d, e.target.value)} data-testid={`prompt-${d}`}>
+        <option value="">{dflt ? t.dflt(dflt[d]!) : t.noDefault}</option>
+        {list.map((g) => <option key={g} value={g}>{g}</option>)}
+      </select>
+    </label>
+  )
+  return (
+    <div className="field" data-testid="prompt-field">
+      <label className="field-label">
+        {t.action}
+        <select value={action} onChange={(e) => set('action', e.target.value)} data-testid="prompt-action">
+          <option value="">{t.actionNone}</option>
+          {action && !(PROMPT_ACTIONS as readonly string[]).includes(action) && <option value={action}>{action}</option>}
+          {PROMPT_ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </label>
+      <label className="field-label">
+        {t.glyph(strings.stage.promptDevices['keyboard']!)}
+        <input value={key ?? value?.['keyboard'] ?? ''} placeholder={dflt?.['keyboard'] ?? ''} className={keyErr ? 'is-invalid' : undefined} aria-invalid={keyErr} spellCheck={false} data-testid="prompt-keyboard"
+          onChange={(e) => setKey(e.target.value)}
+          onBlur={() => { if (key !== undefined && !keyErr) set('keyboard', key); setKey(undefined) }}
+          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setKey(undefined) }} />
+      </label>
+      {keyErr && <p className="tone-error">{t.keyHelp}</p>}
+      {glyphSelect('xbox', XBOX_GLYPHS)}
+      {glyphSelect('playstation', PS_GLYPHS)}
+      <p className="dim">{t.help}</p>
     </div>
   )
 }
