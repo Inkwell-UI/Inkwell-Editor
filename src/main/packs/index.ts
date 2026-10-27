@@ -6,7 +6,8 @@ import type { LoadedPack, PackSet } from '../../shared/graphs'
 /**
  * Reads a pack folder: `manifest.json` plus `nodes/*.json` (one NodeDef each), validated with the Spec schemas. Packs are data only; nothing in a
  * pack is ever executed. A node file that fails to read or validate is listed in `problems` and skipped, the rest of the pack still loads.
- * shortcut: `compatible.tool` is kept but not evaluated against the editor version; evaluate it when downloaded packs and packs.lock arrive (0.5).
+ * Downloaded packs come here too, from `<project>/packs-cache/` once their zip matches packs.lock (`manager.ts`).
+ * shortcut: `compatible.tool` is kept but not evaluated: the editor's own version (package.json 0.1.0) is not the tool version packs name (core says ^0.2.0); evaluate it once the editor carries a real version (Phase 7).
  */
 export async function loadPack(dir: string): Promise<{ pack?: LoadedPack; problems: string[] }> {
   const problems: string[] = []

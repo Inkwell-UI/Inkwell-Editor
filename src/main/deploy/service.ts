@@ -28,6 +28,8 @@ export interface DeployDeps {
   dev?(): { token: string; port: number } | undefined
   /** Builds the custom menus that have no finished build yet (for a Dev deploy: no current `build/<name>.dev.swf`), so a deploy never stops at "not built". */
   ensureBuilds?(dev: boolean): Promise<void>
+  /** The pack folders of the open project (core plus packs.lock); default: the bundled core pack. */
+  packDirs?(): string[]
 }
 
 /** Deploy in two steps so the UI can ask before anything is written: `prepare` compiles and checks everything, `commit` writes. One prepared deploy is pending at a time. */
@@ -58,7 +60,7 @@ export function createDeployService(d: DeployDeps) {
       const input: DeployInput = {
         modId: p.modId, modName: p.name, swfs: p.swfs, root: t.root, gameDirs, ...(p.imageMode ? { imageMode: p.imageMode } : {}), ...(p.assets ? { assets: p.assets } : {}), ...(p.localization ? { localization: p.localization } : {}), ...(scope === 'active' && activeName ? { only: activeName } : {}),
         buildDir: join(p.dir, 'build'), ffdec: d.ffdec(), ...(resolved.papyrusExe ? { papyrusExe: resolved.papyrusExe } : {}),
-        ...(dev ? { dev } : {}), ...(pkg ? { package: true } : {}), stubsDir: join(d.appPath, 'resources/papyrus-stubs'), packs: (await loadCodegenPacks([corePackDir(d.appPath)])).packs, vanillaHashes: await loadVanillaHashes(vanillaCacheRoot(d.userData))
+        ...(dev ? { dev } : {}), ...(pkg ? { package: true } : {}), stubsDir: join(d.appPath, 'resources/papyrus-stubs'), packs: (await loadCodegenPacks(d.packDirs?.() ?? [corePackDir(d.appPath)])).packs, vanillaHashes: await loadVanillaHashes(vanillaCacheRoot(d.userData))
       }
       const r = await prepareDeploy(input)
       if (!r.ok) {

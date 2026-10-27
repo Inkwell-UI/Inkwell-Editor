@@ -19,7 +19,7 @@ describe('new and example projects', () => {
     const p = await loadProject(dir)
     expect(p.meta).toMatchObject({ name: 'My Mod', modId: 'MyMod', version: '0.1.0' })
     expect(p.swfs).toEqual({})
-    expect(await readFile(join(dir, '.gitignore'), 'utf8')).toBe('build/\ndist/\n') // build output and Package Mod zips are never committed
+    expect(await readFile(join(dir, '.gitignore'), 'utf8')).toBe('build/\ndist/\npacks-cache/\n') // build output, Package Mod zips and downloaded packs are never committed
   })
   it('cleans a bad mod id when it loads and writes the clean one back on save', async () => {
     const dir = join(await tmp(), 'Skyrim Stopwatch')

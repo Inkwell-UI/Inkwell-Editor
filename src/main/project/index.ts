@@ -32,8 +32,6 @@ export interface Project {
   /** `graphs`: the SWF's `graphs/<id>.json` files by graph id (docs/graphs.md). */
   /** `menu`: `swfs/<name>/menu.json` of a custom menu (absent = none on disk); `menuError`: the file exists but could not be read, so it is never written back. */
   swfs: Record<string, { ir: Opaque; overlay: Opaque; graphs?: Record<string, Graph>; menu?: MenuSettings; menuError?: string }>
-  /** Raw text of packs.lock (format not defined yet); undefined if absent. */
-  packsLock?: string
 }
 
 /** Sorted keys, 2-space indent, trailing newline. */
@@ -70,8 +68,7 @@ export async function loadProject(dir: string): Promise<Project> {
       ...(menu.error ? { menuError: menu.error } : {})
     }
   }
-  const packsLock = await readFile(join(dir, 'packs.lock'), 'utf8').catch(() => undefined)
-  return packsLock === undefined ? { meta, swfs } : { meta, swfs, packsLock }
+  return { meta, swfs } // packs.lock belongs to the packs manager (src/main/packs/manager.ts): a cached project must never write it back
 }
 
 export async function saveProject(dir: string, project: Project): Promise<void> {
@@ -96,5 +93,4 @@ export async function saveProject(dir: string, project: Project): Promise<void> 
   for (const e of existing.filter((e) => e.isDirectory() && !Object.hasOwn(project.swfs, e.name))) {
     await rm(join(dir, 'swfs', e.name), { recursive: true, force: true })
   }
-  if (project.packsLock !== undefined) await writeFile(join(dir, 'packs.lock'), project.packsLock)
 }

@@ -30,6 +30,8 @@ import { createTrust } from './sync/figmaTrust'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { corePackDir, loadPacks } from './packs'
+import { createPackManager, lockedPacks, parseGitHubRef, readLock, type Fetch } from './packs/manager'
+import type { PackCandidate, PackResult, PacksState } from '../shared/packs'
 import { loadProject, type ProjectMeta } from './project'
 import { writeMenuSettings } from './project/menuFile'
 import { readLocalization, writeLocalization } from './project/localizationFile'
@@ -57,6 +59,8 @@ export interface SessionDeps {
   broadcast(channel: string, payload: unknown): void
   /** Native save dialog for a package zip (index.ts); undefined = cancelled. */
   chooseZip?(defaultPath: string): Promise<string | undefined>
+  /** Pack downloads (tests inject one); default: the global fetch. */
+  fetch?: Fetch
 }
 
 /**
@@ -81,8 +85,18 @@ export function createSession(deps: SessionDeps) {
   const previewThemes = new Map<string, string>() // swf id -> theme mode the stage toolbar previews (not saved)
   const menus = new Map<string, { settings?: MenuSettings; error?: string }>() // swf name -> swfs/<name>/menu.json (the panel is the writer; main keeps the saved copy for deploy)
   let packs: Promise<PackSet> | undefined
-  const getPacks = (): Promise<PackSet> => (packs ??= loadPacks([corePackDir(deps.appPath)]))
+  /** The bundled core pack first (it wins an id clash), then the project's cached packs that match packs.lock (`refreshPacks`). */
+  let packDirs = [corePackDir(deps.appPath)]
+  const getPacks = (): Promise<PackSet> => (packs ??= loadPacks(packDirs))
   let codegenPacks: ReturnType<typeof loadCodegenPacks> | undefined
+  const packManager = createPackManager({ fetch: deps.fetch ?? fetch, ...(process.env['INKWELL_PACKS_INDEX'] ? { indexUrl: process.env['INKWELL_PACKS_INDEX'] } : {}) })
+  /** Re-reads packs.lock and the cache; every pack consumer (lint, preview builds, AS2 view, deploy) loads again on next use. */
+  const refreshPacks = async (dir: string | undefined): Promise<void> => {
+    packDirs = [corePackDir(deps.appPath), ...(dir ? (await lockedPacks(dir, (await readLock(dir)).lock)).dirs : [])]
+    packs = undefined
+    codegenPacks = undefined
+    pipeline?.resetPacks()
+  }
   /** Overlay without mock data: mock data is delivered to Ruffle live and never needs a build. */
   const withoutMock = (d: OverlayDoc | undefined): string => JSON.stringify({ ...d, mockData: undefined })
   const lintBySwf = new Map<string, number>()
@@ -199,6 +213,14 @@ export function createSession(deps: SessionDeps) {
     const rows = [...graphIssues.values()].flat().map((x) => x.row)
     update({ graphLint: rows, lintCount: lintTotal() })
   }
+  /** After an install or restore: the new pack set reaches lint and every SWF's build (a graph may use the new nodes). */
+  const afterPackChange = async <T extends { ok: boolean }>(r: T): Promise<T> => {
+    if (!r.ok || !projectDir) return r
+    await refreshPacks(projectDir)
+    await refreshGraphLint().catch(() => undefined)
+    server?.rebuildAll()
+    return r
+  }
   const rebuildSwf = (name: string): void => {
     const info = server?.swfs().find((i) => i.name === name)
     if (info && !info.orphaned) server!.rebuild(info.id)
@@ -243,6 +265,8 @@ export function createSession(deps: SessionDeps) {
       snapshot = undefined
     }
     projectDir = dir
+    packManager.clear()
+    await refreshPacks(dir)
     assets = createAssetStore(dir)
     pipeline = createBuildPipeline({
       ...cfg,
@@ -251,7 +275,7 @@ export function createSession(deps: SessionDeps) {
       themeFor: (name, swfId) => ({ ...(menus.get(name)?.settings?.userDefaults?.theme ? { default: menus.get(name)!.settings!.userDefaults!.theme! } : {}), ...(previewThemes.has(swfId) ? { preview: previewThemes.get(swfId)! } : {}) }),
       devBuild: () => link().deploy === true,
       onDevBuild: (n) => void devFresh.add(n),
-      packDirs: [corePackDir(deps.appPath)],
+      get packDirs(): string[] { return packDirs },
       contractsDir: contractsDir(deps.appPath),
       ...(dir ? { projectDir: dir } : {}),
       buildDir: dir ? join(dir, 'build') : join(deps.userData, 'build'),
@@ -481,6 +505,7 @@ export function createSession(deps: SessionDeps) {
       return l.deploy && l.token ? { token: l.token, port: l.port ?? DEFAULT_PORT } : undefined
     },
     ensureBuilds,
+    packDirs: () => packDirs,
     ...(deps.chooseZip ? { chooseZip: deps.chooseZip } : {})
   })
   let lastZip: string | undefined // the only path "Open folder" may reveal: never a path from the renderer
@@ -727,6 +752,23 @@ export function createSession(deps: SessionDeps) {
       return { ok: true }
     },
     getPacks,
+    /** Assets > Node packs (docs/graphs.md, Downloaded packs): state, index search, add by GitHub ref, install after the dialog, restore from packs.lock, check updates. Never reject. */
+    packsState: async (): Promise<PacksState> => (projectDir ? packManager.state(projectDir) : { locked: [] }),
+    packsIndex: () => packManager.index(),
+    async packsResolve(input: string): Promise<PackResult<{ candidate: PackCandidate }>> {
+      if (!projectDir) return { ok: false, error: 'No project is open.' }
+      const ref = parseGitHubRef(input)
+      return ref ? packManager.resolve(projectDir, ref) : { ok: false, error: 'Not a GitHub repository: use owner/name or https://github.com/owner/name.' }
+    },
+    async packsInstall(token: string): Promise<PackResult> {
+      if (!projectDir) return { ok: false, error: 'No project is open.' }
+      return afterPackChange(await packManager.install(projectDir, token))
+    },
+    async packsRestore(): Promise<PackResult<{ restored: string[]; errors: string[] }>> {
+      if (!projectDir) return { ok: false, error: 'No project is open.' }
+      return afterPackChange(await packManager.restore(projectDir))
+    },
+    packsCheckUpdates: async (): Promise<PackResult<{ updates: PackCandidate[]; errors: string[] }>> => (projectDir ? packManager.checkUpdates(projectDir) : { ok: false, error: 'No project is open.' }),
     listGraphs(swf: string): GraphResult<{ graphs: GraphSummary[] }> {
       const m = graphs.get(swf)
       return m ? { ok: true, graphs: [...m.values()].map(summarize).sort((a, b) => a.id.localeCompare(b.id)) } : { ok: false, error: 'No such swf in the open project' }
@@ -760,7 +802,7 @@ export function createSession(deps: SessionDeps) {
       const live = parsed.data
       const all = [live, ...[...(graphs.get(swf)?.values() ?? [])].filter((g) => g.id !== live.id)]
       try {
-        const cg = await (codegenPacks ??= loadCodegenPacks([corePackDir(deps.appPath)]))
+        const cg = await (codegenPacks ??= loadCodegenPacks(packDirs))
         const nodes = overlays.get(info.id)?.nodes ?? {}
         const instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (typeof o.instanceName === 'string' && o.instanceName ? [[id, o.instanceName]] : [])))
         const out = generate(ir, { modId: meta.modId, instanceNames, graphs: { graphs: all, packs: cg.packs }, bindings: bindingsOf(nodes) })

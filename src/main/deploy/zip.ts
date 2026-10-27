@@ -1,4 +1,40 @@
-import { crc32, deflateRawSync } from 'node:zlib'
+import { crc32, deflateRawSync, inflateRawSync } from 'node:zlib'
+
+/**
+ * Reads a plain zip (stored or deflate, no zip64, no encryption) into name -> bytes; directory entries are skipped. Untrusted input (pack
+ * downloads): a name that is absolute, has a drive, a backslash or `..` is refused, every entry's CRC is checked and the total size is capped.
+ */
+export function readZip(buf: Buffer, maxTotal = 64 * 1024 * 1024): Map<string, Buffer> {
+  let eocd = -1
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break }
+  if (eocd < 0) throw new Error('Not a zip file.')
+  const count = buf.readUInt16LE(eocd + 10)
+  let p = buf.readUInt32LE(eocd + 16)
+  const out = new Map<string, Buffer>()
+  let total = 0
+  for (let n = 0; n < count; n++) {
+    if (p + 46 > buf.length || buf.readUInt32LE(p) !== 0x02014b50) throw new Error('Broken zip central directory.')
+    const method = buf.readUInt16LE(p + 10)
+    const crc = buf.readUInt32LE(p + 16)
+    const size = buf.readUInt32LE(p + 20)
+    const raw = buf.readUInt32LE(p + 24)
+    const nameLen = buf.readUInt16LE(p + 28)
+    const local = buf.readUInt32LE(p + 42)
+    const name = buf.toString('utf8', p + 46, p + 46 + nameLen)
+    p += 46 + nameLen + buf.readUInt16LE(p + 30) + buf.readUInt16LE(p + 32)
+    if (name.endsWith('/')) continue
+    if (!name || name.includes('\\') || name.startsWith('/') || /^[A-Za-z]:/.test(name) || name.split('/').includes('..')) throw new Error(`Unsafe zip entry name "${name}".`)
+    if ((total += raw) > maxTotal) throw new Error('The zip is too large.')
+    if (local + 30 > buf.length || buf.readUInt32LE(local) !== 0x04034b50) throw new Error(`Broken zip entry "${name}".`)
+    const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28)
+    const body = buf.subarray(start, start + size)
+    const data = method === 0 ? Buffer.from(body) : method === 8 ? inflateRawSync(body, { maxOutputLength: Math.max(raw, 1) }) : undefined
+    if (!data) throw new Error(`Zip entry "${name}" uses an unsupported compression method (${method}).`)
+    if (data.length !== raw || crc32(data) !== crc) throw new Error(`Zip entry "${name}" is corrupt.`)
+    out.set(name, data)
+  }
+  return out
+}
 
 /** DOS date 1980-01-01 00:00: every entry gets the same time so two packages of the same files are byte-identical. */
 const DOS_DATE = (0 << 9) | (1 << 5) | 1

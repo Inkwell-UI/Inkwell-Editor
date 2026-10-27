@@ -6,6 +6,7 @@ import type { FontToolProgress, FontToolResult, FontToolStatus, AddFontOutcome, 
 import type { Graph, Localization, MenuSettings } from '@inkwell-ui/spec'
 import type { GraphAs2, GraphResult, GraphSummary, PackSet } from './graphs'
 import type { OverlayDoc } from './overlay'
+import type { PackCandidate, PackIndexEntry, PackResult, PacksState } from './packs'
 import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from './preview'
 import type { OpenResult, ProjectState, RecentProject, UiEvent } from './projectState'
 import type { SyncUiState } from './syncState'
@@ -33,6 +34,12 @@ export const IPC = {
   swfDiscard: 'swf:discard',
   graphsAs2: 'graphs:as2',
   packsGet: 'packs:get',
+  packsState: 'packs:state',
+  packsIndex: 'packs:index',
+  packsResolve: 'packs:resolve',
+  packsInstall: 'packs:install',
+  packsRestore: 'packs:restore',
+  packsUpdates: 'packs:updates',
   strictSet: 'project:strict',
   modIdSet: 'project:modId',
   buildAll: 'build:all',
@@ -152,8 +159,15 @@ export interface InkwellApi {
   /** Discards an ORPHANED SWF by id: its folder moves to `<project>/.trash/` (never deleted). Refused for a SWF that still has a Figma frame. */
   discardSwf(swfId: string): Promise<{ ok: true; trash: string } | { ok: false; error: string }>
   graphAs2(swfName: string, graph: Graph): Promise<GraphResult<{ as2: GraphAs2 }>>
-  /** Node definitions of the loaded packs (the bundled core pack today). Data only; `problems` lists files that failed their schema. */
+  /** Node definitions of the loaded packs (the bundled core pack, then the project's cached packs that match packs.lock). Data only; `problems` lists files that failed their schema. */
   getPacks(): Promise<PackSet>
+  /** Assets > Node packs (packs.lock and the cache), the Packs Index, a download for the install/update dialog (`owner/name` or a GitHub URL; nothing written), install it, re-download locked packs the cache lacks (hash checked), and newer releases with changelogs. Never reject; offline is an `error`. */
+  getPacksState(): Promise<PacksState>
+  getPacksIndex(): Promise<PackResult<{ index: PackIndexEntry[] }>>
+  resolvePack(input: string): Promise<PackResult<{ candidate: PackCandidate }>>
+  installPack(token: string): Promise<PackResult>
+  restorePacks(): Promise<PackResult<{ restored: string[]; errors: string[] }>>
+  checkPackUpdates(): Promise<PackResult<{ updates: PackCandidate[]; errors: string[] }>>
   /** Strict Mode, stored in project.json; rebuilds every SWF so the build status follows. */
   setStrictMode(on: boolean): Promise<void>
   /** The project's mod id (Settings > Project), stored in project.json; refused unless letters and digits starting with a letter. Rebuilds every SWF. */

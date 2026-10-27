@@ -17,8 +17,8 @@ export async function createProject(dir: string, name = basename(dir)): Promise<
   await writeFile(join(dir, '.gitignore'), PROJECT_GITIGNORE)
 }
 
-/** Build output and packages are derived and never committed (the samples carry the same file). */
-export const PROJECT_GITIGNORE = 'build/\ndist/\n'
+/** Build output, packages and the pack cache (restored from packs.lock) are derived and never committed (the samples carry the same file). */
+export const PROJECT_GITIGNORE = 'build/\ndist/\npacks-cache/\n'
 
 /** Copies a sample project (never its git-ignored `build/` output) into an empty folder and checks that the copy loads. */
 export async function copyExample(src: string, dest: string): Promise<void> {

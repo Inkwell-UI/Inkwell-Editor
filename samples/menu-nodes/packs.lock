@@ -1,1 +1,4 @@
-packs: []
+{
+  "specVersion": 7,
+  "packs": []
+}

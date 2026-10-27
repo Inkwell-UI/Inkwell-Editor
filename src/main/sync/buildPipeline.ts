@@ -202,5 +202,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
 
   // the Mod id field renamed the project (project.json is already written): the cached project builds with the new id from now on
   const setModId = (id: string): void => void project?.then((p) => void (p.meta.modId = id))
-  return { onChange, getFfdec, setModId, stop: (): void => ffdec?.stop?.() }
+  // packs were installed or restored: `cfg.packDirs` is read again on the next build
+  const resetPacks = (): void => void (codegenPacks = undefined)
+  return { onChange, getFfdec, setModId, resetPacks, stop: (): void => ffdec?.stop?.() }
 }

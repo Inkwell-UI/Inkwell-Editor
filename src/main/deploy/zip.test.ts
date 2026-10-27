@@ -1,7 +1,7 @@
 import { crc32, inflateRawSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import { readZipEntry } from '../doctor/zip'
-import { writeZip } from './zip'
+import { readZip, writeZip } from './zip'
 
 const files = [
   { name: 'Scripts/b.pex', data: Buffer.alloc(4096, 7) }, // compressible: deflated
@@ -55,5 +55,28 @@ describe('writeZip', () => {
 
   it('refuses names that could leave the extraction folder', () => {
     for (const name of ['../x', '/abs', 'a\\b', '']) expect(() => writeZip([{ name, data: Buffer.from('x') }])).toThrow()
+  })
+})
+
+describe('readZip (pack downloads)', () => {
+  /** Rewrites one entry name in place (same length) in both headers, to build zips writeZip refuses. */
+  const rename = (z: Buffer, from: string, to: string): Buffer => Buffer.from(z.toString('latin1').split(from).join(to), 'latin1')
+
+  it('reads every entry back', () => {
+    const r = readZip(writeZip(files))
+    expect([...r.keys()].sort()).toEqual(files.map((f) => f.name).sort())
+    for (const f of files) expect(r.get(f.name)).toEqual(f.data)
+  })
+
+  it('refuses unsafe names, corrupt data, a size over the cap and non-zips', () => {
+    const z = writeZip([{ name: 'xx/a.txt', data: Buffer.from('hello hello hello hello') }])
+    for (const bad of ['../a.txt', 'C:/a.txt', 'xx\\a.txt']) expect(() => readZip(rename(z, 'xx/a.txt', bad.padEnd(8, '_').slice(0, 8)))).toThrow(/Unsafe/)
+    expect(() => readZip(rename(z, 'xx/a.txt', '/x/a.txt'))).toThrow(/Unsafe/)
+    const crc = Buffer.from(z)
+    crc.writeUInt32LE(0, 14) // local header crc is not read; corrupt the central one
+    crc.writeUInt32LE(0, z.length - 22 - 46 - 8 + 16)
+    expect(() => readZip(crc)).toThrow(/corrupt/)
+    expect(() => readZip(z, 5)).toThrow(/too large/)
+    expect(() => readZip(Buffer.from('not a zip at all, definitely not a zip'))).toThrow(/Not a zip/)
   })
 })

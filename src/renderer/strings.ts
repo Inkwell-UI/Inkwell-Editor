@@ -199,9 +199,46 @@ export const strings = {
     title: 'Assets',
     sections: [
       { id: 'as2', title: 'IMPORTED AS2 CLASSES', action: '+ Import', reason: 'AS2 import is not scheduled yet', empty: 'No imported AS2 classes. Importing .as files is planned but not scheduled.' },
-      { id: 'packs', title: 'NODE PACKS', action: 'Check Updates', reason: `${BY} node packs (0.5)`, empty: 'No node packs loaded. Community packs arrive in 0.5.' }
+      { id: 'packs', title: 'NODE PACKS (packs.lock)', action: 'Check Updates', reason: undefined, empty: 'No node packs in packs.lock. Add one from the Packs Index or a GitHub URL.' }
     ],
-    packNodes: (n: number) => `${n} nodes`
+    packNodes: (n: number) => `${n} nodes`,
+    packs: {
+      noProject: 'Open a project first',
+      bundled: 'bundled',
+      add: 'Add Pack',
+      download: 'Download',
+      downloadTip: 'Download the locked versions from their GitHub releases (the hash must match packs.lock)',
+      missing: 'not downloaded: its nodes are kept as unknown nodes until it is',
+      mismatch: 'the cached file does not match the hash in packs.lock: not loaded',
+      working: 'Working...',
+      restored: (ids: string[]) => (ids.length ? `Downloaded ${ids.join(', ')}.` : 'Nothing to download.'),
+      addTitle: 'Add a node pack',
+      search: 'Search the Packs Index',
+      searchPlaceholder: 'Pack id or description',
+      indexLoading: 'Loading the Packs Index...',
+      indexEmpty: 'No pack in the index matches.',
+      deprecated: (why: string) => `Deprecated: ${why}`,
+      byUrl: 'Or add by GitHub URL',
+      urlPlaceholder: 'owner/name or https://github.com/owner/name',
+      fetch: 'Fetch',
+      pick: 'Add',
+      confirmTitle: 'Install this pack?',
+      updateTitle: 'Update packs',
+      trust: 'Packs are data and AS2 templates; nothing in a pack runs in the editor. They generate code into your menu, so install packs from repositories you trust. There is no signing in 0.5: compare the hash with the one the author publishes.',
+      repo: 'Repository',
+      version: 'Version',
+      hash: 'Content hash (SHA-256)',
+      nodes: 'Nodes',
+      changelog: 'Changelog',
+      noChangelog: 'This release has no CHANGELOG.md.',
+      install: 'Install',
+      update: 'Update',
+      cancel: 'Cancel',
+      from: (a: string, b: string) => `${a} -> ${b}`,
+      checking: 'Checking GitHub for newer releases...',
+      upToDate: 'Every pack is up to date.',
+      installed: (id: string, v: string) => `Installed ${id} ${v}; packs.lock updated.`
+    }
   },
 
   graph: {
