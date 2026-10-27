@@ -12,7 +12,7 @@ export function useContractsTab(): { disabledReason?: string } {
   return reason ? { disabledReason: reason } : {}
 }
 
-/** Zone 2, tab 2. Contract validation arrives in 0.5, so even for a menu replacement this is an empty state. */
+/** Zone 2, tab 2. The contract check itself is build lint (main/lint/contract.ts); this panel only points there. */
 export function ContractsPanel() {
   const reason = contractsReason(useActiveSwf()?.ir.target.kind)
   return (

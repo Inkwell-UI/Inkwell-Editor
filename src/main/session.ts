@@ -46,6 +46,7 @@ import { readSnapshot, staleSwfs, type FigmaSnapshot, type SnapshotSource } from
 import { generate } from './swf/generate'
 import { loadCodegenPacks } from './codegen/packs'
 import { createBuildPipeline } from './sync/buildPipeline'
+import { contractsDir } from './lint/contract'
 import { startSyncServer, type Layer, type SwfInfo } from './sync/syncServer'
 
 export interface SessionDeps {
@@ -251,6 +252,7 @@ export function createSession(deps: SessionDeps) {
       devBuild: () => link().deploy === true,
       onDevBuild: (n) => void devFresh.add(n),
       packDirs: [corePackDir(deps.appPath)],
+      contractsDir: contractsDir(deps.appPath),
       ...(dir ? { projectDir: dir } : {}),
       buildDir: dir ? join(dir, 'build') : join(deps.userData, 'build'),
       jarPath,
@@ -402,7 +404,8 @@ export function createSession(deps: SessionDeps) {
     for (let n = 0; n < 600 && [...buildBySwf.values()].includes('compiling'); n++) await new Promise((r) => setTimeout(r, 100))
     for (const i of server?.swfs() ?? []) {
       const ir = i.orphaned ? undefined : server?.ir(i.id)
-      if (ir?.target.kind !== 'customMenu' || (buildBySwf.get(i.id) === 'done' && (!dev || devFresh.has(i.name)))) continue
+      const kind = ir?.target.kind // a menu replacement builds too: its build lint carries the contract check (export gate)
+      if (!ir || (kind !== 'customMenu' && kind !== 'menuReplacement') || (buildBySwf.get(i.id) === 'done' && (!dev || kind !== 'customMenu' || devFresh.has(i.name)))) continue
       buildBySwf.set(i.id, 'compiling')
       try {
         await pipeline!.onChange(i.id, ir, i.name)

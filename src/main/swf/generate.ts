@@ -89,6 +89,8 @@ export interface Generated {
   graphClasses: GraphClass[]
   /** On Widget Call signatures of all graphs: the Papyrus API of a widget. */
   graphCalls: WidgetCall[]
+  /** Compiled clip path of every placed layer (`root.a.b`, figma node id -> path): what contract validation checks. */
+  layerPaths: Record<string, string>
 }
 
 export interface SettableText {
@@ -724,7 +726,7 @@ export function generate(ir: Swf, opts: GenerateOptions): Generated {
     ...[...embedded].map(([name, e]) => ({ charId: e.charId, name, chars: [...e.chars].join('') })),
     ...[...custom].map(([hash, c]) => ({ charId: c.charId, name: c.family, chars: c.chars, hash }))
   ]
-  return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls }
+  return { tags, shapes, as2, lint, fonts: fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls, layerPaths: Object.fromEntries(layerPaths) }
 }
 
 /** `node-off-stage`: a visible layer whose box lies entirely outside the frame (the stage), so it never shows. One warning per subtree. */

@@ -124,7 +124,12 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
   timer.start('compile')
   try {
     for (const s of i.swfs.filter((x) => !x.orphaned && (!i.only || x.name === i.only))) {
-      if (s.kind !== 'hudWidget' && s.kind !== 'customMenu') continue // menu replacements are skipped by the plan (warning)
+      if (s.kind === 'menuReplacement') {
+        // not deployed yet (the plan warns), but its contract check is a gate (W5): read from its latest build, like a custom menu's lint
+        if (!s.build || s.build.state !== 'done') issues.push({ severity: 'error', code: 'build-not-ready', message: notReady(s, i.buildDir), swf: s.name })
+        else issues.push(...s.build.lint.filter((l) => l.code.startsWith('contract-')).map((l) => ({ ...l, swf: s.name })))
+        continue
+      }
       const first = issues.length
       const fail = (code: string, message: string): void => void issues.push({ severity: 'error', code, message, swf: s.name })
       for (const id of unreachableNodes(s.ir)) issues.push({ severity: 'warning', code: 'unreachable-node', message: `"${s.ir.nodes[id]!.name}": ${UNREACHABLE_MESSAGE}.`, swf: s.name, nodeId: id, layerName: s.ir.nodes[id]!.name })

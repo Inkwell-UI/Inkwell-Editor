@@ -15,7 +15,7 @@ The editor window is a **workspace**: a layout (plain data) places **panels** (s
 | id | Component | Zone | Data | Shows |
 | --- | --- | --- | --- | --- |
 | `navigator` | `NavigatorPanel` | 2 (tab) | project IR + overlay, `useDockRows()`, sync state, graph docs | GRAPHS (the SWF's graphs with their events, `[+ Graph]`, rename, delete: `graph/GraphsList.tsx`), LAYERS tree with badges and filter, orphaned overlays, unreachable Figma layers |
-| `contracts` | `ContractsPanel` | 2 (tab) | active SWF target | `Only for menu replacements` (tab disabled), else `Contract validation arrives in 0.5` |
+| `contracts` | `ContractsPanel` | 2 (tab) | active SWF target | `Only for menu replacements` (tab disabled), else `Contract checks run on every build (target.contract in ir.json); findings are in the Lint dock` |
 | `assets` | `AssetsPanel` | 2 (tab) | none | Imported AS2 empty state; loaded node packs list |
 | `preview` | `PreviewPanel` | 3 | `usePreviewBuilds()`, project, sync state, selection store | stage toolbar, aspect frame, safe zones, Inspect overlay, banners (the last-good-build indicator is in the status bar) |
 | `graph` | `GraphPanel` | 4 | active SWF, overlay, graph docs, packs, selection | breadcrumb and event jump list, the Knotwork canvas of the open graph (`graph/GraphCanvas.tsx`), empty state with `+ Graph`, AS2 split view (`graph/As2View.tsx`, `docs/debugging.md`) |

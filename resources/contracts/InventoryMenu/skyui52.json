@@ -1,0 +1,93 @@
+{
+  "$schema": "../../schemas/contract-layer.schema.json",
+  "schemaVersion": 1,
+  "menu": "InventoryMenu",
+  "layer": "skyui52",
+  "description": "What SkyUI 5.2 (SE) checks when the Inventory opens: SKI_Main CheckMenuVersion and CheckItemMenuComponents read UI.GetInt/GetString(menu, \"_global.<Class>.SKYUI_RELEASE_IDX\" / \"SKYUI_VERSION_STRING\") and show SKYUI ERROR CODE 5 when they are zero or empty. Applies only when the player has SkyUI 5.2: the menu works without them, SkyUI only shows the popup. Names and values only, no SkyUI code (S-B results and variant 7, TEST-IN-GAME-0.5.md).",
+  "sources": {
+    "in-game": "spike S-B run B0 and variant 7 (owner, SE 1.7.104, SkyUI 5.2)",
+    "skyui": "SkyUI 5.2 SKI_Main string table and decompiled SWFs (names and values only)"
+  },
+  "entries": [
+    {
+      "id": "global.InventoryMenu.SKYUI_RELEASE_IDX",
+      "kind": "global",
+      "path": "_global.InventoryMenu.SKYUI_RELEASE_IDX",
+      "type": "Number",
+      "value": 2018,
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B B0: zero gives SKYUI ERROR CODE 5 (Incompatible menu file); variant 7: defined, no popup."
+    },
+    {
+      "id": "global.InventoryMenu.SKYUI_VERSION_STRING",
+      "kind": "global",
+      "path": "_global.InventoryMenu.SKYUI_VERSION_STRING",
+      "type": "String",
+      "value": "5.2 SE",
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B B0: empty gives SKYUI ERROR CODE 5; variant 7: defined, no popup."
+    },
+    {
+      "id": "global.ItemCard.SKYUI_RELEASE_IDX",
+      "kind": "global",
+      "path": "_global.ItemCard.SKYUI_RELEASE_IDX",
+      "type": "Number",
+      "value": 2018,
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B B0: zero gives SKYUI ERROR CODE 5 (Incompatible menu file); variant 7: defined, no popup."
+    },
+    {
+      "id": "global.ItemCard.SKYUI_VERSION_STRING",
+      "kind": "global",
+      "path": "_global.ItemCard.SKYUI_VERSION_STRING",
+      "type": "String",
+      "value": "5.2 SE",
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B B0: empty gives SKYUI ERROR CODE 5; variant 7: defined, no popup."
+    },
+    {
+      "id": "global.BottomBar.SKYUI_RELEASE_IDX",
+      "kind": "global",
+      "path": "_global.BottomBar.SKYUI_RELEASE_IDX",
+      "type": "Number",
+      "value": 2018,
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B B0: zero gives SKYUI ERROR CODE 5 (Incompatible menu file); variant 7: defined, no popup."
+    },
+    {
+      "id": "global.BottomBar.SKYUI_VERSION_STRING",
+      "kind": "global",
+      "path": "_global.BottomBar.SKYUI_VERSION_STRING",
+      "type": "String",
+      "value": "5.2 SE",
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B B0: empty gives SKYUI ERROR CODE 5; variant 7: defined, no popup."
+    },
+    {
+      "id": "global.InventoryLists.SKYUI_RELEASE_IDX",
+      "kind": "global",
+      "path": "_global.InventoryLists.SKYUI_RELEASE_IDX",
+      "type": "Number",
+      "value": 2018,
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B B0: zero gives SKYUI ERROR CODE 5 (Incompatible menu file); variant 7: defined, no popup."
+    },
+    {
+      "id": "global.InventoryLists.SKYUI_VERSION_STRING",
+      "kind": "global",
+      "path": "_global.InventoryLists.SKYUI_VERSION_STRING",
+      "type": "String",
+      "value": "5.2 SE",
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B B0: empty gives SKYUI ERROR CODE 5; variant 7: defined, no popup."
+    }
+  ]
+}

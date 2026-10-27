@@ -18,6 +18,7 @@ import { snapshotContent, writeSnapshot, type FigmaSnapshot, type SnapshotSource
 import type { PreviewFontSet } from '../previewFonts'
 import { applyTheme, themeModes } from '@inkwell-ui/spec'
 import { themeLint } from '../lint/theme'
+import { contractLint, loadContracts } from '../lint/contract'
 import { compileSwf } from '../swf/compile'
 import type { ChangeResult } from './syncServer'
 
@@ -50,6 +51,8 @@ export interface PipelineConfig {
   themeFor?: (name: string, swfId: string) => { default?: string; preview?: string }
   /** After figma/snapshot.json was checked (written only when its content changed). */
   onSnapshot?: (s: FigmaSnapshot) => void
+  /** Contract data (contracts/<menu>/<layer>.json) a menu replacement is checked against; without it a replacement with a contract gets `contract-unknown`. */
+  contractsDir?: string
 }
 
 /** Defaults documented in docs/sync-server.md. */
@@ -75,6 +78,7 @@ export function toReport(swfId: string, name: string, r: Pick<Awaited<ReturnType
 export function createBuildPipeline(cfg: PipelineConfig) {
   let project: Promise<Project> | undefined
   let codegenPacks: ReturnType<typeof loadCodegenPacks> | undefined
+  let contracts: ReturnType<typeof loadContracts> | undefined
   let ffdec: { build: Parameters<typeof compileSwf>[1]['ffdec']['build']; stop?: () => void } | undefined
 
   /** The resident wrapper (created on first use; shared with Deploy). A missing FFDec is a clear error status, not a crash; the server keeps running. */
@@ -153,6 +157,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     const fontOpts = emb?.option ? { embeddedFonts: emb.option, embeddedFontBytes: emb.bytes } : {}
     const r = await compileSwf(gameIr, { modId, instanceNames, roles, lists, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
     if (emb) r.lint.push(...emb.issues)
+    if (ir.target.kind === 'menuReplacement') r.lint.push(...contractLint(ir, r.layerPaths, cfg.contractsDir ? await (contracts ??= loadContracts(cfg.contractsDir)) : []))
     r.lint.push(...themeLint(ir, want?.default).map((l) => ({ ...l, nodeName: l.nodeName ?? ir.nodes[l.nodeId]?.name ?? l.nodeId })))
     // Dev SWF (Dev deploy only): the game SWF plus the hooks that stream pin and variable values to the editor. Never part of the normal build or Package Mod.
     const dt = createStageTimer()

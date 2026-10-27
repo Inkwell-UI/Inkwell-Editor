@@ -1,0 +1,11 @@
+{
+  "$schema": "../../schemas/contract-layer.schema.json",
+  "schemaVersion": 1,
+  "menu": "InventoryMenu",
+  "layer": "skyui6",
+  "description": "SkyUI 6 (6.11) checks nothing in a replaced Inventory SWF: S-B run C0 works without any SkyUI name and shows no popup. SkyUI 6.11 defines SKYUI_RELEASE_IDX = 2026 in its own classes, but nothing reads it, so this layer has no entries.",
+  "sources": {
+    "in-game": "spike S-B run C0 (owner, SE 1.7.104, SkyUI 6.11)"
+  },
+  "entries": []
+}

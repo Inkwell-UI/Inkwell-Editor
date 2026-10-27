@@ -1,0 +1,133 @@
+{
+  "$schema": "../../schemas/contract-layer.schema.json",
+  "schemaVersion": 1,
+  "menu": "InventoryMenu",
+  "layer": "engine",
+  "swf": "Interface/inventorymenu.swf",
+  "description": "What the game executable needs from the Inventory menu SWF. Required flags from spike S-B (TEST-IN-GAME-0.5.md, S-B results, SE 1.7.104, 2026-10-27; logs spike-logs/S-B-*.log): each run left one group out of a working replacement. Entries with proof \"source\" come from the decompiled vanilla and SkyUI SWFs (draft: Inkwell-Spec/spikes/inventory-contract/inventory.contract.draft.json) and were not seen in the S-B logs.",
+  "sources": {
+    "in-game": "spike S-B runs A0-A6, B0, C0 and variant 7 (owner, SE 1.7.104)",
+    "vanilla": "interface/inventorymenu.swf from Skyrim - Interface.bsa, game 1.7.104, decompiled with FFDec 26.3.0 (not stored)",
+    "skyui": "doodlum/SkyUI-Community @ b7a24a9 (names and signatures only)"
+  },
+  "entries": [
+    {
+      "id": "fn.root.GetInventoryItemList",
+      "kind": "function",
+      "path": "_root.GetInventoryItemList",
+      "type": "Function",
+      "args": [],
+      "required": "fatal",
+      "proof": "in-game",
+      "evidence": "S-B A1: without it the game crashes (null read in SkyrimSE.exe+0CF5AAB) when the menu opens.",
+      "notes": "Returns the item list object; the engine fills its entryList and reads its selectedIndex."
+    },
+    {
+      "id": "inst.root.Menu_mc",
+      "kind": "instance",
+      "path": "_root.Menu_mc",
+      "type": "MovieClip",
+      "required": "fatal",
+      "proof": "in-game",
+      "evidence": "S-B A3: without the clip the game crashes (same address, other path); the log ends at the lookup of _root.Menu_mc."
+    },
+    {
+      "id": "fn.bridge.call",
+      "kind": "function",
+      "path": "_root.call",
+      "type": "Function",
+      "args": ["methodName:String", "...args"],
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B A5: without the ExternalInterface callbacks no engine->as callback arrives at all (dead list, equip, drop, card); the engine looks up _root.call.",
+      "notes": "ExternalInterface.addCallback(\"call\", ...) on the root timeline, as gfx.io.GameDelegate.initialize does. Every callback entry below arrives through it."
+    },
+    {
+      "id": "fn.bridge.respond",
+      "kind": "function",
+      "path": "_root.respond",
+      "type": "Function",
+      "args": ["uid:Number", "...result"],
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B A5 (see fn.bridge.call); the engine looks up _root.respond. The item card info arrives through it (respond uid=n {...}) as the answer to RequestItemCardInfo."
+    },
+    {
+      "id": "member.list.entryList",
+      "kind": "member",
+      "path": "_root.GetInventoryItemList().entryList",
+      "type": "Array",
+      "required": "function",
+      "proof": "inferred",
+      "evidence": "The engine reads it in every run (\"engine used list.entryList get\") and fills it with the items; never left out in S-B, so whether its absence crashes is not known.",
+      "notes": "Entry fields seen in game: text, count, enabled, equipState, filterFlag, favorite."
+    },
+    {
+      "id": "member.list.selectedIndex",
+      "kind": "member",
+      "path": "_root.GetInventoryItemList().selectedIndex",
+      "type": "Number",
+      "required": "function",
+      "proof": "in-game",
+      "evidence": "S-B A6: with every list member except entryList left out the menu shows, but equip, drop and the card are dead; the engine reads list.selectedIndex for the item it acts on."
+    },
+    {
+      "id": "fn.root.InitExtensions",
+      "kind": "function",
+      "path": "_root.InitExtensions",
+      "type": "Function",
+      "args": [],
+      "required": "optional",
+      "proof": "in-game",
+      "evidence": "S-B A2: works without it (the engine calls it when present)."
+    },
+    {
+      "id": "fn.root.SetPlatform",
+      "kind": "function",
+      "path": "_root.SetPlatform",
+      "type": "Function",
+      "args": ["aiPlatform:Number", "abPS3Switch:Boolean"],
+      "required": "optional",
+      "proof": "in-game",
+      "evidence": "S-B A2: works without it (the engine calls it when present). Platform 0 = PC."
+    },
+    {
+      "id": "var.root.BackgroundAlpha",
+      "kind": "global",
+      "path": "_root.BackgroundAlpha",
+      "type": "Number",
+      "required": "unused",
+      "proof": "in-game",
+      "evidence": "S-B: the engine looks it up (\"lookup of missing _root.BackgroundAlpha\") and works without it.",
+      "notes": "Type is a guess from the name."
+    },
+    { "id": "cb.SetCategoriesList", "kind": "callback", "name": "SetCategoriesList", "args": ["...triples (text:String, flag:Number, bDontHide:Boolean)"], "required": "optional", "proof": "in-game", "evidence": "Seen in every S-B run when the menu opens; flag 0 marks a divider.", "notes": "Without a handler the category list stays empty (inferred)." },
+    { "id": "cb.InvalidateListData", "kind": "callback", "name": "InvalidateListData", "args": [], "required": "optional", "proof": "in-game", "evidence": "Seen in S-B after the engine (re)filled entryList (open, equip, drop).", "notes": "Without a handler the list never redraws (inferred)." },
+    { "id": "cb.UpdatePlayerInfo", "kind": "callback", "name": "UpdatePlayerInfo", "args": ["playerInfo:Object"], "required": "optional", "proof": "in-game", "evidence": "Seen in S-B. Fields seen: health, maxHealth, magicka, maxMagicka, stamina, maxStamina, shoutPoints, maxShoutPoints, encumbrance, maxEncumbrance, armor, damage, gold, dragonSoulText, healthColor, magickaColor, staminaColor." },
+    { "id": "cb.RestoreIndices", "kind": "callback", "name": "RestoreIndices", "args": ["...elements of the last SaveIndices array"], "required": "optional", "proof": "in-game", "evidence": "Seen in S-B A0. The engine hands back what the SWF saved with SaveIndices; the shape is the SWF's own." },
+    { "id": "cb.DropItem", "kind": "callback", "name": "DropItem", "args": [], "required": "optional", "proof": "in-game", "evidence": "Seen in S-B when dropping an item." },
+    { "id": "cb.AttemptEquip", "kind": "callback", "name": "AttemptEquip", "args": ["aiSlot:Number", "abCheckOverList?:Boolean"], "required": "optional", "proof": "in-game", "evidence": "Seen in S-B when equipping; also the respond target of CheckForMouseEquip in vanilla and SkyUI." },
+    { "id": "cb.SetButtonMapping", "kind": "callback", "name": "SetButtonMapping", "args": ["mapping:Object"], "required": "unused", "proof": "in-game", "evidence": "Sent in every S-B run, no handler: harmless." },
+    { "id": "cb.UpdateItemCardInfo", "kind": "callback", "name": "UpdateItemCardInfo", "args": ["itemInfo:Object"], "required": "optional", "proof": "in-game", "evidence": "S-B A4: works without the card callback and request; the engine never pushes the card unasked. In S-B the card came only as the respond answer to RequestItemCardInfo.", "notes": "Info fields seen: name, type, value, weight, count, stolen, effects, armor, armorChange, damage, damageChange, charge, usedCharge, poisoned, skillText." },
+    { "id": "cb.AttemptChargeItem", "kind": "callback", "name": "AttemptChargeItem", "args": [], "required": "optional", "proof": "source", "evidence": "Registered by vanilla and SkyUI; not seen in S-B." },
+    { "id": "cb.ItemRotating", "kind": "callback", "name": "ItemRotating", "args": [], "required": "optional", "proof": "source", "evidence": "Registered by vanilla and SkyUI; cosmetic; not seen in S-B." },
+    { "id": "cb.ToggleMenuFade", "kind": "callback", "name": "ToggleMenuFade", "args": [], "required": "optional", "proof": "source", "evidence": "Registered by vanilla and SkyUI; not seen in S-B." },
+    { "id": "call.PlaySound", "kind": "call", "name": "PlaySound", "args": ["soundEditorId:String"], "required": "optional", "proof": "in-game", "evidence": "Made in S-B; IDs in vanilla: UIMenuBladeOpenSD, UIMenuBladeCloseSD, UIMenuFocus, UIMenuPrevNext." },
+    { "id": "call.UpdateItem3D", "kind": "call", "name": "UpdateItem3D", "args": ["show:Boolean"], "required": "optional", "proof": "in-game", "evidence": "Made in S-B; shows the 3D model of the selected item." },
+    { "id": "call.RequestItemCardInfo", "kind": "call", "name": "RequestItemCardInfo", "args": [], "required": "optional", "proof": "in-game", "evidence": "Made in S-B; answered through respond with the item info object (S-B A4: the card is optional)." },
+    { "id": "call.ItemSelect", "kind": "call", "name": "ItemSelect", "args": ["(none) | slot:Number | amount:Number"], "required": "optional", "proof": "in-game", "evidence": "Made in S-B when equipping (the engine acts on list.selectedIndex).", "notes": "Without it nothing can be equipped or used (inferred)." },
+    { "id": "call.ItemDrop", "kind": "call", "name": "ItemDrop", "args": ["amount:Number"], "required": "optional", "proof": "in-game", "evidence": "Made in S-B when dropping.", "notes": "Without it nothing can be dropped (inferred)." },
+    { "id": "call.SaveIndices", "kind": "call", "name": "SaveIndices", "args": ["indices:Array"], "required": "optional", "proof": "in-game", "evidence": "Made in S-B on close; the engine hands the array back through RestoreIndices." },
+    { "id": "call.CloseTweenMenu", "kind": "call", "name": "CloseTweenMenu", "args": [], "required": "optional", "proof": "in-game", "evidence": "Made in S-B on close." },
+    { "id": "call.CloseMenu", "kind": "call", "name": "CloseMenu", "args": [], "required": "optional", "proof": "in-game", "evidence": "Made in S-B on close.", "notes": "The SWF closes itself (Tab is handled in AS), so without it the menu cannot be closed from the UI (draft, inferred)." },
+    { "id": "call.CheckForMouseEquip", "kind": "call", "name": "CheckForMouseEquip", "args": ["aiMouseButton:Number"], "required": "optional", "proof": "source", "evidence": "Vanilla and SkyUI; answered through respond (AttemptEquip). Not seen in S-B." },
+    { "id": "call.DisabledItemSelect", "kind": "call", "name": "DisabledItemSelect", "args": [], "required": "optional", "proof": "source", "evidence": "Vanilla and SkyUI; not seen in S-B." },
+    { "id": "call.ItemCardListCallback", "kind": "call", "name": "ItemCardListCallback", "args": ["index:Number"], "required": "optional", "proof": "source", "evidence": "Vanilla and SkyUI; not seen in S-B." },
+    { "id": "call.QuantitySliderOpen", "kind": "call", "name": "QuantitySliderOpen", "args": ["opening:Boolean"], "required": "optional", "proof": "source", "evidence": "Vanilla and SkyUI; not seen in S-B." },
+    { "id": "call.ShowSoulGemList", "kind": "call", "name": "ShowSoulGemList", "args": [], "required": "optional", "proof": "source", "evidence": "Vanilla and SkyUI; not seen in S-B." },
+    { "id": "call.ShowTweenMenu", "kind": "call", "name": "ShowTweenMenu", "args": [], "required": "optional", "proof": "source", "evidence": "Vanilla and SkyUI; not seen in S-B." },
+    { "id": "call.StartMouseRotation", "kind": "call", "name": "StartMouseRotation", "args": [], "required": "optional", "proof": "source", "evidence": "Vanilla and SkyUI; not seen in S-B." },
+    { "id": "call.StopMouseRotation", "kind": "call", "name": "StopMouseRotation", "args": [], "required": "optional", "proof": "source", "evidence": "Vanilla and SkyUI; not seen in S-B." },
+    { "id": "call.ZoomItemModel", "kind": "call", "name": "ZoomItemModel", "args": ["delta:Number"], "required": "optional", "proof": "source", "evidence": "Vanilla and SkyUI; not seen in S-B." }
+  ]
+}

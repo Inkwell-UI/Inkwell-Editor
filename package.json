@@ -24,7 +24,8 @@
     "deploy:menu-nodes": "tsx scripts/deploy-menu-nodes.ts",
     "deploy:menu-i18n": "tsx scripts/deploy-menu-i18n.ts",
     "deploy:menu-themes": "tsx scripts/deploy-menu-themes.ts",
-    "sync:core-pack": "node scripts/sync-core-pack.mjs"
+    "sync:core-pack": "node scripts/sync-core-pack.mjs",
+    "sync:contracts": "node scripts/sync-contracts.mjs"
   },
   "dependencies": {
     "@inkwell-ui/spec": "link:../Inkwell-Spec",

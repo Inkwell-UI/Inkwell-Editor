@@ -13,6 +13,7 @@ import { syntheticPng } from '../images/synthetic'
 import { loadCodegenPacks } from '../codegen/packs'
 import { loadProject } from '../project'
 import { frame } from '../swf/ir.testutil'
+import { exportGate } from '../lint/gate'
 import { sha256 } from '../vanilla/bsa'
 import { commitDeploy, prepareDeploy, type DeployInput, type DeploySwf } from './run'
 import { readManifest, writeDeploy } from './write'
@@ -134,6 +135,20 @@ describe('prepareDeploy guards', () => {
     expect(await issue(unbuilt)).toMatchObject([{ code: 'build-not-ready', message: expect.stringContaining('not been built since') }])
     expect(await issue({ ...swf('wheel'), build: { state: 'compiling', lint: [] } })).toMatchObject([{ code: 'build-not-ready', message: expect.stringContaining('still compiling') }])
     expect(await issue({ ...swf('wheel'), build: { state: 'failed', lint: [] } })).toMatchObject([{ code: 'build-not-ready', message: expect.stringContaining('last build failed') }])
+  })
+
+  it("a menu replacement is not deployed, but its contract lint (and only that) is a gate error; unbuilt is build-not-ready", async () => {
+    const lint = [{ severity: 'error' as const, code: 'contract-missing', message: '_root.Menu_mc', nodeId: 'r' }, { severity: 'error' as const, code: 'font-unmapped', message: 'x', nodeId: 'r' }]
+    const inv: DeploySwf = { ...swf('inv'), kind: 'menuReplacement', build: { state: 'done', lint } }
+    const i = input({ swfs: [swf('wheel'), inv] })
+    writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    const r = await prepareDeploy(i)
+    if (!r.ok) throw new Error(r.error)
+    expect(r.prepared.issues.filter((x) => x.swf === 'inv')).toEqual([{ ...lint[0], swf: 'inv' }])
+    expect(exportGate(r.prepared.issues, false).ok).toBe(false)
+    const { build: _b, ...unbuilt } = inv
+    const u = await prepareDeploy(input({ swfs: [swf('wheel'), unbuilt] }))
+    expect(u.ok && u.prepared.issues.filter((x) => x.swf === 'inv')).toMatchObject([{ code: 'build-not-ready', swf: 'inv' }])
   })
 
   it("a custom menu's build lint and unreachable layers feed the gate, scoped to the deployed SWF", async () => {

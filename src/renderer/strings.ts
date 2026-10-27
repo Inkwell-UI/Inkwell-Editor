@@ -192,7 +192,7 @@ export const strings = {
   contracts: {
     title: 'Contracts',
     onlyReplacements: 'Only for menu replacements',
-    later: 'Contract validation arrives in 0.5'
+    later: 'Contract checks run on every build (target.contract in ir.json); findings are in the Lint dock'
   },
 
   assets: {
