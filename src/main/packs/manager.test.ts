@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { packAssetUrl, parsePacksLock, writePacksLock } from '@inkwell-ui/spec'
+import { packAssetUrl, parsePacksLock, SPEC_VERSION, writePacksLock } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
 import { defIndex, emptyGraph } from '../../shared/graphs'
 import { validateGraph } from '../../shared/graphValidate'
@@ -59,7 +59,7 @@ describe('pack manager', () => {
     const dir = await project()
     const v1 = pack('1.0.0')
     const entry = { id: 'hello', version: '1.0.0', source: packAssetUrl(REPO, '1.0.0'), sha256: sha(v1) }
-    await writeFile(join(dir, 'packs.lock'), writePacksLock({ specVersion: 7, packs: [entry] }))
+    await writeFile(join(dir, 'packs.lock'), writePacksLock({ specVersion: SPEC_VERSION, packs: [entry] }))
     const tampered = github({ '1.0.0': pack('1.0.0', 'evil') })
     const r = await createPackManager(tampered).restore(dir)
     expect(r.ok && r.errors[0]).toMatch(/hello@1\.0\.0: hash mismatch: packs\.lock says [0-9a-f]{64}, the download is [0-9a-f]{64}\. Refused\./)
@@ -78,7 +78,7 @@ describe('pack manager', () => {
   it('a pack removed from the index (or deprecated) still resolves from the lockfile', async () => {
     const dir = await project()
     const v1 = pack('1.0.0')
-    await writeFile(join(dir, 'packs.lock'), writePacksLock({ specVersion: 7, packs: [{ id: 'hello', version: '1.0.0', source: packAssetUrl(REPO, '1.0.0'), sha256: sha(v1) }] }))
+    await writeFile(join(dir, 'packs.lock'), writePacksLock({ specVersion: SPEC_VERSION, packs: [{ id: 'hello', version: '1.0.0', source: packAssetUrl(REPO, '1.0.0'), sha256: sha(v1) }] }))
     const gh = github({ '1.0.0': v1 }, { index: { packs: [] } })
     const r = await createPackManager(gh).restore(dir)
     expect(r).toEqual({ ok: true, restored: ['hello@1.0.0'], errors: [] })
@@ -145,7 +145,7 @@ describe('pack manager', () => {
     expect(await readFile(join(dir, 'packs.lock'), 'utf8')).toBe('{ broken')
     expect((await m.state(dir)).lockError).toContain('packs.lock cannot be read')
     await writeFile(join(dir, 'packs.lock'), 'packs: []\n')
-    expect(await readLock(dir)).toEqual({ lock: { specVersion: 7, packs: [] } })
+    expect(await readLock(dir)).toEqual({ lock: { specVersion: SPEC_VERSION, packs: [] } })
     await rm(join(dir, 'packs.lock'))
     expect(await m.state(dir)).toEqual({ locked: [] })
   })
@@ -153,7 +153,7 @@ describe('pack manager', () => {
   it('a node of a locked pack the cache lacks is kept and flagged; once restored it validates', async () => {
     const dir = await project()
     const v1 = pack('1.0.0')
-    await writeFile(join(dir, 'packs.lock'), writePacksLock({ specVersion: 7, packs: [{ id: 'hello', version: '1.0.0', source: packAssetUrl(REPO, '1.0.0'), sha256: sha(v1) }] }))
+    await writeFile(join(dir, 'packs.lock'), writePacksLock({ specVersion: SPEC_VERSION, packs: [{ id: 'hello', version: '1.0.0', source: packAssetUrl(REPO, '1.0.0'), sha256: sha(v1) }] }))
     const g = { ...emptyGraph('g', 'G', 'menu'), nodes: [{ id: 'h', kind: 'hello/Hello@1', fields: { future: 1 }, pos: { x: 0, y: 0 } }] }
     const issues = async () => validateGraph(g, { defs: defIndex(await loadPacks((await lockedPacks(dir, (await readLock(dir)).lock)).dirs)) }).map((i) => i.code)
     expect(await issues()).toEqual(['graph-unknown-node'])
