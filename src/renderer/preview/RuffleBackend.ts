@@ -12,26 +12,41 @@ interface RuffleGlobal {
   RufflePlayer?: { config?: Record<string, unknown>; newest?(): { createPlayer(): RufflePlayerElement } | null }
 }
 
-/** Ruffle's files are copied next to index.html (see electron.vite.config.ts), so they are found relative to the page. No network is used. */
-let loading: Promise<void> | undefined
-function loadRuffle(): Promise<void> {
-  loading ??= (async () => {
-    // Device fonts for the preview text come from main as bytes; Ruffle fetches them by (blob) URL, so nothing touches the network.
-    // shortcut: fonts are read once per window; a changed font source needs a restart.
-    const fonts = await (inkwell?.getPreviewFonts() ?? Promise.resolve([])).catch(() => [])
-    const fontSources = fonts.map((f) => URL.createObjectURL(new Blob([f.bytes], { type: 'font/ttf' })))
-    await new Promise<void>((resolve, reject) => {
-      const RUFFLE_DIR = new URL('./', document.baseURI).href
-      const g = window as unknown as RuffleGlobal
-      g.RufflePlayer = { config: { publicPath: RUFFLE_DIR, polyfills: false, autoplay: 'on', unmuteOverlay: 'hidden', splashScreen: false, contextMenu: 'off', letterbox: 'on', logLevel: 'info', fontSources } }
-      const s = document.createElement('script')
-      s.src = `${RUFFLE_DIR}ruffle.js`
-      s.onload = () => resolve()
-      s.onerror = () => reject(new Error('Could not load ruffle.js'))
-      document.head.appendChild(s)
-    })
-  })()
-  return loading
+/** Device fonts for the preview text come from main as bytes; Ruffle fetches them by (blob) URL, so nothing touches the network. */
+let fontSources: Promise<string[]> | undefined
+// shortcut: fonts are read once per window; a changed font source needs a restart.
+const loadFonts = (): Promise<string[]> =>
+  (fontSources ??= (inkwell?.getPreviewFonts() ?? Promise.resolve([]))
+    .catch(() => [])
+    .then((fonts) => fonts.map((f) => URL.createObjectURL(new Blob([f.bytes], { type: 'font/ttf' })))))
+
+/**
+ * Every load runs in a frame of its own with its own copy of Ruffle. Ruffle times a movie's timers (setInterval, so Delay, On Timer and Tween) from when its page started, so a second movie in the same
+ * page ran the timers of the seconds the first one had been up in one burst: a timer node fired many times at once and a Tween never finished after a Reload. A fresh page starts the clock at zero.
+ * Ruffle's files are copied next to index.html (see electron.vite.config.ts), so they are found relative to the page. No network is used; the frame has no inline script (the page's CSP).
+ */
+async function openFrame(host: HTMLElement): Promise<{ frame: HTMLIFrameElement; ruffle: { createPlayer(): RufflePlayerElement } }> {
+  const fonts = await loadFonts()
+  const frame = document.createElement('iframe')
+  frame.style.cssText = 'width:100%;height:100%;border:0;display:block'
+  frame.srcdoc = '<!doctype html><html style="height:100%"><body style="margin:0;height:100%;overflow:hidden;background:#000"></body></html>' // the player takes the whole frame: it needs a body with a height
+  host.appendChild(frame)
+  await new Promise<void>((resolve) => (frame.onload = () => resolve()))
+  const win = frame.contentWindow as unknown as (Window & RuffleGlobal) | null
+  if (!win) throw new Error('Could not open the preview frame')
+  const RUFFLE_DIR = new URL('./', document.baseURI).href
+  win.RufflePlayer = { config: { publicPath: RUFFLE_DIR, polyfills: false, autoplay: 'on', unmuteOverlay: 'hidden', splashScreen: false, contextMenu: 'off', letterbox: 'on', logLevel: 'info', fontSources: fonts } }
+  tapConsole((win as unknown as { console: Console }).console) // Ruffle writes the movie's trace() output to this frame's console
+  await new Promise<void>((resolve, reject) => {
+    const sc = win.document.createElement('script')
+    sc.src = `${RUFFLE_DIR}ruffle.js`
+    sc.onload = () => resolve()
+    sc.onerror = () => reject(new Error('Could not load ruffle.js'))
+    win.document.head.appendChild(sc)
+  })
+  const ruffle = win.RufflePlayer?.newest?.()
+  if (!ruffle) throw new Error('Ruffle did not initialise')
+  return { frame, ruffle }
 }
 
 /**
@@ -42,6 +57,7 @@ function loadRuffle(): Promise<void> {
 export class RuffleBackend implements PreviewBackend {
   readonly element: HTMLElement
   private player: RufflePlayerElement | undefined
+  private frame: HTMLIFrameElement | undefined
   private readonly subs: { [E in keyof PreviewBackendEvents]: Set<(v: PreviewBackendEvents[E]) => void> } = { loaded: new Set(), error: new Set(), firstFrame: new Set(), trace: new Set() }
   private disposed = false
   private offTap: (() => void) | undefined
@@ -78,15 +94,15 @@ export class RuffleBackend implements PreviewBackend {
 
   async load(build: PreviewBuild): Promise<void> {
     if (!build.bytes) throw new Error('No SWF bytes')
-    await loadRuffle()
-    if (this.disposed) return
-    const ruffle = (window as unknown as RuffleGlobal).RufflePlayer?.newest?.()
-    if (!ruffle) throw new Error('Ruffle did not initialise')
-    this.player?.remove()
+    this.frame?.remove() // the old movie goes with its frame
+    this.frame = this.player = undefined
+    const { frame, ruffle } = await openFrame(this.element)
+    if (this.disposed) return frame.remove()
+    this.frame = frame
     const player = (this.player = ruffle.createPlayer())
     player.style.width = '100%'
     player.style.height = '100%'
-    this.element.appendChild(player)
+    frame.contentDocument!.body.appendChild(player)
     player.addEventListener('loadedmetadata', () => this.emit('loaded', undefined), { once: true })
     player.addEventListener(
       'loadeddata',
@@ -105,8 +121,7 @@ export class RuffleBackend implements PreviewBackend {
   dispose(): void {
     this.disposed = true
     this.offTap?.()
-    this.player?.ruffle().destroy?.()
-    this.player?.remove()
+    this.frame?.remove()
     this.element.remove()
     Object.values(this.subs).forEach((s) => s.clear())
   }
@@ -125,18 +140,22 @@ export function traceTextOf(args: readonly unknown[]): string | undefined {
   return first.includes('[Inkwell]') ? first : undefined
 }
 let tapped = false
+/** Hands the trace text of every log call of this console on to the taps. */
+function tapConsole(c: Console): void {
+  for (const level of ['log', 'info', 'debug'] as const) {
+    const orig = c[level].bind(c)
+    c[level] = (...args: unknown[]): void => {
+      orig(...args)
+      const text = traceTextOf(args)
+      if (text !== undefined) taps.forEach((t) => t(text))
+    }
+  }
+}
 export function tapTrace(cb: (line: string) => void): () => void {
   taps.add(cb)
   if (!tapped) {
     tapped = true
-    for (const level of ['log', 'info', 'debug'] as const) {
-      const orig = console[level].bind(console)
-      console[level] = (...args: unknown[]): void => {
-        orig(...args)
-        const text = traceTextOf(args)
-        if (text !== undefined) taps.forEach((t) => t(text))
-      }
-    }
+    tapConsole(console)
   }
   return () => void taps.delete(cb)
 }
