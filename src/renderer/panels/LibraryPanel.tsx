@@ -1,5 +1,5 @@
 import { useState, type DragEvent } from 'react'
-import { Copy, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, Copy, Trash2 } from 'lucide-react'
 import type { Graph } from '@inkwell-ui/spec'
 import { FUNCTION_DRAG, GraphRowView, GraphsList } from '../graph/GraphsList'
 import { inkwell } from '../hooks/api'
@@ -66,6 +66,8 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
   const own = pack.origin === 'library'
   const [over, setOver] = useState(false)
   const [exporting, setExporting] = useState<string | undefined>()
+  const [open, setOpen] = useState(true)
+  const has = pack.functions.length > 0
   const activeId = useGraphDocs((s) => s.active[swf.id])
   const note = own ? strings.lib.editedInPlace : strings.lib.editedInstalled
   const accepts = (e: DragEvent): boolean => own && e.dataTransfer.types.includes(FUNCTION_DRAG)
@@ -113,7 +115,10 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
       onDrop={(e) => void drop(e)}
     >
       <div className="graph-row-main">
-        <span className="layer-main"><span className="layer-name">{pack.id}</span><span className="layer-type">{pack.version} · {strings.lib.origin[pack.origin ?? 'installed']} · {strings.lib.packContents(pack.nodes, pack.functions.length)}</span></span>
+        <button type="button" className="layer-main" aria-expanded={has ? open : undefined} disabled={!has} onClick={() => setOpen(!open)} data-testid={`library-pack-toggle-${pack.id}`}>
+          {has && open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
+          <span className="layer-name">{pack.id}</span><span className="layer-type">{pack.version} · {strings.lib.origin[pack.origin ?? 'installed']} · {strings.lib.packContents(pack.nodes, pack.functions.length)}</span>
+        </button>
         {own && <Btn label={strings.lib.exportTip} onClick={() => setExporting(exporting === undefined ? pack.version : undefined)} pressed={exporting !== undefined} testId="library-export-open">{strings.lib.exportOpen}</Btn>}
         {own && <Btn icon={Trash2} label={strings.lib.remove(pack.id)} onClick={() => void remove()} testId="library-remove" />}
       </div>
@@ -123,7 +128,7 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
           <Btn variant="primary" onClick={() => void exportPack()} testId="library-export-run">{strings.lib.exportRun}</Btn>
         </div>
       )}
-      <ul className="graph-list" role="list" title={note}>
+      {open && <ul className="graph-list" role="list" title={note}>
         {pack.functions.map((fn) => (
           <GraphRowView
             key={fn.id}
@@ -138,7 +143,7 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
             extra={<Btn icon={Copy} label={strings.lib.copyTip(fn.name)} onClick={() => void copy(fn)} testId="library-copy" />}
           />
         ))}
-      </ul>
+      </ul>}
     </li>
   )
 }
