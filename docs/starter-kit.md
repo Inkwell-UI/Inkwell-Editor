@@ -54,6 +54,20 @@ Rules that avoid surprises:
 - Rotation is clockwise-flipped from Figma and unverified in game: avoid it.
 - A list lays out its rows at runtime; build one template row, not several.
 
+### Inventory menu replacement (0.5)
+
+A menu replacement (Target dialog: `menuReplacement`, contract `InventoryMenu`) is a frame the game's inventory menu fills. Build it with these exact layer names; `samples/inventory-replacement` is the reference (the editor's own minimal design, plain text on a panel).
+
+| Piece | Build it as | Notes |
+| --- | --- | --- |
+| **Menu clip** | a frame named exactly `Menu_mc`, directly inside the stage frame | The game looks it up and **crashes without it** (contract `fatal`); the contract lint (`contract-missing`) blocks the deploy. Everything else goes inside it. |
+| **Item list** | a text layer (e.g. `items`) | The sample's graph writes the rows into it: Inventory: On Invalidate List -> a loop -> Set Text. A scrolling list component is not part of 0.5. |
+| **Categories** | a text layer (e.g. `cats`) | Inventory: On Set Categories gives `{text, flag, dontHide}` per category. |
+| **Item card** | text layers for name, type, value and weight (the sample uses one, `card`) | Inventory: Request Item Card, then On Item Card gives `info` (`name`, `type`, `value`, `weight`, `damage`, `armor`, ...). |
+| **Scroll bar, category tabs** | plain shapes/frames | Not wired by the engine glue: drive them from the graph if you want them (no role of their own in 0.5). |
+
+The editor's preview stands in for the game engine with mock categories, five items and their cards (`replacementMock.ts`), so you see a filled menu while designing; the mock is preview only and never ships. Use your own artwork and names for the look: never copy SkyUI's or the game's files or art.
+
 ## 4. Themes (two modes)
 
 1. Figma > **Local variables** > create a collection (any name, e.g. `Theme`) with **two or more modes**, e.g. `Vanilla` and `Nordic`. The first collection with two or more modes is the one used.
@@ -77,4 +91,4 @@ What changes in game: opacity, visibility, text colour, the colour of a shape wi
 
 ## What the kit does not give you yet
 
-Components and variants (instances are skipped), checkbox, slider and dropdown (planned 0.5), gamepad focus and button prompts (0.5), and embedded custom fonts (after 1.0). A HUD widget has no runtime: it gets the default theme only and no translations.
+A SkyUI-style component set (scrolling item list, scroll bar, category tabs as ready-made roles: the inventory proof uses plain text layers), components and variants (instances are skipped), checkbox, slider and dropdown (planned 0.5), gamepad focus and button prompts (0.5), and embedded custom fonts (after 1.0). A HUD widget has no runtime: it gets the default theme only and no translations.
