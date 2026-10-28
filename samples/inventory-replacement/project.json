@@ -1,0 +1,10 @@
+{
+  "author": "Inkwell",
+  "deploy": {
+    "path": "C:/Modding/MO2/mods/Inkwell Inventory Replacement Test",
+    "preset": "mo2"
+  },
+  "modId": "InkwellInventoryReplacement",
+  "name": "Inkwell Inventory Replacement Test",
+  "version": "0.5.0"
+}

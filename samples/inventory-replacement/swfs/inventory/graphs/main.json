@@ -1,0 +1,1541 @@
+{
+  "comments": [],
+  "edges": [
+    {
+      "from": {
+        "node": "getItems",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fe",
+        "pin": "array"
+      }
+    },
+    {
+      "from": {
+        "node": "render",
+        "pin": "then"
+      },
+      "to": {
+        "node": "clr",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "clr",
+        "pin": "then"
+      },
+      "to": {
+        "node": "fe",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "fe",
+        "pin": "body"
+      },
+      "to": {
+        "node": "ap",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "fe",
+        "pin": "index"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "getSel",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mark",
+        "pin": "condition"
+      }
+    },
+    {
+      "from": {
+        "node": "fe",
+        "pin": "item"
+      },
+      "to": {
+        "node": "field",
+        "pin": "object"
+      }
+    },
+    {
+      "from": {
+        "node": "getText",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "mark",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "field",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt",
+        "pin": "c"
+      }
+    },
+    {
+      "from": {
+        "node": "fmt",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ap",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "fe",
+        "pin": "completed"
+      },
+      "to": {
+        "node": "showItems",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "getList2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "showItems",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "showItems",
+        "pin": "then"
+      },
+      "to": {
+        "node": "req",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "getSel2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "req",
+        "pin": "index"
+      }
+    },
+    {
+      "from": {
+        "node": "req",
+        "pin": "then"
+      },
+      "to": {
+        "node": "u3d",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "invList",
+        "pin": "then"
+      },
+      "to": {
+        "node": "setItems",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "invList",
+        "pin": "items"
+      },
+      "to": {
+        "node": "setItems",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "setItems",
+        "pin": "then"
+      },
+      "to": {
+        "node": "setCount",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "invList",
+        "pin": "count"
+      },
+      "to": {
+        "node": "setCount",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "setCount",
+        "pin": "then"
+      },
+      "to": {
+        "node": "callR",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "cats",
+        "pin": "categories"
+      },
+      "to": {
+        "node": "catLen",
+        "pin": "array"
+      }
+    },
+    {
+      "from": {
+        "node": "catLen",
+        "pin": "value"
+      },
+      "to": {
+        "node": "catStr",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "catStr",
+        "pin": "value"
+      },
+      "to": {
+        "node": "catFmt",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "catFmt",
+        "pin": "value"
+      },
+      "to": {
+        "node": "showCats",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "cats",
+        "pin": "then"
+      },
+      "to": {
+        "node": "showCats",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "restore",
+        "pin": "indices"
+      },
+      "to": {
+        "node": "rArr",
+        "pin": "array"
+      }
+    },
+    {
+      "from": {
+        "node": "rArr",
+        "pin": "value"
+      },
+      "to": {
+        "node": "rSet",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "restore",
+        "pin": "then"
+      },
+      "to": {
+        "node": "rSet",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "rSet",
+        "pin": "then"
+      },
+      "to": {
+        "node": "callR2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "card",
+        "pin": "info"
+      },
+      "to": {
+        "node": "cName",
+        "pin": "object"
+      }
+    },
+    {
+      "from": {
+        "node": "card",
+        "pin": "info"
+      },
+      "to": {
+        "node": "cType",
+        "pin": "object"
+      }
+    },
+    {
+      "from": {
+        "node": "card",
+        "pin": "info"
+      },
+      "to": {
+        "node": "cValue",
+        "pin": "object"
+      }
+    },
+    {
+      "from": {
+        "node": "card",
+        "pin": "info"
+      },
+      "to": {
+        "node": "cWeight",
+        "pin": "object"
+      }
+    },
+    {
+      "from": {
+        "node": "cName",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cFmt",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "cType",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cFmt",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cValue",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cFmt",
+        "pin": "c"
+      }
+    },
+    {
+      "from": {
+        "node": "cWeight",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cFmt",
+        "pin": "d"
+      }
+    },
+    {
+      "from": {
+        "node": "cFmt",
+        "pin": "value"
+      },
+      "to": {
+        "node": "showCard",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "card",
+        "pin": "then"
+      },
+      "to": {
+        "node": "showCard",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "upGet",
+        "pin": "value"
+      },
+      "to": {
+        "node": "upSub",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "upCnt",
+        "pin": "value"
+      },
+      "to": {
+        "node": "upMax",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "upSub",
+        "pin": "value"
+      },
+      "to": {
+        "node": "upClamp",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "upMax",
+        "pin": "value"
+      },
+      "to": {
+        "node": "upClamp",
+        "pin": "max"
+      }
+    },
+    {
+      "from": {
+        "node": "kUp",
+        "pin": "then"
+      },
+      "to": {
+        "node": "upSet",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "upClamp",
+        "pin": "value"
+      },
+      "to": {
+        "node": "upSet",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "upSet",
+        "pin": "then"
+      },
+      "to": {
+        "node": "upCall",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "upCall",
+        "pin": "then"
+      },
+      "to": {
+        "node": "upSnd",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "dnGet",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dnAdd",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "dnCnt",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dnMax",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "dnAdd",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dnClamp",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "dnMax",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dnClamp",
+        "pin": "max"
+      }
+    },
+    {
+      "from": {
+        "node": "kDn",
+        "pin": "then"
+      },
+      "to": {
+        "node": "dnSet",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "dnClamp",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dnSet",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "dnSet",
+        "pin": "then"
+      },
+      "to": {
+        "node": "dnCall",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "dnCall",
+        "pin": "then"
+      },
+      "to": {
+        "node": "dnSnd",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "kEnter",
+        "pin": "then"
+      },
+      "to": {
+        "node": "doSelect",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "enterSel",
+        "pin": "value"
+      },
+      "to": {
+        "node": "doSelect",
+        "pin": "index"
+      }
+    },
+    {
+      "from": {
+        "node": "dropEv",
+        "pin": "then"
+      },
+      "to": {
+        "node": "doDrop",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "dropSel",
+        "pin": "value"
+      },
+      "to": {
+        "node": "doDrop",
+        "pin": "index"
+      }
+    },
+    {
+      "from": {
+        "node": "equipEv",
+        "pin": "then"
+      },
+      "to": {
+        "node": "doEquip",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "equipEv",
+        "pin": "slot"
+      },
+      "to": {
+        "node": "doEquip",
+        "pin": "slot"
+      }
+    },
+    {
+      "from": {
+        "node": "equipSel",
+        "pin": "value"
+      },
+      "to": {
+        "node": "doEquip",
+        "pin": "index"
+      }
+    },
+    {
+      "from": {
+        "node": "idxA",
+        "pin": "value"
+      },
+      "to": {
+        "node": "idxB",
+        "pin": "array"
+      }
+    },
+    {
+      "from": {
+        "node": "idxSel",
+        "pin": "value"
+      },
+      "to": {
+        "node": "idxB",
+        "pin": "item"
+      }
+    },
+    {
+      "from": {
+        "node": "kTab",
+        "pin": "then"
+      },
+      "to": {
+        "node": "saveTab",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "idxB",
+        "pin": "value"
+      },
+      "to": {
+        "node": "saveTab",
+        "pin": "indices"
+      }
+    },
+    {
+      "from": {
+        "node": "saveTab",
+        "pin": "then"
+      },
+      "to": {
+        "node": "closeTab",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "kEsc",
+        "pin": "then"
+      },
+      "to": {
+        "node": "saveEsc",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "idxB",
+        "pin": "value"
+      },
+      "to": {
+        "node": "saveEsc",
+        "pin": "indices"
+      }
+    },
+    {
+      "from": {
+        "node": "saveEsc",
+        "pin": "then"
+      },
+      "to": {
+        "node": "closeEsc",
+        "pin": "in"
+      }
+    }
+  ],
+  "groups": [],
+  "id": "main",
+  "name": "Main",
+  "nodes": [
+    {
+      "fields": {
+        "name": "Render",
+        "params": []
+      },
+      "id": "render",
+      "kind": "core/OnWidgetCall@1",
+      "pos": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "value": "",
+        "variable": "listText"
+      },
+      "id": "clr",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 240,
+        "y": 0
+      }
+    },
+    {
+      "fields": {},
+      "id": "fe",
+      "kind": "core/ForEach@1",
+      "pos": {
+        "x": 480,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "variable": "items"
+      },
+      "id": "getItems",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 240,
+        "y": 120
+      }
+    },
+    {
+      "fields": {
+        "variable": "listText"
+      },
+      "id": "ap",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 760,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "variable": "listText"
+      },
+      "id": "getText",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 480,
+        "y": 140
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "getSel",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 480,
+        "y": 260
+      }
+    },
+    {
+      "fields": {
+        "op": "==",
+        "valueType": "Number"
+      },
+      "id": "cmp",
+      "kind": "core/Compare@1",
+      "pos": {
+        "x": 680,
+        "y": 260
+      }
+    },
+    {
+      "fields": {
+        "ifFalse": "   ",
+        "ifTrue": "> "
+      },
+      "id": "mark",
+      "kind": "core/Select@1",
+      "pos": {
+        "x": 880,
+        "y": 260
+      }
+    },
+    {
+      "fields": {
+        "key": "text",
+        "valueType": "String"
+      },
+      "id": "field",
+      "kind": "core/GetField@1",
+      "pos": {
+        "x": 680,
+        "y": 380
+      }
+    },
+    {
+      "fields": {
+        "pattern": "{0}{1}{2}\n"
+      },
+      "id": "fmt",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 1080,
+        "y": 200
+      }
+    },
+    {
+      "fields": {
+        "target": "3:4"
+      },
+      "id": "showItems",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 1000,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "variable": "listText"
+      },
+      "id": "getList2",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 1000,
+        "y": 120
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "getSel2",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 1240,
+        "y": 0
+      }
+    },
+    {
+      "fields": {},
+      "id": "req",
+      "kind": "core/InventoryRequestItemCard@1",
+      "pos": {
+        "x": 1240,
+        "y": 60
+      }
+    },
+    {
+      "fields": {
+        "show": true
+      },
+      "id": "u3d",
+      "kind": "core/InventoryUpdateItem3D@1",
+      "pos": {
+        "x": 1480,
+        "y": 60
+      }
+    },
+    {
+      "fields": {},
+      "id": "invList",
+      "kind": "core/InventoryOnInvalidateList@1",
+      "pos": {
+        "x": 0,
+        "y": 500
+      }
+    },
+    {
+      "fields": {
+        "variable": "items"
+      },
+      "id": "setItems",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 240,
+        "y": 500
+      }
+    },
+    {
+      "fields": {
+        "variable": "count"
+      },
+      "id": "setCount",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 480,
+        "y": 500
+      }
+    },
+    {
+      "fields": {
+        "name": "Render",
+        "params": []
+      },
+      "id": "callR",
+      "kind": "core/CallWidget@1",
+      "pos": {
+        "x": 720,
+        "y": 500
+      }
+    },
+    {
+      "fields": {},
+      "id": "cats",
+      "kind": "core/InventoryOnSetCategories@1",
+      "pos": {
+        "x": 0,
+        "y": 680
+      }
+    },
+    {
+      "fields": {},
+      "id": "catLen",
+      "kind": "core/ArrayLength@1",
+      "pos": {
+        "x": 240,
+        "y": 780
+      }
+    },
+    {
+      "fields": {},
+      "id": "catStr",
+      "kind": "core/ToString@1",
+      "pos": {
+        "x": 420,
+        "y": 780
+      }
+    },
+    {
+      "fields": {
+        "pattern": "Categories: {0}"
+      },
+      "id": "catFmt",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 600,
+        "y": 780
+      }
+    },
+    {
+      "fields": {
+        "target": "3:3"
+      },
+      "id": "showCats",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 840,
+        "y": 680
+      }
+    },
+    {
+      "fields": {},
+      "id": "restore",
+      "kind": "core/InventoryOnRestoreIndices@1",
+      "pos": {
+        "x": 0,
+        "y": 900
+      }
+    },
+    {
+      "fields": {
+        "index": 1,
+        "valueType": "Number"
+      },
+      "id": "rArr",
+      "kind": "core/ArrayGet@1",
+      "pos": {
+        "x": 240,
+        "y": 1000
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "rSet",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 480,
+        "y": 900
+      }
+    },
+    {
+      "fields": {
+        "name": "Render",
+        "params": []
+      },
+      "id": "callR2",
+      "kind": "core/CallWidget@1",
+      "pos": {
+        "x": 720,
+        "y": 900
+      }
+    },
+    {
+      "fields": {},
+      "id": "card",
+      "kind": "core/InventoryOnItemCard@1",
+      "pos": {
+        "x": 0,
+        "y": 1100
+      }
+    },
+    {
+      "fields": {
+        "key": "name",
+        "valueType": "String"
+      },
+      "id": "cName",
+      "kind": "core/GetField@1",
+      "pos": {
+        "x": 240,
+        "y": 1200
+      }
+    },
+    {
+      "fields": {
+        "key": "type",
+        "valueType": "String"
+      },
+      "id": "cType",
+      "kind": "core/GetField@1",
+      "pos": {
+        "x": 240,
+        "y": 1300
+      }
+    },
+    {
+      "fields": {
+        "key": "value",
+        "valueType": "String"
+      },
+      "id": "cValue",
+      "kind": "core/GetField@1",
+      "pos": {
+        "x": 240,
+        "y": 1400
+      }
+    },
+    {
+      "fields": {
+        "key": "weight",
+        "valueType": "String"
+      },
+      "id": "cWeight",
+      "kind": "core/GetField@1",
+      "pos": {
+        "x": 240,
+        "y": 1500
+      }
+    },
+    {
+      "fields": {
+        "pattern": "{0}\ntype {1}\nvalue {2}\nweight {3}"
+      },
+      "id": "cFmt",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": 500,
+        "y": 1100
+      }
+    },
+    {
+      "fields": {
+        "target": "3:5"
+      },
+      "id": "showCard",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": 760,
+        "y": 1100
+      }
+    },
+    {
+      "fields": {
+        "name": "Up"
+      },
+      "id": "kUp",
+      "kind": "core/InventoryOnKey@1",
+      "pos": {
+        "x": 0,
+        "y": 1700
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "upGet",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 200,
+        "y": 1800
+      }
+    },
+    {
+      "fields": {
+        "b": 1
+      },
+      "id": "upSub",
+      "kind": "core/Subtract@1",
+      "pos": {
+        "x": 380,
+        "y": 1800
+      }
+    },
+    {
+      "fields": {
+        "variable": "count"
+      },
+      "id": "upCnt",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 380,
+        "y": 1900
+      }
+    },
+    {
+      "fields": {
+        "b": 1
+      },
+      "id": "upMax",
+      "kind": "core/Subtract@1",
+      "pos": {
+        "x": 560,
+        "y": 1900
+      }
+    },
+    {
+      "fields": {
+        "min": 0
+      },
+      "id": "upClamp",
+      "kind": "core/Clamp@1",
+      "pos": {
+        "x": 740,
+        "y": 1800
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "upSet",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 960,
+        "y": 1700
+      }
+    },
+    {
+      "fields": {
+        "name": "Render",
+        "params": []
+      },
+      "id": "upCall",
+      "kind": "core/CallWidget@1",
+      "pos": {
+        "x": 1200,
+        "y": 1700
+      }
+    },
+    {
+      "fields": {
+        "sound": "UIMenuFocus"
+      },
+      "id": "upSnd",
+      "kind": "core/InventoryPlaySound@1",
+      "pos": {
+        "x": 1440,
+        "y": 1700
+      }
+    },
+    {
+      "fields": {
+        "name": "Down"
+      },
+      "id": "kDn",
+      "kind": "core/InventoryOnKey@1",
+      "pos": {
+        "x": 0,
+        "y": 2100
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "dnGet",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 200,
+        "y": 2200
+      }
+    },
+    {
+      "fields": {
+        "b": 1
+      },
+      "id": "dnAdd",
+      "kind": "core/Add@1",
+      "pos": {
+        "x": 380,
+        "y": 2200
+      }
+    },
+    {
+      "fields": {
+        "variable": "count"
+      },
+      "id": "dnCnt",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 380,
+        "y": 2300
+      }
+    },
+    {
+      "fields": {
+        "b": 1
+      },
+      "id": "dnMax",
+      "kind": "core/Subtract@1",
+      "pos": {
+        "x": 560,
+        "y": 2300
+      }
+    },
+    {
+      "fields": {
+        "min": 0
+      },
+      "id": "dnClamp",
+      "kind": "core/Clamp@1",
+      "pos": {
+        "x": 740,
+        "y": 2200
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "dnSet",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": 960,
+        "y": 2100
+      }
+    },
+    {
+      "fields": {
+        "name": "Render",
+        "params": []
+      },
+      "id": "dnCall",
+      "kind": "core/CallWidget@1",
+      "pos": {
+        "x": 1200,
+        "y": 2100
+      }
+    },
+    {
+      "fields": {
+        "sound": "UIMenuFocus"
+      },
+      "id": "dnSnd",
+      "kind": "core/InventoryPlaySound@1",
+      "pos": {
+        "x": 1440,
+        "y": 2100
+      }
+    },
+    {
+      "fields": {
+        "name": "Enter"
+      },
+      "id": "kEnter",
+      "kind": "core/InventoryOnKey@1",
+      "pos": {
+        "x": 0,
+        "y": 2500
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "enterSel",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 200,
+        "y": 2600
+      }
+    },
+    {
+      "fields": {},
+      "id": "doSelect",
+      "kind": "core/InventoryItemSelect@1",
+      "pos": {
+        "x": 420,
+        "y": 2500
+      }
+    },
+    {
+      "fields": {},
+      "id": "dropEv",
+      "kind": "core/InventoryOnDropItem@1",
+      "pos": {
+        "x": 0,
+        "y": 2800
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "dropSel",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 200,
+        "y": 2900
+      }
+    },
+    {
+      "fields": {
+        "amount": 1
+      },
+      "id": "doDrop",
+      "kind": "core/InventoryItemDrop@1",
+      "pos": {
+        "x": 420,
+        "y": 2800
+      }
+    },
+    {
+      "fields": {},
+      "id": "equipEv",
+      "kind": "core/InventoryOnAttemptEquip@1",
+      "pos": {
+        "x": 0,
+        "y": 3100
+      }
+    },
+    {
+      "fields": {},
+      "id": "doEquip",
+      "kind": "core/InventoryItemSelect@1",
+      "pos": {
+        "x": 420,
+        "y": 3100
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "equipSel",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 200,
+        "y": 3200
+      }
+    },
+    {
+      "fields": {
+        "item": 0,
+        "valueType": "Number"
+      },
+      "id": "idxA",
+      "kind": "core/ArrayPush@1",
+      "pos": {
+        "x": 0,
+        "y": 3400
+      }
+    },
+    {
+      "fields": {
+        "variable": "sel"
+      },
+      "id": "idxSel",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": 200,
+        "y": 3500
+      }
+    },
+    {
+      "fields": {
+        "valueType": "Number"
+      },
+      "id": "idxB",
+      "kind": "core/ArrayPush@1",
+      "pos": {
+        "x": 420,
+        "y": 3400
+      }
+    },
+    {
+      "fields": {
+        "name": "Tab"
+      },
+      "id": "kTab",
+      "kind": "core/InventoryOnKey@1",
+      "pos": {
+        "x": 0,
+        "y": 3700
+      }
+    },
+    {
+      "fields": {},
+      "id": "saveTab",
+      "kind": "core/InventorySaveIndices@1",
+      "pos": {
+        "x": 240,
+        "y": 3700
+      }
+    },
+    {
+      "fields": {
+        "tween": true
+      },
+      "id": "closeTab",
+      "kind": "core/InventoryCloseMenu@1",
+      "pos": {
+        "x": 480,
+        "y": 3700
+      }
+    },
+    {
+      "fields": {
+        "name": "Escape"
+      },
+      "id": "kEsc",
+      "kind": "core/InventoryOnKey@1",
+      "pos": {
+        "x": 0,
+        "y": 3900
+      }
+    },
+    {
+      "fields": {},
+      "id": "saveEsc",
+      "kind": "core/InventorySaveIndices@1",
+      "pos": {
+        "x": 240,
+        "y": 3900
+      }
+    },
+    {
+      "fields": {
+        "tween": false
+      },
+      "id": "closeEsc",
+      "kind": "core/InventoryCloseMenu@1",
+      "pos": {
+        "x": 480,
+        "y": 3900
+      }
+    }
+  ],
+  "scope": "menu",
+  "specVersion": 8,
+  "variables": [
+    {
+      "default": [],
+      "id": "items",
+      "name": "items",
+      "scope": "menu",
+      "type": "Array"
+    },
+    {
+      "default": "",
+      "id": "listText",
+      "name": "listText",
+      "scope": "menu",
+      "type": "String"
+    },
+    {
+      "default": 0,
+      "id": "sel",
+      "name": "sel",
+      "scope": "menu",
+      "type": "Number"
+    },
+    {
+      "default": 0,
+      "id": "count",
+      "name": "count",
+      "scope": "menu",
+      "type": "Number"
+    }
+  ]
+}

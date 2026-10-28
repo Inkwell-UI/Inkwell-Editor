@@ -14,7 +14,7 @@
     }
   ],
   "fields": {
-    "key": {
+    "name": {
       "type": "string",
       "default": "Enter",
       "description": "Up, Down, Left, Right, Enter, Tab, Escape or a letter"
