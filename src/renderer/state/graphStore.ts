@@ -50,6 +50,8 @@ interface Doc {
   groups: Graph['groups']
   /** A function graph's interface (docs/functions.md); part of the document so a change is one undo entry. Undefined for every other graph. */
   signature: Graph['signature']
+  /** A component graph's props (its data inputs); part of the document so a change is one undo entry. Undefined for every other graph. */
+  props: Graph['props']
 }
 export interface GraphState extends Doc {
   /** specVersion, id, scope and every unknown top-level key of the file. */
@@ -72,6 +74,8 @@ export interface GraphState extends Doc {
   removeVariable(id: string): void
   /** Function graphs: gives the function a new signature; the wires of its Function Entry / Exit nodes follow their pin by id. Callers follow through the store listener. */
   setSignature(next: NonNullable<Graph['signature']>): void
+  /** Component graphs: replaces the props. */
+  setProps(next: NonNullable<Graph['props']>): void
   /** Call Function: points the node at `fn` (copies its signature; wires of pins that no longer exist are dropped). */
   setCallTarget(nodeId: string, fn: Graph): void
   /** Refreshes every Call Function node that calls `fn` and holds an out-of-date copy of its signature. */
@@ -86,7 +90,7 @@ export interface GraphState extends Doc {
 export type GraphStore = UseBoundStore<StoreApi<GraphState>> & { temporal: StoreApi<import('zundo').TemporalState<Doc>> }
 
 export function toFlow(g: Graph): Doc & { meta: GraphState['meta'] } {
-  const { nodes, edges, variables, comments, groups, name, signature, ...meta } = g
+  const { nodes, edges, variables, comments, groups, name, signature, props, ...meta } = g
   return {
     meta,
     name,
@@ -94,6 +98,7 @@ export function toFlow(g: Graph): Doc & { meta: GraphState['meta'] } {
     comments,
     groups,
     signature,
+    props,
     nodes: nodes.map((n) => ({ id: n.id, type: NODE_TYPE, position: { x: n.pos.x, y: n.pos.y }, data: n as GraphNodeData })),
     edges: edges.map((e) => ({ id: edgeId(e.from, e.to), source: e.from.node, target: e.to.node, sourceHandle: outHandle(e.from.pin), targetHandle: inHandle(e.to.pin), data: e as GraphEdgeData }))
   }
@@ -108,7 +113,8 @@ export function toGraph(s: Pick<GraphState, keyof Doc | 'meta'>): Graph {
     variables: s.variables,
     comments: s.comments,
     groups: s.groups,
-    ...(s.signature ? { signature: s.signature } : {})
+    ...(s.signature ? { signature: s.signature } : {}),
+    ...(s.props ? { props: s.props } : {})
   } as Graph
 }
 
@@ -126,7 +132,7 @@ function withNodeData(s: Pick<GraphState, 'nodes'>, g: Graph): Pick<GraphState, 
 
 /** What a history entry compares: everything the file holds except selection and measured sizes. */
 const docKey = (p: Doc): string =>
-  JSON.stringify([p.name, p.nodes.map((n) => [n.id, n.position, n.data]), p.edges.map((e) => [e.id, e.source, e.target, e.sourceHandle, e.targetHandle, e.data]), p.variables, p.comments, p.groups, p.signature])
+  JSON.stringify([p.name, p.nodes.map((n) => [n.id, n.position, n.data]), p.edges.map((e) => [e.id, e.source, e.target, e.sourceHandle, e.targetHandle, e.data]), p.variables, p.comments, p.groups, p.signature, p.props])
 
 interface Entry {
   swfName: string
@@ -157,9 +163,9 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
     return hit.store
   }
   const history = createHistory<GraphState, Doc>({
-    partialize: (s) => ({ name: s.name, nodes: s.nodes, edges: s.edges, variables: s.variables, comments: s.comments, groups: s.groups, signature: s.signature }),
+    partialize: (s) => ({ name: s.name, nodes: s.nodes, edges: s.edges, variables: s.variables, comments: s.comments, groups: s.groups, signature: s.signature, props: s.props }),
     key: docKey,
-    slices: (s) => [s.nodes, s.edges, s.variables, s.name, s.signature]
+    slices: (s) => [s.nodes, s.edges, s.variables, s.name, s.signature, s.props]
   })
   const store = create<GraphState>()(
     temporal(
@@ -212,6 +218,7 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
             const g = applySignature(toGraph(s), next)
             return { signature: next, edges: toFlow(g).edges }
           }),
+        setProps: (next) => set({ props: next }),
         setCallTarget: (nodeId, fn) =>
           set((s) => {
             const g = toGraph(s)

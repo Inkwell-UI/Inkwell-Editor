@@ -21,7 +21,7 @@ export function nameProblem(sig: Sig, kind: Kind, index: number, name: string): 
 }
 
 /** A name box that applies on Enter or when it loses focus, and only when the name is valid (an invalid draft is shown in red and dropped on blur). */
-function NameBox({ value, problem, label, onCommit }: { value: string; problem(name: string): string | undefined; label: string; onCommit(name: string): void }) {
+export function NameBox({ value, problem, label, onCommit }: { value: string; problem(name: string): string | undefined; label: string; onCommit(name: string): void }) {
   const [draft, setDraft] = useState(value)
   useEffect(() => setDraft(value), [value])
   const why = draft === value ? undefined : problem(draft)

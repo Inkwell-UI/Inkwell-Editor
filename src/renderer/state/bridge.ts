@@ -2,6 +2,7 @@ import { reloadPacks } from '../hooks/usePacks'
 import { inkwell } from '../hooks/api'
 import { useProjectStore } from './projectStore'
 import { graphForComponent } from '../model/graphNav'
+import { setComponentGraph } from './componentGraphs'
 import { setActiveGraph, useGraphDocs } from './graphDocs'
 import { setGraphEditListener, setGraphSaver } from './graphStore'
 import { graphEdited } from './hotReload'
@@ -53,7 +54,11 @@ export function startBridge(): () => void {
   setOverlaySaver((name, doc) => void api.saveOverlay(name, doc))
   // a library function that is open for editing is saved back into its pack folder (its store is named `@lib:<packId>`), then the pack set is read again
   setGraphSaver((name, graph) =>
-    name.startsWith('@lib:') ? void api.saveLibraryFunction(name.slice('@lib:'.length), graph).then((r) => r.ok && reloadPacks()) : void api.saveGraph(name, graph)
+    name.startsWith('@lib:')
+      ? void api.saveLibraryFunction(name.slice('@lib:'.length), graph).then((r) => r.ok && reloadPacks())
+      : name.startsWith('@comp:')
+        ? void api.saveComponentGraph(graph).then((r) => r.ok && setComponentGraph(graph))
+        : void api.saveGraph(name, graph)
   )
   setGraphEditListener(graphEdited)
 

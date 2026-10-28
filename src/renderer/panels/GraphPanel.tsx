@@ -4,6 +4,7 @@ import { nodeIndex } from '@nicklaj/knotwork'
 import { useStore } from 'zustand'
 import { As2View } from '../graph/As2View'
 import { GraphCanvas } from '../graph/GraphCanvas'
+import { PropsEditor } from '../graph/PropsEditor'
 import { useGraphActions } from '../graph/useGraphActions'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { useLibraryPacks, usePacks } from '../hooks/usePacks'
@@ -11,7 +12,8 @@ import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
 import { eventNodes } from '../model/graphModel'
 import { tidyPositions } from '../model/graphLayout'
 import { ownersOfGraph } from '../model/graphNav'
-import { menuGraphId, openGraphs, openLibraryFunction, setActiveGraph, useGraphDocs } from '../state/graphDocs'
+import { menuGraphId, openComponentGraph, openGraphs, openLibraryFunction, setActiveGraph, useGraphDocs } from '../state/graphDocs'
+import { useComponentGraphs } from '../state/componentGraphs'
 import { findGraphStore, type GraphStore } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
@@ -95,8 +97,12 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
   const names = new Map(openGraphs(swf.id).map((g) => [g.id, g.name])) // the open graph's own name is live (`name`); siblings update on the next render
   // the dropdown lists graphs of the same kind: from a graph, the SWF's graphs; from a function, the functions that can be edited (the SWF's and those of local packs)
   const isFunction = useStore(store, (s) => s.meta.scope === 'function')
+  const isComponent = useStore(store, (s) => s.meta.scope === 'blueprint')
+  const componentGraphs = useComponentGraphs((s) => s.graphs)
   const localPacks = useLibraryPacks().filter((p) => p.origin === 'library')
-  const choices: { id: string; label: string; pick(): void }[] = isFunction
+  const choices: { id: string; label: string; pick(): void }[] = isComponent
+    ? Object.values(componentGraphs).map((g) => ({ id: g.id, label: g.id === graphId ? name : g.name, pick: () => openComponentGraph({ id: swf.id, name: swf.name }, g) }))
+    : isFunction
     ? [
         ...allIds.filter((id) => findGraphStore(swf.id, id)?.getState().meta.scope === 'function').map((id) => ({ id, label: id === graphId ? name : (names.get(id) ?? id), pick: () => setActiveGraph(swf.id, id) })),
         ...localPacks.flatMap((p) => p.functions.map((fn) => ({ id: fn.id, label: `${fn.id === graphId ? name : fn.name} (${p.id})`, pick: () => openLibraryFunction({ id: swf.id, name: swf.name }, fn) })))
@@ -129,6 +135,7 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
         </Popover>
         {nodeTitle && <><span aria-hidden="true">&gt;</span><span>{nodeTitle}</span></>}
       </nav>
+      {isComponent && <PropsEditor store={store} />}
       <div className={`graph-body${split ? ' is-split' : ''}`}>
         <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} fitSignal={tidied} />
         <EventList events={events} selected={selectedNode} onPick={(id) => setFocus({ id, n: (focus?.n ?? 0) + 1 })} />

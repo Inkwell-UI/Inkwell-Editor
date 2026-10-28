@@ -203,6 +203,11 @@ export const strings = {
     heading: 'COMPONENTS',
     empty: 'No components yet. Make a component in Figma and it shows up here, in a frame or away from the design.',
     where: (swf?: string) => swf ?? 'Not placed in a frame',
+    addGraph: 'Add a graph',
+    openGraph: 'Open graph',
+    noSwf: 'Select a SWF first: the Graph panel shows the graph in it',
+    graphFailed: 'Could not create the graph',
+    props: (props: readonly { name: string; type: string }[]) => (props.length ? `(${props.map((p) => `${p.name}: ${p.type}`).join(', ')})` : 'no props'),
     instances: (n: number) => (n === 0 ? 'Not used yet' : `Used ${n} time${n === 1 ? '' : 's'}`)
   },
 
@@ -362,6 +367,10 @@ export const strings = {
     makeFunctionFailed: 'Could not make a function',
     madeFunction: 'Function created. The selected nodes are now a Call Function node.',
     sigTitle: 'Function signature',
+    propsTitle: 'Props',
+    propsEmpty: 'No props yet. A prop is data the one who places this component can give it.',
+    propAdd: 'Add prop',
+    propDefault: 'Default value',
     sigInputs: 'Inputs',
     sigOutputs: 'Outputs',
     sigExits: 'Exits (the ways a call can continue)',

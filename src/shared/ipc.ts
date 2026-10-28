@@ -31,6 +31,10 @@ export const IPC = {
   graphsSave: 'graphs:save',
   graphsCreate: 'graphs:create',
   graphsDelete: 'graphs:delete',
+  componentGraphsList: 'componentGraphs:list',
+  componentGraphsCreate: 'componentGraphs:create',
+  componentGraphsSave: 'componentGraphs:save',
+  componentGraphsDelete: 'componentGraphs:delete',
   swfDiscard: 'swf:discard',
   graphsAs2: 'graphs:as2',
   packsGet: 'packs:get',
@@ -165,6 +169,11 @@ export interface InkwellApi {
   saveGraph(swfName: string, graph: Graph): Promise<GraphResult>
   createGraph(swfName: string, name: string, scope: Graph['scope']): Promise<GraphResult<{ graph: Graph }>>
   deleteGraph(swfName: string, id: string): Promise<GraphResult>
+  /** The behaviour graphs of components (`<project>/components/*.json`, blueprint graphs; one per Figma component id): list, create (empty, for the component `componentId`), write (validated), delete. Never reject. */
+  listComponentGraphs(): Promise<GraphResult<{ graphs: Graph[] }>>
+  createComponentGraph(componentId: string, name: string): Promise<GraphResult<{ graph: Graph }>>
+  saveComponentGraph(graph: Graph): Promise<GraphResult>
+  deleteComponentGraph(componentId: string): Promise<GraphResult>
   /** Runs codegen on the open (unsaved) `graph` next to the SWF's other saved graphs and returns its AS2 class with the source map (the AS2 split view). Not a build: no FFDec. */
   /** Discards an ORPHANED SWF by id: its folder moves to `<project>/.trash/` (never deleted). Refused for a SWF that still has a Figma frame. */
   discardSwf(swfId: string): Promise<{ ok: true; trash: string } | { ok: false; error: string }>

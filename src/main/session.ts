@@ -6,7 +6,7 @@ import { basename, join, resolve } from 'node:path'
 import { Graph, Swf, type Localization, type MenuSettings } from '@inkwell-ui/spec'
 import { bindingsOf } from '../shared/graphBinding'
 import { newFunctionGraph } from '../shared/functions'
-import { defIndex, isGraphId, newGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type LoadedPack, type PackSet } from '../shared/graphs'
+import { defIndex, isGraphId, newComponentGraph, newGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type LoadedPack, type PackSet } from '../shared/graphs'
 import { TOOL_VERSION } from '../shared/product'
 import { validateGraph } from '../shared/graphValidate'
 import { IPC, type SaveOverlayResult } from '../shared/ipc'
@@ -43,6 +43,7 @@ import { analyzeFont, isCharsetId, licenseVerdict } from './fonts/embed'
 import { fsTypeLabel } from './fonts/convert'
 import type { AddFontOutcome, ProjectFontInfo, ProjectFontsState } from '../shared/fonts'
 import { deleteGraph, readGraph, writeGraph } from './project/graphFiles'
+import { componentGraphExists, deleteComponentGraph, readComponentGraphs, writeComponentGraph } from './project/componentFiles'
 import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
 import { writeProjectSetting } from './project/settings'
@@ -867,6 +868,25 @@ export function createSession(deps: SessionDeps) {
       } catch (e) {
         return { ok: false, error: e instanceof Error ? e.message : String(e) }
       }
+    },
+    async listComponentGraphs(): Promise<GraphResult<{ graphs: Graph[] }>> {
+      if (!projectDir) return { ok: true, graphs: [] }
+      return { ok: true, graphs: (await readComponentGraphs(projectDir)).graphs }
+    },
+    async createComponentGraph(componentId: string, name: string): Promise<GraphResult<{ graph: Graph }>> {
+      if (!projectDir) return { ok: false, error: 'No project is open.' }
+      if (await componentGraphExists(projectDir, componentId)) return { ok: false, error: 'This component already has a graph.' }
+      const graph = newComponentGraph(componentId, name)
+      const r = await writeComponentGraph(projectDir, graph)
+      return r.ok ? { ok: true, graph } : r
+    },
+    async saveComponentGraph(doc: unknown): Promise<GraphResult> {
+      if (!projectDir) return { ok: false, error: 'No project is open.' }
+      return writeComponentGraph(projectDir, doc)
+    },
+    async deleteComponentGraph(componentId: string): Promise<GraphResult> {
+      if (!projectDir) return { ok: false, error: 'No project is open.' }
+      return deleteComponentGraph(projectDir, componentId)
     },
     async createGraph(swf: string, name: string, scope: Graph['scope']): Promise<GraphResult<{ graph: Graph }>> {
       const m = graphs.get(swf)

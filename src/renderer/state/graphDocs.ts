@@ -5,6 +5,7 @@ import { extractFunction } from '../../shared/functions'
 import { scriptsOf } from '../../shared/graphs'
 import type { OverlayDoc } from '../../shared/overlay'
 import { dropGraphStore, findGraphStore, getGraphStore, resetGraphs, retargetCalls, saveGraphNow, toGraph, type GraphStore } from './graphStore'
+import { resetComponentGraphs } from './componentGraphs'
 import { editNode } from './overlayStore'
 
 /**
@@ -118,6 +119,15 @@ export function openLibraryFunction(swf: SwfRef, fn: Graph): void {
 }
 
 /**
+ * Opens a component's graph in the Graph panel (the active SWF only lends the panel). Its store is named `@comp:<component id>`, so every change is saved to the project's `components/` folder
+ * (`bridge.ts`); it is not one of the SWF's graphs.
+ */
+export function openComponentGraph(swf: SwfRef, g: Graph): void {
+  getGraphStore(swf.id, `@comp:${g.component}`, g)
+  setActiveGraph(swf.id, g.id)
+}
+
+/**
  * Drag a function onto a pack: the function graph is written into the pack (`functions/<id>.json`), every call of it in the SWF now says `<packId>/<id>` and the SWF's own copy is deleted,
  * so the function lives in one place. Refused (nothing changed) when it calls a function that is still the SWF's own or the pack already has that id.
  */
@@ -186,6 +196,7 @@ export const openGraphs = (swfId: string): Graph[] =>
 /** Another project was opened. */
 export function resetGraphDocs(): void {
   resetGraphs()
+  resetComponentGraphs()
   loading.clear()
   useGraphDocs.setState({ ids: {}, active: {}, loaded: {}, error: undefined })
 }
