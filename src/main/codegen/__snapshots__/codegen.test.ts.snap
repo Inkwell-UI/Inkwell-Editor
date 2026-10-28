@@ -957,6 +957,21 @@ exports[`golden AS2 per node kind > core/InventoryItemSelect@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/InventoryOnAttemptEquip@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/InventoryOnAttemptEquip@1
+        _root.inkwellContract.on("AttemptEquip", function() {
+            var n1_slot = typeof (arguments[0]) == "number" ? arguments[0] : 0;
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        });"
+`;
+
 exports[`golden AS2 per node kind > core/InventoryOnDropItem@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -994,6 +1009,20 @@ exports[`golden AS2 per node kind > core/InventoryOnItemCard@1 1`] = `
         // [n1] core/InventoryOnItemCard@1
         _root.inkwellContract.on("UpdateItemCardInfo", function() {
             var n1_info = typeof (arguments[0]) == "object" ? arguments[0] : {};
+            try {
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("n1", e);
+            }
+        });"
+`;
+
+exports[`golden AS2 per node kind > core/InventoryOnKey@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [n1] core/InventoryOnKey@1
+        _root.inkwellContract.on("key:" + "Enter", function() {
             try {
                 // [l_then] core/Log@1
                 trace("[Inkwell] info l_then: " + "");
@@ -1099,6 +1128,26 @@ exports[`golden AS2 per node kind > core/InventorySaveIndices@1 1`] = `
             try {
                 // [n1] core/InventorySaveIndices@1
                 _root.inkwellContract.send("SaveIndices", [[] instanceof Array ? [] : []]);
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/InventoryUpdateItem3D@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/InventoryUpdateItem3D@1
+                _root.inkwellContract.send("UpdateItem3D", [true]);
                 // [l_then] core/Log@1
                 trace("[Inkwell] info l_then: " + "");
             } catch (e) {

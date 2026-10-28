@@ -1,0 +1,4 @@
+// [{{node.id}}] core/InventoryOnKey@1
+_root.inkwellContract.on("key:" + {{field.key}}, function() {
+    {{guarded.then}}
+});

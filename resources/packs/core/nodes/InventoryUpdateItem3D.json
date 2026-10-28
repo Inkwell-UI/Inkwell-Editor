@@ -1,0 +1,31 @@
+{
+  "kind": "InventoryUpdateItem3D",
+  "major": 1,
+  "title": "Inventory: Update Item 3D",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "Show or hide the 3D model of the selected item (engine call UpdateItem3D). Call it after the selection changes so the model follows.",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "show",
+      "type": "Bool",
+      "default": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventoryUpdateItem3D.as2",
+  "extra": {
+    "contract": "InventoryMenu"
+  }
+}

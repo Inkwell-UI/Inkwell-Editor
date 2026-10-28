@@ -1,0 +1,28 @@
+{
+  "kind": "InventoryOnAttemptEquip",
+  "major": 1,
+  "title": "Inventory: On Attempt Equip",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "The engine asks to equip the selected item into a hand slot (callback AttemptEquip); answer with Inventory: Item Select using the same slot.",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "slot",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/InventoryOnAttemptEquip.as2",
+  "extra": {
+    "entry": true,
+    "contract": "InventoryMenu",
+    "contractCallback": "AttemptEquip"
+  }
+}

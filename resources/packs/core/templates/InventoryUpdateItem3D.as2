@@ -1,0 +1,3 @@
+// [{{node.id}}] core/InventoryUpdateItem3D@1
+_root.inkwellContract.send("UpdateItem3D", [{{in.show}}]);
+{{next.then}}

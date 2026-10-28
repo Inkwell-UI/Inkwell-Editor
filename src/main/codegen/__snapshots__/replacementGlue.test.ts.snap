@@ -176,6 +176,15 @@ class mods.MyMod.InvContract {
         _global.InventoryLists = function() {};
         _global.InventoryLists.SKYUI_RELEASE_IDX = 2018;
         _global.InventoryLists.SKYUI_VERSION_STRING = "5.2 SE";
+        var keys = {};
+        keys.onKeyDown = function() { self.fire("key:" + self.keyName(Key.getCode()), []); };
+        Key.addListener(keys);
+    }
+    function keyName(code) {
+        var names = {};
+        names[37] = "Left"; names[38] = "Up"; names[39] = "Right"; names[40] = "Down"; names[13] = "Enter"; names[9] = "Tab"; names[27] = "Escape";
+        if (names[code] != undefined) return names[code];
+        return code >= 65 && code <= 90 ? String.fromCharCode(code) : "";
     }
     function args(a, from) {
         var r = [];

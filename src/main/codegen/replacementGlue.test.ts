@@ -20,6 +20,12 @@ const inventoryIr = (l = ['engine', 'skyui52']) => swf([frame('r', ['m']), { ...
 const merged = (l: string[]) => contractFor(inventoryIr(l), layers)!
 
 describe('replacement glue from the InventoryMenu contract', () => {
+  it('listens to the keyboard and fires key:<Name> for Inventory: On Key', () => {
+    const src = replacementGlue(merged(['engine']), 'M', 'Inv').source
+    expect(src).toContain('Key.addListener(keys);')
+    expect(src).toContain('self.fire("key:" + self.keyName(Key.getCode()), [])')
+  })
+
   it('golden AS2, engine + SkyUI 5.2', () => {
     expect(replacementGlue(merged(['engine', 'skyui52']), 'MyMod', 'Inv').source).toMatchSnapshot()
   })

@@ -1,0 +1,28 @@
+{
+  "kind": "InventoryOnKey",
+  "major": 1,
+  "title": "Inventory: On Key",
+  "category": "Inventory",
+  "milestone": "0.5",
+  "description": "A keyboard key went down in the replacement menu (the generated Key listener). Keys: Up, Down, Left, Right, Enter, Tab, Escape, or a single letter A-Z (R: drop is delivered by the engine as On Drop Item). Gamepad input is not covered.",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "key": {
+      "type": "string",
+      "default": "Enter",
+      "description": "Up, Down, Left, Right, Enter, Tab, Escape or a letter"
+    }
+  },
+  "as2Template": "templates/InventoryOnKey.as2",
+  "extra": {
+    "entry": true,
+    "contract": "InventoryMenu"
+  }
+}
