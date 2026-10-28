@@ -1,0 +1,82 @@
+name: Build portable zip
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  FFDEC_VERSION: 26.2.1 # the wrapper is pinned to this FFDec; CI only compiles against it, the zip does not ship it
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Inkwell-Editor
+    steps:
+      # the editor links ../Inkwell-Spec and packages ../Inkwell-Figma, so the three repos sit side by side
+      - uses: actions/checkout@v4
+        with:
+          path: Inkwell-Editor
+      - uses: actions/checkout@v4
+        with:
+          repository: Inkwell-UI/Inkwell-Spec
+          path: Inkwell-Spec
+      - uses: actions/checkout@v4
+        with:
+          repository: Inkwell-UI/Inkwell-Figma
+          path: Inkwell-Figma
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build Spec
+        working-directory: Inkwell-Spec
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+      - name: Build Figma plugin
+        working-directory: Inkwell-Figma
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: Install editor dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Typecheck and test
+        run: |
+          yarn typecheck
+          yarn test
+
+      - name: Build ffdec wrapper
+        shell: pwsh
+        run: |
+          Invoke-WebRequest "https://github.com/jindrapetrik/jpexs-decompiler/releases/download/version$env:FFDEC_VERSION/ffdec_$env:FFDEC_VERSION.zip" -OutFile "$env:RUNNER_TEMP\ffdec.zip"
+          Expand-Archive "$env:RUNNER_TEMP\ffdec.zip" "$env:RUNNER_TEMP\ffdec"
+          $env:INKWELL_FFDEC = "$env:RUNNER_TEMP\ffdec"
+          $env:INKWELL_JDK = $env:JAVA_HOME
+          yarn build:wrapper
+
+      - name: Package portable zip
+        run: yarn package:portable
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Inkwell-portable
+          path: Inkwell-Editor/dist-portable/*.zip
+          if-no-files-found: error
+
+      - name: Attach zip to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Inkwell-Editor/dist-portable/*.zip
