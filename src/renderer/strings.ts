@@ -198,6 +198,14 @@ export const strings = {
     issues: 'Export checks'
   },
 
+  lib: {
+    title: 'Library',
+    functions: 'FUNCTIONS',
+    empty: 'No functions yet. + Function creates one; Make Function in the Graph panel turns selected nodes into one.',
+    deleteFunction: (name: string) => `Delete function ${name}`,
+    signature: (inputs: string, outputs: string, exits: string) => `(${inputs}) → ${outputs || 'nothing'} · exits: ${exits}`
+  },
+
   contracts: {
     title: 'Contracts',
     onlyReplacements: 'Only for menu replacements',

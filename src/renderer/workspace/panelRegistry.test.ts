@@ -41,7 +41,7 @@ describe('panel registry', () => {
     }
     expect(left('layout')).toEqual(['navigator', 'assets'])
     const col = (WORKSPACES.behaviour.layout as { children: LayoutNode[] }).children[0] as { children: { tabs?: { panel: string }[]; panel?: string }[] }
-    expect(col.children[0]!.tabs!.map((t) => t.panel)).toEqual(['navigator', 'contracts']) // Behaviour: the left column is [tabs, variables]
+    expect(col.children[0]!.tabs!.map((t) => t.panel)).toEqual(['navigator', 'library', 'contracts']) // Behaviour: the left column is [tabs, variables]
     expect(col.children[1]!.panel).toBe('variables')
   })
 
