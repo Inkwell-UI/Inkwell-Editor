@@ -186,7 +186,7 @@ export interface FieldRow {
   pattern?: string
 }
 
-interface Schema { type?: string; enum?: unknown[]; default?: unknown; pattern?: string }
+interface Schema { type?: string; enum?: unknown[]; default?: unknown; pattern?: string; format?: string }
 
 /**
  * The inline editors of a node: its pack fields (enum, string, number, bool; `variable` picks a graph variable; `params` is the On Widget Call
@@ -206,7 +206,7 @@ export function fieldRows(def: NodeDef, node: Pick<FlowNode, 'data'>, pins: Pins
     else if (key === 'variable') rows.push({ key, label: key, kind: 'variable', value })
     else if (s.type === 'number' || s.type === 'integer') rows.push({ key, label: key, kind: 'number', value })
     else if (s.type === 'boolean') rows.push({ key, label: key, kind: 'bool', value })
-    else rows.push({ key, label: key, kind: key === 'text' && def.extra && (def.extra as { editorOnly?: boolean }).editorOnly ? 'text' : 'string', value, ...(s.pattern ? { pattern: s.pattern } : {}) })
+    else rows.push({ key, label: key, kind: s.format === 'multiline' || (key === 'text' && def.extra && (def.extra as { editorOnly?: boolean }).editorOnly) ? 'text' : 'string', value, ...(s.pattern ? { pattern: s.pattern } : {}) })
   }
   for (const p of pins.inputs) {
     if (p.type === 'Exec' || wired.has(p.name)) continue
