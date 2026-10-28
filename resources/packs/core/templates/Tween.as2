@@ -6,10 +6,18 @@ var {{node.uid}}_ea = {{field.easing}};
 var {{node.uid}}_from = {{in.from}};
 var {{node.uid}}_to = {{in.to}};
 var {{node.uid}}_ms = {{in.seconds}} * 1000;
+// local*: from/to are offsets from the target's value when the tween starts
+var {{node.uid}}_b = 0;
+if ({{node.uid}}_pr == "localX") {{node.uid}}_b = {{node.uid}}_tg._x;
+else if ({{node.uid}}_pr == "localY") {{node.uid}}_b = {{node.uid}}_tg._y;
+else if ({{node.uid}}_pr == "localRotation") {{node.uid}}_b = {{node.uid}}_tg._rotation;
 var {{node.uid}}_set = function(v) {
     if ({{node.uid}}_pr == "alpha") {{node.uid}}_tg._alpha = v;
     else if ({{node.uid}}_pr == "x") {{node.uid}}_tg._x = v;
     else if ({{node.uid}}_pr == "y") {{node.uid}}_tg._y = v;
+    else if ({{node.uid}}_pr == "localX") {{node.uid}}_tg._x = {{node.uid}}_b + v;
+    else if ({{node.uid}}_pr == "localY") {{node.uid}}_tg._y = {{node.uid}}_b + v;
+    else if ({{node.uid}}_pr == "localRotation") {{node.uid}}_tg._rotation = {{node.uid}}_b + v;
     else if ({{node.uid}}_pr == "scale") {
         {{node.uid}}_tg._xscale = v;
         {{node.uid}}_tg._yscale = v;

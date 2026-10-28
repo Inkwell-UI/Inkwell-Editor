@@ -61,7 +61,10 @@
         "x",
         "y",
         "scale",
-        "rotation"
+        "rotation",
+        "localX",
+        "localY",
+        "localRotation"
       ],
       "default": "alpha"
     },
