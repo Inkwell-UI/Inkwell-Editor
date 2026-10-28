@@ -101,7 +101,7 @@
 .section-title.library-heading { margin-top: 0; } /* the first thing in the panel: the panel's own padding is the gap above it */
 .graph-list.library-children, .empty.library-children { margin-left: 16px; } /* the functions of a group sit under its name */
 .btn.row-confirm-delete { color: var(--err); } /* the quiet button style, in the error colour, for "Delete ..." */
-.graph-row-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 2px; }
+.graph-row-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 2px; padding: 4px 6px 4px 2px; }
 .graph-row-grid > .graph-row-main { display: contents; } /* the name and the buttons become grid items, so the buttons centre on the whole row (name and signature) */
 .graph-row-grid .graph-row-actions { grid-column: 2; grid-row: 1 / span 2; display: inline-flex; align-items: center; gap: 2px; }
 .graph-row-grid .graph-row-events { grid-column: 1; }
