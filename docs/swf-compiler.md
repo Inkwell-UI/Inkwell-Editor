@@ -35,6 +35,12 @@ compileSwf(ir, { modId, buildDir, ffdec, outPath?, instanceNames? }) -> { swfPat
 
 Read from the spec IR `Text` node (specVersion 2+): `align`, `verticalAlign`, `lineHeight` (`auto` | px | percent of font size), `letterSpacing` (px | percent of font size), `textFit` (`none`|`shrink`|`fit`, GFx `textAutoSize`) and `truncate`. `loadProject` runs the spec's `migrate()` on v1 projects, which moves the old `extra.text` keys into these fields. Text decoration is not in the IR and is no longer linted.
 
+## Scrolling, clipping and components
+
+- **Clip content:** a frame with `clipContent` gets a clip layer (PlaceObject2 `clipDepth`) over its layers. A frame that a Create Component node names as its parent also clips the instances it gets at run time: its clip layer reaches depth 16384 + 2000 (`DYNAMIC_CLIP_DEPTH`; clips attached by script start at depth 0 = 16384 in the display list).
+- **Overflow:** a clipping frame whose IR `overflow` is `horizontal`, `vertical` or `both` is scrollable (`swf/scrollAs2.ts`, class `mods.<modId>.InkwellScroll`, attach code in the frame script). Shapes directly inside it are wrapped in clips (a bare shape cannot be addressed from AS2). Details in `docs/components.md`.
+- **Component symbols:** the page components that have a graph are compiled as library symbols `inkwell_component_<figma id>` (`generate()` option `components`). The component's own tree overrides a copy of the same ids the SWF's IR may still hold.
+
 ## Not supported (reported, compile continues)
 
 - `instance`, `component` nodes: compiled as the frame they draw like (their own fills, clipping and auto layout, and their children); the link to the main component does nothing yet (behaviour comes with PLAN-COMPONENTS.md). A component set drawn inside a frame shows all its variants stacked.

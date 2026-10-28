@@ -6,7 +6,7 @@ Implements phases 1 and 2 of the UI/UX architecture spec (phase 2: the Settings 
 
 ```
 Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, mode switcher, Build All, Deploy (shell/DeployMenu.tsx: MO2 folders, Vortex and Package Mod = zip; docs/deploy.md)
-Zone 2  left tabs         navigator | contracts | assets | menu settings (custom menus)
+Zone 2  left tabs         navigator | contracts | assets | menu settings (custom menus); Behaviour also library | components (a second tab group)
 Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, Inspect overlay, banners (build failed; Figma not connected: snapshot / no snapshot), the last-good-build indicator moved to the status bar; no GFx note (removed 2026-10-26, the owner: users know it is a preview)
 Zone 4  graph             GraphPanel             breadcrumb, event jump list, Knotwork canvas (docs/graphs.md, Graph UI), AS2 split view (docs/debugging.md)
 Zone 5  inspector         InspectorPanel
@@ -18,7 +18,7 @@ Zones 2 to 6A are layout panels; Zones 1 and 6B are shell chrome around the layo
 
 ## Modes (`workspace/workspaces.ts`)
 
-Layout (default), Behaviour, Localization: three layouts as data, Blender-style one job per mode, so each shows only the panels it needs (Layout: Navigator, Assets, Menu settings, preview, Inspector, Lint; Behaviour: a left column over the full height (Navigator with Contracts and Menu settings as tabs, Variables below it), and to its right the Graph, a small fixed-size preview above the Inspector in the right column, and the dock (Play, Trace, Mock Data, Data Binding, Lint) under graph and right column; Localization: Navigator, preview, Inspector, Localization, Lint). Together they cover every panel. Switch with the top bar or `Ctrl+1/2/3`. Each remembers its own split sizes and chosen tabs (`state/workspaceStore.ts`, localStorage behind `state/safeStorage.ts`; nothing in the project). A splitter drag is stored under the split's key; double-click resets it.
+Layout (default), Behaviour, Localization: three layouts as data, Blender-style one job per mode, so each shows only the panels it needs (Layout: Navigator, Assets, Menu settings, preview, Inspector, Lint; Behaviour: a left column over the full height (Navigator with Contracts and Menu settings as tabs, then Library and Components as tabs of one group, then Variables), and to its right the Graph, a small fixed-size preview above the Inspector in the right column, and the dock (Play, Trace, Mock Data, Data Binding, Lint) under graph and right column; Localization: Navigator, preview, Inspector, Localization, Lint). Together they cover every panel. Switch with the top bar or `Ctrl+1/2/3`. Each remembers its own split sizes and chosen tabs (`state/workspaceStore.ts`, localStorage behind `state/safeStorage.ts`; nothing in the project). A splitter drag is stored under the split's key; double-click resets it.
 
 **Behaviour's preview is fixed.** Its slot (`BEHAVIOUR_PREVIEW_HEIGHT`, 280 px: title bar, compact toolbar, a 16:9 stage about as wide as the Inspector column, the Ruffle note) is a layout node with `fixed`: no splitter between it and the Inspector and stored sizes are ignored; the preview switches to its compact toolbar by itself (`PreviewPanel`, panel height < 300 or width < 400 px). Sizes stored for splits that no longer exist (the old Behaviour strip over graph) are dropped on load (`sanitizePersisted` keeps only keys of the current layout, with or without the preview). Proposal for the UX spec: `SPEC-CHANGES.md` Q.
 

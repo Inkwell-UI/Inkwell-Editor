@@ -5,9 +5,9 @@ A component is a Figma component that has behaviour: a graph, and props (data th
 ## What a component is
 
 - **Visual:** the Figma component. Never edited here. A component kept on the Figma page away from the design is sent by the plugin (`swfs.componentTrees`) and kept in `figma/components/<id>.json`; a component inside a frame is part of that SWF's IR.
-- **Behaviour:** a **blueprint graph** (Spec `Graph.scope: "blueprint"`, `component` = the Figma id, `props`), stored in `components/<id>.json` of the project, not in a SWF. The Components tab (Behaviour, left) adds or opens it; the Graph panel shows it. It starts with an On Load, which runs when an instance is created, after its props are set.
+- **Behaviour:** a **blueprint graph** (Spec `Graph.scope: "blueprint"`, `component` = the Figma id, `props`), stored in `components/<id>.json` of the project, not in a SWF. Clicking a component in the Components tab (Behaviour, left) opens it, making it on first use; the Graph panel shows it. It starts with an On Load, which runs when an instance is created, after its props are set.
 - **Props:** `{id, name, type, default}`, edited in the Inspector while nothing is selected. **Get Prop** (`core/GetProp@1`) reads one in the graph (`__g.props["<name>"]`); its output takes the prop's type, and the node its name, from copies the editor keeps current (`propType`, `propName`).
-- **Layers:** while a component's graph is open the Navigator lists what the component is made of, and node layer pickers list those layers (`hooks/useComponentIr.ts`).
+- **Layers:** while a component's graph is open the Navigator lists what the component is made of, and node layer pickers list those layers, the component's own root included (a Tween can fade the whole instance; `hooks/useComponentIr.ts`, `layerOptions(..., withRoot)`).
 
 ## At runtime
 
