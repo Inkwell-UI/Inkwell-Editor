@@ -94,6 +94,13 @@ describe('graph validation', () => {
     expect(codes(mine, { siblings: [other, mine] })).toEqual(['graph-duplicate-handler'])
   })
 
+  it('a component graph has its own handlers: its On Load does not clash with the menu graph On Load, and the other way round', () => {
+    const comp = { ...emptyGraph('li', 'ListItem', 'blueprint'), component: '5:1', props: [], nodes: [node('OnClick', { target: 'B' }, 'c')] } as Graph
+    const menu = graph([node('OnClick', { target: 'B' }, 'm')])
+    expect(codes(comp, { siblings: [menu, comp] })).toEqual([])
+    expect(codes(menu, { siblings: [menu, comp] })).toEqual([])
+  })
+
   it('a wire to a missing node or pin is reported', () => {
     expect(codes(graph([node('OnClick', { target: 'B' }, 'e')], [wire('e', 'nope', 'e', 'in')]))).toContain('graph-bad-wire')
     expect(codes(graph([node('OnClick', { target: 'B' }, 'e')], [wire('e', 'then', 'ghost', 'in')]))).toContain('graph-bad-wire')

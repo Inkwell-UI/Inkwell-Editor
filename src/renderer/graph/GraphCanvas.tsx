@@ -83,13 +83,14 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     () =>
       createGraphValidation(store, () => ({
         defs,
-        layers: new Set(Object.keys(swf.ir.nodes)),
+        // in a component's graph the layers are the component's own (unknown while its layers are: the check is skipped)
+        ...(comp === 'unavailable' ? {} : { layers: new Set(Object.keys((comp ?? swf).ir.nodes)) }),
         siblings: openGraphs(swf.id),
         library: getLibraryFunctions(),
         target: swf.ir.target.kind,
         ...(swf.ir.target.contract ? { contract: swf.ir.target.contract } : {})
       })),
-    [store, defs, swf.ir, swf.id]
+    [store, defs, swf.ir, swf.id, comp]
   )
   useEffect(() => validation.start(), [validation])
 

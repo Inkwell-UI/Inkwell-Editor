@@ -193,7 +193,8 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
   }
   const handlers = new Map<string, string>() // handler key -> name of the graph that has it first
   for (const s of ctx.siblings ?? []) {
-    if (s.id === g.id) continue
+    // a component's graph runs once per instance, apart from the SWF's graphs: its On Load is not the menu's On Load
+    if (s.id === g.id || s.scope === 'blueprint' || g.scope === 'blueprint') continue
     for (const n of s.nodes) {
       const d = ctx.defs.get(n.kind)
       if (d && isEntry(d) && !isFunctionEntry(d) && !handlers.has(handlerKey(n, d))) handlers.set(handlerKey(n, d), s.name)
