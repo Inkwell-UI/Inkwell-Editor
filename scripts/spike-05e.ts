@@ -60,7 +60,10 @@ const IMPORTS: { url: string; name: string }[] = [
   ...['360_A.png', '360_B.png', 'PS3_A.png', 'Enter.png'].map((name) => ({ url: 'hudmenu.swf', name })),
   ...['360_A.png', '360_B.png', 'PS3_A.png', 'Enter.png'].map((name) => ({ url: '../../hudmenu.swf', name }))
 ]
-IMPORTS.forEach((im, i) => {
+// --imports a|b|both builds only that group (a failed ImportAssets2 can make the whole SWF fail to load: 2026-10-28 the first 'both' build did not load); default: none (the S-F menu)
+const SEL = arg('--imports')
+const USED = IMPORTS.map((im, i) => ({ im, i })).filter(({ i }) => (SEL === 'a' ? i < 4 : SEL === 'b' ? i >= 4 : SEL === 'both'))
+USED.forEach(({ im, i }) => {
   const bid = nextId++
   const sid = nextId++
   const lid = nextId++
@@ -69,7 +72,8 @@ IMPORTS.forEach((im, i) => {
   tags.push(T.importAssets2(im.url, { id: bid, name: im.name }))
   tags.push(T.defineBitmapShape({ id: sid, bitmapId: bid, rect: { x: 0, y: 0, w: 64, h: 64 }, scale: 1, tx: 0, ty: 0 }))
   tags.push(T.placeObject2({ depth: depth++, charId: sid, x, y }))
-  tags.push(T.defineEditText({ id: lid, wPx: 180, hPx: 60, fontId: FONT_ALIAS, sizePx: 16, color: white, text: `${i < 4 ? 'hudmenu.swf' : '../../hudmenu.swf'}${im.name}`, wordWrap: true, multiline: true, autoSize: false, align: 0, leadingPx: 0 }))
+  tags.push(T.defineEditText({ id: lid, wPx: 180, hPx: 60, fontId: FONT_ALIAS, sizePx: 16, color: white, text: `${i < 4 ? 'hudmenu.swf' : '../../hudmenu.swf'}
+${im.name}`, wordWrap: true, multiline: true, autoSize: false, align: 0, leadingPx: 0 }))
   tags.push(T.placeObject2({ depth: depth++, charId: lid, x, y: y + 70 }))
 })
 tags.push(T.doAction(), T.showFrame(), T.endTag())
