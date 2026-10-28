@@ -12,6 +12,7 @@ import { useTimingStore } from './timingStore'
 import { useSyncStore } from './syncStore'
 import { usePopoutStore } from './popoutStore'
 import { useDevStore } from './devStore'
+import { useWorkspaceStore } from './workspaceStore'
 
 /**
  * Connects the main process to the stores, once per window (main.tsx). Everything the renderer knows about the outside arrives here:
@@ -36,6 +37,15 @@ export function startBridge(): () => void {
   void api.getDevState().then((s) => useDevStore.getState().setState(s))
   offs.push(api.onDevState((s) => useDevStore.getState().setState(s)))
   offs.push(api.onDevEvents((e) => useDevStore.getState().apply(e)))
+  // the game starts connecting: show Behaviour with the Runtime Trace on the game source
+  offs.push(
+    useDevStore.subscribe((s, prev) => {
+      if (s.dev.phase !== 'connecting' || prev.dev.phase === 'connecting') return
+      useWorkspaceStore.getState().setActive('behaviour')
+      useWorkspaceStore.getState().showDockTab('trace')
+      s.setSource('game')
+    })
+  )
   void api.getPreviewDetached().then((d) => usePopoutStore.getState().setDetached(d))
   offs.push(api.onPreviewDetached((d) => usePopoutStore.getState().setDetached(d)))
 
