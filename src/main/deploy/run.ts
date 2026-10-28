@@ -6,6 +6,7 @@ import { stableStringify } from '../project'
 import type { CodegenPacks } from '../codegen/packs'
 import type { DeployFileInfo, DeployLintItem, DeployResult } from '../../shared/deploy'
 import { createStageTimer } from '../../shared/timing'
+import { setCell } from '../../shared/localizationOps'
 import { ddsRel, type AssetStore, type ImageMode } from '../images/assets'
 import { writeDds } from '../images/dds'
 import { decodePng } from '../images/png'
@@ -79,7 +80,7 @@ const menuFeatures = (s: DeploySwf): string[] => [
   ...(hasFocusGraph(s.overlay ?? {}) ? ['focusGraph'] : []),
   ...(keyedTexts([locSwf(s)]).length ? ['translation'] : [])
 ]
-const locSwf = (x: DeploySwf): LocSwf => ({ name: x.name, kind: x.kind, ir: x.ir, ...(x.overlay ? { overlay: x.overlay as Record<string, Record<string, unknown>> } : {}), ...(x.graphs ? { graphs: x.graphs } : {}) })
+const locSwf = (x: DeploySwf): LocSwf => ({ name: x.name, kind: x.kind, ir: x.ir, ...(x.overlay ? { overlay: x.overlay as Record<string, Record<string, unknown>> } : {}), ...(x.graphs ? { graphs: x.graphs } : {}), ...(x.menu?.triggers.systemMenu ? { systemMenu: x.menu.triggers.systemMenu } : {}) })
 
 /** Why a menu mod has no runtime check and what to do (S3 rule 5). */
 const CHECK_MISSING = 'The runtime check (the in-game message when Inkwell Runtime is missing or too old) was not generated because no Papyrus compiler is set. Set the compiler path in Settings (or INKWELL_PAPYRUS), then deploy again.'
@@ -208,12 +209,15 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
     timer.end('compile')
   }
   // V13.2: the translation files; a language without a text for a key carries the source language's text (the player never sees a raw key)
-  if (i.localization && !issues.some((l) => l.severity === 'error'))
-    for (const lang of i.localization.languages) {
+  if (i.localization && !issues.some((l) => l.severity === 'error')) {
+    // Figma owns the source text of a layer key: the table shows it live, so deploy must not write a stale stored copy (the `$` you removed in Figma)
+    const loc = keyedTexts(i.swfs.filter((x) => !x.orphaned).map(locSwf)).reduce((l, t) => (t.graph || !t.text ? l : setCell(l, t.key, l.source, t.text)), i.localization)
+    for (const lang of loc.languages) {
       const rel = translationFilePath(i.modId, lang)
       const f = plan.files.find((p) => p.rel === rel)
-      if (f && allowed.has(rel)) files.set(rel, { data: Buffer.from(writeTranslationFile(entriesFor(i.localization, lang).entries)), swf: f.swf })
+      if (f && allowed.has(rel)) files.set(rel, { data: Buffer.from(writeTranslationFile(entriesFor(loc, lang).entries)), swf: f.swf })
     }
+  }
   if (i.dev && plan.files.some((f) => f.rel === RUNTIME_INI_REL) && !issues.some((l) => l.severity === 'error')) {
     // merged into the file that is there (LogLevel, Watch and the like survive); the token is the editor's, so a stale or runtime-made one is replaced
     const existing = await readFile(safeJoin(i.root, RUNTIME_INI_REL), 'utf8').catch(() => undefined)
