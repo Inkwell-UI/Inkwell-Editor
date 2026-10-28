@@ -20,14 +20,14 @@ if (!/[\\/]mods[\\/][^\\/]+$/i.test(dest) || /[\\/]data([\\/]|$)/i.test(dest)) t
 const dll = resolve(arg('--dll') ?? process.env['INKWELL_RUNTIME_DLL'] ?? 'D:/Mods/Inkwell/Inkwell-Runtime/build/Release/Inkwell.dll')
 if (!existsSync(dll)) throw new Error(`Runtime DLL not found: ${dll}`)
 
-// Candidate art (all GUESSES from memory of the vanilla Interface folder; the spike exists to find out). Relative paths are relative to this menu's SWF (Interface/Inkwell/<mod>/Menu.swf);
+// Candidate art, round 2 (S-F, 2026-10-28): the real names in Skyrim - Interface.bsa are interface/exported/360_a.png.dds, ps3_a.png.dds, 360_start.png.dds, ... (round 1 guessed Controls/ paths and drew nothing). Relative paths are relative to this menu's SWF (Interface/Inkwell/<mod>/Menu.swf);
 // img:// paths are relative to Data (the editor's DDS image mode uses img://textures/...; images.md).
 const CANDIDATES = [
-  '../../buttonart.swf',
-  '../../Controls/360/A.swf',
-  'img://Interface/Controls/360/A.dds',
-  'img://Interface/Controls/PS3/Cross.dds',
-  'img://Interface/Controls/PC/Space.dds'
+  'img://Interface/exported/360_a.png.dds',
+  'img://Interface/exported/360_a.png',
+  'img://exported/360_a.png.dds',
+  'img://Interface/exported/ps3_a.png.dds',
+  'img://Interface/exported/360_start.png.dds'
 ]
 
 const white = { r: 255, g: 255, b: 255, a: 255 }
