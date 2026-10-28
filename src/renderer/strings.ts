@@ -210,7 +210,8 @@ export const strings = {
     dropTip: 'Drop a function here to move it into this pack',
     moved: (name: string, id: string) => `${name} moved into ${id}.`,
     moveFailed: 'Could not move the function',
-    packContents: (nodes: number, fns: number) => `${nodes} node${nodes === 1 ? '' : 's'} · ${fns} function${fns === 1 ? '' : 's'}`,
+    /** A function is a node of the pack (Call Function lists it), so both count as nodes. */
+    packContents: (nodes: number, fns: number) => `${nodes + fns} node${nodes + fns === 1 ? '' : 's'}`,
     import: 'Import…',
     importTip: 'Import a pack: a folder or pack.zip',
     importReplace: (id: string) => `The pack "${id}" is already in this project. Replace it?`,
