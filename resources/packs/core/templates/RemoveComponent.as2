@@ -1,0 +1,3 @@
+// [{{node.id}}] core/RemoveComponent@1
+{{in.instance}}.removeMovieClip();
+{{next.then}}

@@ -193,6 +193,8 @@ export interface FunctionCtx {
   sig?: Graph['signature']
   /** The props of the component graph the node lives in (Get Prop's choice). */
   props?: Graph['props']
+  /** The components that have a graph (Create Component's choice). */
+  components?: readonly { id: string; name: string }[]
   functions?: readonly { id: string; name: string }[]
 }
 
@@ -207,11 +209,15 @@ export function fieldRows(def: NodeDef, node: Pick<FlowNode, 'data'>, pins: Pins
   const f = node.data.fields
   const rows: FieldRow[] = []
   const inputNames = new Set(def.inputs.map((p) => p.name))
-  const x = (def.extra ?? {}) as { managedFields?: string[]; callsFunction?: string; signatureInputs?: string; readsProp?: string }
+  const x = (def.extra ?? {}) as { managedFields?: string[]; callsFunction?: string; signatureInputs?: string; readsProp?: string; createsComponent?: string }
   for (const [key, raw] of Object.entries(def.fields)) {
     if (inputNames.has(key) || x.managedFields?.includes(key)) continue // managed fields (a call's copy of the signature) are kept by the editor, not typed
     if (key === x.callsFunction) {
       rows.push({ key, label: 'function', kind: 'choice', value: f[key], choices: (fn.functions ?? []).map((g) => ({ value: g.id, label: g.name })) })
+      continue
+    }
+    if (key === x.createsComponent) {
+      rows.push({ key, label: 'component', kind: 'choice', value: f[key], choices: (fn.components ?? []).map((c) => ({ value: c.id, label: c.name })) })
       continue
     }
     if (key === x.readsProp) {

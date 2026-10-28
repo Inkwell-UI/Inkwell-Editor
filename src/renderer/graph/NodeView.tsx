@@ -5,6 +5,7 @@ import { createContext, memo, useContext } from 'react'
 import { useStore } from 'zustand'
 import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import { categoryVar, fieldRows, nodePins, PIN_STYLE, type FieldRow, type LayerOption } from '../model/graphModel'
+import { useComponentGraphs } from '../state/componentGraphs'
 import { functionChoices, inHandle, outHandle, pinName, pointCall, type FlowNode, type GraphStore } from '../state/graphStore'
 import type { createGraphValidation } from '../state/graphValidation'
 import { usePinBadge } from '../state/devStore'
@@ -72,6 +73,7 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
   const outs = useStore(ctx.store, (s) => outgoing(s.edges, id).map((e) => pinName(e.sourceHandle)).join(','))
   const bad = new Set(badPins ? badPins.split(',') : [])
   const props = useStore(ctx.store, (s) => s.props)
+  const componentGraphs = useComponentGraphs((s) => s.graphs)
   const { callsFunction: callKey, readsProp: propKey } = (def?.extra ?? {}) as { callsFunction?: string; readsProp?: string }
   // choosing the function of a Call Function node also copies its signature and re-points the wires; choosing the prop of a Get Prop node copies its type
   const setField = (key: string, value: unknown): void =>
@@ -123,7 +125,7 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
     )
   }
 
-  const rows = fieldRows(def, { data }, pins, new Set(wired.split(',')), { sig: ctx.signature, props, functions: callKey ? functionChoices(ctx.store) : [] })
+  const rows = fieldRows(def, { data }, pins, new Set(wired.split(',')), { sig: ctx.signature, props, components: Object.values(componentGraphs).map((g) => ({ id: g.component!, name: g.name })), functions: callKey ? functionChoices(ctx.store) : [] })
   const rowOf = new Map(rows.map((r) => [r.key, r]))
   const pinRows = (list: typeof pins.inputs, side: 'inputs'): React.ReactNode =>
     list.map((p) => {

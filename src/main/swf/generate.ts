@@ -706,6 +706,15 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
     componentSymbols.push({ id: c.id, linkage, charId: id })
   }
 
+  // a layer inside a component is addressed from the instance's clip (`__g.base`): its path inside the symbol, '' for the symbol itself
+  const symbolOf = new Map(componentSymbols.map((c) => [c.id, `component.${ident(c.id.replace(/[^A-Za-z0-9]+/g, '_'))}`]))
+  const componentPath = (id: string): string | undefined => {
+    const root = symbolOf.get(id)
+    if (root !== undefined) return ''
+    const p = layerPaths.get(id)
+    const owner = p && [...symbolOf.values()].find((r) => p.startsWith(`${r}.`))
+    return owner ? p!.slice(owner.length + 1) : undefined
+  }
   const mod = ident(opts.modId)
   const swfCls = ident(ir.id).replace(/^_?([a-z])/, (_, c: string) => c.toUpperCase())
   const as2: Generated['as2'] = []
@@ -723,7 +732,8 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   const gen = opts.graphs?.graphs.length
     ? generateGraphClasses({
         modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}), ...(menu ? { menu: true } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}), ...(flowInfos.length ? { flow: flowClassName(mod) } : {}),
-        layerPath: (id) => (id === (widget && wf ? wf.frame.id : ir.root) ? '' : layerPaths.get(id)?.startsWith(basePrefix) ? layerPaths.get(id)!.slice(basePrefix.length) : undefined)
+        componentLinkage: (id) => componentSymbols.find((c) => c.id === id)?.linkage,
+        layerPath: (id, g) => (g.scope === 'blueprint' ? componentPath(id) : id === (widget && wf ? wf.frame.id : ir.root) ? '' : layerPaths.get(id)?.startsWith(basePrefix) ? layerPaths.get(id)!.slice(basePrefix.length) : undefined)
       })
     : undefined
   const graphCalls = gen?.classes.flatMap((c) => c.calls) ?? []
@@ -763,10 +773,10 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
     addClass(replacementClassName(swfCls), glue.source)
     frameCode.push(...replacementFrameCode(mod, swfCls))
   }
-  let started = 0 // function classes (c.fn) are created by Call Function, only the other graphs are started here
+  let started = 0 // function classes (c.fn) are created by Call Function and component classes (c.component) by Create Component, only the other graphs are started here
   gen?.classes.forEach((c) => {
     addClass(c.cls, c.source)
-    if (!menu && !c.fn) frameCode.push(`${baseExpr}.inkwellGraph${started} = new mods.${mod}.${c.cls}(${baseExpr});`, `${baseExpr}.inkwellGraph${started++}.init();`)
+    if (!menu && !c.fn && !c.component) frameCode.push(`${baseExpr}.inkwellGraph${started} = new mods.${mod}.${c.cls}(${baseExpr});`, `${baseExpr}.inkwellGraph${started++}.init();`)
   })
   const translatedTexts = menu ? keyed.flatMap((k) => (k.here.startsWith('root.') ? [{ nodeId: k.nodeId, path: k.here.slice('root.'.length), key: k.key }] : [])) : []
   if (menu) {
@@ -782,7 +792,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       const ps = PROMPT_DEVICE_ORDER.map((d) => (opts.prompts![pid]![d] ? pathOf(glyphId(pid, d)) ?? null : null))
       return ps.some((x) => x) ? [ps] : []
     })
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.filter((c) => !c.fn).map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.filter((c) => !c.fn && !c.component).map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
       frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, [...listInfos.map((l) => listAttachCode(mod, l, '_root')), ...flowInfos.map((f) => flowAttachCode(mod, f, '_root'))]))

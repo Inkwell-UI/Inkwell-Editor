@@ -29,7 +29,7 @@ function fieldsFor(d: NodeDef): Record<string, unknown> {
 
 /** A graph that exercises one node kind: entries are followed by Log; exec nodes hang off On Widget Call and every exec output leads to a Log; a pure node feeds a Log message. null for editor-only kinds. */
 export function kindGraph(packId: string, d: NodeDef): Graph | null {
-  if (isEditorOnly(d) || isFunctionNode(d)) return null // function nodes need a function graph and a caller: functions.test.ts
+  if (isEditorOnly(d) || isFunctionNode(d) || (d.extra as { createsComponent?: unknown } | undefined)?.createsComponent) return null // function nodes need a function graph and a caller: functions.test.ts; Create Component needs a component with a graph: codegen.component.test.ts
   const kind = `${packId}/${d.kind}@${d.major}`
   const n = node('n1', kind, fieldsFor(d))
   const nodes: GraphNode[] = [n]

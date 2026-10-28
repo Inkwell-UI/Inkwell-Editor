@@ -40,6 +40,8 @@ export interface GraphClass {
   calls: WidgetCall[]
   /** A function graph: the class is created per call by Call Function, never by the frame code or the menu class. */
   fn?: boolean
+  /** A component's graph (blueprint): the class is created per instance by Create Component, `new <cls>(clip, props, owner)`, never by the frame code or the menu class. */
+  component?: boolean
 }
 
 export interface CodegenInput {
@@ -48,8 +50,10 @@ export interface CodegenInput {
   swfCls: string
   graphs: readonly Graph[]
   packs: CodegenPacks
-  /** Clip path of a Figma layer relative to the base clip, `''` for the base clip itself, undefined when the layer is not compiled. */
-  layerPath: (figmaId: string) => string | undefined
+  /** Clip path of a Figma layer relative to the base clip, `''` for the base clip itself, undefined when the layer is not compiled. A component's graph only sees the layers of its component (the path is inside the symbol). */
+  layerPath: (figmaId: string, graph: Graph) => string | undefined
+  /** The linkage name of a component's library symbol (Create Component's `attachMovie`), undefined when the component is not compiled into this SWF. */
+  componentLinkage?: (figmaId: string) => string | undefined
   /** Overlay `dataBinding` strings by Figma layer id (grammar: `shared/graphBinding.ts`). `var:` bindings are applied on init and after every Set Variable. */
   bindings?: Readonly<Record<string, string>>
   /**
@@ -161,8 +165,9 @@ export function toBridgeLog(line: string): string {
 const key = (node: string, pin: string): string => `${node}\u0000${pin}`
 
 /** Generates one AS2 class for one graph. */
-function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssue[], first: boolean, fnCls: ReadonlyMap<string, string>): GraphClass {
+function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssue[], first: boolean, fnCls: ReadonlyMap<string, string>, compCls: ReadonlyMap<string, string>): GraphClass {
   const file = `__Packages/mods/${ident(i.modId)}/${cls}.as`
+  const comp = g.scope === 'blueprint' // a component: its own class, one instance per component instance (`new Cls(clip, props, owner)`, then `init()` runs On Load); `__g.props` holds the props
   const fn = g.scope === 'function' // a function: its own class, one instance per call (`run` instead of `init`, docs/functions.md)
   const dev = i.menu === true && i.dev === true
   const flow = i.preview === true || dev // flow trace calls (rn/wt/wf/wx): the preview traces them, a dev build sends them as pins
@@ -209,7 +214,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
 
   // ---- data bindings (overlay `dataBinding`) ----
   const clipOf = (layer: string): string | undefined => {
-    const p = i.layerPath(layer)
+    const p = i.layerPath(layer, g)
     return p === undefined ? undefined : p === '' ? '__g.base' : `__g.base.${p}`
   }
   const apply = (prop: BindProp, clip: string, x: string): string =>
@@ -248,7 +253,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
       const v = n.fields[pin.name]
       if (COMPONENT.has(pin.type)) {
         if (typeof v !== 'string' || v === '') throw new Skip(`input "${pin.name}" has no target layer.`)
-        const p = i.layerPath(v)
+        const p = i.layerPath(v, g)
         if (p === undefined) throw new Skip(`the target layer ${v} of "${pin.name}" is not compiled.`)
         return { expr: p === '' ? '__g.base' : `__g.base.${p}`, volatile: false }
       }
@@ -307,6 +312,18 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           const c = typeof target === 'string' ? fnCls.get(target) : undefined
           if (!c) throw new Skip(`there is no function graph "${String(target)}".`)
           return `mods.${ident(i.modId)}.${c}`
+        }
+        case 'comp': {
+          const target = fieldOf(n, d, nm)
+          const c = typeof target === 'string' ? compCls.get(target) : undefined
+          if (!c) throw new Skip(`there is no graph for the component "${String(target)}" (it needs a graph, and the component must be on the Figma page).`)
+          return `mods.${ident(i.modId)}.${c}`
+        }
+        case 'symbol': {
+          const target = fieldOf(n, d, nm)
+          const l = typeof target === 'string' ? i.componentLinkage?.(target) : undefined
+          if (!l) throw new Skip(`the component "${String(target)}" is not compiled into this SWF.`)
+          return as2Literal(l)
         }
         case 'exit': {
           const id = fieldOf(n, d, nm)
@@ -590,10 +607,20 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         ]
       : [
           { t: '    var base;' },
+          ...(comp ? [{ t: '    var owner;' }, { t: '    var props;' }] : []),
           { t: '    var inputHandlers;' },
           ...(i.menu ? [{ t: '    var bridge;' }, { t: '    var messageHandlers;' }, { t: '    var modEventHandlers;' }] : []),
-          { t: `    function ${cls}(base) {` },
+          { t: `    function ${cls}(base${comp ? ', props, owner' : ''}) {` },
           { t: '        this.base = base;' },
+          ...(comp
+            ? [
+                { t: '        this.owner = owner;' },
+                { t: '        this.props = props == undefined ? {} : props;' },
+                // a prop the creator did not give has its default (a missing default is the zero of its type)
+                ...(g.props ?? []).map((p) => ({ t: `        if (this.props[${as2Literal(p.id)}] == undefined) this.props[${as2Literal(p.id)}] = ${as2Literal(p.default ?? defaultOf(p.type))};` })),
+                ...(i.menu ? [{ t: '        this.bridge = owner.bridge;' }] : [])
+              ]
+            : []),
           { t: '        this.inputHandlers = {};' },
           ...(i.menu ? [{ t: '        this.messageHandlers = [];' }, { t: '        this.modEventHandlers = [];' }] : []),
           { t: '    }' }
@@ -754,7 +781,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     if (l.n) lines[String(k + 1)] = l.n
   })
   return {
-    graphId: g.id, cls, path: file, calls, ...(fn ? { fn: true } : {}),
+    graphId: g.id, cls, path: file, calls, ...(fn ? { fn: true } : {}), ...(comp ? { component: true } : {}),
     source: all.map((l) => l.t).join('\n') + '\n',
     map: { version: 1, graph: g.id, file, lines }
   }
@@ -786,7 +813,8 @@ export function generateGraphClasses(i: CodegenInput): { classes: GraphClass[]; 
     return cls
   })
   const fnCls = new Map(graphs.flatMap((g, k) => (g.scope === 'function' ? [[g.id, names[k]!] as const] : [])))
-  const firstGraph = i.graphs.findIndex((g) => g.scope !== 'function') // the preview's mock hooks go to the first graph that is started by the frame code
-  const classes = graphs.map((g, k) => generateOne(g, names[k]!, i, issues, k === firstGraph, fnCls))
+  const firstGraph = i.graphs.findIndex((g) => g.scope !== 'function' && g.scope !== 'blueprint') // the preview's mock hooks go to the first graph that is started by the frame code
+  const compCls = new Map(graphs.flatMap((g, k) => (g.scope === 'blueprint' && g.component ? [[g.component, names[k]!] as const] : [])))
+  const classes = graphs.map((g, k) => generateOne(g, names[k]!, i, issues, k === firstGraph, fnCls, compCls))
   return { classes, issues }
 }

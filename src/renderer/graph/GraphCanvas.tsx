@@ -13,6 +13,7 @@ import { useStore } from 'zustand'
 import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import type { SwfDoc } from '../../shared/projectState'
 import { useComponentIr } from '../hooks/useComponentIr'
+import { loadComponentGraphs } from '../state/componentGraphs'
 import { categoriesOf, categoryVar, connectionRule, layerOptions, nodePins, nodeTarget, PIN_STYLE, spawnDefs, spawnFor, spawnWire, type SpawnFromPin } from '../model/graphModel'
 import { callFields } from '../../shared/functions'
 import { findGraphStore, functionGraphs, getLibraryFunctions, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
@@ -70,6 +71,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   const [menu, setMenu] = useState<MenuState | null>(null)
   const [find, setFind] = useState(false)
   const [varDrop, setVarDrop] = useState<{ x: number; y: number; id: string; name: string } | null>(null)
+  useEffect(() => void (inkwell && loadComponentGraphs(inkwell)), []) // Create Component lists the components that have a graph
   const comp = useComponentIr() // in a component's graph the layers to pick are the component's own
   const layers = useMemo(() => (comp === 'unavailable' ? [] : comp ? layerOptions(comp.ir, comp.inSwf ? overlay : undefined) : layerOptions(swf.ir, overlay)), [comp, swf.ir, overlay])
   const rule = useMemo(() => connectionRule(defs, () => store.getState().variables, () => store.getState().signature), [defs, store])

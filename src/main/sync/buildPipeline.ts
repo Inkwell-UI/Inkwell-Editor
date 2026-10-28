@@ -148,7 +148,13 @@ export function createBuildPipeline(cfg: PipelineConfig) {
       if (gs.length) graphs = { graphs: gs, packs: (await (codegenPacks ??= loadCodegenPacks(cfg.packDirs))).packs }
     }
     // components kept away from the design that have a graph: compiled as symbols so a graph can add them at runtime (C2.2)
-    const components = cfg.projectDir ? await loadComponentSources(cfg.projectDir).then((c) => c.sources, () => []) : []
+    const loaded = cfg.projectDir ? await loadComponentSources(cfg.projectDir).catch(() => undefined) : undefined
+    const components = loaded?.sources ?? []
+    // their graphs are compiled as classes next to the SWF's own (created per instance by Create Component), only when the SWF has graphs
+    if (graphs && loaded && components.length) {
+      const ids = new Set(components.map((c) => c.id))
+      graphs = { ...graphs, graphs: [...graphs.graphs, ...loaded.graphs.filter((g) => g.component && ids.has(g.component))] }
+    }
     // themes (V6.3): the default theme is baked into the SWFs the game gets; the preview may show another mode
     const want = cfg.themeFor?.(name, swfId)
     const modes = themeModes(ir)

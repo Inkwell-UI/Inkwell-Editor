@@ -1,0 +1,53 @@
+{
+  "kind": "CreateComponent",
+  "major": 1,
+  "title": "Create Component",
+  "category": "Components",
+  "milestone": "0.6",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "parent",
+      "type": "Clip",
+      "description": "The layer the new instance is added to"
+    },
+    {
+      "name": "name",
+      "type": "String",
+      "default": "",
+      "description": "Instance name; empty makes a unique one"
+    },
+    {
+      "name": "props",
+      "type": "Object",
+      "default": {},
+      "description": "The values of the component's props by prop id (a prop not given has its default); build it with Make Object"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "instance",
+      "type": "Clip",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "component": {
+      "type": "string",
+      "default": "",
+      "description": "Id of the component to create (the Figma component that has a graph)"
+    }
+  },
+  "as2Template": "templates/CreateComponent.as2",
+  "extra": {
+    "createsComponent": "component"
+  }
+}

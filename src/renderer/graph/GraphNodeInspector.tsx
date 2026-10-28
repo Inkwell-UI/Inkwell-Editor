@@ -6,6 +6,7 @@ import { useComponentIr } from '../hooks/useComponentIr'
 import { usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf, useDockRows } from '../hooks/useProject'
 import { fieldRows, layerOptions, nodePins } from '../model/graphModel'
+import { useComponentGraphs } from '../state/componentGraphs'
 import { functionChoices, pinName, pointCall } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
@@ -28,6 +29,7 @@ export function GraphNodeInspector() {
   const variables = useStore(store ?? emptyStore, (s) => s.variables)
   const signature = useStore(store ?? emptyStore, (s) => s.signature)
   const props = useStore(store ?? emptyStore, (s) => s.props)
+  const componentGraphs = useComponentGraphs((s) => s.graphs)
   const node = nodeId ? nodeIndex(nodes).get(nodeId) : undefined
   if (!store || !node || !swf) return <OpenComponentProps><p className="empty">{strings.insp.gnNone}</p></OpenComponentProps>
   const def = defs.get(node.data.kind)
@@ -35,7 +37,7 @@ export function GraphNodeInspector() {
   const pins = def ? nodePins(defs, node, variables, signature) : undefined
   const wired = new Set(incoming(store.getState().edges, node.id).map((e) => pinName(e.targetHandle)))
   const { callsFunction: callKey, readsProp: propKey } = (def?.extra ?? {}) as { callsFunction?: string; readsProp?: string }
-  const list = def && pins ? fieldRows(def, node, pins, wired, { sig: signature, props, functions: callKey ? functionChoices(store) : [] }) : []
+  const list = def && pins ? fieldRows(def, node, pins, wired, { sig: signature, props, components: Object.values(componentGraphs).map((g) => ({ id: g.component!, name: g.name })), functions: callKey ? functionChoices(store) : [] }) : []
   const ctx = { setField: (k: string, v: unknown) => (k === callKey && typeof v === 'string' ? pointCall(store, node.id, v) : k === propKey && typeof v === 'string' ? store.getState().setNodeProp(node.id, v) : store.getState().setField(node.id, k, v)), layers, variables }
   return (
     <div className="insp" data-testid="graph-node-inspector">
