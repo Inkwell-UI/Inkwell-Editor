@@ -19,6 +19,8 @@ export interface MenuGlueInput {
   themed?: { themes: readonly string[]; ops: readonly { path: string; kind: ThemeKind; values: Record<string, number | boolean> }[] }
   /** Full name of the generated list class when the SWF has a list: `onInput` forwards the user events to its `input` (S8). */
   listClass?: string
+  /** Full name of the generated auto-layout class when the SWF has frames that re-lay out: a translated text calls its `touch`. */
+  flowClass?: string
   /** W3 focus graph: focusable clip paths from the base clip in focus order, and per path the index moved to on [Up, Down, Left, Right]. */
   focus?: { paths: readonly string[]; moves: readonly (readonly number[])[] }
   /** W4 prompts: per prompt the glyph clip paths [keyboard, xbox, playstation] (null = no glyph for that device). */
@@ -189,7 +191,7 @@ export function menuClassSource(i: MenuGlueInput): string {
     ...create,
     '        bridge.glueReady();',
     '    }',
-    ...(tx.length ? ['    function tx(field, key) {', '        var t = this.bridge.translate(key);', '        if (t != undefined && t != key) field.text = t;', '    }'] : []),
+    ...(tx.length ? ['    function tx(field, key) {', '        var t = this.bridge.translate(key);', '        if (t != undefined && t != key) {', '            field.text = t;', ...(i.flowClass ? [`            ${i.flowClass}.touch(field);`] : []), '        }', '    }'] : []),
     ...themeFns,
     ...(fg || pr ? ['    function clip(path) {', '        var o = this.base;', '        var p = path.split(".");', '        for (var k = 0; k < p.length; k++) o = o[p[k]];', '        return o;', '    }'] : []),
     ...(fg

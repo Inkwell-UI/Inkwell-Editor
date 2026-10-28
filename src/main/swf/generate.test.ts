@@ -243,3 +243,44 @@ describe('layout lint (export gate rules)', () => {
     expect(codes(quiet, 'instance-name-duplicate')).toEqual([])
   })
 })
+
+describe('generate auto layout (flow)', () => {
+  const auto = { mode: 'horizontal', spacing: 10, padding: [1, 2, 3, 4], primaryAlign: 'center', counterAlign: 'end', wrap: false }
+  const row = (over: Record<string, unknown> = {}, aSizing = 'autoWidth') => [
+    frame('r', ['row']),
+    frame('row', ['a', 'b'], { name: 'row', autoLayout: auto, transform: { x: 0, y: 0, width: 300, height: 60, rotation: 0 }, ...over }),
+    textNode('a', { name: 'a', sizing: aSizing, transform: { x: 4, y: 10, width: 80, height: 30, rotation: 0 } }),
+    textNode('b', { name: 'b', sizing: 'fixed', transform: { x: 94, y: 10, width: 50, height: 30, rotation: 0 } })
+  ]
+  const code = (g: ReturnType<typeof gen>) => g.as2.find((f) => f.path.endsWith('DoAction.as'))?.source ?? ''
+  it('a fixed auto-layout frame with an auto-width text registers its flow; the class is generated once', () => {
+    const g = gen(row())
+    expect(code(g)).toContain('mods.MyMod.InkwellFlow.attach(this, "row", 300, 60, 0, 0, 0, 10, 1, 2, 3, 4, 1, 2, ["a", "b"], [[80, 30, 1, -2, -2], [50, 30, 0, -2, -2]]);')
+    expect(g.as2.filter((f) => f.path.endsWith('InkwellFlow.as'))).toHaveLength(1)
+  })
+  it('without an auto-width text nothing changes size at run time: no class, no code', () => {
+    const g = gen(row({}, 'fixed'))
+    expect(g.as2.some((f) => f.path.endsWith('InkwellFlow.as'))).toBe(false)
+  })
+  it('a frame that wraps is left as designed, with a note', () => {
+    const g = gen(row({ autoLayout: { ...auto, wrap: true } }))
+    expect(g.as2.some((f) => f.path.endsWith('InkwellFlow.as'))).toBe(false)
+    expect(g.lint.map((l) => l.code)).toContain('flow-static')
+  })
+  it('a frame that hugs its content registers the axes it sizes; the row above it measures it as a hugging frame', () => {
+    const ns = [
+      frame('r', ['outer']),
+      frame('outer', ['row'], { name: 'outer', autoLayout: auto, transform: { x: 0, y: 0, width: 400, height: 60, rotation: 0 } }),
+      frame('row', ['a', 'b'], { name: 'row', autoLayout: auto, layout: { h: 'hug', v: 'fixed' }, transform: { x: 0, y: 0, width: 300, height: 60, rotation: 0 } }),
+      textNode('a', { name: 'a', sizing: 'autoWidth', transform: { x: 4, y: 10, width: 80, height: 30, rotation: 0 } }),
+      textNode('b', { name: 'b', sizing: 'fixed', transform: { x: 94, y: 10, width: 50, height: 30, rotation: 0 } })
+    ]
+    const c = code(gen(ns))
+    expect(c).toContain('attach(this, "outer.row", 300, 60, 1, 0, 0,')
+    expect(c).toContain('attach(this, "outer", 400, 60, 0, 0, 0, 10, 1, 2, 3, 4, 1, 2, ["row"], [[300, 60, 2, 0, 0]]);')
+  })
+  it('data synced before the Spec had these fields keeps the Figma values in extra.figma and still works', () => {
+    const g = gen(row({ autoLayout: { mode: 'horizontal', spacing: 10, padding: [1, 2, 3, 4] }, extra: { figma: { primaryAxisAlignItems: 'MAX', counterAxisAlignItems: 'CENTER' } } }))
+    expect(code(g)).toContain('1, 2, 3, 4, 2, 1, ["a", "b"]')
+  })
+})

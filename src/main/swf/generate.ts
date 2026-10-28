@@ -16,6 +16,7 @@ import { replacementClassName, replacementFrameCode, replacementGlue } from '../
 import { themeOps } from '../codegen/themeOps'
 import type { CodegenPacks } from '../codegen/packs'
 import { listAttachCode, listClassName, listClassSource, type ListInfo } from './listAs2'
+import { flowAttachCode, flowClassName, flowClassSource, flowInfo, type FlowInfo } from './flowAs2'
 
 export interface GenerateOptions {
   /** Characters the font behind an alias can draw (lint `font-missing-glyph`); omitted or undefined for an alias: not checked. */
@@ -412,6 +413,8 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   const keyed: { nodeId: string; here: string; key: string }[] = []
   const layerPaths = new Map<string, string>() // figma node id -> clip path from _root (graph targets)
   const listInfos: ListInfo[] = [] // frames with overlay role `list` (S8)
+  const flowInfos: FlowInfo[] = [] // auto-layout frames with an auto-width text: laid out again when a text changes
+  const gutters = new Map<string, { x: number; y: number }>() // TextField gutter offset per text node
   // runtime theming (V6.4): a custom menu's bound properties the INI theme changes; a shape is only addressable from AS2 inside a sprite, so those are wrapped
   const tOps = ir.target.kind === 'customMenu' && !opts.widget ? themeOps(ir) : []
   const wrapShape = new Set(tOps.filter((o) => o.target === 'self' && ir.nodes[o.nodeId]?.type === 'shape').map((o) => o.nodeId))
@@ -548,6 +551,9 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
           const l = listInfo(n)
           if (l) listInfos.push(l)
         }
+        const fl = flowInfo(n, ir.nodes, (nid) => layerPaths.get(nid), (nid) => gutters.get(nid), (nid) => { const f = flowInfos.find((x) => x.path === layerPaths.get(nid)?.slice('root.'.length)); return f && (f.hugW || f.hugH) ? { w: f.hugW, h: f.hugH } : undefined })
+        if (fl && 'info' in fl) flowInfos.push(fl.info)
+        else if (fl) lint.push(issue('info', 'flow-static', cid, `"${n.name}" keeps its designed layout when a text in it changes: ${fl.skip}.`))
         defs.push(T.sprite(id, inner))
         out.push(T.placeObject2({ ...base, charId: id }))
       } else if (n.type === 'image') {
@@ -603,6 +609,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
         // the gutter offset is in the node's own (possibly rotated) space
         const r = (rot * Math.PI) / 180
         const { x: gx, y: gy } = m.text.gutter
+        gutters.set(cid, m.text.gutter)
         out.push(T.placeObject2({ ...base, charId: id, x: x + gx * Math.cos(r) - gy * Math.sin(r), y: y + gx * Math.sin(r) + gy * Math.cos(r) }))
         if (opts.locKeys?.[cid]) keyed.push({ nodeId: cid, here, key: opts.locKeys[cid]! })
         if (Object.keys(m.text.script).length) scripts.push({ nodeId: cid, layer: n.name, path: here, script: m.text.script, ...(opts.preview && n.sizing === 'fixed' && m.text.script.verticalAlign ? { previewBoxH: n.transform.height } : {}) })
@@ -685,7 +692,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   const basePrefix = widget && wf ? 'root.widget.' : 'root.'
   const gen = opts.graphs?.graphs.length
     ? generateGraphClasses({
-        modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}), ...(menu ? { menu: true } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}),
+        modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}), ...(menu ? { menu: true } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}), ...(flowInfos.length ? { flow: flowClassName(mod) } : {}),
         layerPath: (id) => (id === (widget && wf ? wf.frame.id : ir.root) ? '' : layerPaths.get(id)?.startsWith(basePrefix) ? layerPaths.get(id)!.slice(basePrefix.length) : undefined)
       })
     : undefined
@@ -716,6 +723,10 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
     addClass('InkwellList', listClassSource(mod))
     frameCode.push(...listInfos.map((l) => listAttachCode(mod, l)))
   }
+  if (flowInfos.length) {
+    addClass('InkwellFlow', flowClassSource(mod))
+    frameCode.push(...flowInfos.map((f) => flowAttachCode(mod, f)))
+  }
   // W5: the engine glue of a menu replacement, installed before the graphs register their contract-node handlers
   const glue = ir.target.kind === 'menuReplacement' && opts.contract && !opts.widget ? replacementGlue(opts.contract, mod, swfCls, opts.preview === true) : undefined
   if (glue) {
@@ -740,10 +751,10 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       const ps = PROMPT_DEVICE_ORDER.map((d) => (opts.prompts![pid]![d] ? pathOf(glyphId(pid, d)) ?? null : null))
       return ps.some((x) => x) ? [ps] : []
     })
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
-      frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, listInfos.map((l) => listAttachCode(mod, l, '_root'))))
+      frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, [...listInfos.map((l) => listAttachCode(mod, l, '_root')), ...flowInfos.map((f) => flowAttachCode(mod, f, '_root'))]))
     }
     frameCode.push(...menuFrameCode(mod, swfCls))
   }

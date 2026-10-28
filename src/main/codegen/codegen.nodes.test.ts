@@ -132,6 +132,15 @@ describe('keyed Set Text in a menu (V13.2)', () => {
   })
 })
 
+describe('auto layout hook', () => {
+  const g = graph('f', [entry, node('a', 'core/SetText@1', { target: 'L', text: 'x' })], [wire('e', 'then', 'a', 'in')])
+  const src = (flow?: string) => generateGraphClasses({ modId: 'M', swfCls: 'T', graphs: [g], packs, layerPath: (id) => (id === 'L' ? 'title' : undefined), ...(flow ? { flow } : {}) }).classes[0]!.source
+  it('Set Text lays out the frames above its layer again, only when the SWF has such frames', () => {
+    expect(src('mods.M.InkwellFlow')).toMatch(/__g\.base\.title\.text = "x";\s+mods\.M\.InkwellFlow\.touch\(__g\.base\.title\);/)
+    expect(src()).not.toContain('touch(')
+  })
+})
+
 describe('Get Time and On Update (V13.4: time from getTimer, no per-frame event)', () => {
   it('Get Time is volatile: two consumers read the clock twice, never a cached temp', () => {
     const g = graph('t', [entry, node('t', 'core/GetTime@1'), setText('a'), setText('b')], [wire('e', 'then', 'a', 'in'), wire('a', 'then', 'b', 'in'), wire('t', 'value', 'a', 'text'), wire('t', 'value', 'b', 'text')])

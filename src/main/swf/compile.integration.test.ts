@@ -69,6 +69,28 @@ describe.skipIf(!can)('compileSwf (real FFDec)', () => {
     }
   }, 60_000)
 
+  it('auto layout: the flow class and its attach call parse and compile with FFDec, in the game SWF and the preview', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
+    const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
+    try {
+      const nodes = () => [
+        frame('r', ['row']),
+        frame('row', ['a', 'b'], { name: 'row', autoLayout: { mode: 'horizontal', spacing: 10, padding: [1, 2, 3, 4], primaryAlign: 'center', counterAlign: 'center', wrap: false } }),
+        textNode('a', { sizing: 'autoWidth' }),
+        textNode('b', { sizing: 'fixed' })
+      ]
+      for (const preview of [false, true]) {
+        const r = await compileSwf(swf(nodes(), { id: 'flow' }), { modId: 'ItestMod', buildDir: dir, ffdec, preview })
+        expect(r.lint).toEqual([])
+        const xmlPath = join(dir, 'out.xml')
+        execFileSync(javaPath, ['-jar', join(ffdecDir, 'ffdec-cli.jar'), '-swf2xml', r.swfPath, xmlPath], { stdio: 'ignore' })
+        expect(readFileSync(xmlPath, 'utf8')).toContain('__Packages.mods.ItestMod.InkwellFlow')
+      }
+    } finally {
+      ffdec.stop()
+    }
+  }, 60_000)
+
   it('a nested frame with a solid fill and clipContent: the fill and the mask shapes are filled in and the clip layer survives FFDec', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
     const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })

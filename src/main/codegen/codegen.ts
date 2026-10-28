@@ -61,6 +61,8 @@ export interface CodegenInput {
    * Without it the output is exactly what a HUD widget gets.
    */
   menu?: boolean
+  /** Full name of the generated auto-layout class (`swf/flowAs2.ts`) when the SWF has frames that re-lay out: Set Text of a layer calls its `touch` after the assignment. */
+  flow?: string
   /**
    * Dev build of a custom menu (SPEC-CHANGES S6/S7, docs/dev-mode.md): needs `menu`. Pure node outputs go to `bridge.pin(node, pin, value)`, every variable assignment to
    * `bridge.watch(graph, name, scope, value)` and the class gets `dumpVariables()`. Only for a dev deploy into a game folder; the normal game build and Package Mod never set it.
@@ -414,6 +416,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           const boundVar = typeof wv === 'string' ? String(n.fields[wv]) : /^core\/(SetVariable|Toggle)@/.test(n.kind) ? String(n.fields['variable']) : undefined
           const bv = boundVar ? g.variables.find((x) => x.id === boundVar) : undefined
           // S5.4: a saved variable goes to the bridge right after its assignment, before the continuation
+          if (i.flow && SET_TEXT.test(n.kind) && args.get('target')) out.push({ t: `${own[1]}${i.flow}.touch(${args.get('target')});`, n: n.id })
           if (bv && isSaved(bv)) out.push({ t: `${own[1]}__g.bridge.setSaved(${as2Literal(bv.name)}, __g.v_${varNames.get(bv.id)});`, n: n.id })
           if (bv && dev) out.push({ t: `${own[1]}__g.bridge.watch(${as2Literal(g.id)}, ${as2Literal(bv.name)}, "${bv.scope}", __g.v_${varNames.get(bv.id)});`, n: n.id })
           if (boundVar && binders.has(boundVar)) out.push({ t: `${own[1]}__g.b_${varNames.get(boundVar)}();`, n: n.id })
