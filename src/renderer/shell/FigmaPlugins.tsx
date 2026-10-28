@@ -4,12 +4,13 @@ import { inkwell } from '../hooks/api'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Dialog } from '../ui/Dialog'
+import { SettingItem } from '../ui/SettingItem'
 
 const s = strings.settings.figmaPlugins
 /** Everything the section shows, lowercased, for the Settings search. */
 export const FIGMA_PLUGINS_TEXT = `${s.title} ${s.none} ${s.forget} ${s.search}`.toLowerCase()
 
-/** Settings section "Figma plugins": how many are approved and "Forget all Figma plugins" (after a confirmation). */
+/** Settings row "Plugin approvals" (Figma category): how many are approved and "Forget all Figma plugins" (after a confirmation). */
 export function FigmaPlugins() {
   const [count, setCount] = useState<number>()
   const [confirm, setConfirm] = useState(false)
@@ -23,8 +24,7 @@ export function FigmaPlugins() {
     })
   }
   return (
-    <section data-testid="figma-plugins" aria-labelledby="figma-plugins-title">
-      <h3 id="figma-plugins-title">{s.title}</h3>
+    <SettingItem name={s.name} value={count === undefined ? undefined : count ? s.countShort(count) : s.noneShort} testId="figma-plugins" autoOpen={!!msg}>
       {count !== undefined && <p className="dim" data-testid="figma-plugins-count">{count ? s.count(count) : s.none}</p>}
       {msg && <p className={msg.ok ? 'tone-ok' : 'tone-error'} role="status" data-testid="figma-plugins-msg">{msg.text}</p>}
       <div className="row-actions">
@@ -41,6 +41,6 @@ export function FigmaPlugins() {
           </div>
         </Dialog>
       )}
-    </section>
+    </SettingItem>
   )
 }

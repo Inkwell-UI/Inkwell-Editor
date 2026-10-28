@@ -14,7 +14,6 @@ import { useDialogStore } from '../state/dialogStore'
 import { flushGraphSaves } from '../state/graphStore'
 import { Toasts } from '../ui/Toasts'
 import { Dialogs } from './Dialogs'
-import { ProjectSettingsView } from './ProjectSettingsView'
 import { SettingsView } from './SettingsView'
 import { StartScreen } from './StartScreen'
 import { StatusBar } from './StatusBar'
@@ -109,7 +108,7 @@ export function AppShell() {
     <div className="shell">
       <TitleBar />
       <TopBar />
-      <main className="shell-main">{settingsOpen ? <SettingsView /> : projectSettingsOpen ? <ProjectSettingsView /> : <WorkspaceView />}</main>
+      <main className="shell-main">{settingsOpen ? <SettingsView key="settings" /> : projectSettingsOpen ? <SettingsView key="project" initial="project" /> : <WorkspaceView />}</main>
       <StatusBar />
       <Dialogs />
       <Toasts />

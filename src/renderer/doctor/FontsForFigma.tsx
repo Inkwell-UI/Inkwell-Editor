@@ -5,6 +5,7 @@ import { inkwell } from '../hooks/api'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Dialog } from '../ui/Dialog'
+import { SettingItem } from '../ui/SettingItem'
 
 const s = strings.fonts
 /** Everything the section shows, lowercased, for the Settings search. */
@@ -12,7 +13,7 @@ export const FONTS_TEXT = [s.title, s.intro, s.notice, s.install, s.installMissi
 
 const stepText = (p: FontToolProgress): string => (p.step === 'install' || p.step === 'remove' ? s.steps[p.step](p.done, p.total) : s.steps[p.step])
 
-/** Settings section "Fonts for Figma" (opt-in): notice, status, Install (after a confirmation that repeats the notice and lists the faces) and Remove. Never runs by itself. */
+/** Settings row "Skyrim fonts" (Figma category, opt-in): notice, status, Install (after a confirmation that repeats the notice and lists the faces) and Remove. Never runs by itself. */
 export function FontsForFigma() {
   const [status, setStatus] = useState<FontToolStatus>()
   const [loadError, setLoadError] = useState<string>()
@@ -50,8 +51,13 @@ export function FontsForFigma() {
   const notWin = status && !status.platformOk ? s.notWindows : undefined
   const r = result?.r
   return (
-    <section className="fonts-figma" data-testid="fonts-figma" aria-labelledby="fonts-figma-title">
-      <h3 id="fonts-figma-title">{s.title}</h3>
+    <SettingItem
+      name={s.title}
+      value={status ? (installed ? s.statusInstalled(status.faces.length, status.faces.length + status.missing.length) : s.statusNone) : undefined}
+      tone={busy ? 'busy' : installed && missing.length > 0 ? 'warn' : 'none'}
+      autoOpen={!!(busy || result || loadError)}
+      testId="fonts-figma"
+    >
       <p className="dim">{s.intro}</p>
       <p className="banner banner-info fonts-notice" data-testid="fonts-notice"><span>{s.notice}</span></p>
       <p className="dim">{s.quality}</p>
@@ -121,6 +127,6 @@ export function FontsForFigma() {
           </div>
         </Dialog>
       )}
-    </section>
+    </SettingItem>
   )
 }

@@ -7,7 +7,7 @@ import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 
 const s = strings.settings.project
-/** Project Settings section (only with a project open): the Mod id, checked while typing; a rename warns that the deployed file names change. */
+/** Project settings (only with a project open; the Project page of the Settings view): the Mod id, checked while typing; a rename warns that the deployed file names change. */
 export function ProjectSettings() {
   const project = useProject()
   const current = project?.modId ?? ''
@@ -25,8 +25,7 @@ export function ProjectSettings() {
     })
   }
   return (
-    <section data-testid="project-settings" aria-labelledby="project-settings-title">
-      <h3 id="project-settings-title">{s.title}</h3>
+    <section data-testid="project-settings">
       <label className="field">
         <span>{s.modId}</span>
         <input

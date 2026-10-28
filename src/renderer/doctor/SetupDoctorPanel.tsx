@@ -1,13 +1,13 @@
-import { CircleAlert, CircleCheck, CircleDashed, CircleX, FolderOpen, Loader, RefreshCw, TriangleAlert, X } from 'lucide-react'
+import { CircleAlert, FolderOpen, Loader, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { ROW_SETTINGS, type CheckResult, type Fix, type SettingKey } from '../../shared/doctor'
 import { useSetupDoctor, type DoctorHook } from '../hooks/useSetupDoctor'
 import { formatMs } from '../model/statusBar'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { SettingItem, type ItemTone } from '../ui/SettingItem'
 
-const ICON = { pass: CircleCheck, warn: TriangleAlert, fail: CircleX, skipped: CircleDashed } as const
-const TONE = { pass: 'tone-ok', warn: 'tone-warn', fail: 'tone-error', skipped: '' } as const
+const TONE: Record<string, ItemTone> = { pass: 'ok', warn: 'warn', fail: 'error', skipped: 'none' }
 
 function FixButton({ row, fix, d, primary, extra }: { row: CheckResult; fix: Fix; d: DoctorHook; primary?: boolean; extra?: boolean }) {
   const a = fix.action
@@ -33,7 +33,6 @@ function SettingField({ name, folder, row, d }: { name: SettingKey; folder: bool
   const env = src === 'env'
   const stored = src === 'settings' || env ? (s?.[name] ?? '') : ''
   const hint = name === 'mo2ModName' ? strings.doctor.modNamePlaceholder : src === 'default' ? s?.[name] : row.found?.value
-  const shownSource = stored ? src : src === 'default' ? 'default' : row.found?.source
   const [text, setText] = useState(stored)
   const submitted = useRef(stored) // Enter and blur both commit; the second one must not save again
   useEffect(() => {
@@ -58,7 +57,7 @@ function SettingField({ name, folder, row, d }: { name: SettingKey; folder: bool
     <div className="field" data-testid={`field-${name}`} data-busy={saving || checking ? 'true' : undefined}>
       <div className="field-head">
         <label htmlFor={id}>{label}</label>
-        {shownSource && <span className="source-badge" data-testid={`source-${name}`} title={env ? strings.doctor.fromEnv(envName) : undefined}>{strings.doctor.sourceLabel(shownSource, envName)}</span>}
+        {env && <span className="source-badge" data-testid={`source-${name}`} title={strings.doctor.fromEnv(envName)}>{strings.doctor.locked}</span>}
         {(saving || checking) && (
           <span className="dim" role="status">
             <Loader size={12} className="spin" aria-hidden="true" /> {saving ? strings.doctor.saving : strings.doctor.checking}
@@ -94,12 +93,16 @@ function SettingField({ name, folder, row, d }: { name: SettingKey; folder: bool
 }
 
 /** Everything a row shows or can set, lowercased, for the Settings search. */
-const rowText = (r: CheckResult): string =>
+export const rowText = (r: CheckResult): string =>
   [r.id, strings.doctor.titles[r.id] ?? r.label, r.detail, ...(ROW_SETTINGS[r.id] ?? []).flatMap((f) => [f.key, strings.doctor.fields[f.key], strings.doctor.envVars[f.key]])].join(' ').toLowerCase()
+
+/** Checks that need a look: a warning or a failure. */
+export const attentionCount = (rows: CheckResult[] | undefined): number => rows?.filter((r) => r.status === 'warn' || r.status === 'fail').length ?? 0
+
+const settingValue = (d: DoctorHook, key: SettingKey): string | undefined => (d.settings as unknown as Record<string, string | undefined> | undefined)?.[key]
 
 function Row({ row, d }: { row: CheckResult; d: DoctorHook }) {
   const checking = d.checking.includes(row.id)
-  const Icon = checking ? Loader : ICON[row.status]
   const title = strings.doctor.titles[row.id] ?? row.label
   const status = checking ? strings.doctor.checking : (strings.doctor.status[row.status] ?? row.status)
   const fields = ROW_SETTINGS[row.id]
@@ -107,11 +110,11 @@ function Row({ row, d }: { row: CheckResult; d: DoctorHook }) {
   const own = (f: Fix): boolean => f.action.kind === 'browse' && !!fields?.some((x) => x.key === (f.action as { setting: string }).setting)
   const fix = row.fix && !own(row.fix) ? row.fix : undefined
   const extra = row.extra?.filter((f) => !own(f))
+  // the line shows the path a row points at, else what the check found
+  const value = (fields?.[0] && (settingValue(d, fields[0].key) || row.found?.value)) || row.detail
   return (
     <li className="doctor-row" data-testid={`doctor-${row.id}`} data-status={checking ? 'checking' : row.status} aria-busy={checking || undefined}>
-      <Icon size={16} className={checking ? 'spin' : TONE[row.status]} role="img" aria-label={strings.doctor.rowLabel(title, status)} />
-      <div className="doctor-body">
-        <strong>{title}</strong> <span className="dim">{status}</span>
+      <SettingItem name={title} value={value} tone={checking ? 'busy' : (TONE[row.status] ?? 'none')} statusLabel={status} autoOpen={row.status === 'warn' || row.status === 'fail'}>
         <p className="doctor-detail" data-testid={`doctor-detail-${row.id}`}>{row.detail}</p>
         {fields && (
           <div className="doctor-fields">
@@ -128,7 +131,7 @@ function Row({ row, d }: { row: CheckResult; d: DoctorHook }) {
         {row.id === 'vanilla' && d.cache && (
           <p className={d.cache.ok ? 'tone-ok' : 'tone-error'}>{d.cache.ok ? strings.doctor.cacheDone(d.cache.entries ?? 0, ((d.cache.bytes ?? 0) / 1048576).toFixed(1)) : strings.doctor.cacheFailed(d.cache.error)}</p>
         )}
-      </div>
+      </SettingItem>
     </li>
   )
 }
@@ -148,24 +151,16 @@ function Benchmark({ d }: { d: DoctorHook }) {
   )
 }
 
-/** The environment checks (UX 5.3, the former Setup Doctor): one row per check (icon, detail, its editable settings, fix actions), Re-run and the two on-request tasks. Rendered by the Settings view (shell/SettingsView.tsx), which passes the search `query`. */
-export function SetupDoctorPanel({ query = '' }: { query?: string }) {
-  const d = useSetupDoctor()
+/** The checks of one Settings category (UX 5.3, the former Setup Doctor): one collapsed line per check, a problem opens itself. The Settings view owns the hook and says which rows belong where (`inCategory`) and what the search `query` is. */
+export function DoctorRows({ d, inCategory, query = '' }: { d: DoctorHook; inCategory: (r: CheckResult) => boolean; query?: string }) {
   const q = query.trim().toLowerCase()
-  const rows = d.results?.filter((r) => !q || rowText(r).includes(q))
-  const count = (s: string): number => d.results?.filter((r) => r.status === s).length ?? 0
+  const rows = d.results?.filter((r) => inCategory(r) && (!q || rowText(r).includes(q)))
   return (
-    <div className="doctor" data-testid="setup-doctor">
-      <p>{strings.doctor.intro}</p>
-      <div className="doctor-head">
-        <Btn icon={RefreshCw} onClick={d.rerun} reason={d.running ? strings.doctor.running : undefined} label={strings.doctor.rerunTip} testId="doctor-rerun">{strings.doctor.rerun}</Btn>
-        <span className="dim" role="status">{d.running ? strings.doctor.running : d.results ? strings.doctor.summary(count('pass'), count('warn'), count('fail')) : ''}</span>
-      </div>
+    <>
       {d.loadError && <p className="tone-error" role="alert" data-testid="doctor-load-error">{strings.doctor.loadFailed(d.loadError)}</p>}
       <ul className="plain checks" aria-label={strings.dialogs.doctor.title}>
         {rows?.map((r) => <Row key={r.id} row={r} d={d} />)}
       </ul>
-      {q && rows?.length === 0 && <p className="dim" role="status">{strings.settings.noMatch}</p>}
-    </div>
+    </>
   )
 }
