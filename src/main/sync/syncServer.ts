@@ -64,10 +64,10 @@ export function sanitizeName(name: string, fallback: string): string {
   return n || fallback.replace(/[^A-Za-z0-9._-]+/g, '_')
 }
 
-/** Nodes that no root reaches (derived, never stored). */
+/** Nodes that no root reaches (derived, never stored). A component and what is inside it are not stray: components are kept away from the design on purpose, to be added by code. */
 export function unreachableNodes(ir: Swf): string[] {
   const seen = new Set<string>()
-  const stack = ir.nodes[ir.root] ? [ir.root] : []
+  const stack = [...(ir.nodes[ir.root] ? [ir.root] : []), ...Object.keys(ir.nodes).filter((id) => ir.nodes[id]!.type === 'component')]
   while (stack.length) {
     const id = stack.pop()!
     if (seen.has(id)) continue

@@ -232,6 +232,7 @@ describe('syncServer', () => {
   it('unreachableNodes and sanitizeName', () => {
     expect(unreachableNodes(sample())).toEqual([])
     expect(unreachableNodes(swf([frame('f', []), rectShape('s')]))).toEqual(['s'])
+    expect(unreachableNodes(swf([frame('f', []), { ...frame('c', ['t']), type: 'component', variants: [] } as never, { ...rectShape('t'), parent: 'c' }]))).toEqual([])
     expect(sanitizeName('Menu / Main*', '1:2')).toBe('Menu_Main')
     expect(sanitizeName('???', '1:2')).toBe('1_2')
   })
