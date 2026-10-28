@@ -1,6 +1,6 @@
 # Functions
 
-Plan and phases: `PLAN-FUNCTIONS.md` (workspace root). This file is what is built so far: **Phase 1, steps 1 to 4** (Spec, Core Pack nodes, codegen, validation). The editor UI (extract from selection, signature editor, call-site updates) is not built yet.
+Plan and phases: `PLAN-FUNCTIONS.md` (workspace root). This file is what is built so far: **Phase 1** (Spec, Core Pack nodes, codegen, validation, editing logic and a first editor UI). The UI has **not been looked at in the running app yet** (only its store logic is tested): see Editor UI.
 
 ## What a function is
 
@@ -37,6 +37,13 @@ Errors: Entry/Exit outside a function graph; a function without a Function Entry
 
 `resolvePins(def, node, vars, signature?)` takes the graph's signature (Function Entry and Exit read their pins from it); `extra.dynamicExits` adds one Exec output per entry of a field.
 
+## Editor UI
+
+- **Creating:** Navigator > Graphs > `+ Function` (a function graph with one exit "Done", Entry wired to Exit; it is not attached to a layer). **Make Function** (Graph panel toolbar) turns the selected nodes into a function and puts one Call Function node in their place (`shared/functions.ts` `extractFunction`, `state/graphDocs.ts` `makeFunction`; one undo step in the open graph, the function file is created and kept). It is refused, with the reason in a toast and nothing created, when the selection has an event, uses a graph variable, is entered at more than one place, or nothing connects to it.
+- **Signature editor:** above the canvas of a function graph (`graph/SignatureEditor.tsx`): inputs and outputs (name, type), exits (name; at least one). A name is applied on Enter or blur and only when valid (identifier, not reserved, unique; outputs and exits share names), so the file never holds a signature the Spec refuses. Each change is one undo step.
+- **Calls follow the signature:** the signature is part of the graph store's document. When it changes (edit, undo or redo) the Function Entry / Exit wires follow their pin by id, and every Call Function node in the SWF's other graphs is refreshed (`syncCalls`, not recorded in their histories: they are derived, and undoing the signature brings them back). A call node's own `function` field is a picker; choosing another function copies that signature and drops the wires of pins that no longer exist (`pointCall`). The copied lists are hidden (`extra.managedFields`).
+- **Function Exit** has an exit picker (the signature's exits). The Functions node category has its own colour.
+
 ## Verified
 
 - Unit tests: `codegen/functions.test.ts` (generated AS2, frame code, validation). Real FFDec compile of a function and its caller, game and preview flavour: `codegen/functions.integration.test.ts`.
@@ -44,7 +51,7 @@ Errors: Entry/Exit outside a function graph; a function without a Function Entry
 
 ## Known limits (v1)
 
-- The editor cannot create a function yet (no UI); graphs and calls are written as JSON.
+- The UI is untested by eye. Make Function does not pull pure nodes that only feed the selection into the function; they stay outside and arrive as inputs.
 - `rn`/`wt` flow-trace sequence numbers (`rc`, `tq`) are per instance, so in a Dev build the order of timer traces across a function and its caller is not global. Preview traces carry node ids without a graph id, so a node id reused in two graphs would be ambiguous (matters for libraries, Phase 2).
 - A call placed on two exec paths is emitted twice, like any exec node (`docs/codegen.md`).
 - Functions are per SWF; sharing across SWFs is Phase 2 (libraries).

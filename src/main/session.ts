@@ -5,6 +5,7 @@ import { homedir, release } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { Graph, Swf, type Localization, type MenuSettings } from '@inkwell-ui/spec'
 import { bindingsOf } from '../shared/graphBinding'
+import { newFunctionGraph } from '../shared/functions'
 import { defIndex, newGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type PackSet } from '../shared/graphs'
 import { validateGraph } from '../shared/graphValidate'
 import { IPC, type SaveOverlayResult } from '../shared/ipc'
@@ -813,11 +814,12 @@ export function createSession(deps: SessionDeps) {
         return { ok: false, error: e instanceof Error ? e.message : String(e) }
       }
     },
-    async createGraph(swf: string, name: string, scope: 'menu' | 'component'): Promise<GraphResult<{ graph: Graph }>> {
+    async createGraph(swf: string, name: string, scope: Graph['scope']): Promise<GraphResult<{ graph: Graph }>> {
       const m = graphs.get(swf)
       if (!projectDir || !m) return { ok: false, error: 'No such swf in the open project' }
       if (scope === 'menu' && [...m.values()].some((g) => g.scope === 'menu')) return { ok: false, error: 'This SWF already has its menu graph' }
-      const graph = newGraph(newGraphId(name, new Set(m.keys())), name, scope)
+      const id = newGraphId(name, new Set(m.keys()))
+      const graph = scope === 'function' ? newFunctionGraph(id, name) : newGraph(id, name, scope)
       const r = await writeGraph(projectDir, swf, graph)
       if (!r.ok) return r
       m.set(graph.id, graph)

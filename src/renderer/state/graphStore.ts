@@ -3,6 +3,7 @@ import type { Edge, Node } from '@xyflow/react'
 import { temporal } from 'zundo'
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import type { Graph, GraphNode } from '@inkwell-ui/spec'
+import { applySignature, callFields, refreshCall, refreshCalls, staleCalls } from '../../shared/functions'
 import { registerHistory, unregisterHistory } from './swfHistory'
 
 /**
@@ -47,6 +48,8 @@ interface Doc {
   variables: Graph['variables']
   comments: Graph['comments']
   groups: Graph['groups']
+  /** A function graph's interface (docs/functions.md); part of the document so a change is one undo entry. Undefined for every other graph. */
+  signature: Graph['signature']
 }
 export interface GraphState extends Doc {
   /** specVersion, id, scope and every unknown top-level key of the file. */
@@ -67,19 +70,28 @@ export interface GraphState extends Doc {
   addVariable(v: Pick<Variable, 'id' | 'name' | 'type'> & { default?: unknown; scope?: Variable['scope'] }): void
   updateVariable(id: string, patch: Partial<Pick<Variable, 'name' | 'type' | 'default'>>): void
   removeVariable(id: string): void
+  /** Function graphs: gives the function a new signature; the wires of its Function Entry / Exit nodes follow their pin by id. Callers follow through the store listener. */
+  setSignature(next: NonNullable<Graph['signature']>): void
+  /** Call Function: points the node at `fn` (copies its signature; wires of pins that no longer exist are dropped). */
+  setCallTarget(nodeId: string, fn: Graph): void
+  /** Refreshes every Call Function node that calls `fn` and holds an out-of-date copy of its signature. */
+  syncCalls(fn: Graph): void
+  /** Replaces the nodes, wires and groups with those of `g` (Make function: the selection became a call). One undo entry. */
+  applyGraph(g: Graph): void
   beginDrag(): void
   endDrag(): void
 }
 export type GraphStore = UseBoundStore<StoreApi<GraphState>> & { temporal: StoreApi<import('zundo').TemporalState<Doc>> }
 
 export function toFlow(g: Graph): Doc & { meta: GraphState['meta'] } {
-  const { nodes, edges, variables, comments, groups, name, ...meta } = g
+  const { nodes, edges, variables, comments, groups, name, signature, ...meta } = g
   return {
     meta,
     name,
     variables,
     comments,
     groups,
+    signature,
     nodes: nodes.map((n) => ({ id: n.id, type: NODE_TYPE, position: { x: n.pos.x, y: n.pos.y }, data: n as GraphNodeData })),
     edges: edges.map((e) => ({ id: edgeId(e.from, e.to), source: e.from.node, target: e.to.node, sourceHandle: outHandle(e.from.pin), targetHandle: inHandle(e.to.pin), data: e as GraphEdgeData }))
   }
@@ -93,13 +105,26 @@ export function toGraph(s: Pick<GraphState, keyof Doc | 'meta'>): Graph {
     edges: s.edges.map((e) => ({ ...e.data, from: { ...e.data!.from, node: e.source, pin: pinOf(e.sourceHandle) }, to: { ...e.data!.to, node: e.target, pin: pinOf(e.targetHandle) } })),
     variables: s.variables,
     comments: s.comments,
-    groups: s.groups
+    groups: s.groups,
+    ...(s.signature ? { signature: s.signature } : {})
   } as Graph
+}
+
+/** The state with the nodes' data and the wires of `g`; existing React Flow nodes keep their selection and measured size. */
+function withNodeData(s: Pick<GraphState, 'nodes'>, g: Graph): Pick<GraphState, 'nodes' | 'edges'> {
+  const byId = new Map(g.nodes.map((n) => [n.id, n]))
+  return {
+    nodes: s.nodes.map((n) => {
+      const next = byId.get(n.id)
+      return next && next.fields !== (n.data as GraphNode).fields ? { ...n, data: { ...n.data, ...next } as GraphNodeData } : n
+    }),
+    edges: toFlow(g).edges
+  }
 }
 
 /** What a history entry compares: everything the file holds except selection and measured sizes. */
 const docKey = (p: Doc): string =>
-  JSON.stringify([p.name, p.nodes.map((n) => [n.id, n.position, n.data]), p.edges.map((e) => [e.id, e.source, e.target, e.sourceHandle, e.targetHandle, e.data]), p.variables, p.comments, p.groups])
+  JSON.stringify([p.name, p.nodes.map((n) => [n.id, n.position, n.data]), p.edges.map((e) => [e.id, e.source, e.target, e.sourceHandle, e.targetHandle, e.data]), p.variables, p.comments, p.groups, p.signature])
 
 interface Entry {
   swfName: string
@@ -130,9 +155,9 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
     return hit.store
   }
   const history = createHistory<GraphState, Doc>({
-    partialize: (s) => ({ name: s.name, nodes: s.nodes, edges: s.edges, variables: s.variables, comments: s.comments, groups: s.groups }),
+    partialize: (s) => ({ name: s.name, nodes: s.nodes, edges: s.edges, variables: s.variables, comments: s.comments, groups: s.groups, signature: s.signature }),
     key: docKey,
-    slices: (s) => [s.nodes, s.edges, s.variables, s.name]
+    slices: (s) => [s.nodes, s.edges, s.variables, s.name, s.signature]
   })
   const store = create<GraphState>()(
     temporal(
@@ -180,6 +205,26 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
         updateVariable: (id, patch) =>
           history.edit(`var:${id}`, patch.name ?? patch.default, get, () => set((s) => ({ variables: s.variables.map((v) => (v.id === id ? ({ ...v, ...patch } as Variable) : v)) }))),
         removeVariable: (id) => set((s) => ({ variables: s.variables.filter((v) => v.id !== id) })),
+        setSignature: (next) =>
+          set((s) => {
+            const g = applySignature(toGraph(s), next)
+            return { signature: next, edges: toFlow(g).edges }
+          }),
+        setCallTarget: (nodeId, fn) =>
+          set((s) => {
+            const g = toGraph(s)
+            // the new function's pins have other ids, so the wires of the old call's pins are dropped by the refresh; the node keeps its place and id
+            const moved = { ...g, nodes: g.nodes.map((n) => (n.id === nodeId ? { ...n, fields: { ...n.fields, function: fn.id } } : n)) }
+            const next = refreshCall(moved, nodeId, fn)
+            return withNodeData(s, next)
+          }),
+        syncCalls: (fn) =>
+          set((s) => {
+            const g = toGraph(s)
+            if (staleCalls(g, fn).length === 0) return s
+            return withNodeData(s, refreshCalls(g, fn))
+          }),
+        applyGraph: (g) => set((s) => ({ ...toFlow(g), meta: s.meta, nodes: toFlow(g).nodes })),
         beginDrag: () => history.beginDrag(store),
         endDrag: () => history.endDrag(store)
       }),
@@ -190,12 +235,49 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
   stores.set(key, entry)
   registerHistory(swfId, `graph:${initial.id}`, store.temporal)
   store.subscribe((s, prev) => {
+    if (s.signature !== prev.signature && s.meta.scope === 'function') syncCallers(swfId, initial.id, toGraph(s))
     if (docKey(s) === docKey(prev)) return // selection and measuring are not edits
     onEdit?.()
     clearTimeout(entry.timer)
     entry.timer = setTimeout(() => save(entry), SAVE_DELAY)
   })
   return store
+}
+
+/**
+ * A function's signature changed (an edit, an undo or a redo): every other graph of the SWF refreshes its calls of it. Not recorded in their histories: the calls are derived from the
+ * signature, so undoing the signature change brings them back by itself, and an extra entry here would break the SWF's undo order.
+ */
+function syncCallers(swfId: string, fnId: string, fn: Graph): void {
+  for (const [key, e] of stores) {
+    if (!key.startsWith(`${swfId}/`) || key === `${swfId}/${fnId}`) continue
+    const t = e.store.temporal.getState()
+    t.pause()
+    try {
+      e.store.getState().syncCalls(fn)
+    } finally {
+      t.resume()
+    }
+  }
+}
+
+/** The function graphs of the SWF that owns `store` (a Call Function node's choices). */
+export function functionGraphs(store: GraphStore): Graph[] {
+  const swfId = [...stores].find(([, e]) => e.store === store)?.[0].split('/')[0]
+  if (swfId === undefined) return []
+  return [...stores].flatMap(([key, e]) => (key.startsWith(`${swfId}/`) && e.store.getState().meta.scope === 'function' ? [toGraph(e.store.getState())] : []))
+}
+
+/** Points a Call Function node of `store` at the function graph `fnId` of the same SWF. */
+export function pointCall(store: GraphStore, nodeId: string, fnId: string): void {
+  const fn = functionGraphs(store).find((g) => g.id === fnId)
+  if (fn) store.getState().setCallTarget(nodeId, fn)
+}
+
+/** Writes a graph's file now (a graph created from a selection has content the file does not have yet). */
+export function saveGraphNow(swfId: string, graphId: string): void {
+  const e = stores.get(`${swfId}/${graphId}`)
+  if (e) save(e)
 }
 
 /** The open store of a graph, if it was loaded. */

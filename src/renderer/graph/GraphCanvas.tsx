@@ -52,6 +52,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   const nodes = useStore(store, (s) => s.nodes)
   const edges = useStore(store, (s) => s.edges)
   const variables = useStore(store, (s) => s.variables)
+  const signature = useStore(store, (s) => s.signature)
   const picked = useStore(store, (s) => s.nodes.filter((n) => n.selected).length)
   const wires = useStore(store, (s) => s.edges.filter((e) => e.selected).length)
   const runs = useTraceStore((s) => s.runs)
@@ -64,7 +65,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   const [find, setFind] = useState(false)
   const [varDrop, setVarDrop] = useState<{ x: number; y: number; id: string; name: string } | null>(null)
   const layers = useMemo(() => layerOptions(swf.ir, overlay), [swf.ir, overlay])
-  const rule = useMemo(() => connectionRule(defs, () => store.getState().variables), [defs, store])
+  const rule = useMemo(() => connectionRule(defs, () => store.getState().variables, () => store.getState().signature), [defs, store])
   const sdefs = useMemo(() => spawnDefs(defs), [defs])
   const categories = useMemo(() => categoriesOf(defs), [defs])
 
@@ -82,7 +83,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   )
   useEffect(() => validation.start(), [validation])
 
-  const ctx = useMemo<GraphCtx>(() => ({ store, defs, layers, variables, issues: validation.use }), [store, defs, layers, variables, validation])
+  const ctx = useMemo<GraphCtx>(() => ({ store, defs, layers, variables, signature, issues: validation.use }), [store, defs, layers, variables, signature, validation])
 
   const clipboard = useMemo(
     () => createClipboard<FlowNode, ReturnType<GraphStore['getState']>>({ store, edge: (s, sh, t, th) => newEdge({ node: s, pin: pinName(sh) }, { node: t, pin: pinName(th) }) as FlowEdge }),
@@ -134,7 +135,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   // Space listens on the window: only open when the pointer is over this canvas
   const space = useSpaceMenu(wrap, (p) => wrap.current?.matches(':hover') && setMenu({ ...p, from: null }))
 
-  const options = useMemo(() => (menu ? spawnFor({ defs, spawn: sdefs, nodes: store.getState().nodes, edges: store.getState().edges, vars: store.getState().variables, from: menu.from }) : []), [menu, defs, sdefs, store])
+  const options = useMemo(() => (menu ? spawnFor({ defs, spawn: sdefs, nodes: store.getState().nodes, edges: store.getState().edges, vars: store.getState().variables, sig: store.getState().signature, from: menu.from }) : []), [menu, defs, sdefs, store])
   const pick = (o: SpawnOption<KwDef>): void => {
     if (!menu) return
     const id = crypto.randomUUID()
@@ -194,14 +195,14 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     const index = nodeIndex(nodes)
     return edges.map((e) => {
       const n = index.get(e.source)
-      const pin = n && nodePins(defs, n, variables)?.outputs.find((p) => p.name === pinName(e.sourceHandle))
+      const pin = n && nodePins(defs, n, variables, signature)?.outputs.find((p) => p.name === pinName(e.sourceHandle))
       const exec = pin ? pin.type === 'Exec' : false
       const color = pin ? PIN_STYLE[pin.type].color : 'var(--fg-faint)'
       // an exec wire lights up (restarting its animation: the two classes alternate) each time the node it leads to ran in the preview
       const ran = exec ? runs[e.target] ?? 0 : 0
       return { ...e, className: `${exec ? 'gw-exec' : 'gw-data'}${ran ? ` gw-run-${ran % 2}` : ''}`, style: { stroke: color, strokeWidth: exec ? 3 : 1.5 } }
     })
-  }, [nodes, edges, defs, variables, runs])
+  }, [nodes, edges, defs, variables, signature, runs])
 
   const select = useSelectionStore((s) => s.selectGraphNode)
   const onSelectionChange = useCallback(

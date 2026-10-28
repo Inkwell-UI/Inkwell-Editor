@@ -21,6 +21,7 @@ export function GraphsList() {
       <header className="section-title">
         <h3 id="nav-graphs">{strings.nav.graphs}</h3>
         <Btn label={strings.nav.addGraph} testId="graph-add-nav" onClick={() => void actions.add()} reason={actions.canAdd}>{strings.nav.addGraphShort}</Btn>
+        <Btn label={strings.nav.addFunction} testId="function-add-nav" onClick={() => void actions.addFn()} reason={actions.canAdd}>{strings.nav.addFunctionShort}</Btn>
       </header>
       {actions.error && <p className="tone-error">{actions.error}</p>}
       {swf && loaded && ids.length === 0 && <p className="empty">{strings.nav.graphsEmpty}</p>}
@@ -62,7 +63,7 @@ function Row({ swfId, id, active, actions, store }: { swfId: string; id: string;
             <button type="button" className="layer-main" aria-pressed={active} onClick={() => setActiveGraph(swfId, id)} data-testid="graph-open">
               <Workflow size={14} aria-hidden="true" className="type-icon" />
               <span className="layer-name">{name}</span>
-              <span className="layer-type">{scope === 'menu' ? strings.nav.menuGraph : strings.nav.componentGraph}</span>
+              <span className="layer-type">{scope === 'menu' ? strings.nav.menuGraph : scope === 'function' ? strings.nav.functionGraph : strings.nav.componentGraph}</span>
             </button>
             <Btn icon={Pencil} label={strings.nav.renameGraph} onClick={() => setEditing(name)} testId="graph-rename" />
             {confirm ? (

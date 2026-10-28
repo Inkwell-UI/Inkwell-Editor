@@ -65,6 +65,18 @@ export function FieldEditor({ row, ctx, bare }: { row: FieldRow; ctx: FieldCtx; 
       )
       break
     }
+    case 'choice': {
+      const id = typeof row.value === 'string' ? row.value : ''
+      const choices = row.choices ?? []
+      editor = (
+        <select {...common} className={`${common.className}${id !== '' && !choices.some((c) => c.value === id) ? ' is-bad' : ''}`} value={id} onChange={(e) => set(e.target.value === '' ? undefined : e.target.value)} data-testid="choice-picker">
+          <option value="">{strings.graph.pickChoice}</option>
+          {id !== '' && !choices.some((c) => c.value === id) && <option value={id}>{id}</option>}
+          {choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
+      )
+      break
+    }
     case 'params':
       editor = <ParamsEditor value={row.value} onChange={set} />
       break

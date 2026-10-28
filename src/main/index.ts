@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell, type MenuItemConstructorOptions } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
+import type { Graph } from '@inkwell-ui/spec'
 import { IPC } from '../shared/ipc'
 import type { AppMenu } from '../shared/appMenu'
 import type { DeployScope, DeployTargetId } from '../shared/deploy'
@@ -202,7 +203,7 @@ ipcMain.handle(IPC.locTxtExport, async (): Promise<LocFileResult> => {
 ipcMain.handle(IPC.graphsList, (_e, swf: string) => session.listGraphs(swf))
 ipcMain.handle(IPC.graphsLoad, (_e, swf: string, id: string) => session.loadGraph(swf, id))
 ipcMain.handle(IPC.graphsSave, (_e, swf: string, g: unknown) => session.saveGraph(swf, g))
-ipcMain.handle(IPC.graphsCreate, (_e, swf: string, name: string, scope: 'menu' | 'component') => session.createGraph(swf, name, scope))
+ipcMain.handle(IPC.graphsCreate, (_e, swf: string, name: string, scope: Graph['scope']) => session.createGraph(swf, name, scope))
 ipcMain.handle(IPC.graphsDelete, (_e, swf: string, id: string) => session.deleteGraph(swf, id))
 ipcMain.handle(IPC.swfDiscard, (_e, swfId: string) => session.discardSwf(swfId))
 ipcMain.handle(IPC.graphsAs2, (_e, swf: string, g: unknown) => session.graphAs2(swf, g))

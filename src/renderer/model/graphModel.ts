@@ -28,16 +28,16 @@ export const isComponentType = (t: PinType): boolean => COMPONENT_TYPES.includes
 
 export type Defs = ReadonlyMap<string, NodeDef>
 type Pins = ReturnType<typeof resolvePins>
-const pinCache = new WeakMap<object, { vars: unknown; defs: Defs; pins: Pins }>()
+const pinCache = new WeakMap<object, { vars: unknown; sig: unknown; defs: Defs; pins: Pins }>()
 
-/** Effective pins of a node (typeFrom and dynamic outputs applied), cached per node data object. Undefined for a kind no pack defines. */
-export function nodePins(defs: Defs, node: Pick<FlowNode, 'data'>, vars: Graph['variables']): Pins | undefined {
+/** Effective pins of a node (typeFrom, dynamic pins and the graph's function signature applied), cached per node data object. Undefined for a kind no pack defines. */
+export function nodePins(defs: Defs, node: Pick<FlowNode, 'data'>, vars: Graph['variables'], sig?: Graph['signature']): Pins | undefined {
   const def = defs.get(node.data.kind)
   if (!def) return undefined
   const hit = pinCache.get(node.data)
-  if (hit && hit.vars === vars && hit.defs === defs) return hit.pins
-  const pins = resolvePins(def, node.data, vars)
-  pinCache.set(node.data, { vars, defs, pins })
+  if (hit && hit.vars === vars && hit.sig === sig && hit.defs === defs) return hit.pins
+  const pins = resolvePins(def, node.data, vars, sig)
+  pinCache.set(node.data, { vars, sig, defs, pins })
   return pins
 }
 
@@ -52,10 +52,10 @@ type Ctx = Parameters<Rule<FlowNode>>[1]
  * pins match (Exec only to Exec, data by the Spec's `pinCompat`: `same` and `coerce` pass), no self link, an Exec output and any data input take one
  * wire, and no Exec loop. Returns the reason a wire is refused, or null.
  */
-export function connectionRule(defs: Defs, vars: () => Graph['variables']) {
+export function connectionRule(defs: Defs, vars: () => Graph['variables'], sig: () => Graph['signature'] = () => undefined) {
   const pinAt = (ctx: Ctx, id: string, handle: string | null | undefined, side: 'inputs' | 'outputs'): ResolvedPin | 'unknown' | undefined => {
     const n = ctx.node(id)
-    const pins = n && nodePins(defs, n, vars())
+    const pins = n && nodePins(defs, n, vars(), sig())
     if (!pins) return n ? 'unknown' : undefined
     return pins[side].find((p) => p.name === pinName(handle))
   }
@@ -134,10 +134,10 @@ export interface SpawnFromPin {
  * What the menu offers: every node type with no wire, else the types having a pin the dragged pin can connect to (same type, as Knotwork matches),
  * each tried against the real rule. `option.pin` is `<PinType>:<pin name>`.
  */
-export function spawnFor(o: { defs: Defs; spawn: SpawnDef[]; nodes: FlowNode[]; edges: FlowEdge[]; vars: Graph['variables']; from: SpawnFromPin | null }): SpawnOption<SpawnDef>[] {
-  const rule = connectionRule(o.defs, () => o.vars)
+export function spawnFor(o: { defs: Defs; spawn: SpawnDef[]; nodes: FlowNode[]; edges: FlowEdge[]; vars: Graph['variables']; sig?: Graph['signature']; from: SpawnFromPin | null }): SpawnOption<SpawnDef>[] {
+  const rule = connectionRule(o.defs, () => o.vars, () => o.sig)
   const fromNode = o.from && o.nodes.find((n) => n.id === o.from!.nodeId)
-  const fromPin = o.from && fromNode && nodePins(o.defs, fromNode, o.vars)?.[o.from.type === 'source' ? 'outputs' : 'inputs'].find((p) => p.name === pinName(o.from!.handle))
+  const fromPin = o.from && fromNode && nodePins(o.defs, fromNode, o.vars, o.sig)?.[o.from.type === 'source' ? 'outputs' : 'inputs'].find((p) => p.name === pinName(o.from!.handle))
   if (o.from && !fromPin) return []
   const options = spawnOptions({
     defs: o.spawn,
@@ -172,7 +172,7 @@ export function spawnWire(from: SpawnFromPin | null, newId: string, option: Pick
 
 // ---- fields -------------------------------------------------------------------------------------------------------------------------
 
-export type FieldKind = 'enum' | 'string' | 'text' | 'number' | 'bool' | 'layer' | 'variable' | 'params'
+export type FieldKind = 'enum' | 'string' | 'text' | 'number' | 'bool' | 'layer' | 'variable' | 'params' | 'choice'
 export interface FieldRow {
   /** Key in `node.fields`: a pack field, or the pin name of an unwired input pin. */
   key: string
@@ -184,6 +184,14 @@ export interface FieldRow {
   pinType?: PinType
   /** A schema `pattern` the value should match (identifiers). */
   pattern?: string
+  /** `choice` rows: the values to pick from and what to show for each (a function graph id and its name, an exit id and its name). */
+  choices?: { value: string; label: string }[]
+}
+
+/** What the field rows of function nodes need to know: the signature of the graph the node lives in (Function Exit's exits) and the function graphs of the SWF (Call Function's target). */
+export interface FunctionCtx {
+  sig?: Graph['signature']
+  functions?: readonly { id: string; name: string }[]
 }
 
 interface Schema { type?: string; enum?: unknown[]; default?: unknown; pattern?: string; format?: string }
@@ -193,12 +201,21 @@ interface Schema { type?: string; enum?: unknown[]; default?: unknown; pattern?:
  * parameter list) and one row per UNWIRED data input pin (a component-typed pin shows the layer picker and stores the layer id in `fields[<pin>]`;
  * other pins store a literal in `fields[<pin>]`, which codegen uses before the pack default). `wired` = input pins with a wire.
  */
-export function fieldRows(def: NodeDef, node: Pick<FlowNode, 'data'>, pins: Pins, wired: ReadonlySet<string>): FieldRow[] {
+export function fieldRows(def: NodeDef, node: Pick<FlowNode, 'data'>, pins: Pins, wired: ReadonlySet<string>, fn: FunctionCtx = {}): FieldRow[] {
   const f = node.data.fields
   const rows: FieldRow[] = []
   const inputNames = new Set(def.inputs.map((p) => p.name))
+  const x = (def.extra ?? {}) as { managedFields?: string[]; callsFunction?: string; signatureInputs?: string }
   for (const [key, raw] of Object.entries(def.fields)) {
-    if (inputNames.has(key)) continue
+    if (inputNames.has(key) || x.managedFields?.includes(key)) continue // managed fields (a call's copy of the signature) are kept by the editor, not typed
+    if (key === x.callsFunction) {
+      rows.push({ key, label: 'function', kind: 'choice', value: f[key], choices: (fn.functions ?? []).map((g) => ({ value: g.id, label: g.name })) })
+      continue
+    }
+    if (key === 'exit' && x.signatureInputs) {
+      rows.push({ key, label: 'exit', kind: 'choice', value: f[key], choices: (fn.sig?.exits ?? []).map((e) => ({ value: e.id, label: e.name })) })
+      continue
+    }
     const s = (raw ?? {}) as Schema & { items?: unknown }
     const value = f[key] ?? s.default
     if (s.type === 'array') rows.push({ key, label: key, kind: 'params', value: Array.isArray(f[key]) ? f[key] : [] })

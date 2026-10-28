@@ -5,7 +5,7 @@ import { useSwfGraphs } from '../hooks/useGraphs'
 import { usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf, useDockRows } from '../hooks/useProject'
 import { fieldRows, layerOptions, nodePins } from '../model/graphModel'
-import { pinName } from '../state/graphStore'
+import { functionGraphs, pinName, pointCall } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { FieldEditor } from './FieldEditors'
@@ -21,14 +21,16 @@ export function GraphNodeInspector() {
   const layers = useMemo(() => (swf ? layerOptions(swf.ir, overlay) : []), [swf, overlay])
   const nodes = useStore(store ?? emptyStore, (s) => s.nodes)
   const variables = useStore(store ?? emptyStore, (s) => s.variables)
+  const signature = useStore(store ?? emptyStore, (s) => s.signature)
   const node = nodeId ? nodeIndex(nodes).get(nodeId) : undefined
   if (!store || !node || !swf) return <p className="empty">{strings.insp.gnNone}</p>
   const def = defs.get(node.data.kind)
   const mine = rows.filter((r) => r.swfName === swf.name && r.graphId === activeId && r.graphNodeId === node.id)
-  const pins = def ? nodePins(defs, node, variables) : undefined
+  const pins = def ? nodePins(defs, node, variables, signature) : undefined
   const wired = new Set(incoming(store.getState().edges, node.id).map((e) => pinName(e.targetHandle)))
-  const list = def && pins ? fieldRows(def, node, pins, wired) : []
-  const ctx = { setField: (k: string, v: unknown) => store.getState().setField(node.id, k, v), layers, variables }
+  const callKey = (def?.extra as { callsFunction?: string } | undefined)?.callsFunction
+  const list = def && pins ? fieldRows(def, node, pins, wired, { sig: signature, functions: callKey ? functionGraphs(store) : [] }) : []
+  const ctx = { setField: (k: string, v: unknown) => (k === callKey && typeof v === 'string' ? pointCall(store, node.id, v) : store.getState().setField(node.id, k, v)), layers, variables }
   return (
     <div className="insp" data-testid="graph-node-inspector">
       <header className="insp-head">
@@ -56,4 +58,4 @@ export function GraphNodeInspector() {
 
 import { create } from 'zustand'
 import type { GraphState } from '../state/graphStore'
-const emptyStore = create<Pick<GraphState, 'nodes' | 'variables'>>(() => ({ nodes: [], variables: [] }))
+const emptyStore = create<Pick<GraphState, 'nodes' | 'variables' | 'signature'>>(() => ({ nodes: [], variables: [], signature: undefined }))

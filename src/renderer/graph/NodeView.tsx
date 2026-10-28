@@ -5,7 +5,7 @@ import { createContext, memo, useContext } from 'react'
 import { useStore } from 'zustand'
 import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import { categoryVar, fieldRows, nodePins, PIN_STYLE, type FieldRow, type LayerOption } from '../model/graphModel'
-import { inHandle, outHandle, pinName, type FlowNode, type GraphStore } from '../state/graphStore'
+import { functionGraphs, inHandle, outHandle, pinName, pointCall, type FlowNode, type GraphStore } from '../state/graphStore'
 import type { createGraphValidation } from '../state/graphValidation'
 import { usePinBadge } from '../state/devStore'
 import { useRunCount, useTraceStore } from '../state/traceStore'
@@ -18,6 +18,8 @@ export interface GraphCtx {
   defs: ReadonlyMap<string, NodeDef>
   layers: readonly LayerOption[]
   variables: Graph['variables']
+  /** The signature of the open graph when it is a function (Function Entry and Exit take their pins from it). */
+  signature: Graph['signature']
   issues: ReturnType<typeof createGraphValidation>['use']
 }
 export const GraphContext = createContext<GraphCtx | undefined>(undefined)
@@ -69,7 +71,9 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
   const wired = useStore(ctx.store, (s) => wiredKey(s.edges, id))
   const outs = useStore(ctx.store, (s) => outgoing(s.edges, id).map((e) => pinName(e.sourceHandle)).join(','))
   const bad = new Set(badPins ? badPins.split(',') : [])
-  const setField = (key: string, value: unknown): void => ctx.store.getState().setField(id, key, value)
+  const callKey = (def?.extra as { callsFunction?: string } | undefined)?.callsFunction
+  // choosing the function of a Call Function node also copies its signature and re-points the wires
+  const setField = (key: string, value: unknown): void => (key === callKey && typeof value === 'string' ? pointCall(ctx.store, id, value) : ctx.store.getState().setField(id, key, value))
   const fctx = { setField, layers: ctx.layers, variables: ctx.variables, badPins: bad }
 
   if (!def) {
@@ -97,7 +101,7 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
       </div>
     )
   }
-  const pins = nodePins(ctx.defs, { data }, ctx.variables)!
+  const pins = nodePins(ctx.defs, { data }, ctx.variables, ctx.signature)!
   if (kind === 'Comment') {
     return (
       <div className={`gn gn-comment${selected ? ' is-selected' : ''}`}>
@@ -117,7 +121,7 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
     )
   }
 
-  const rows = fieldRows(def, { data }, pins, new Set(wired.split(',')))
+  const rows = fieldRows(def, { data }, pins, new Set(wired.split(',')), { sig: ctx.signature, functions: callKey ? functionGraphs(ctx.store) : [] })
   const rowOf = new Map(rows.map((r) => [r.key, r]))
   const pinRows = (list: typeof pins.inputs, side: 'inputs'): React.ReactNode =>
     list.map((p) => {

@@ -4,16 +4,19 @@ import { nodeIndex } from '@nicklaj/knotwork'
 import { useStore } from 'zustand'
 import { As2View } from '../graph/As2View'
 import { GraphCanvas } from '../graph/GraphCanvas'
+import { SignatureEditor } from '../graph/SignatureEditor'
 import { useGraphActions } from '../graph/useGraphActions'
+import { inkwell } from '../hooks/api'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
 import { eventNodes } from '../model/graphModel'
 import { tidyPositions } from '../model/graphLayout'
 import { ownersOfGraph } from '../model/graphNav'
-import { menuGraphId, openGraphs, setActiveGraph, useGraphDocs } from '../state/graphDocs'
+import { makeFunction, menuGraphId, openGraphs, setActiveGraph, useGraphDocs } from '../state/graphDocs'
 import type { GraphStore } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
+import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
@@ -47,6 +50,7 @@ export function GraphPanel() {
       title={strings.graph.title}
       actions={
         <>
+          {store && <MakeFunctionBtn store={store} />}
           <Btn label={strings.graph.tidy} onClick={tidy} reason={store ? undefined : strings.nav.noSwf} testId="graph-tidy">{strings.graph.tidy}</Btn>
           <Btn icon={SplitSquareHorizontal} pressed={split} onClick={() => setSplit(!split)} label={strings.graph.as2Split} testId="as2-split">{strings.graph.as2Split}</Btn>
         </>
@@ -69,6 +73,21 @@ export function GraphPanel() {
       </div>
     </Panel>
   )
+}
+
+/** Turns the selected nodes into a function and puts a Call Function node in their place (`makeFunction`); a refused selection says why. */
+function MakeFunctionBtn({ store }: { store: GraphStore }) {
+  const swf = useActiveSwf()
+  const defs = usePacks()
+  const picked = useStore(store, (s) => s.nodes.filter((n) => n.selected).length)
+  const run = async (): Promise<void> => {
+    if (!swf || !inkwell) return
+    const selected = store.getState().nodes.filter((n) => n.selected).map((n) => n.id)
+    const n = (useGraphDocs.getState().ids[swf.id] ?? []).length + 1
+    const r = await makeFunction({ swf: { id: swf.id, name: swf.name }, store, selected, name: `Function ${n}`, defs }, inkwell)
+    useToastStore.getState().push(r.ok ? { tone: 'ok', title: strings.graph.madeFunction } : { tone: 'error', title: strings.graph.makeFunctionFailed, text: r.error })
+  }
+  return <Btn label={strings.graph.makeFunctionTip} onClick={() => void run()} reason={picked === 0 ? strings.graph.makeFunctionNone : undefined} testId="graph-make-function">{strings.graph.makeFunction}</Btn>
 }
 
 function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graphId: string; split: boolean; tidied: number }) {
@@ -120,6 +139,7 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
         </Popover>
         {nodeTitle && <><span aria-hidden="true">&gt;</span><span>{nodeTitle}</span></>}
       </nav>
+      {store.getState().meta.scope === 'function' && <SignatureEditor store={store} />}
       <div className={`graph-body${split ? ' is-split' : ''}`}>
         <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} fitSignal={tidied} />
         <EventList events={events} selected={selectedNode} onPick={(id) => setFocus({ id, n: (focus?.n ?? 0) + 1 })} />
