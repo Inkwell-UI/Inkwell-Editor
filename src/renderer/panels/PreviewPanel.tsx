@@ -21,8 +21,8 @@ import { hasFocusGraph } from '../../main/lint/focus'
 import { RuffleBackend } from '../preview/RuffleBackend'
 import { SafeZoneOverlay } from '../preview/SafeZoneOverlay'
 import { StageToolbar, type StageMode } from '../preview/StageToolbar'
-import { UiScaleControl, uiScaleStore } from '../preview/uiScale'
-import { LocaleControls, localeStore } from '../preview/locale'
+import { uiScaleStore } from '../preview/uiScale'
+import { localeStore } from '../preview/locale'
 import { useLocalizationStore } from '../state/localizationStore'
 import { SwfViewport } from '../preview/SwfViewport'
 import { useLintStore } from '../state/lintStore'
@@ -187,7 +187,7 @@ export function PreviewPanel() {
           onZoomReset={() => setZoom(1)}
           compact={compact}
           swfPicker={picker}
-          {...(isMenu ? { menuControls: <><UiScaleControl testId="stage-ui-scale" /><LocaleControls /></>, focusGraph: { on: focusOn, onToggle: () => setFocusOn(!focusOn) } } : {})}
+          {...(isMenu ? { menuControls: true, focusGraph: { on: focusOn, onToggle: () => setFocusOn(!focusOn) } } : {})}
         />
         {!compact && banners}
         <div className="preview-stage" tabIndex={0} role="group" aria-label={strings.stage.stageLabel} onKeyDownCapture={onStageKey} data-mode={mode} data-testid="stage">

@@ -100,7 +100,7 @@ export function DeployMenu() {
         align="end"
         trigger={(p, open) => (
           <button type="button" className="btn" {...p} data-testid="deploy" title={strings.top.deploy} aria-label={strings.top.deploy}>
-            <Rocket size={14} aria-hidden="true" /> {busy ? strings.deploy.running : strings.top.deploy} <ChevronDown size={12} aria-hidden="true" className={open ? 'flip' : undefined} />
+            <Rocket size={14} aria-hidden="true" /> <span className="btn-text">{busy ? strings.deploy.running : strings.top.deploy}</span> <ChevronDown size={12} aria-hidden="true" className={open ? 'flip' : undefined} />
           </button>
         )}
       >

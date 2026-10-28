@@ -19,9 +19,9 @@ describe('timing history', () => {
     expect(h[0]!.previewMs).toBeUndefined()
     expect(editToPreview(h[1]!)).toBe(61)
   })
-  it('over target means edit-to-preview above 1000 ms', () => {
-    expect(isOverTarget(rec(1, 990, 10))).toBe(false)
-    expect(isOverTarget(rec(1, 990, 11))).toBe(true)
+  it('over target means edit-to-preview above 3000 ms', () => {
+    expect(isOverTarget(rec(1, 2990, 10))).toBe(false)
+    expect(isOverTarget(rec(1, 2990, 11))).toBe(true)
     expect(isOverTarget(undefined)).toBe(false)
   })
 })

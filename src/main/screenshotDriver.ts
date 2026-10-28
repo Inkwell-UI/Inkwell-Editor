@@ -103,7 +103,7 @@ export async function runShots(o: {
   const entry = async (): Promise<unknown> => (JSON.parse(await readFile(file, 'utf8')) as { nodes?: Record<string, unknown> }).nodes?.['1:3']
   console.log('[shots] overlay after edit:', JSON.stringify(await entry()))
   await snap('k-overlay-edit')
-  await click('[data-testid="overlay-undo"]')
+  key('Z', ['control'])
   await wait(800)
   console.log('[shots] overlay after undo:', JSON.stringify(await entry()))
 

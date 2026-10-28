@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from 'react'
+import { Scaling } from 'lucide-react'
 import { UI_SCALE_RANGE } from '@inkwell-ui/spec'
 import { strings } from '../strings'
+import { Popover } from '../ui/Popover'
 import { previewBus } from './previewBus'
 
 // The preview's UI Scale (SPEC-CHANGES S9): the same number the user INI's `UIScale` would hand the menu. Module-level like previewBus, so the toolbar (stage), the Play panel
@@ -39,5 +41,24 @@ export function UiScaleControl({ testId }: { testId: string }) {
       />{' '}
       <output className="ui-scale-value" onDoubleClick={() => uiScaleStore.set(1)} title={strings.stage.uiScaleReset}>{v.toFixed(2)}</output>
     </label>
+  )
+}
+
+/** The toolbar's UI scale: a button with the value ("1.25x") that opens the slider, so it costs as much room as the other buttons. */
+export function UiScaleButton({ testId }: { testId: string }) {
+  const v = useUiScale()
+  return (
+    <Popover
+      label={strings.stage.uiScale}
+      align="end"
+      className="ui-scale-pop"
+      trigger={(p) => (
+        <button type="button" className="btn" {...p} title={strings.stage.uiScaleTip} aria-label={`${strings.stage.uiScale}: ${v.toFixed(2)}`} data-testid={`${testId}-btn`}>
+          <Scaling size={14} aria-hidden="true" /> <span className="ui-scale-value">{v.toFixed(2)}&times;</span>
+        </button>
+      )}
+    >
+      <UiScaleControl testId={testId} />
+    </Popover>
   )
 }

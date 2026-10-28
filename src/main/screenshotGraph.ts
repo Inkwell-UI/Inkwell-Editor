@@ -313,7 +313,7 @@ export async function runDebugShots(o: { outDir: string; projectDir: string; win
   await wait(1500)
   key('2', ['control']) // Behaviour
   await until('graph canvas', () => has('[data-testid="graph-canvas"]'))
-  await until('Ruffle preview built and drawn', async () => (await timing()).includes('Ruffle'), 60000)
+  await until('Ruffle preview built and drawn', async () => (await timing()).includes('Render'), 60000)
   console.log('[debug] first build:', await timing())
   await wait(1500)
   await snap('d0-start')
@@ -424,7 +424,7 @@ export async function runDebugShots(o: { outDir: string; projectDir: string; win
   await js(`(() => { const e = document.querySelector('[data-testid="node-core/Log@1"] input[type="text"], [data-testid="node-core/Log@1"] .gn-inline input'); e.focus(); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(e, 'edited!'); e.dispatchEvent(new Event('input', { bubbles: true })); e.blur() })()`)
   await until('as2 shows the edit', async () => (await text('[data-testid="as2-code"]')).includes('edited!'), 10000)
   check('AS2 view followed the edit', true, `${Date.now() - t0} ms`)
-  await until('new build timing', async () => { const t = await timing(); return t !== before && t.includes('Ruffle') }, 20000)
+  await until('new build timing', async () => { const t = await timing(); return t !== before && t.includes('Render') }, 20000)
   console.log(`[debug] graph edit to the new preview frame: ${Date.now() - t0} ms wall clock; status bar: ${await timing()}`)
   await wait(500)
   await must('[data-testid="tab-play"]')

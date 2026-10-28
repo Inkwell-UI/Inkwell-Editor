@@ -2,9 +2,8 @@ import { useSyncExternalStore } from 'react'
 import { entriesFor, pseudoLocalize, type Localization } from '@inkwell-ui/spec'
 import { useLocalizationStore } from '../state/localizationStore'
 import { strings } from '../strings'
-import { Btn } from '../ui/Btn'
 import { previewBus } from './previewBus'
-import { Languages, Sparkles } from 'lucide-react'
+import { Languages } from 'lucide-react'
 
 // The preview's Locale and Pseudo-Loc (SPEC-CHANGES V4, V11.2): the menu class asks the mock bridge `translate(key)`, which answers from the mock data keys `tr.<$KEY>`.
 // Module-level like uiScale, so the toolbar and the preview panel's "re-apply after a rebuild" effect share one state. Only keyed texts change; a layer without a key is the source text.
@@ -51,21 +50,23 @@ export const useLocale = (): { language: string; pseudo: boolean } => {
   return localeStore.get()
 }
 
-/** Locale select and Pseudo-Loc toggle of the stage toolbar (custom menus only: a HUD widget has no runtime to translate). */
+const PSEUDO = 'pseudo'
+const CODES: Record<string, string> = { ENGLISH: 'EN', FRENCH: 'FR', GERMAN: 'DE', ITALIAN: 'IT', SPANISH: 'ES', RUSSIAN: 'RU', POLISH: 'PL', JAPANESE: 'JA', CZECH: 'CS' }
+/** The two-letter code of a Skyrim language name (ENGLISH -> EN); a name we do not know shows its first two letters. */
+export const languageCode = (language: string): string => CODES[language] ?? language.slice(0, 2)
+
+/** Language select of the stage toolbar (custom menus only: a HUD widget has no runtime to translate). Pseudo-localized text is an entry of the list, not a toggle on top of a language. */
 export function LocaleControls() {
   const loc = useLocalizationStore((s) => s.localization)
   const { language: lang, pseudo: p } = useLocale()
   const none = !loc
   return (
-    <>
-      <label className="inline" title={none ? strings.stage.localeNoTable : strings.stage.locale}>
-        <Languages size={14} aria-hidden="true" /> <span className="sr-only">{strings.stage.locale}</span>
-        <select value={lang} disabled={none} onChange={(e) => localeStore.set({ language: e.target.value }, loc)} aria-label={strings.stage.locale} data-testid="stage-locale">
-          <option value="">{strings.stage.localeSource}</option>
-          {(loc?.languages ?? []).filter((l) => l !== loc?.source).map((l) => <option key={l} value={l}>{l}</option>)}
-        </select>
-      </label>
-      <Btn icon={Sparkles} pressed={p} reason={none ? strings.stage.localeNoTable : undefined} onClick={() => localeStore.set({ pseudo: !p }, loc)} testId="stage-pseudo">{strings.stage.pseudo}</Btn>
-    </>
+    <label className="inline select-icon" title={none ? strings.stage.localeNoTable : strings.stage.locale}>
+      <Languages size={14} aria-hidden="true" /> <span className="sr-only">{strings.stage.locale}</span>
+      <select value={p ? PSEUDO : lang} disabled={none} onChange={(e) => localeStore.set(e.target.value === PSEUDO ? { language: '', pseudo: true } : { language: e.target.value, pseudo: false }, loc)} aria-label={strings.stage.locale} data-testid="stage-locale">
+        <option value="" title={loc?.source}>{languageCode(loc?.source ?? 'ENGLISH')}</option>
+        {(loc?.languages ?? []).filter((l) => l !== loc?.source).map((l) => <option key={l} value={l} title={l}>{languageCode(l)}</option>)}
+      </select>
+    </label>
   )
 }

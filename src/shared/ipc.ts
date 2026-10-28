@@ -49,6 +49,8 @@ export const IPC = {
   figmaSelection: 'figma:selection',
   menuSettings: 'menu:settings',
   menuSaveNow: 'menu:save-now',
+  menuUndo: 'menu:undo',
+  menuRedo: 'menu:redo',
   menuSave: 'menu:save',
   menuModel: 'menu:model',
   menuInvoke: 'menu:invoke',
@@ -188,6 +190,9 @@ export interface InkwellApi {
   onOpenSettings(cb: () => void): () => void
   /** File > Save in the application menu: writes the edits still waiting for their debounce. */
   onSaveNow(cb: () => void): () => void
+  /** Edit > Undo and Redo of the title bar menu (the window decides: a text field keeps its own undo, otherwise the active SWF's history). */
+  onUndo(cb: () => void): () => void
+  onRedo(cb: () => void): () => void
   /** The application menu as data (the title bar draws it), its change (Open Recent, enabled entries) and running an entry by its id. */
   getAppMenu(): Promise<AppMenu>
   onAppMenuChanged(cb: (menu: AppMenu) => void): () => void

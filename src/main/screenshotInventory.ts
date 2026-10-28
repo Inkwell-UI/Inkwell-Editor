@@ -45,7 +45,7 @@ export async function runInventoryShots(o: { outDir: string; projectDir: string;
   o.session.debug.seedBuilds()
   await wait(1500)
   main().webContents.sendInputEvent({ type: 'keyDown', keyCode: '2', modifiers: ['control'] }) // Behaviour
-  await until('Ruffle preview built and drawn', async () => (await text('[data-testid="timing"]')).includes('Ruffle'), 90000)
+  await until('Ruffle preview built and drawn', async () => (await text('[data-testid="timing"]')).includes('Render'), 90000)
   await wait(1500) // the mock fills the menu 200 ms after the glue is installed
   const items = await get('Menu_mc.items.text')
   const card = await get('Menu_mc.card.text')

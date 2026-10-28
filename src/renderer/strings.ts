@@ -1,5 +1,8 @@
 // All UI strings (English only in 1.0). One module, so translating the editor later is a single change.
 import { PRODUCT_NAME } from '../shared/product'
+import { TARGET_MS } from './model/timingHistory'
+
+const TARGET = `${TARGET_MS / 1000} s`
 
 const BY = 'Arrives with the'
 
@@ -36,7 +39,11 @@ export const strings = {
 
   stage: {
     toolbar: 'Stage controls',
-    interactTip: 'Interact: mouse and keyboard go to the SWF. Off: clicks select components and input does not reach the SWF (Tab toggles while the stage has focus)',
+    modes: 'What a click on the stage does',
+    inspect: 'Inspect',
+    inspectTip: 'Inspect: click a layer to select it',
+    interact: 'Interact',
+    interactTip: 'Interact: mouse and keyboard go to the menu (Tab switches while the stage has focus)',
     modeInspect: 'Inspect mode',
     modePlay: 'Interact mode',
     play: 'Play',
@@ -56,31 +63,26 @@ export const strings = {
     zoomReset: 'Reset zoom to fit',
     more: 'More stage controls',
     uiScaleReset: 'Double-click to set 1.00',
-    previewSettings: 'Preview settings',
-    previewSettingsTip: 'Theme, language, UI scale and Pseudo-Loc of the preview',
-    moreTools: 'Tools that arrive later',
+    groupPlayer: 'Player',
+    groupScreen: 'Screen',
     uiScale: 'UI scale',
     uiScaleTip: 'Menu size as the user INI setting UIScale would set it (0.20 to 2.00). Reopens the menu in the preview so the effect is visible.',
-    occupied: 'Occupied HUD',
-    occupiedReason: 'Arrives with community occupied-zone data (0.6+)',
     focus: 'Focus Graph',
     focusReason: 'Custom menus only: a HUD widget gets no gamepad input',
     focusTip: 'Show the gamepad focus graph. Inspect mode: click a component to add it to the focus order (Alt+click removes it), drag from one component to another to set the override of that direction. Play mode: arrow keys and Enter act as the d-pad and A.',
     focusBadge: (order: number) => `Focus order ${order}`,
     focusArrow: (dir: string) => `${dir} override`,
-    prompts: 'Prompts',
     promptsReason: 'Custom menus only: prompts follow the input device the Inkwell Runtime reports',
-    promptsTip: 'Which glyphs the prompts show in the preview (in game: the active input device and the mod INI [Prompts] Gamepad=xbox|playstation)',
+    promptsKeys: 'Prompts: keyboard and mouse',
+    promptsStep: (now: string, next: string) => `Prompts: ${now}. Switch to ${next}`,
     promptDevices: { keyboard: 'Keyboard', xbox: 'Xbox', playstation: 'PlayStation' } as Record<string, string>,
     theme: 'Theme',
     themeNone: 'No Figma variable collection with two or more modes in this SWF. Make one in Figma (Local variables) and bind layers to it',
     themeDefault: 'Default theme',
     locale: 'Locale',
     localeReason: 'Custom menus only: a HUD widget has no Inkwell Runtime to translate its texts',
-    localeSource: 'Source language',
     localeNoTable: 'Create localization.json in the Localization tab first',
-    pseudo: 'Pseudo-Loc',
-    pseudoReason: 'Custom menus only: a HUD widget has no Inkwell Runtime to translate its texts',
+    pseudo: 'Pseudo-localized',
     buildFailedLastGood: 'Build failed - showing last good build',
     buildFailedNone: 'Build failed - there is no good build to show yet',
     showError: 'Show error',
@@ -357,8 +359,8 @@ export const strings = {
     fontNone: 'No font report for this layer yet. Build the SWF first.',
     dataBinding: {
       label: 'Data binding',
-      none: 'None. Edit data bindings in the Data Binding panel (Behaviour workspace, bottom tabs).',
-      set: 'Edit it in the Data Binding panel (Behaviour workspace, bottom tabs).'
+      none: 'None',
+      help: 'Edit data bindings in the Data Binding panel (bottom tabs of the Behaviour workspace).'
     },
     themeBindings: {
       label: 'Theme bindings (from Figma variables)',
@@ -397,10 +399,6 @@ export const strings = {
       5: 'An embedded font chosen in the overlay (wins over rules 1 to 4)'
     } as Record<number, string>,
     overlay: 'BEHAVIOR',
-    undo: 'Undo overlay edit',
-    redo: 'Redo overlay edit',
-    nothingToUndo: 'Nothing to undo in this SWF',
-    nothingToRedo: 'Nothing to redo in this SWF',
     role: 'Role',
     roleNone: '(none)',
     listTemplate: 'List item template',
@@ -408,7 +406,14 @@ export const strings = {
     listSpacing: 'List row spacing (px)',
     roleNames: { button: 'Button', list: 'List', progress: 'Progress', text: 'Text', image: 'Image', clip: 'Clip', prompt: 'Prompt' } as Record<string, string>,
     instanceName: 'Instance Name',
-    instanceNameHelp: (def: string) => `Empty uses the layer name: ${def}`,
+    groupIdentity: 'Identity',
+    groupData: 'Data',
+    groupLayout: 'Layout',
+    noRole: 'No role',
+    dataNone: 'Nothing bound',
+    layoutDefault: 'Figma constraints',
+    widgetAnchorSummary: 'Widget anchor',
+    instanceNameHelp: (def: string) => `Scripts reach this layer by this name. Empty uses the layer name, ${def}.`,
     instanceNameErrors: { empty: 'Instance names cannot be empty', invalid: 'Use letters, digits and _ only; do not start with a digit' } as Record<string, string>,
     widgetAnchor: 'Screen position (SkyUI)',
     widgetAnchorFigma: 'Figma position',
@@ -432,7 +437,9 @@ export const strings = {
       add: 'Add to focus order',
       remove: 'Remove',
       dirs: { up: 'Up', down: 'Down', left: 'Left', right: 'Right' } as Record<string, string>,
-      dflt: (name: string) => `Default (${name})`,
+      dflt: (name: string) => `Auto \u00b7 ${name}`,
+      none: 'Not focusable',
+      orderSummary: (n: number) => `Order ${n}`,
       help: 'Lower order comes first and gets focus when the menu opens. Without an override, Down/Right go to the next and Up/Left to the previous component (wrapping). Custom menus need Input Context MenuMode for the pad.'
     },
     prompt: {
@@ -649,13 +656,20 @@ export const strings = {
   status: {
     label: 'Status bar',
     specTip: 'The inkwell-spec version this editor speaks. v1 is frozen at 0.5.',
+    build: 'Build',
+    lastGoodBuild: 'Last good build',
+    buildFailed: 'the latest build failed',
     lastBuild: 'Last build',
     noBuilds: 'No build yet',
-    overTarget: '(over 1000 ms)',
-    historyTitle: 'Build timing history',
-    historyTip: 'Show the last 50 builds',
-    historyCols: ['#', 'SWF', 'Edit to preview', 'Stages'],
-    historyNote: 'Time from an edit to the updated preview. Amber above 1000 ms.',
+    overTarget: `Over the ${TARGET} target`,
+    noGoodBuild: 'No good build yet',
+    recent: (n: number) => `Last ${n} builds`,
+    targetLabel: `${TARGET} target`,
+    oldest: (n: number) => `${n} builds ago`,
+    latest: 'latest',
+    showTable: 'Show table',
+    showChart: 'Show chart',
+    chartLabel: (n: number) => `Build times of the last ${n} builds, with the ${TARGET} target`,
     stage: (n: string) => ({ sync: 'Sync', codegen: 'Scripts', swf: 'Layout', ffdec: 'Assemble', 'preview-build': 'Preview', 'dev-build': 'Dev build', preview: 'Render', compile: 'Compile', vanilla: 'Vanilla check', write: 'Write' } as Record<string, string>)[n] ?? n,
     ffdec: (s?: string) => (s === 'warm' ? 'FFDec: warm' : s === 'cold' ? 'FFDec: cold' : 'FFDec: checking'),
     ffdecNotFound: 'FFDec: not found',
@@ -665,8 +679,6 @@ export const strings = {
     deployTip: 'Last deploy. Stages: compile, vanilla check, write.',
     lint: (e: number, w: number) => `Lint: ${e} Err, ${w} Warn`,
     lintTip: 'Lint errors block Deploy (warnings too in Strict Mode). Click to open the Lint dock.',
-    undo: 'Undo: SWF',
-    undoTip: (name?: string) => (name ? `Undo history of the SWF "${name}" (one history per SWF)` : 'One undo history per SWF')
   },
 
   start: {

@@ -5,7 +5,6 @@ import { usePreviewBuilds } from '../hooks/usePreviewBuilds'
 import type { SnapshotInfo } from '../../shared/projectState'
 import { figmaConnection, type DotTone } from '../model/connection'
 import { useSettingsStore } from '../state/settingsStore'
-import { useUndo } from '../hooks/useUndo'
 import { countSeverities } from '../model/lintRows'
 import { useSyncState } from '../hooks/useSyncState'
 import { specLabel, timingLine } from '../model/statusBar'
@@ -15,6 +14,7 @@ import { useWorkspaceStore } from '../state/workspaceStore'
 import { formatMs } from '../model/statusBar'
 import { strings } from '../strings'
 import { Popover } from '../ui/Popover'
+import { BuildPopup } from './BuildPopup'
 import { GameDot } from './GameDot'
 
 function Dot({ tone }: { tone: DotTone }) {
@@ -90,8 +90,8 @@ function DeployItem() {
 }
 
 /**
- * Zone 6B (UX 4.6): spec version, last build with every stage and the Ruffle time (amber above one second edit-to-preview; click for the
- * last 50 builds), FFDec status (warm / cold / not found, linking to the Settings view), packs, and which undo history is active.
+ * Zone 6B (UX 4.6): spec version, last build with every stage and the Ruffle time (amber above the 3 s edit-to-preview target; click for the
+ * last 50 builds), FFDec status (warm / cold / not found, linking to the Settings view) and packs.
  */
 export function StatusBar() {
   const sync = useSyncState()
@@ -99,7 +99,6 @@ export function StatusBar() {
   const last = history.at(-1)
   const line = last ? timingLine(last) : undefined
   const ffdec = sync?.ffdec
-  const undo = useUndo()
   const show = useDialogStore((s) => s.show)
   const packs = usePackList()
   const lint = countSeverities(useDockRows())
@@ -107,47 +106,23 @@ export function StatusBar() {
   const entries = usePreviewBuilds()
   const entry = entries.find((e) => e.latest.swfId === swf?.id) ?? (swf ? undefined : entries[0])
   const failed = sync?.build === 'error' || !!entry?.stale
-  const lastGood = entry?.shownAt !== undefined ? strings.stage.lastGood(new Date(entry.shownAt).toLocaleTimeString()) : undefined
+  const lastGoodAt = entry?.shownAt !== undefined ? new Date(entry.shownAt).toLocaleTimeString() : undefined
+  const summary = line ? `${strings.status.lastBuild}: ${line.total} [${line.parts.map(([n, v]) => `${strings.status.stage(n)} ${v}`).join(' · ')}]` : strings.status.noBuilds
+  const tone: DotTone = failed ? 'error' : !line ? 'off' : line.amber ? 'warn' : 'ok'
   return (
     <footer className="statusbar" aria-label={strings.status.label}>
       <span className="item" title={strings.status.specTip}><Check size={13} aria-hidden="true" /> {specLabel()}</span>
-      {lastGood && <span className={`item ${failed ? 'is-error' : ''}`} data-testid="last-good" title={lastGood}><Dot tone={failed ? 'error' : 'ok'} /> {lastGood}</span>}
       <Popover
         up
-        label={strings.status.historyTitle}
+        label={strings.status.build}
         trigger={(p) => (
-          <button type="button" className={`item item-button${line?.amber ? ' is-amber' : ''}`} {...p} data-testid="timing" title={strings.status.historyTip}>
-            {line ? (
-              <>
-                {strings.status.lastBuild}: <strong>{line.total}</strong> <span className="mono">[{line.parts.map(([n, v]) => `${strings.status.stage(n)} ${v}`).join(' · ')}]</span>
-                {line.amber && <span className="amber-note"> {strings.status.overTarget}</span>}
-              </>
-            ) : strings.status.noBuilds}
+          <button type="button" className={`item item-button${failed ? ' is-error' : ''}`} {...p} data-testid="timing" title={summary}>
+            <Dot tone={tone} /> {strings.status.build}
+            <span className="sr-only">: {summary}</span>
           </button>
         )}
       >
-        <div className="details history">
-          <h3>{strings.status.historyTitle}</h3>
-          {history.length === 0 ? (
-            <p className="empty">{strings.status.noBuilds}</p>
-          ) : (
-            <table>
-              <thead><tr>{strings.status.historyCols.map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
-              <tbody>
-                {[...history].reverse().map((r) => {
-                  const l = timingLine(r)
-                  return (
-                    <tr key={r.seq} className={l.amber ? 'is-amber' : undefined}>
-                      <td>{r.seq}</td><td>{r.swfName}</td><td className="mono">{l.total}</td>
-                      <td className="mono">{l.parts.map(([n, v]) => `${strings.status.stage(n)} ${v}`).join(' · ')}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
-          <p className="dim">{strings.status.historyNote}</p>
-        </div>
+        <BuildPopup history={history} lastGoodAt={lastGoodAt} failed={failed} />
       </Popover>
       {ffdec?.status === 'notFound' ? (
         <button type="button" className="item item-button is-error" onClick={() => show('settings')} data-testid="ffdec" title={strings.status.openDoctor}>
@@ -164,7 +139,6 @@ export function StatusBar() {
       <span className="spacer" />
       <FigmaDot />
       <GameDot />
-      <span className="item item-fixed" title={strings.status.undoTip(undo.swfName)} data-testid="undo-scope">{strings.status.undo}</span>
     </footer>
   )
 }

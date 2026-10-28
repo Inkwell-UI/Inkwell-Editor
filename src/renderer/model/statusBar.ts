@@ -16,16 +16,21 @@ export interface TimingLine {
   amber: boolean
 }
 
-/** Pure formatting of one build for the status bar and the history rows. Stages not in the usual order come last. */
-export function timingLine(r: BuildRecord): TimingLine {
+/** The stages of one build in ms, in pipeline order, then the Ruffle time when measured. Stages not in the usual order come last. */
+export function timingStages(r: BuildRecord): [string, number][] {
   const names = Object.keys(r.stages).sort((a, b) => {
     const ia = STAGE_ORDER.indexOf(a)
     const ib = STAGE_ORDER.indexOf(b)
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
   })
-  const parts: [string, string][] = names.map((n) => [n, formatMs(r.stages[n]!)])
-  if (r.previewMs !== undefined) parts.push(['preview', formatMs(r.previewMs)])
-  return { total: formatMs(editToPreview(r)), parts, amber: isOverTarget(r) }
+  const parts: [string, number][] = names.map((n) => [n, r.stages[n]!])
+  if (r.previewMs !== undefined) parts.push(['preview', r.previewMs])
+  return parts
+}
+
+/** Pure formatting of one build for the status bar and the history rows. Stages not in the usual order come last. */
+export function timingLine(r: BuildRecord): TimingLine {
+  return { total: formatMs(editToPreview(r)), parts: timingStages(r).map(([n, v]) => [n, formatMs(v)]), amber: isOverTarget(r) }
 }
 
 export { ffdecState } from '../../shared/ffdec'

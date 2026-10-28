@@ -52,7 +52,7 @@ export async function runMenuShots(o: { outDir: string; projectDir: string; win:
   await wait(1500)
   key('2', ['control']) // Behaviour
   await until('graph canvas', () => has('[data-testid="graph-canvas"]'))
-  await until('Ruffle preview built and drawn', async () => (await text('[data-testid="timing"]')).includes('Ruffle'), 60000)
+  await until('Ruffle preview built and drawn', async () => (await text('[data-testid="timing"]')).includes('Render'), 60000)
   await wait(1500)
 
   // ---- the mock runtime started the menu class
@@ -97,6 +97,7 @@ export async function runMenuShots(o: { outDir: string; projectDir: string; win:
   check('UI scale 0.5: root at 50 %', (await get('_xscale')) === '50' && (await get('_x')) === '480', `${await get('_xscale')} at ${await get('_x')}`)
   await snap('u2-ui-scale-50')
   await must('[data-testid="stage-more"]') // the compact toolbar keeps the same control in its More menu
+  await must('[data-testid="stage-ui-scale-btn"]') // the button opens the slider
   await until('UI scale in More', () => has('[data-testid="stage-ui-scale"]'))
   await setValue('[data-testid="stage-ui-scale"]', '0.75')
   await wait(500)

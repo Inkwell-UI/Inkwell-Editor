@@ -79,7 +79,7 @@ export async function runDevShots(o: { outDir: string; projectDir: string; win: 
     mocks.push(m)
     return m
   }
-  await until('Ruffle preview built', async () => (await text('[data-testid="timing"]')).includes('Ruffle'), 60000)
+  await until('Ruffle preview built', async () => (await text('[data-testid="timing"]')).includes('Render'), 60000)
 
   // ---- d0/d1: no project token yet: grey, with the way out
   await waitPhase('noToken')

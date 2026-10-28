@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { CircleX, Lock, Redo2, TriangleAlert, Undo2, Info } from 'lucide-react'
+import { CircleX, Lock, TriangleAlert, Info } from 'lucide-react'
 import { FOCUS_DIRS, focusGraph, isThemeBindingKey, KEY_LABEL, LOC_KEY, PROMPT_ACTIONS, PROMPT_DEFAULTS, PS_GLYPHS, suggestKey, uniqueKey, XBOX_GLYPHS, type Node } from '@inkwell-ui/spec'
 import { bindingMode, themeVariable } from '../../shared/theme'
 import { describeTextMapping } from '../../main/swf/text'
@@ -10,7 +10,6 @@ import { ensureKey, renameKey } from '../../shared/localizationOps'
 import { debugHotkeyOf, ident, instanceNameError, ROLES, widgetAnchorOf, type WidgetAnchor } from '../../shared/overlay'
 import type { FontRow } from '../../shared/syncState'
 import { GraphNodeInspector } from '../graph/GraphNodeInspector'
-import { useUndo } from '../hooks/useUndo'
 import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import type { DockRow } from '../model/lintRows'
@@ -20,6 +19,8 @@ import { editNode, getOverlayDoc } from '../state/overlayStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { Fold } from '../ui/Fold'
+import { Tip } from '../ui/Tip'
 import { FigmaSelectBtn } from '../ui/FigmaSelectBtn'
 import { Panel } from './Panel'
 
@@ -66,7 +67,6 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
   const overlay = useActiveOverlay()
   const entry = (overlay?.nodes?.[node.id] ?? {}) as { role?: string; instanceName?: string }
   const font = sync?.fonts?.find((f) => f.swfName === swfName && f.nodeId === node.id)
-  const undo = useUndo()
   const swf = useActiveSwf()
   const isWidgetFrame = swf?.ir.target.kind === 'hudWidget' && widgetFrame(swf.ir)?.frame.id === node.id
 
@@ -120,30 +120,34 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
       )}
 
       <section aria-labelledby="insp-overlay" className="overlay-section">
-        <div className="section-title">
-          <h4 id="insp-overlay">{strings.insp.overlay}</h4>
-          <span className="row-actions">
-            <Btn icon={Undo2} label={strings.insp.undo} reason={undo.canUndo ? undefined : strings.insp.nothingToUndo} onClick={undo.undo} testId="overlay-undo" />
-            <Btn icon={Redo2} label={strings.insp.redo} reason={undo.canRedo ? undefined : strings.insp.nothingToRedo} onClick={undo.redo} testId="overlay-redo" />
-          </span>
-        </div>
-        <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
-        {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
-        {entry.role === 'prompt' && <PromptField swfId={swfId} nodeId={node.id} value={(entry as { prompt?: Record<string, string> }).prompt} />}
-        {swf?.ir.target.kind === 'customMenu' && <FocusField swfId={swfId} nodeId={node.id} value={(entry as { focus?: FocusValue }).focus} />}
-        <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
-        <ThemeBindingsField node={node} />
-        <DataBindingNote value={(entry as { dataBinding?: string }).dataBinding} />
-        {node.type === 'text' && <LocKeyField swfId={swfId} node={node} value={(entry as { locKey?: string }).locKey} />}
-        {EMBEDDED_FONTS_UI && node.type === 'text' && <EmbeddedFontField swfId={swfId} nodeId={node.id} value={(entry as { font?: string }).font} />}
-        {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
-        {isWidgetFrame && <DebugHotkeyField swfId={swfId} nodeId={node.id} value={debugHotkeyOf(entry)} />}
-        {strings.insp.disabledControls.filter((c, i) => !(isWidgetFrame && i === 0)).map((c) => (
-          <div key={c.label} className="field">
-            <span className="field-label">{c.label}</span>
-            <Btn label={c.label} reason={c.reason}>{c.value}</Btn>
-          </div>
-        ))}
+        <h4 id="insp-overlay">{strings.insp.overlay}</h4>
+        <Fold id="identity" title={strings.insp.groupIdentity} summary={entry.role ? strings.insp.roleNames[entry.role] ?? entry.role : strings.insp.noRole} defaultOpen>
+          <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
+          {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
+          {entry.role === 'prompt' && <PromptField swfId={swfId} nodeId={node.id} value={(entry as { prompt?: Record<string, string> }).prompt} />}
+          <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
+        </Fold>
+        {swf?.ir.target.kind === 'customMenu' && (
+          <Fold id="focus" title={strings.insp.focus.label} summary={typeof (entry as { focus?: FocusValue }).focus?.order === 'number' ? strings.insp.focus.orderSummary((entry as { focus?: FocusValue }).focus!.order!) : strings.insp.focus.none} defaultOpen>
+            <FocusField swfId={swfId} nodeId={node.id} value={(entry as { focus?: FocusValue }).focus} />
+          </Fold>
+        )}
+        <Fold id="data" title={strings.insp.groupData} summary={[(entry as { dataBinding?: string }).dataBinding, (entry as { locKey?: string }).locKey].filter(Boolean).join(' \u00b7 ') || strings.insp.dataNone}>
+          <DataBindingNote value={(entry as { dataBinding?: string }).dataBinding} />
+          <ThemeBindingsField node={node} />
+          {node.type === 'text' && <LocKeyField swfId={swfId} node={node} value={(entry as { locKey?: string }).locKey} />}
+          {EMBEDDED_FONTS_UI && node.type === 'text' && <EmbeddedFontField swfId={swfId} nodeId={node.id} value={(entry as { font?: string }).font} />}
+        </Fold>
+        <Fold id="layout" title={strings.insp.groupLayout} summary={isWidgetFrame ? strings.insp.widgetAnchorSummary : strings.insp.layoutDefault}>
+          {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
+          {isWidgetFrame && <DebugHotkeyField swfId={swfId} nodeId={node.id} value={debugHotkeyOf(entry)} />}
+          {strings.insp.disabledControls.filter((c, i) => !(isWidgetFrame && i === 0)).map((c) => (
+            <div key={c.label} className="field">
+              <span className="field-label">{c.label}</span>
+              <Btn label={c.label} reason={c.reason}>{c.value}</Btn>
+            </div>
+          ))}
+        </Fold>
       </section>
 
       <details className="source" data-testid="figma-source">
@@ -351,9 +355,8 @@ function DataBindingNote({ value }: { value: string | undefined }) {
   const t = strings.insp.dataBinding
   return (
     <div className="field" data-testid="data-binding-note">
-      <span className="field-label">{t.label}</span>
-      {value ? <code className="mono">{value}</code> : null}
-      <p className="dim">{value ? t.set : t.none}</p>
+      <span className="field-label">{t.label}<Tip text={t.help} /></span>
+      <code className="mono">{value ?? t.none}</code>
     </div>
   )
 }
@@ -396,7 +399,7 @@ function InstanceNameField({ swfId, nodeId, layerName, value }: { swfId: string;
   }
   return (
     <div className="field">
-      <label className="field-label" htmlFor="instance-name">{strings.insp.instanceName}</label>
+      <label className="field-label" htmlFor="instance-name">{strings.insp.instanceName}<Tip text={strings.insp.instanceNameHelp(def)} /></label>
       <input
         id="instance-name"
         className={err ? 'is-invalid' : undefined}
@@ -404,7 +407,7 @@ function InstanceNameField({ swfId, nodeId, layerName, value }: { swfId: string;
         placeholder={def}
         spellCheck={false}
         aria-invalid={!!err}
-        aria-describedby="instance-name-help"
+        {...(err ? { 'aria-describedby': 'instance-name-help' } : {})}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => {
@@ -413,7 +416,7 @@ function InstanceNameField({ swfId, nodeId, layerName, value }: { swfId: string;
         }}
         data-testid="instance-name"
       />
-      <p id="instance-name-help" className={err ? 'tone-error' : 'dim'}>{err ? strings.insp.instanceNameErrors[err] : strings.insp.instanceNameHelp(def)}</p>
+      {err && <p id="instance-name-help" className="tone-error">{strings.insp.instanceNameErrors[err]}</p>}
     </div>
   )
 }
@@ -490,6 +493,8 @@ function DebugHotkeyField({ swfId, nodeId, value }: { swfId: string; nodeId: str
 type FocusValue = { order?: number; overrides?: Record<string, string> } & Record<string, unknown>
 
 /** Overlay `focus` (W3): the order and the four overrides; the default target of each direction comes from the Spec's `focusGraph`. Lint shows on the layer (Issues above). */
+const DIR_ARROWS: Record<string, string> = { up: '\u2191', down: '\u2193', left: '\u2190', right: '\u2192' }
+
 function FocusField({ swfId, nodeId, value }: { swfId: string; nodeId: string; value: FocusValue | undefined }) {
   const overlay = useActiveOverlay()
   const swf = useActiveSwf()
@@ -503,9 +508,7 @@ function FocusField({ swfId, nodeId, value }: { swfId: string; nodeId: string; v
     const max = Math.max(0, ...g.order.map((id) => (nodes[id]?.focus as { order: number }).order))
     return (
       <div className="field">
-        <span className="field-label">{t.label}</span>
-        <span className="row-actions"><Btn onClick={() => set({ ...value, order: max + 1 })} testId="focus-add">{t.add}</Btn></span>
-        <p className="dim">{t.help}</p>
+        <span className="row-actions"><Btn onClick={() => set({ ...value, order: max + 1 })} testId="focus-add">{t.add}</Btn><Tip text={t.help} /></span>
       </div>
     )
   }
@@ -522,19 +525,20 @@ function FocusField({ swfId, nodeId, value }: { swfId: string; nodeId: string; v
   }
   return (
     <div className="field" data-testid="focus-field">
-      <span className="field-label">{t.label}</span>
       <div className="field-row">
         <label className="field-label">
-          {t.order}
+          {t.order}<Tip text={t.help} />
           <input key={value.order} type="number" defaultValue={value.order} data-testid="focus-order"
             onBlur={(e) => { const n = Number(e.target.value); if (e.target.value.trim() !== '' && Number.isFinite(n) && n !== value.order) set({ ...value, order: n }) }}
             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
         </label>
         <Btn onClick={remove} testId="focus-remove">{t.remove}</Btn>
       </div>
+      <div className="dpad">
       {FOCUS_DIRS.map((d) => (
-        <label key={d} className="field-label">
-          {t.dirs[d]}
+        <label key={d} className={`dpad-${d}`} title={t.dirs[d]}>
+          <span className="dpad-arrow" aria-hidden="true">{DIR_ARROWS[d]}</span>
+          <span className="sr-only">{t.dirs[d]}</span>
           <select value={value.overrides?.[d] ?? ''} onChange={(e) => setOverride(d, e.target.value)} data-testid={`focus-${d}`}>
             <option value="">{t.dflt(name(g.moves[nodeId]?.[d] ?? nodeId))}</option>
             {value.overrides?.[d] && !g.order.includes(value.overrides[d]!) && <option value={value.overrides[d]}>{name(value.overrides[d]!)}</option>}
@@ -542,7 +546,8 @@ function FocusField({ swfId, nodeId, value }: { swfId: string; nodeId: string; v
           </select>
         </label>
       ))}
-      <p className="dim">{t.help}</p>
+      <span className="dpad-mid mono" title={name(nodeId)}>{name(nodeId)}</span>
+      </div>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import { Keyboard } from 'lucide-react'
-import { PROMPT_DEVICES, type PromptDevice } from '@inkwell-ui/spec'
+import { Gamepad2, Keyboard } from 'lucide-react'
+import type { PromptDevice } from '@inkwell-ui/spec'
 import { strings } from '../strings'
 import { previewBus } from './previewBus'
 
@@ -29,14 +29,17 @@ export const promptPreviewStore = {
   }
 }
 
+const ORDER: readonly PromptDevice[] = ['keyboard', 'xbox', 'playstation']
+
+/** One button that steps through keyboard, Xbox and PlayStation; the gamepad icon carries the face button of the pad style (A, cross). */
 export function PromptsControl() {
   const v = useSyncExternalStore(promptPreviewStore.subscribe, promptPreviewStore.get)
+  const next = ORDER[(ORDER.indexOf(v) + 1) % ORDER.length]!
+  const label = strings.stage.promptsStep(strings.stage.promptDevices[v]!, strings.stage.promptDevices[next]!)
   return (
-    <label className="inline" title={strings.stage.promptsTip}>
-      <Keyboard size={14} aria-hidden="true" /> <span>{strings.stage.prompts}</span>{' '}
-      <select value={v} onChange={(e) => promptPreviewStore.set(e.target.value as PromptDevice)} aria-label={strings.stage.prompts} data-testid="stage-prompts">
-        {PROMPT_DEVICES.map((d) => <option key={d} value={d}>{strings.stage.promptDevices[d]}</option>)}
-      </select>
-    </label>
+    <button type="button" className="btn btn-default" title={label} aria-label={label} data-testid="stage-prompts" data-device={v} onClick={() => promptPreviewStore.set(next)}>
+      {v === 'keyboard' ? <Keyboard size={14} aria-hidden="true" /> : <Gamepad2 size={14} aria-hidden="true" />}
+      {v !== 'keyboard' && <span className="btn-glyph" aria-hidden="true">{v === 'xbox' ? 'A' : '✕'}</span>}
+    </button>
   )
 }

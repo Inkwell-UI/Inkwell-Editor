@@ -281,8 +281,8 @@ ipcMain.on(IPC.previewRendered, (_e, r: PreviewRendered) => {
 let appMenu: AppMenu = []
 const menuActions = new Map<string, () => void>()
 const ROLES: Record<string, RoleEntry> = {
-  undo: { label: strings.menu.undo, key: 'Ctrl+Z', run: () => win?.webContents.undo() },
-  redo: { label: strings.menu.redo, key: 'Ctrl+Y', run: () => win?.webContents.redo() },
+  undo: { label: strings.menu.undo, key: 'Ctrl+Z', run: () => win?.webContents.send(IPC.menuUndo) },
+  redo: { label: strings.menu.redo, key: 'Ctrl+Y', run: () => win?.webContents.send(IPC.menuRedo) },
   cut: { label: strings.menu.cut, key: 'Ctrl+X', run: () => win?.webContents.cut() },
   copy: { label: strings.menu.copy, key: 'Ctrl+C', run: () => win?.webContents.copy() },
   paste: { label: strings.menu.paste, key: 'Ctrl+V', run: () => win?.webContents.paste() },

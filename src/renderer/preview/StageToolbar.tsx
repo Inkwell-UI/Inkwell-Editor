@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react'
-import { Crosshair, Ellipsis, Keyboard, Languages, MousePointerClick, Palette, Pause, PictureInPicture2, Play, RefreshCw, ScanLine, Sparkles, Waypoints, ZoomIn, ZoomOut } from 'lucide-react'
-import { themeModes } from '@inkwell-ui/spec'
+import { Ellipsis, Languages, MousePointer2, MousePointerClick, Pause, PictureInPicture2, Play, RefreshCw, ScanLine, Waypoints, ZoomIn, ZoomOut } from 'lucide-react'
 import { ASPECTS, type AspectId } from '../../shared/preview'
+import { useElementSize } from '../hooks/useElementSize'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
-import { useActiveSwf } from '../hooks/useProject'
-import { useLocale } from './locale'
+import { LocaleControls } from './locale'
+import { UiScaleButton } from './uiScale'
 import { ThemeControl } from './ThemeControl'
 import { PromptsControl } from './prompts'
 
@@ -33,47 +33,48 @@ export interface StageToolbarProps {
   compact: boolean
   /** SWF picker (the detached window has no top bar). */
   swfPicker?: ReactNode
-  /** Custom menu only: the UI Scale control (S9); sits in the More popover of the compact toolbar. */
-  menuControls?: ReactNode
+  /** Custom menu only: shows the language and UI scale controls (they need the Inkwell Runtime). */
+  menuControls?: boolean
   /** Custom menu only (W3/W4): the Focus Graph mode toggle; the Prompts preview toggle shows with it. Absent = both disabled with a reason. */
   focusGraph?: { on: boolean; onToggle(): void }
 }
 
-/** A button that opens a small panel under it; the toolbar's two panels (preview settings, later tools) share it. With `text` the button shows it, otherwise it is icon-only. */
-function Pop({ open, onToggle, icon, label, tip, testId, right, children, text }: { open: boolean; onToggle(): void; icon: typeof Palette; label: string; tip?: string; testId: string; right?: boolean; children: ReactNode; text?: string }) {
+/** What a click on the stage does: inspect layers, play the menu, or edit the gamepad focus graph (which needs the inspect overlay, so it is a mode of its own). */
+function ModeSwitch({ p, iconOnly }: { p: StageToolbarProps; iconOnly: boolean }) {
+  const focus = p.focusGraph?.on === true
+  const text = (s: string): string | undefined => (iconOnly ? undefined : s)
+  const pick = (m: StageMode, f: boolean): void => {
+    if (f !== focus) p.focusGraph?.onToggle()
+    p.onMode(m)
+  }
   return (
-    <span className="stage-pop">
-      <Btn icon={icon} label={text ? undefined : label} pressed={open} onClick={onToggle} testId={testId} {...(tip ? { title: tip } : {})}>{text}</Btn>
-      {open && <div className={`stage-pop-panel${right ? ' right' : ''}`} role="group" aria-label={label}>{children}</div>}
+    <span className="seg" role="group" aria-label={strings.stage.modes}>
+      <Btn icon={MousePointer2} label={strings.stage.inspectTip} pressed={p.mode === 'inspect' && !focus} onClick={() => pick('inspect', false)} testId="mode-inspect" className="btn-seg">{text(strings.stage.inspect)}</Btn>
+      <Btn icon={MousePointerClick} label={strings.stage.interactTip} pressed={p.mode === 'play'} onClick={() => pick('play', false)} testId="mode-play" className="btn-seg">{text(strings.stage.interact)}</Btn>
+      <Btn icon={Waypoints} label={strings.stage.focusTip} reason={p.focusGraph ? undefined : strings.stage.focusReason} pressed={focus} onClick={() => pick('inspect', true)} testId="stage-focus" className="btn-seg">{text(strings.stage.focus)}</Btn>
     </span>
   )
 }
 
-/** "Nordic · Deutsch": the current theme and language, so the state stays visible while the settings sit in a panel. */
-const previewSummary = (theme: string | undefined, language: string | undefined): string => [theme, language].filter(Boolean).join(' · ') || strings.stage.previewSettings
-
 /**
- * The stage toolbar of UX 4.3. Controls whose feature arrives later (Occupied HUD, Focus Graph, Prompts) are shown DISABLED with a one-line reason, never hidden: in the
- * "..." panel. Wide layout: mode | view (SWF, aspect, zoom, safe zones, reload, pop out) | one Preview settings button (theme, language, UI scale, Pseudo-Loc) | later tools.
- * The compact layout keeps its single More panel with everything.
+ * The stage toolbar of UX 4.3. Wide layout: playback (Pause, Reload) | what a click does (Inspect, Interact, Focus) | the player (language, theme, input device) | the screen
+ * (SWF, aspect, zoom, UI scale, safe zones, pop out). The compact layout keeps the essentials and puts the rest in one More panel.
  */
+/** Below this width the toolbar keeps the essentials and puts the rest in its More panel (the preview panel's own compact layout does the same in a small slot). */
+const TIGHT_BELOW = 1000
+
 export function StageToolbar(p: StageToolbarProps) {
   const [more, setMore] = useState(false)
-  const [preview, setPreview] = useState(false)
-  const [later, setLater] = useState(false)
-  const swf = useActiveSwf()
-  const { language } = useLocale()
-  const modes = swf ? themeModes(swf.ir) : []
-  const theme = modes.length >= 2 ? swf?.previewTheme ?? swf?.menu?.userDefaults?.theme ?? modes[0] : undefined
-  const lang = p.menuControls ? language || strings.stage.localeSource : undefined
-  const settings = (
+  const [ref, size] = useElementSize<HTMLDivElement>()
+  const tight = p.compact || (size.width > 0 && size.width < TIGHT_BELOW)
+  const player = (
     <>
+      {p.menuControls ? <LocaleControls /> : <Btn icon={Languages} reason={strings.stage.localeReason}>{strings.stage.locale}</Btn>}
       <ThemeControl />
-      {p.menuControls}
-      {!p.menuControls && <Btn icon={Languages} reason={strings.stage.localeReason}>{strings.stage.locale}</Btn>}
-      {!p.menuControls && <Btn icon={Sparkles} reason={strings.stage.pseudoReason}>{strings.stage.pseudo}</Btn>}
+      {p.focusGraph && <PromptsControl />}
     </>
   )
+  const uiScale = p.menuControls ? <UiScaleButton testId="stage-ui-scale" /> : undefined
   const zoom = (
     <span className="zoom" role="group" aria-label={strings.stage.zoom}>
       <Btn icon={ZoomOut} label={strings.stage.zoomOut} onClick={() => p.onZoom(-1)} />
@@ -82,52 +83,49 @@ export function StageToolbar(p: StageToolbarProps) {
     </span>
   )
   const safe = <Btn icon={ScanLine} label={strings.stage.safeZones} pressed={p.safeZones} onClick={() => p.onSafeZones(!p.safeZones)} testId="stage-safe" />
-  const tools = p.focusGraph ? (
-    <>
-      <span title={strings.stage.focusTip}><Btn icon={Waypoints} pressed={p.focusGraph.on} onClick={p.focusGraph.onToggle} testId="stage-focus">{strings.stage.focus}</Btn></span>
-      <PromptsControl />
-    </>
-  ) : undefined
-  const unbuilt = (
-    <>
-      <Btn icon={Crosshair} reason={strings.stage.occupiedReason}>{strings.stage.occupied}</Btn>
-      {!p.focusGraph && <Btn icon={Waypoints} reason={strings.stage.focusReason}>{strings.stage.focus}</Btn>}
-      {!p.focusGraph && <Btn icon={Keyboard} reason={strings.stage.promptsReason}>{strings.stage.prompts}</Btn>}
-    </>
+  const aspect = (
+    <label className="inline">
+      <span className="sr-only">{strings.stage.aspect}</span>
+      <select value={p.aspect} onChange={(e) => p.onAspect(e.target.value as AspectId)} aria-label={strings.stage.aspect} title={strings.stage.aspect} data-testid="aspect">
+        {(Object.keys(ASPECTS) as AspectId[]).map((a) => <option key={a} value={a}>{strings.stage.aspectNames[a]}</option>)}
+      </select>
+    </label>
   )
-  const close = (): void => (setMore(false), setPreview(false), setLater(false))
+  const pause = <Btn icon={p.paused ? Play : Pause} label={p.paused ? strings.stage.resumeTip : strings.stage.pauseTip} pressed={p.paused} onClick={() => p.onPaused(!p.paused)} testId="stage-pause" className="icon-filled" />
+  const reload = <Btn icon={RefreshCw} label={strings.stage.reload} onClick={p.onReload} testId="stage-reload" />
+  const popout = <Btn icon={PictureInPicture2} label={p.detached ? strings.stage.dock : strings.stage.popout} onClick={p.onPopout} testId="stage-popout" />
   return (
-    <div className="stage-toolbar" role="toolbar" aria-label={strings.stage.toolbar} onKeyDown={(e) => e.key === 'Escape' && (more || preview || later) && close()}>
-      <Btn icon={p.paused ? Play : Pause} label={p.paused ? strings.stage.resumeTip : strings.stage.pauseTip} pressed={p.paused} onClick={() => p.onPaused(!p.paused)} testId="stage-pause" className="icon-filled">{p.paused ? strings.stage.play : strings.stage.pause}</Btn>
-      <Btn icon={MousePointerClick} label={strings.stage.interactTip} pressed={p.mode === 'play'} onClick={() => p.onMode(p.mode === 'play' ? 'inspect' : 'play')} testId="mode-play" />
-      {!p.compact && <span className="stage-sep" aria-hidden="true" />}
-      {p.swfPicker}
-      <label className="inline">
-        <span className="sr-only">{strings.stage.aspect}</span>
-        <select value={p.aspect} onChange={(e) => p.onAspect(e.target.value as AspectId)} aria-label={strings.stage.aspect} title={strings.stage.aspect} data-testid="aspect">
-          {(Object.keys(ASPECTS) as AspectId[]).map((a) => <option key={a} value={a}>{strings.stage.aspectNames[a]}</option>)}
-        </select>
-      </label>
-      {!p.compact && zoom}
-      {!p.compact && safe}
-      <Btn icon={RefreshCw} label={strings.stage.reload} onClick={p.onReload} testId="stage-reload" />
-      <Btn icon={PictureInPicture2} label={p.detached ? strings.stage.dock : strings.stage.popout} onClick={p.onPopout} testId="stage-popout" />
-      {p.compact ? (
+    <div ref={ref} className={`stage-toolbar${tight ? ' is-tight' : ''}`} role="toolbar" aria-label={strings.stage.toolbar} onKeyDown={(e) => e.key === 'Escape' && more && setMore(false)}>
+      {pause}
+      {reload}
+      {!tight && <span className="stage-sep" aria-hidden="true" />}
+      <ModeSwitch p={p} iconOnly={tight} />
+      {tight ? (
         <>
+          {p.swfPicker}
+          {aspect}
+          {popout}
           <Btn icon={Ellipsis} label={strings.stage.more} pressed={more} onClick={() => setMore(!more)} testId="stage-more" />
-          {more && <div className="stage-more" role="group" aria-label={strings.stage.more}>{settings}{zoom}{safe}{tools}{unbuilt}</div>}
+          {more && (
+            <div className="stage-more" role="group" aria-label={strings.stage.more}>
+              <span className="stage-more-head">{strings.stage.groupPlayer}</span>
+              {player}
+              <span className="stage-more-head">{strings.stage.groupScreen}</span>
+              {zoom}{uiScale}{safe}
+            </div>
+          )}
         </>
       ) : (
         <>
           <span className="stage-sep" aria-hidden="true" />
-          <Pop open={preview} onToggle={() => (setLater(false), setPreview(!preview))} icon={Palette} label={strings.stage.previewSettings} tip={strings.stage.previewSettingsTip} testId="stage-preview" text={previewSummary(theme, lang)}>
-            {settings}
-          </Pop>
-          {tools}
+          {player}
           <span className="stage-spacer" />
-          <Pop open={later} onToggle={() => (setPreview(false), setLater(!later))} icon={Ellipsis} label={strings.stage.moreTools} testId="stage-later" right>
-            {unbuilt}
-          </Pop>
+          {p.swfPicker}
+          {aspect}
+          {zoom}
+          {uiScale}
+          {safe}
+          {popout}
         </>
       )}
     </div>

@@ -65,7 +65,7 @@ export async function runPopupShots(o: { outDir: string; projectDir: string; win
   await wait(1500)
   key('2', ['control']) // Behaviour
   await until('graph canvas', () => has('[data-testid="graph-canvas"]'))
-  await until('Ruffle preview built and drawn', async () => (await text('[data-testid="timing"]')).includes('Ruffle'), 60000)
+  await until('Ruffle preview built and drawn', async () => (await text('[data-testid="timing"]')).includes('Render'), 60000)
   await wait(1500)
   await snap('p0-start')
   // a taller preview strip and a zoomed widget

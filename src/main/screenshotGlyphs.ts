@@ -27,10 +27,10 @@ export async function runGlyphShots(o: { outDir: string; projectDir: string; win
   if (!r.ok) throw new Error(`open failed: ${JSON.stringify(r)}`)
   o.session.debug.seedBuilds()
   await wait(1500)
-  await until('Ruffle preview built and drawn', async () => (await text('[data-testid="timing"]')).includes('Ruffle'), 90000)
+  await until('Ruffle preview built and drawn', async () => (await text('[data-testid="timing"]')).includes('Render'), 90000)
   await wait(1500)
   for (const d of ['keyboard', 'xbox', 'playstation']) {
-    const ok = await js<boolean>(`(() => { const e = document.querySelector('[data-testid="stage-prompts"]'); if (!e) return false; Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(e, ${JSON.stringify(d)}); e.dispatchEvent(new Event('change', { bubbles: true })); return true })()`)
+    const ok = await js<boolean>(`(() => { const dev = document.querySelector('[data-testid="stage-prompts"]'); if (!dev) return false; for (let i = 0; i < 3 && dev.dataset.device !== ${JSON.stringify(d)}; i++) dev.click(); return true })()`)
     if (!ok) {
       // a project without prompts (e.g. an example): one shot of the preview
       await writeFile(join(o.outDir, 'g-preview.png'), (await main().webContents.capturePage()).toPNG())

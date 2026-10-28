@@ -10,8 +10,8 @@ export interface BuildRecord {
 }
 
 export const HISTORY_KEEP = 50
-/** The one-second target from the design spec ("Build pipeline and preview"). */
-export const TARGET_MS = 1000
+/** The edit-to-preview target: 3 s (the design spec ("Build pipeline and preview") says 1 s; changed on the owner's request). */
+export const TARGET_MS = 3000
 
 /** Appends a build (replacing one with the same seq), keeps the last `keep`. */
 export function addBuild(history: readonly BuildRecord[], rec: BuildRecord, keep = HISTORY_KEEP): BuildRecord[] {

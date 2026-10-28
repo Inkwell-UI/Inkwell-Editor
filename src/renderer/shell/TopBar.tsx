@@ -134,7 +134,7 @@ export function TopBar() {
       <TargetPill />
       <WorkspaceSwitcher />
       <span className="spacer" />
-      <Btn icon={Hammer} variant="primary" onClick={() => void inkwell?.buildAll()} reason={buildReason} testId="build-all">{compiling ? strings.top.building : strings.top.buildAll}</Btn>
+      <Btn icon={Hammer} variant="primary" onClick={() => void inkwell?.buildAll()} reason={buildReason} label={compiling ? strings.top.building : strings.top.buildAll} testId="build-all"><span className="btn-text">{compiling ? strings.top.building : strings.top.buildAll}</span></Btn>
       <DeployMenu />
     </header>
   )

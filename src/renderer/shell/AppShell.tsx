@@ -72,6 +72,16 @@ export function AppShell() {
 
   // Edit > Settings in the application menu
   useEffect(() => inkwell?.onOpenSettings(() => useDialogStore.getState().show('settings')), [])
+  // Edit > Undo / Redo of the title bar menu: a field being edited keeps its own undo, anything else is the active SWF's history
+  useEffect(() => {
+    const run = (name: 'undo' | 'redo'): void => {
+      const id = useProjectStore.getState().activeSwfId
+      if (isTyping(document.activeElement) || !id) document.execCommand(name)
+      else (name === 'undo' ? undoSwf : redoSwf)(id)
+    }
+    const offs = [inkwell?.onUndo(() => run('undo')), inkwell?.onRedo(() => run('redo'))]
+    return () => offs.forEach((f) => f?.())
+  }, [])
   // File > Save: only graph edits are debounced; everything else is written as it changes
   useEffect(() => inkwell?.onSaveNow(flushGraphSaves), [])
 

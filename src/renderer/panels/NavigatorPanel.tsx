@@ -121,9 +121,8 @@ export function NavigatorPanel() {
           )}
         </section>
 
-        <section aria-labelledby="nav-orphans">
+        {orphans.length > 0 && <section aria-labelledby="nav-orphans">
           <header className="section-title"><h3 id="nav-orphans">{strings.nav.orphans(orphans.length)}</h3></header>
-          {orphans.length === 0 && <p className="empty">{strings.nav.none}</p>}
           {orphans.map((o) => {
             // an overlay entry can only be edited once its SWF's overlay store exists, i.e. while it is the active SWF
             const notActive = o.kind === 'overlay' && o.swfId !== swf?.id ? strings.nav.openSwfFirst : undefined
@@ -160,11 +159,10 @@ export function NavigatorPanel() {
               </div>
             )
           })}
-        </section>
+        </section>}
 
-        <section aria-labelledby="nav-unreachable">
+        {unreachable.length > 0 && <section aria-labelledby="nav-unreachable">
           <header className="section-title"><h3 id="nav-unreachable">{strings.nav.unreachable(unreachable.length)}</h3></header>
-          {unreachable.length === 0 && <p className="empty">{strings.nav.none}</p>}
           {unreachable.map((u) => (
             <div key={u.id} className="card">
               <div className="card-head">
@@ -176,7 +174,7 @@ export function NavigatorPanel() {
               <div className="row-actions"><FigmaSelectBtn nodeId={u.id} /></div>
             </div>
           ))}
-        </section>
+        </section>}
       </div>
     </Panel>
   )

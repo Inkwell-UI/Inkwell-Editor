@@ -11,7 +11,7 @@ export function ThemeControl() {
   const modes = swf ? themeModes(swf.ir) : []
   if (!swf || modes.length < 2) return <Btn icon={Palette} reason={strings.stage.themeNone} testId="stage-theme">{strings.stage.theme}</Btn>
   return (
-    <label className="inline" title={strings.stage.theme}>
+    <label className="inline select-icon" title={strings.stage.theme}>
       <Palette size={14} aria-hidden="true" /> <span className="sr-only">{strings.stage.theme}</span>
       <select value={swf.previewTheme ?? ''} onChange={(e) => void inkwell?.setPreviewTheme(swf.name, e.target.value)} aria-label={strings.stage.theme} data-testid="stage-theme">
         <option value="">{strings.stage.themeDefault}</option>
