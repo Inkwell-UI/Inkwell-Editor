@@ -4,7 +4,6 @@ import { nodeIndex } from '@nicklaj/knotwork'
 import { useStore } from 'zustand'
 import { As2View } from '../graph/As2View'
 import { GraphCanvas } from '../graph/GraphCanvas'
-import { SignatureEditor } from '../graph/SignatureEditor'
 import { useGraphActions } from '../graph/useGraphActions'
 import { inkwell } from '../hooks/api'
 import { useSwfGraphs } from '../hooks/useGraphs'
@@ -139,7 +138,6 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
         </Popover>
         {nodeTitle && <><span aria-hidden="true">&gt;</span><span>{nodeTitle}</span></>}
       </nav>
-      {store.getState().meta.scope === 'function' && <SignatureEditor store={store} />}
       <div className={`graph-body${split ? ' is-split' : ''}`}>
         <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} fitSignal={tidied} />
         <EventList events={events} selected={selectedNode} onPick={(id) => setFocus({ id, n: (focus?.n ?? 0) + 1 })} />

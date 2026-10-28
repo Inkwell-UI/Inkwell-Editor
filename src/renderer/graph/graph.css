@@ -68,10 +68,10 @@
 .gn-input.is-bad, .gn-input[aria-invalid="true"] { border-color: var(--err); }
 .gn-params { display: flex; flex-direction: column; gap: 4px; }
 .gn-param { display: grid; grid-template-columns: minmax(0, 1fr) 62px auto; gap: 4px; align-items: center; }
-.signature { border-bottom: 1px solid var(--line-strong); padding: 6px 10px 8px; }
+.signature { padding: 2px 0 6px; }
 .sig-title { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--fg-dim); }
-.sig-body { display: flex; flex-wrap: wrap; gap: 10px 24px; }
-.sig-group { display: flex; flex-direction: column; gap: 4px; min-width: 200px; }
+.sig-body { display: flex; flex-direction: column; gap: 10px; }
+.sig-group { display: flex; flex-direction: column; gap: 4px; }
 .sig-exit { grid-template-columns: minmax(0, 1fr) auto; }
 .gn-icon, .gn-add { display: inline-flex; align-items: center; gap: 4px; background: transparent; color: var(--fg-dim); border: 1px solid var(--line-strong); border-radius: 4px; padding: 1px 6px; font: inherit; font-size: 11px; cursor: pointer; }
 .gn-icon:hover, .gn-add:hover { color: var(--fg); background: var(--hover); }

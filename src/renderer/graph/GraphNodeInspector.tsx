@@ -8,7 +8,9 @@ import { fieldRows, layerOptions, nodePins } from '../model/graphModel'
 import { functionGraphs, pinName, pointCall } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
+import { isFunctionEntry, isFunctionExit } from '../../shared/graphValidate'
 import { FieldEditor } from './FieldEditors'
+import { SignatureEditor } from './SignatureEditor'
 
 /** The Inspector body for a selected graph node (UX 4.5): its kind, the issues pinned to it (the one lint source) and the same field editors as the node. */
 export function GraphNodeInspector() {
@@ -46,6 +48,8 @@ export function GraphNodeInspector() {
         {mine.length === 0 && <p className="empty">{strings.insp.noIssues}</p>}
         <ul className="plain">{mine.map((r, i) => <li key={i} className="issue"><span className="issue-text"><span className="mono">{r.code}</span><span>{r.message}</span></span></li>)}</ul>
       </section>
+      {def && isFunctionEntry(def) && <SignatureEditor store={store} sections={['inputs']} />}
+      {def && isFunctionExit(def) && <SignatureEditor store={store} sections={['outputs', 'exits']} />}
       {list.length > 0 && (
         <section aria-labelledby="gn-fields">
           <h4 id="gn-fields">{strings.insp.gnFields}</h4>

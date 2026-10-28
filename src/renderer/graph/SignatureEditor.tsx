@@ -44,10 +44,10 @@ function NameBox({ value, problem, label, onCommit }: { value: string; problem(n
 }
 
 /**
- * The interface of the open function graph: inputs, outputs (typed) and exits. Every change is one `setSignature` (undoable); the wires of the function's Entry and Exit nodes and
+ * The interface of the open function graph, shown in the Inspector: the Function Entry node edits the inputs, the Function Exit node the outputs and exits (`sections`). Every change is one `setSignature` (undoable); the wires of the function's Entry and Exit nodes and
  * the calls in the other graphs follow by pin id (docs/functions.md). A name is applied only when it is valid, so the file never holds a signature the Spec refuses.
  */
-export function SignatureEditor({ store }: { store: GraphStore }) {
+export function SignatureEditor({ store, sections }: { store: GraphStore; sections: readonly Kind[] }) {
   const sig = useStore(store, (s) => s.signature)
   if (!sig) return null
   const set = (next: Sig): void => store.getState().setSignature(next)
@@ -75,9 +75,9 @@ export function SignatureEditor({ store }: { store: GraphStore }) {
     <section className="signature" aria-label={strings.graph.sigTitle} data-testid="signature-editor">
       <h4 className="sig-title">{strings.graph.sigTitle}</h4>
       <div className="sig-body">
-        {pins('inputs')}
-        {pins('outputs')}
-        <div className="sig-group" data-testid="sig-exits">
+        {sections.includes('inputs') && pins('inputs')}
+        {sections.includes('outputs') && pins('outputs')}
+        {sections.includes('exits') && <div className="sig-group" data-testid="sig-exits">
           <div className="gn-field-label">{strings.graph.sigExits}</div>
           {sig.exits.map((x, i) => (
             <div className="gn-param sig-exit" key={x.id}>
@@ -88,7 +88,7 @@ export function SignatureEditor({ store }: { store: GraphStore }) {
           <button type="button" className="gn-add" onClick={() => set({ ...sig, exits: [...sig.exits, { id: crypto.randomUUID(), name: fresh('exits', 'exit') }] })}>
             <Plus size={12} aria-hidden="true" />{strings.graph.sigAddExit}
           </button>
-        </div>
+        </div>}
       </div>
     </section>
   )
