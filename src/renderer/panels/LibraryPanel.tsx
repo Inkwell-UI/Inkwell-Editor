@@ -122,7 +122,7 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
         </button>
         {own && (
           <span className="row-reveal">
-            <Btn label={strings.lib.exportTip} onClick={() => setExporting(exporting === undefined ? pack.version : undefined)} pressed={exporting !== undefined} testId="library-export-open">{strings.lib.exportOpen}</Btn>
+            <Btn variant="quiet" label={strings.lib.exportTip} onClick={() => setExporting(exporting === undefined ? pack.version : undefined)} pressed={exporting !== undefined} testId="library-export-open">{strings.lib.exportOpen}</Btn>
             <RowMenu label={strings.lib.more} testId="library-more" items={[{ label: strings.lib.remove(pack.id), danger: true, onClick: () => void remove() }]} />
           </span>
         )}
@@ -145,7 +145,7 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
             onOpen={() => openLibraryFunction(swf, fn)}
             onRename={(n) => renameLibraryFunction(swf, fn, n)}
             onDelete={() => void removeFn(fn)}
-            extra={<Btn icon={Copy} label={strings.lib.copyTip(fn.name)} onClick={() => void copy(fn)} testId="library-copy" />}
+            extra={<Btn icon={Copy} variant="quiet" label={strings.lib.copyTip(fn.name)} onClick={() => void copy(fn)} testId="library-copy" />}
           />
         ))}
       </ul>}
