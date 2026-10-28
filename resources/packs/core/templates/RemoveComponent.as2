@@ -1,3 +1,6 @@
 // [{{node.id}}] core/RemoveComponent@1
-{{in.instance}}.removeMovieClip();
+var {{node.uid}}_i = {{in.instance}};
+var {{node.uid}}_p = {{node.uid}}_i._parent;
+{{node.uid}}_i.removeMovieClip();
+__g.restack({{node.uid}}_p);
 {{next.then}}

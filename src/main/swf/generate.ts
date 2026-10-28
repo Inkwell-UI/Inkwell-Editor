@@ -16,7 +16,7 @@ import { replacementClassName, replacementFrameCode, replacementGlue } from '../
 import { themeOps } from '../codegen/themeOps'
 import type { CodegenPacks } from '../codegen/packs'
 import { listAttachCode, listClassName, listClassSource, type ListInfo } from './listAs2'
-import { flowAttachCode, flowClassName, flowClassSource, flowInfo, type FlowInfo } from './flowAs2'
+import { flowAttachCode, flowClassName, flowClassSource, flowInfo, stackAttachCode, type FlowInfo } from './flowAs2'
 
 export interface GenerateOptions {
   /** Characters the font behind an alias can draw (lint `font-missing-glyph`); omitted or undefined for an alias: not checked. */
@@ -766,6 +766,13 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   if (flowInfos.length) {
     addClass('InkwellFlow', flowClassSource(mod))
     frameCode.push(...flowInfos.map((f) => flowAttachCode(mod, f)))
+  }
+  // auto-layout frames that a Create Component node names as its parent lay out the instances it adds (`stackAdd` in the graph class)
+  const stackParents = new Set((opts.graphs?.graphs ?? []).flatMap((g) => g.nodes.flatMap((n) => (n.kind.split('/')[1]?.startsWith('CreateComponent@') && typeof n.fields['parent'] === 'string' ? [n.fields['parent']] : []))))
+  for (const id of stackParents) {
+    const f = asFrame(ir.nodes[id])
+    const code = f && f.type === 'frame' ? stackAttachCode(f, ir.nodes, (nid) => (nid === ir.root ? 'root' : layerPaths.get(nid)), widget && wf ? 'this.widget' : 'this') : undefined
+    if (code) frameCode.push(code)
   }
   // W5: the engine glue of a menu replacement, installed before the graphs register their contract-node handlers
   const glue = ir.target.kind === 'menuReplacement' && opts.contract && !opts.widget ? replacementGlue(opts.contract, mod, swfCls, opts.preview === true) : undefined

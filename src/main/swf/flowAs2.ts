@@ -134,6 +134,59 @@ const PRIMARY: Record<string, number> = { MIN: 0, CENTER: 1, MAX: 2, SPACE_BETWE
 const COUNTER: Record<string, number> = { MIN: 0, CENTER: 1, MAX: 2, BASELINE: 0, start: 0, center: 1, end: 2 }
 const figmaOf = (n: Node): Record<string, unknown> => (n.extra?.['figma'] ?? {}) as Record<string, unknown>
 
+/**
+ * Frame code that lets an auto-layout frame lay out the component instances a graph adds to it at run time (Create Component, `stackAdd` of the graph class): sets `inkwellStack` on the frame clip
+ * with its flow (direction, spacing, padding, counter-axis alignment, size) and `start`, the main-axis offset after the children Figma designed (the new instances follow them). Nothing moves
+ * until an instance is added or removed. shortcut: instances stack from the start of the main axis; centre, end and space-between of the primary axis are not applied to them.
+ */
+export function stackAttachCode(n: Frame, nodes: Swf['nodes'], pathOf: (id: string) => string | undefined, root = 'this'): string | undefined {
+  const a = n.autoLayout
+  const here = pathOf(n.id)
+  if (!a || !here) return undefined
+  const vert = a.mode === 'vertical'
+  const fx = figmaOf(n)
+  const kids = n.children.flatMap((id) => {
+    const c = nodes[id]
+    return c && c.visible && pathOf(id) && !isAbsolute(c) ? [c] : []
+  })
+  const start = (vert ? a.padding[0]! : a.padding[3]!) + kids.reduce((s, c) => s + (vert ? c.transform.height : c.transform.width) + a.spacing, 0)
+  const counter = COUNTER[String(fx['counterAxisAlignItems'] ?? a.counterAlign ?? 'start')] ?? 0
+  const path = here === 'root' ? '' : here.slice('root.'.length) // the root frame is the base clip itself
+  return `${root}${path ? `.${path}` : ''}.inkwellStack = {mode: ${vert ? 1 : 0}, spacing: ${num(a.spacing)}, pad: [${a.padding.map(num).join(', ')}], counter: ${counter}, w: ${num(n.transform.width)}, h: ${num(n.transform.height)}, start: ${num(start)}};`
+}
+
+/** The graph class methods that place instances in such a frame; emitted into every graph class that has a Create Component or Remove Component node. `restack` lays out the live instances of `parent.inkwellDyn`. */
+export const STACK_METHODS: readonly string[] = [
+  '    function stackAdd(parent, clip) {',
+  '        if (parent.inkwellStack == undefined) return;',
+  '        if (parent.inkwellDyn == undefined) parent.inkwellDyn = [];',
+  '        parent.inkwellDyn.push(clip);',
+  '        this.restack(parent);',
+  '    }',
+  '    function restack(parent) {',
+  '        var s = parent.inkwellStack;',
+  '        if (s == undefined) return;',
+  '        var live = [];',
+  '        for (var i = 0; i < parent.inkwellDyn.length; i++) if (parent.inkwellDyn[i]._parent == parent) live.push(parent.inkwellDyn[i]);',
+  '        parent.inkwellDyn = live;',
+  '        var vert = s.mode == 1;',
+  '        var pos = s.start;',
+  '        var padC0 = vert ? s.pad[3] : s.pad[0];',
+  '        var innerC = (vert ? s.w : s.h) - padC0 - (vert ? s.pad[1] : s.pad[2]);',
+  '        for (var j = 0; j < live.length; j++) {',
+  '            var c = live[j];',
+  '            var size = vert ? c._height : c._width;',
+  '            var cross = vert ? c._width : c._height;',
+  '            var cp = padC0;',
+  '            if (s.counter == 1) cp += (innerC - cross) / 2;',
+  '            else if (s.counter == 2) cp += innerC - cross;',
+  '            c._x = vert ? cp : pos;',
+  '            c._y = vert ? pos : cp;',
+  '            pos += size + s.spacing;',
+  '        }',
+  '    }'
+]
+
 /** Sizing of a node on one axis. A project synced before the Spec had `layout` keeps the Figma values under `extra.figma`. */
 const sizingOf = (n: Node, axis: 'h' | 'v'): string => {
   const old = figmaOf(n)[axis === 'h' ? 'layoutSizingHorizontal' : 'layoutSizingVertical']

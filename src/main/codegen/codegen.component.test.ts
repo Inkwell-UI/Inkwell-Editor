@@ -68,4 +68,20 @@ describe('Create Component in a SWF', () => {
     const g = generate(swf([frame('f', ['s']), rectShape('s')]), { modId: 'M', graphs: { graphs: [menu], packs } })
     expect(g.lint.some((l) => l.severity === 'error' && l.message.includes('9:9'))).toBe(true)
   })
+
+  it('an auto-layout parent named on Create Component lays its new instances out (frame registration + stackAdd), a wired parent does not', async () => {
+    const { generate } = await import('../swf/generate')
+    const { frame, rectShape, swf } = await import('../swf/ir.testutil')
+    const comp = { ...frame('5:1', ['5:2']), type: 'component', variants: [{ name: 'Default', node: '5:1' }] }
+    const parent = frame('p', ['d'], { autoLayout: { mode: 'vertical', spacing: 10, padding: [8, 8, 8, 8], primaryAlign: 'start', counterAlign: 'start', wrap: false } })
+    const ir = swf([frame('f', ['p']), parent, { ...rectShape('d'), parent: 'p' }])
+    const menu = graph('main', [node('ol', 'core/OnLoad@1'), node('cc', 'core/CreateComponent@1', { component: '5:1', parent: 'p' })], [wire('ol', 'then', 'cc', 'in')])
+    const g = generate(ir, { modId: 'M', graphs: { graphs: [menu, compGraph() as never], packs }, components: [{ id: '5:1', name: 'ListItem', nodes: { '5:1': comp as never, '5:2': { ...rectShape('5:2'), parent: '5:1' } } }] })
+    const frameCode = g.as2.find((f) => f.path === 'frame_1/DoAction.as')!.source
+    expect(frameCode).toMatch(/this\.frame_p\.inkwellStack = \{mode: 1, spacing: 10, pad: \[8, 8, 8, 8\], counter: 0, w: \d+, h: \d+, start: \d+\};/)
+    expect(g.graphClasses.find((c) => c.graphId === 'main')!.source).toContain('function stackAdd(parent, clip)')
+    expect(g.graphClasses.find((c) => c.graphId === 'main')!.source).toContain('__g.stackAdd(')
+    // a graph with neither node gets no stack methods
+    expect(generate(ir, { modId: 'M', graphs: { graphs: [graph('main', [node('ol', 'core/OnLoad@1')], [])], packs } }).graphClasses[0]!.source).not.toContain('stackAdd')
+  })
 })
