@@ -13,7 +13,8 @@ import { useStore } from 'zustand'
 import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import type { SwfDoc } from '../../shared/projectState'
 import { categoriesOf, categoryVar, connectionRule, layerOptions, nodePins, nodeTarget, PIN_STYLE, spawnDefs, spawnFor, spawnWire, type SpawnFromPin } from '../model/graphModel'
-import { findGraphStore, getLibraryFunctions, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
+import { callFields } from '../../shared/functions'
+import { findGraphStore, functionGraphs, getLibraryFunctions, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
 import { createGraphValidation } from '../state/graphValidation'
 import { droppedVariable, VARIABLE_DRAG } from '../model/variables'
 import { menuGraphId, openGraphs } from '../state/graphDocs'
@@ -21,6 +22,7 @@ import { graphEditorBlurred } from '../state/hotReload'
 import { useSelectionStore } from '../state/selectionStore'
 import { useTraceStore } from '../state/traceStore'
 import { strings } from '../strings'
+import { FUNCTION_DRAG } from './GraphsList'
 import { GraphContext, InkwellNode, type GraphCtx } from './NodeView'
 import './graph.css'
 
@@ -149,9 +151,21 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
 
   // a variable dragged from the Variables panel: ask Get or Set, then spawn that node at the drop point
   const onVarDragOver = (e: React.DragEvent): void => {
-    if (e.dataTransfer.types.includes(VARIABLE_DRAG)) (e.preventDefault(), (e.dataTransfer.dropEffect = 'link'))
+    if (e.dataTransfer.types.includes(VARIABLE_DRAG) || e.dataTransfer.types.includes(FUNCTION_DRAG)) (e.preventDefault(), (e.dataTransfer.dropEffect = 'link'))
+  }
+  // a function dragged from the Library (the project's or a pack's): a Call Function node of it at the drop point
+  const dropFunction = (e: React.DragEvent, fnId: string): void => {
+    const fn = functionGraphs(store).find((g) => g.id === fnId)
+    const call = [...defs].find(([k, d]) => k.startsWith('core/') && d.kind === 'CallFunction')?.[0]
+    if (!fn || !call) return
+    e.preventDefault()
+    const id = crypto.randomUUID()
+    store.getState().addNode({ id, kind: call, pos: rf.screenToFlowPosition({ x: e.clientX, y: e.clientY }), fields: callFields(fn) })
+    store.getState().setSelection([id])
   }
   const onVarDrop = (e: React.DragEvent): void => {
+    const fnId = e.dataTransfer.getData(FUNCTION_DRAG)
+    if (fnId) return dropFunction(e, fnId)
     const raw = e.dataTransfer.getData(VARIABLE_DRAG)
     if (!raw) return
     e.preventDefault()
