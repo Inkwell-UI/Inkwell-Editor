@@ -200,7 +200,7 @@ export const strings = {
 
   lib: {
     title: 'Library',
-    empty: 'No functions yet. Use + > New function, or select nodes in a graph and Make Function.',
+    empty: 'No functions yet. Use + > New function, or select nodes in a graph and press G.',
     deleteFunction: (name: string) => `Delete function ${name}`,
     more: 'More actions',
     heading: 'LIBRARY',

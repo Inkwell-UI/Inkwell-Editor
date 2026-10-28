@@ -17,7 +17,9 @@ import { callFields } from '../../shared/functions'
 import { findGraphStore, functionGraphs, getLibraryFunctions, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
 import { createGraphValidation } from '../state/graphValidation'
 import { droppedVariable, VARIABLE_DRAG } from '../model/variables'
-import { menuGraphId, openGraphs } from '../state/graphDocs'
+import { inkwell } from '../hooks/api'
+import { makeFunction, menuGraphId, openGraphs, useGraphDocs } from '../state/graphDocs'
+import { useToastStore } from '../state/toastStore'
 import { graphEditorBlurred } from '../state/hotReload'
 import { useSelectionStore } from '../state/selectionStore'
 import { useTraceStore } from '../state/traceStore'
@@ -206,6 +208,16 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     setVarDrop(null)
   }
 
+  // G ("group"): the selected nodes become a function and a Call Function node takes their place (`makeFunction`); a refused selection says why
+  const groupSelection = async (): Promise<void> => {
+    const toast = useToastStore.getState().push
+    const selected = store.getState().nodes.filter((n) => n.selected).map((n) => n.id)
+    if (!inkwell || selected.length === 0) return toast({ tone: 'error', title: strings.graph.makeFunctionFailed, text: strings.graph.makeFunctionNone })
+    const n = (useGraphDocs.getState().ids[swf.id] ?? []).length + 1
+    const r = await makeFunction({ swf: { id: swf.id, name: swf.name }, store, selected, name: `Function ${n}`, defs }, inkwell)
+    toast(r.ok ? { tone: 'ok', title: strings.graph.madeFunction } : { tone: 'error', title: strings.graph.makeFunctionFailed, text: r.error })
+  }
+
   const onKeyDown = (e: React.KeyboardEvent): void => {
     const native = e.nativeEvent
     if (isTyping(native)) return
@@ -219,6 +231,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
       const sel = store.getState().nodes.filter((n) => n.selected).map((n) => ({ id: n.id }))
       return void (e.preventDefault(), rf.fitView({ ...(sel.length ? { nodes: sel } : {}), duration: 250, padding: 0.3, maxZoom: 1.2 }))
     }
+    if (!mod && !e.altKey && k === 'g') return void (e.preventDefault(), void groupSelection())
     if (mod && k === 'd') return void (e.preventDefault(), clipboard.duplicate())
   }
 
