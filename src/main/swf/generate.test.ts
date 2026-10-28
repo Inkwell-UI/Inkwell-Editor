@@ -201,6 +201,23 @@ describe('generate', () => {
       expect(generate(swf([frame('f', ['s']), rectShape('s')]), { modId: 'MyMod' }).componentSymbols).toEqual([]) // nothing asked, nothing added
     })
 
+    it('a component tree wins over a stale copy of the component in the SWF IR (its fill is drawn)', () => {
+      const fills = [{ type: 'solid', color: { r: 1, g: 0, b: 1 } }]
+      const stale = { ...frame('c1', []), type: 'component', variants: [{ name: 'Default', node: 'c1' }] }
+      const comp = { ...stale, fills }
+      const g = generate(swf([frame('f', ['s']), rectShape('s'), stale as never]), { modId: 'MyMod', components: [{ id: 'c1', name: 'ListItem', nodes: { c1: comp as never } }] })
+      expect(g.shapes.map((x) => x.nodeId)).toContain('c1')
+    })
+
+    it('a clipping frame that scrolls in Figma gets the scroll class and attach code; its shapes become clips; a frame that does not scroll gets neither', () => {
+      const ir = (over: object) => swf([frame('r', ['f']), frame('f', ['s'], { parent: 'r', clipContent: true, transform: { x: 0, y: 0, width: 300, height: 100, rotation: 0 }, ...over }), { ...rectShape('s'), parent: 'f' }])
+      const g = generate(ir({ overflow: 'vertical' }), { modId: 'MyMod' })
+      expect(g.as2.find((f) => f.path.endsWith('InkwellScroll.as'))!.source).toContain('clip.scrollTo = function')
+      expect(g.as2.find((f) => f.path === 'frame_1/DoAction.as')!.source).toContain('mods.MyMod.InkwellScroll.attach(this, "frame_f", 300, 100, 2, 0, 0, ["rect_s"]);')
+      expect(generate(ir({ overflow: 'none' }), { modId: 'MyMod' }).as2.some((f) => f.path.endsWith('InkwellScroll.as'))).toBe(false)
+      expect(generate(ir({ overflow: 'vertical', clipContent: false }), { modId: 'MyMod' }).as2.some((f) => f.path.endsWith('InkwellScroll.as'))).toBe(false) // nothing to scroll without a clip
+    })
+
     it('an image without its asset -> image-missing-asset; compile continues', () => {
       const img = { ...rectShape('i'), type: 'image', asset: 'h', scaleMode: 'fill' } as never
       const g = gen([frame('f', ['i', 's']), img, rectShape('s')])

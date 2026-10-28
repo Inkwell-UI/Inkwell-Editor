@@ -827,6 +827,31 @@ exports[`golden AS2 per node kind > core/GetProp@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/GetScroll@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/GetScroll@1
+                var n1_t = __g.base.title;
+                var n1_s = n1_t.getScroll != undefined ? n1_t.getScroll() : {x: 0, y: 0, maxX: 0, maxY: 0};
+                var n1_x = n1_s.x;
+                var n1_y = n1_s.y;
+                var n1_maxX = n1_s.maxX;
+                var n1_maxY = n1_s.maxY;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/GetSelected@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -1809,7 +1834,8 @@ exports[`golden AS2 per node kind > core/RemoveComponent@1 1`] = `
         __g.Run = function(e_title:String, e_hold:Number) {
             try {
                 // [n1] core/RemoveComponent@1
-                __g.base.title.removeMovieClip();
+                var n1_i = __g.base.title;
+                __g.stackRemove(n1_i._parent, n1_i);
                 // [l_then] core/Log@1
                 trace("[Inkwell] info l_then: " + "");
             } catch (e) {
@@ -1855,6 +1881,27 @@ exports[`golden AS2 per node kind > core/Round@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/ScrollTo@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/ScrollTo@1
+                var n1_t = __g.base.title;
+                if (n1_t.scrollTo != undefined) n1_t.scrollTo(0, 0);
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
 

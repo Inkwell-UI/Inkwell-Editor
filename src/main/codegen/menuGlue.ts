@@ -21,6 +21,8 @@ export interface MenuGlueInput {
   listClass?: string
   /** Full name of the generated auto-layout class when the SWF has frames that re-lay out: a translated text calls its `touch`. */
   flowClass?: string
+  /** The scroll class of the mod (frames that scroll in Figma): it gets the runtime's user events like the list class. */
+  scrollClass?: string
   /** W3 focus graph: focusable clip paths from the base clip in focus order, and per path the index moved to on [Up, Down, Left, Right]. */
   focus?: { paths: readonly string[]; moves: readonly (readonly number[])[] }
   /** W4 prompts: per prompt the glyph clip paths [keyboard, xbox, playstation] (null = no glyph for that device). */
@@ -249,6 +251,7 @@ export function menuClassSource(i: MenuGlueInput): string {
     ...(pr ? ['        this.updatePrompts();'] : []),
     ...(fg ? ['        this.moveFocus(action);'] : []),
     ...(i.listClass ? [`        ${i.listClass}.input(action);`] : []),
+    ...(i.scrollClass ? [`        ${i.scrollClass}.input(action);`] : []),
     '        for (var k = 0; k < this.graphs.length; k++) this.graphs[k].handleInput(action);',
     '    }',
     '    function onMessage(name, text, number, flag) {',

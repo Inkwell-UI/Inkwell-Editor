@@ -1,0 +1,50 @@
+{
+  "kind": "ScrollTo",
+  "major": 1,
+  "title": "Scroll To",
+  "category": "Components",
+  "milestone": "0.6",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    },
+    {
+      "name": "x",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "y",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/ScrollTo.as2"
+}

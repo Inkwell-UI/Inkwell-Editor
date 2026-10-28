@@ -1,0 +1,60 @@
+{
+  "kind": "GetScroll",
+  "major": 1,
+  "title": "Get Scroll Position",
+  "category": "Components",
+  "milestone": "0.6",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "x",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "y",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "maxX",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "maxY",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/GetScroll.as2"
+}

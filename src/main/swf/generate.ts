@@ -16,6 +16,7 @@ import { replacementClassName, replacementFrameCode, replacementGlue } from '../
 import { themeOps } from '../codegen/themeOps'
 import type { CodegenPacks } from '../codegen/packs'
 import { listAttachCode, listClassName, listClassSource, type ListInfo } from './listAs2'
+import { scrollAttachCode, scrollClassName, scrollClassSource, type ScrollInfo } from './scrollAs2'
 import { flowAttachCode, flowClassName, flowClassSource, flowInfo, stackAttachCode, type FlowInfo } from './flowAs2'
 
 export interface GenerateOptions {
@@ -263,6 +264,9 @@ const num = (n: number): string => String(Math.round(n * 1000) / 1000)
 const ASCII = Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)).join('')
 
 /** An instance or a component draws like the frame it is (its own background, clipping and auto layout, its real children); the link to the main component only matters to behaviour. */
+/** SWF depth up to which a clip layer reaches in a frame that holds run-time instances: attachMovie depths start at 0, which is SWF depth 16384 (timeline depths are offset by 16384). */
+const DYNAMIC_CLIP_DEPTH = 16384 + 2000
+
 const asFrame = (n: Node | undefined) => (n && (n.type === 'instance' || n.type === 'component') ? { ...n, type: 'frame' as const, clipContent: n.clipContent ?? false } : n)
 
 /** The linkage name of a component's symbol (what `attachMovie` takes): stable, made from its Figma id. */
@@ -405,8 +409,8 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   // W4: prompt glyphs are compiled from synthetic layers added to this build's copy of the IR (never saved); their lint is reported on the prompt
   const withGlyphs = source.target.kind === 'customMenu' && !opts.widget && opts.prompts && Object.keys(opts.prompts).length ? withPromptGlyphs(source, opts.prompts) : undefined
   const ir0 = withGlyphs?.ir ?? source
-  // the components' own layers are looked up like any other layer: Figma ids are unique across the file, so their nodes join this build's copy of the IR (never saved)
-  const ir = opts.components?.length ? { ...ir0, nodes: { ...Object.fromEntries(opts.components.flatMap((c) => Object.entries(c.nodes))), ...ir0.nodes } } : ir0
+  // the components' own layers are looked up like any other layer: Figma ids are unique across the file, so their nodes join this build's copy of the IR (never saved); they win over a stale copy the SWF's IR may still hold of the same component
+  const ir = opts.components?.length ? { ...ir0, nodes: { ...ir0.nodes, ...Object.fromEntries(opts.components.flatMap((c) => Object.entries(c.nodes))) } } : ir0
   if (withGlyphs) lint.push(...withGlyphs.lint)
   const defs: Buffer[] = []
   const shapes: Generated['shapes'] = []
@@ -425,11 +429,14 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   const keyed: { nodeId: string; here: string; key: string }[] = []
   const layerPaths = new Map<string, string>() // figma node id -> clip path from _root (graph targets)
   const listInfos: ListInfo[] = [] // frames with overlay role `list` (S8)
+  const scrollInfos: ScrollInfo[] = [] // frames that scroll in Figma (overflow direction)
   const flowInfos: FlowInfo[] = [] // auto-layout frames with an auto-width text: laid out again when a text changes
   const gutters = new Map<string, { x: number; y: number }>() // TextField gutter offset per text node
   // runtime theming (V6.4): a custom menu's bound properties the INI theme changes; a shape is only addressable from AS2 inside a sprite, so those are wrapped
   const tOps = ir.target.kind === 'customMenu' && !opts.widget ? themeOps(ir) : []
   const wrapShape = new Set(tOps.filter((o) => o.target === 'self' && ir.nodes[o.nodeId]?.type === 'shape').map((o) => o.nodeId))
+  // a bare shape cannot be addressed from AS2, so the shapes inside a scrolling frame are wrapped in a clip (its content moves by clip)
+  for (const nd of Object.values(ir.nodes)) if ('overflow' in nd && nd.overflow && nd.overflow !== 'none') for (const k of nd.children) if (ir.nodes[k]?.type === 'shape') wrapShape.add(k)
   const wrapFill = new Set(tOps.filter((o) => o.target === 'fill').map((o) => o.nodeId))
   const inSprite = (shapeId: number): number => {
     const sid = alloc()
@@ -478,6 +485,8 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
    * first stop) are rectangle shapes named `fill`, `fill_2`... The root frame is the stage and stays transparent in game, so its solid and gradient fills are skipped.
    * `skip` depths are left free below the first fill (the clip layer). Placements + their reserved names.
    */
+  // frames a Create Component node names as its parent: they hold instances made at run time
+  const stackParents = new Set((opts.graphs?.graphs ?? []).flatMap((g) => g.nodes.flatMap((n) => (n.kind.split('/')[1]?.startsWith('CreateComponent@') && typeof n.fields['parent'] === 'string' ? [n.fields['parent']] : []))))
   const background = (n: Extract<Swf['nodes'][string], { type: 'frame' }>, path: string, skip = 0): [Buffer[], string[]] => {
     const bg: Buffer[] = []
     const names: string[] = []
@@ -553,7 +562,13 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
           const maskId = alloc()
           shapes.push({ charId: maskId, nodeId: cid, svg: maskSvg(n.transform.width, n.transform.height) })
           defs.push(T.defineShapePlaceholder(maskId, n.transform.width, n.transform.height))
-          inner[0] = T.placeObject2({ depth: 1, charId: maskId, x: 0, y: 0, clipDepth: inner.length })
+          inner[0] = T.placeObject2({ depth: 1, charId: maskId, x: 0, y: 0, clipDepth: stackParents.has(cid) ? DYNAMIC_CLIP_DEPTH : inner.length }) // a parent of run-time instances also clips them (they sit above its layers, from depth 0 = 16384)
+        }
+        // a frame that scrolls in Figma: its content moves inside the clip (a frame that does not clip has nothing to scroll)
+        if (clip && n.overflow && n.overflow !== 'none' && here.startsWith('root.')) {
+          const names = n.children.flatMap((k) => { const p = layerPaths.get(k); return p?.startsWith(`${here}.`) ? [p.slice(here.length + 1)] : [] })
+          const [, padRight, padBottom] = n.autoLayout?.padding ?? [0, 0, 0, 0]
+          scrollInfos.push({ path: here.slice('root.'.length), w: n.transform.width, h: n.transform.height, dir: n.overflow === 'horizontal' ? 1 : n.overflow === 'vertical' ? 2 : 3, padX: padRight!, padY: padBottom!, names })
         }
         if (opts.roles?.[cid] === 'list') {
           const l = listInfo(n)
@@ -763,12 +778,15 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
     addClass('InkwellList', listClassSource(mod))
     frameCode.push(...listInfos.map((l) => listAttachCode(mod, l)))
   }
+  if (scrollInfos.length) {
+    addClass('InkwellScroll', scrollClassSource(mod, opts.preview === true))
+    frameCode.push(...scrollInfos.map((x) => scrollAttachCode(mod, x, widget && wf ? 'this.widget' : 'this')))
+  }
   if (flowInfos.length) {
     addClass('InkwellFlow', flowClassSource(mod))
     frameCode.push(...flowInfos.map((f) => flowAttachCode(mod, f)))
   }
   // auto-layout frames that a Create Component node names as its parent lay out the instances it adds (`stackAdd` in the graph class)
-  const stackParents = new Set((opts.graphs?.graphs ?? []).flatMap((g) => g.nodes.flatMap((n) => (n.kind.split('/')[1]?.startsWith('CreateComponent@') && typeof n.fields['parent'] === 'string' ? [n.fields['parent']] : []))))
   for (const id of stackParents) {
     const f = asFrame(ir.nodes[id])
     const code = f && f.type === 'frame' ? stackAttachCode(f, ir.nodes, (nid) => (nid === ir.root ? 'root' : layerPaths.get(nid)), widget && wf ? 'this.widget' : 'this') : undefined
@@ -799,10 +817,10 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       const ps = PROMPT_DEVICE_ORDER.map((d) => (opts.prompts![pid]![d] ? pathOf(glyphId(pid, d)) ?? null : null))
       return ps.some((x) => x) ? [ps] : []
     })
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.filter((c) => !c.fn && !c.component).map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, graphs: gen?.classes.filter((c) => !c.fn && !c.component).map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(scrollInfos.length ? { scrollClass: scrollClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
-      frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, [...listInfos.map((l) => listAttachCode(mod, l, '_root')), ...flowInfos.map((f) => flowAttachCode(mod, f, '_root'))]))
+      frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, [...listInfos.map((l) => listAttachCode(mod, l, '_root')), ...scrollInfos.map((x) => scrollAttachCode(mod, x, '_root')), ...flowInfos.map((f) => flowAttachCode(mod, f, '_root'))]))
     }
     frameCode.push(...menuFrameCode(mod, swfCls))
   }

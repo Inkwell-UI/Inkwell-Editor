@@ -1,0 +1,8 @@
+// [{{node.id}}] core/GetScroll@1
+var {{node.uid}}_t = {{in.target}};
+var {{node.uid}}_s = {{node.uid}}_t.getScroll != undefined ? {{node.uid}}_t.getScroll() : {x: 0, y: 0, maxX: 0, maxY: 0};
+var {{out.x}} = {{node.uid}}_s.x;
+var {{out.y}} = {{node.uid}}_s.y;
+var {{out.maxX}} = {{node.uid}}_s.maxX;
+var {{out.maxY}} = {{node.uid}}_s.maxY;
+{{next.then}}

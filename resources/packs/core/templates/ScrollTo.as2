@@ -1,0 +1,4 @@
+// [{{node.id}}] core/ScrollTo@1
+var {{node.uid}}_t = {{in.target}};
+if ({{node.uid}}_t.scrollTo != undefined) {{node.uid}}_t.scrollTo({{in.x}}, {{in.y}});
+{{next.then}}

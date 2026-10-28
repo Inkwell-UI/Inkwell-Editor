@@ -174,12 +174,16 @@ export const stackMethods = (preview: boolean): string[] => [
     : []),
   '    function stackAdd(parent, clip, component) {',
   ...(preview ? ['        trace("[Inkwell] spawn " + parent.inkwellId + " " + component + " " + clip);'] : []),
+  '        if (parent.inkwellDyn == undefined) parent.inkwellDyn = [];',
+  '        parent.inkwellDyn.push(clip);',
   '        if (parent.inkwellStack == undefined) {',
+  '            if (parent.inkwellOffX != undefined) {', // a scrolling frame: the new instance moves with the content
+  '                clip._x -= parent.inkwellOffX;',
+  '                clip._y -= parent.inkwellOffY;',
+  '            }',
   ...(preview ? ['            this.bnd(clip);'] : []),
   '            return;',
   '        }',
-  '        if (parent.inkwellDyn == undefined) parent.inkwellDyn = [];',
-  '        parent.inkwellDyn.push(clip);',
   '        this.restack(parent);',
   '    }',
   '    function stackRemove(parent, clip) {',
@@ -197,6 +201,8 @@ export const stackMethods = (preview: boolean): string[] => [
   '        var pos = s.start;',
   '        var padC0 = vert ? s.pad[3] : s.pad[0];',
   '        var innerC = (vert ? s.w : s.h) - padC0 - (vert ? s.pad[1] : s.pad[2]);',
+  '        var ox = parent.inkwellOffX == undefined ? 0 : parent.inkwellOffX;', // a scrolling frame: the instances sit where they are scrolled to
+  '        var oy = parent.inkwellOffY == undefined ? 0 : parent.inkwellOffY;',
   '        for (var j = 0; j < live.length; j++) {',
   '            var c = live[j];',
   '            var size = vert ? c._height : c._width;',
@@ -204,11 +210,12 @@ export const stackMethods = (preview: boolean): string[] => [
   '            var cp = padC0;',
   '            if (s.counter == 1) cp += (innerC - cross) / 2;',
   '            else if (s.counter == 2) cp += innerC - cross;',
-  '            c._x = vert ? cp : pos;',
-  '            c._y = vert ? pos : cp;',
+  '            c._x = (vert ? cp : pos) - ox;',
+  '            c._y = (vert ? pos : cp) - oy;',
   '            pos += size + s.spacing;',
   ...(preview ? ['            this.bnd(c);'] : []),
   '        }',
+  '        if (parent.scrollTo != undefined) parent.scrollTo(ox, oy);', // the content may have become shorter: keep the offset inside it
   '    }'
 ]
 
