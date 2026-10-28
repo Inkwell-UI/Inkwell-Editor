@@ -55,6 +55,16 @@ describe('trace store', () => {
     s.newBuild()
     expect(useTraceStore.getState().waits).toEqual({})
   })
+  it('keeps the instances a graph made until they are removed or the build changes; they are not trace lines', () => {
+    const s = useTraceStore.getState()
+    s.push('[Inkwell] spawn p c1 _level0.a.i0')
+    s.push('[Inkwell] spawn p c1 _level0.a.i1')
+    s.push('[Inkwell] despawn _level0.a.i0')
+    expect(useTraceStore.getState().spawned).toEqual([{ parent: 'p', component: 'c1', path: '_level0.a.i1' }])
+    expect(useTraceStore.getState().lines).toHaveLength(0)
+    s.newBuild()
+    expect(useTraceStore.getState().spawned).toEqual([])
+  })
   it('is capped', () => {
     for (let i = 0; i < MAX_TRACE_LINES + 20; i++) useTraceStore.getState().push(`[Inkwell] info n: ${i}`)
     const { lines } = useTraceStore.getState()

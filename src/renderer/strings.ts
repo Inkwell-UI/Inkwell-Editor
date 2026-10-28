@@ -114,6 +114,8 @@ export const strings = {
     deleteConfirm: 'Delete graph file',
     deleteCancel: 'Keep it',
     layers: 'LAYERS',
+    runtimeTag: 'Runtime',
+    runtimeTip: 'Made by a graph while the preview runs (Create Component). Not a layer of your design: it is gone when the preview restarts.',
     componentLayers: (name: string) => `INSIDE ${name.toUpperCase()}`,
     componentUnknown: 'This component is not in any frame, so its layers are known only while Figma is connected.',
     noSwf: 'No SWF yet.',

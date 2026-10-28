@@ -142,7 +142,10 @@ const figmaOf = (n: Node): Record<string, unknown> => (n.extra?.['figma'] ?? {})
 export function stackAttachCode(n: Frame, nodes: Swf['nodes'], pathOf: (id: string) => string | undefined, root = 'this'): string | undefined {
   const a = n.autoLayout
   const here = pathOf(n.id)
-  if (!a || !here) return undefined
+  if (!here) return undefined
+  const at = `${root}${here === 'root' ? '' : `.${here.slice('root.'.length)}`}`
+  const idCode = `${at}.inkwellId = ${q(n.id)};` // which Figma layer this clip is (the preview lists the instances made under it)
+  if (!a) return idCode
   const vert = a.mode === 'vertical'
   const fx = figmaOf(n)
   const kids = n.children.flatMap((id) => {
@@ -152,15 +155,25 @@ export function stackAttachCode(n: Frame, nodes: Swf['nodes'], pathOf: (id: stri
   const start = (vert ? a.padding[0]! : a.padding[3]!) + kids.reduce((s, c) => s + (vert ? c.transform.height : c.transform.width) + a.spacing, 0)
   const counter = COUNTER[String(fx['counterAxisAlignItems'] ?? a.counterAlign ?? 'start')] ?? 0
   const path = here === 'root' ? '' : here.slice('root.'.length) // the root frame is the base clip itself
-  return `${root}${path ? `.${path}` : ''}.inkwellStack = {mode: ${vert ? 1 : 0}, spacing: ${num(a.spacing)}, pad: [${a.padding.map(num).join(', ')}], counter: ${counter}, w: ${num(n.transform.width)}, h: ${num(n.transform.height)}, start: ${num(start)}};`
+  return `${idCode}\n${root}${path ? `.${path}` : ''}.inkwellStack = {mode: ${vert ? 1 : 0}, spacing: ${num(a.spacing)}, pad: [${a.padding.map(num).join(', ')}], counter: ${counter}, w: ${num(n.transform.width)}, h: ${num(n.transform.height)}, start: ${num(start)}};`
 }
 
-/** The graph class methods that place instances in such a frame; emitted into every graph class that has a Create Component or Remove Component node. `restack` lays out the live instances of `parent.inkwellDyn`. */
-export const STACK_METHODS: readonly string[] = [
-  '    function stackAdd(parent, clip) {',
+/**
+ * The graph class methods behind Create and Remove Component, emitted into every graph class that has one of those nodes. `stackAdd` places a new instance in an auto-layout parent
+ * (`restack` lays out the live instances of `parent.inkwellDyn`); `stackRemove` removes one. In a preview build they trace `[Inkwell] spawn <parent id> <component id> <clip path>` and
+ * `[Inkwell] despawn <clip path>`, so the editor can list the instances a graph made (`parent.inkwellId` is set by the frame code for a parent picked on the node).
+ */
+export const stackMethods = (preview: boolean): string[] => [
+  '    function stackAdd(parent, clip, component) {',
+  ...(preview ? ['        trace("[Inkwell] spawn " + parent.inkwellId + " " + component + " " + clip);'] : []),
   '        if (parent.inkwellStack == undefined) return;',
   '        if (parent.inkwellDyn == undefined) parent.inkwellDyn = [];',
   '        parent.inkwellDyn.push(clip);',
+  '        this.restack(parent);',
+  '    }',
+  '    function stackRemove(parent, clip) {',
+  ...(preview ? ['        trace("[Inkwell] despawn " + clip);'] : []),
+  '        clip.removeMovieClip();',
   '        this.restack(parent);',
   '    }',
   '    function restack(parent) {',

@@ -1,4 +1,4 @@
-import { STACK_METHODS } from '../swf/flowAs2'
+import { stackMethods } from '../swf/flowAs2'
 import { LOC_KEY, pinCompat, SAVED_TYPES, type Graph, type GraphNode, type NodeDef, type PinType } from '@inkwell-ui/spec'
 import { isFunctionEntry, resolvePins, type ResolvedPin } from '../../shared/graphValidate'
 import { parseBindings, type BindProp } from '../../shared/graphBinding'
@@ -626,7 +626,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           ...(i.menu ? [{ t: '        this.messageHandlers = [];' }, { t: '        this.modEventHandlers = [];' }] : []),
           { t: '    }' }
         ]),
-    ...(g.nodes.some((n) => /^[^/]+\/(CreateComponent|RemoveComponent)@/.test(n.kind)) ? STACK_METHODS.map((t) => ({ t })) : []),
+    ...(g.nodes.some((n) => /^[^/]+\/(CreateComponent|RemoveComponent)@/.test(n.kind)) ? stackMethods(i.preview === true).map((t) => ({ t })) : []),
     { t: '    // logs the failing node id; e is a string or a plain object {node, message} (GFx has no Error class)' },
     { t: '    function fail(nodeId, e) {' },
     { t: '        var msg = "";' },

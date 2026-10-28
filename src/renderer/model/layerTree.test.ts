@@ -1,6 +1,6 @@
 import type { Swf } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
-import { buildLayerTree, filterTree, flattenTree, lintCounts } from './layerTree'
+import { buildLayerTree, filterTree, flattenTree, lintCounts, withRuntimeRows } from './layerTree'
 
 const base = { anchor: { h: 'left', v: 'top' }, visible: true, opacity: 1 }
 const t = (x = 0) => ({ x, y: 0, width: 10, height: 10, rotation: 0 })
@@ -41,5 +41,20 @@ describe('layer tree', () => {
     expect(flattenTree(tree, new Set()).map((r) => [r.id, r.depth])).toEqual([['r', 0], ['a', 1], ['b', 1], ['c', 2]])
     expect(flattenTree(tree, new Set(['b'])).map((r) => r.id)).toEqual(['r', 'a', 'b'])
     expect(flattenTree(tree, new Set(['b']), true).map((r) => r.id)).toEqual(['r', 'a', 'b', 'c'])
+  })
+})
+
+describe('withRuntimeRows', () => {
+  const row = (id: string, depth: number, over: object = {}) => ({ id, name: id, type: 'frame', badges: [], depth, hasChildren: false, expanded: true, ...over }) as never
+  const rows = [row('root', 0, { hasChildren: true }), row('p', 1, { hasChildren: true }), row('kid', 2), row('other', 1)]
+  it('puts the instances a graph made under their parent, after its own children, marked as runtime', () => {
+    const out = withRuntimeRows(rows, [{ parent: 'p', component: 'c1', path: '_level0.a.i0' }, { parent: 'p', component: 'c1', path: '_level0.a.i1' }], () => 'ListItem')
+    expect(out.map((r) => r.id)).toEqual(['root', 'p', 'kid', 'runtime:_level0.a.i0', 'runtime:_level0.a.i1', 'other'])
+    expect(out[3]).toMatchObject({ name: 'ListItem', runtime: true, depth: 2 })
+  })
+  it('a collapsed parent, or one that is not listed, shows none', () => {
+    const collapsed = [row('p', 1, { hasChildren: true, expanded: false })]
+    expect(withRuntimeRows(collapsed, [{ parent: 'p', component: 'c1', path: 'x' }], () => 'n')).toHaveLength(1)
+    expect(withRuntimeRows(rows, [{ parent: 'elsewhere', component: 'c1', path: 'x' }], () => 'n')).toHaveLength(rows.length)
   })
 })

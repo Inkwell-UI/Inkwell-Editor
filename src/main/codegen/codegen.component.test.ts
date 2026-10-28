@@ -79,7 +79,7 @@ describe('Create Component in a SWF', () => {
     const g = generate(ir, { modId: 'M', graphs: { graphs: [menu, compGraph() as never], packs }, components: [{ id: '5:1', name: 'ListItem', nodes: { '5:1': comp as never, '5:2': { ...rectShape('5:2'), parent: '5:1' } } }] })
     const frameCode = g.as2.find((f) => f.path === 'frame_1/DoAction.as')!.source
     expect(frameCode).toMatch(/this\.frame_p\.inkwellStack = \{mode: 1, spacing: 10, pad: \[8, 8, 8, 8\], counter: 0, w: \d+, h: \d+, start: \d+\};/)
-    expect(g.graphClasses.find((c) => c.graphId === 'main')!.source).toContain('function stackAdd(parent, clip)')
+    expect(g.graphClasses.find((c) => c.graphId === 'main')!.source).toContain('function stackAdd(parent, clip, component)')
     expect(g.graphClasses.find((c) => c.graphId === 'main')!.source).toContain('__g.stackAdd(')
     // a graph with neither node gets no stack methods
     expect(generate(ir, { modId: 'M', graphs: { graphs: [graph('main', [node('ol', 'core/OnLoad@1')], [])], packs } }).graphClasses[0]!.source).not.toContain('stackAdd')

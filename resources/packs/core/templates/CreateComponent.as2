@@ -3,6 +3,6 @@ var {{node.uid}}_p = {{in.parent}};
 var {{node.uid}}_n = {{in.name}};
 if ({{node.uid}}_n == "") {{node.uid}}_n = "component" + {{node.uid}}_p.getNextHighestDepth();
 var {{out.instance}} = {{node.uid}}_p.attachMovie({{symbol.component}}, {{node.uid}}_n, {{node.uid}}_p.getNextHighestDepth());
-__g.stackAdd({{node.uid}}_p, {{out.instance}});
+__g.stackAdd({{node.uid}}_p, {{out.instance}}, {{field.component}});
 (new {{comp.component}}({{out.instance}}, {{in.props}}, __g)).init();
 {{next.then}}

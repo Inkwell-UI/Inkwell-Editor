@@ -1,16 +1,17 @@
 import { useMemo, useState } from 'react'
-import { ChevronDown, ChevronRight, CircleX, Component, DollarSign, FileCode, Frame, Gamepad2, Image as ImageIcon, Link2, Search, Shapes, TriangleAlert, Type, Workflow, type LucideIcon } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleX, Component, Sparkles, DollarSign, FileCode, Frame, Gamepad2, Image as ImageIcon, Link2, Search, Shapes, TriangleAlert, Type, Workflow, type LucideIcon } from 'lucide-react'
 import { GraphsList } from '../graph/GraphsList'
 import { useComponentIr } from '../hooks/useComponentIr'
 import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
-import { buildLayerTree, filterTree, flattenTree, type Badge, type LayerRow } from '../model/layerTree'
+import { buildLayerTree, filterTree, flattenTree, withRuntimeRows, type Badge, type LayerRow } from '../model/layerTree'
 import { computeOrphans } from '../model/orphans'
 import { inkwell } from '../hooks/api'
 import { discardOrphanSwf, discardOverlayOrphan, relinkOverlayOrphan } from '../state/orphanActions'
 import { useSelectionStore } from '../state/selectionStore'
 import { useWorkspaceStore } from '../state/workspaceStore'
 import { useToastStore } from '../state/toastStore'
+import { useTraceStore } from '../state/traceStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { FigmaSelectBtn } from '../ui/FigmaSelectBtn'
@@ -68,7 +69,10 @@ export function NavigatorPanel() {
     [comp, swf, overlay, lint]
   )
   const filtered = tree ? filterTree(tree, query) : undefined
-  const flat: LayerRow[] = filtered ? flattenTree(filtered, collapsed, query.trim() !== '') : []
+  const spawned = useTraceStore((s) => s.spawned)
+  const designRows: LayerRow[] = filtered ? flattenTree(filtered, collapsed, query.trim() !== '') : []
+  // the instances a graph made while the preview runs, under the layer they were added to (not in a component's own layer list)
+  const flat = comp || query.trim() ? designRows : withRuntimeRows(designRows, spawned, (id) => sync?.pageComponents?.find((c) => c.id === id)?.name ?? id)
   const orphans = useMemo(() => computeOrphans((project?.swfs ?? []).map((s) => (s.id === swf?.id && overlay ? { ...s, overlay } : s))), [project, swf, overlay])
   const unreachable = [...(sync?.looseLayers ?? []).map((l) => ({ ...l, note: strings.nav.unreachableLoose })), ...(sync?.unreachableNodes ?? []).map((l) => ({ id: l.id, name: l.name, note: strings.nav.unreachableInSwf(l.swfName) }))]
 
@@ -104,6 +108,19 @@ export function NavigatorPanel() {
             <ul className="tree" role="tree" aria-label={strings.nav.layers} onKeyDown={onKey}>
               {flat.map((r) => {
                 const Icon = TYPE_ICON[r.type] ?? Frame
+                if (r.runtime)
+                  return (
+                    <li key={r.id} role="none">
+                      <div className="layer-row is-runtime" role="treeitem" aria-level={r.depth + 1} aria-selected={false} style={{ paddingLeft: 4 + r.depth * 14 }} title={strings.nav.runtimeTip} data-testid="layer-runtime">
+                        <span className="twisty" aria-hidden="true" />
+                        <span className="layer-main">
+                          <Sparkles size={14} aria-hidden="true" className="type-icon" />
+                          <span className="layer-name">{r.name}</span>
+                          <span className="layer-type">{strings.nav.runtimeTag}</span>
+                        </span>
+                      </div>
+                    </li>
+                  )
                 return (
                   <li key={r.id} role="none">
                     <div className={`layer-row${selected === r.id ? ' is-selected' : ''}`} role="treeitem" aria-level={r.depth + 1} aria-selected={selected === r.id} aria-expanded={r.hasChildren ? r.expanded : undefined} style={{ paddingLeft: 4 + r.depth * 14 }}>

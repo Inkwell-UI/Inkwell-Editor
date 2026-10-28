@@ -20,7 +20,15 @@ export interface Wait {
   n: number
   state: 'running' | 'done' | 'cancelled'
 }
+/** A component instance a graph made in the preview (Create Component): under which layer, which component, and its clip path (its identity). Gone with the next build. */
+export interface SpawnedInstance {
+  parent: string
+  component: string
+  path: string
+}
 export interface TraceStore {
+  /** The instances alive in the preview, in creation order. */
+  spawned: SpawnedInstance[]
   lines: TraceEntry[]
   pins: Record<string, string>
   runs: Record<string, number>
@@ -34,6 +42,7 @@ export const MAX_TRACE_LINES = 500
 let next = 1
 
 export const useTraceStore = create<TraceStore>()((set) => ({
+  spawned: [],
   lines: [],
   pins: {},
   runs: {},
@@ -41,6 +50,8 @@ export const useTraceStore = create<TraceStore>()((set) => ({
   push: (raw, at = Date.now()) => {
     const line = parseTrace(raw)
     if (!line) return
+    if (line.kind === 'spawn') return set((s) => ({ spawned: [...s.spawned.filter((x) => x.path !== line.path), { parent: line.parent, component: line.component, path: line.path }] }))
+    if (line.kind === 'despawn') return set((s) => ({ spawned: s.spawned.filter((x) => x.path !== line.path) }))
     if (line.kind === 'run') return set((s) => ({ runs: { ...s.runs, [line.node]: (s.runs[line.node] ?? 0) + 1 } }))
     if (line.kind === 'wait') return set((s) => ({ waits: { ...s.waits, [line.node]: { key: line.key, at, ms: line.ms, n: (s.waits[line.node]?.n ?? 0) + 1, state: 'running' } } }))
     if (line.kind === 'waited') return set((s) => (s.waits[line.node] ? { waits: { ...s.waits, [line.node]: { ...s.waits[line.node]!, state: 'done' } } } : s))
@@ -51,8 +62,8 @@ export const useTraceStore = create<TraceStore>()((set) => ({
       pins: line.kind === 'pin' ? { ...s.pins, [`${line.node}.${line.pin}`]: line.value } : s.pins
     }))
   },
-  clear: () => set({ lines: [], pins: {}, runs: {}, waits: {} }),
-  newBuild: () => set({ pins: {}, runs: {}, waits: {} })
+  clear: () => set({ lines: [], pins: {}, runs: {}, waits: {}, spawned: [] }),
+  newBuild: () => set({ pins: {}, runs: {}, waits: {}, spawned: [] })
 }))
 
 /** How often one exec node ran in the preview since the last build (0 = never). */

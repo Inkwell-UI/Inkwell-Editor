@@ -26,6 +26,10 @@ describe('parseTrace', () => {
     expect(parseTrace('hello from the movie')).toEqual({ kind: 'text', message: 'hello from the movie' })
     expect(parseTrace('  ')).toBeNull()
   })
+  it('instances made by Create Component', () => {
+    expect(parseTrace('[Inkwell] spawn 36:8 36:5 _level0.menu_list.frame_8.component1')).toEqual({ kind: 'spawn', parent: '36:8', component: '36:5', path: '_level0.menu_list.frame_8.component1' })
+    expect(parseTrace('[Inkwell] despawn _level0.a.b')).toEqual({ kind: 'despawn', path: '_level0.a.b' })
+  })
   it('formats the clock', () => {
     expect(clockTime(new Date(2026, 0, 1, 9, 5, 3, 7).getTime())).toBe('09:05:03.007')
   })

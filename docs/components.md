@@ -15,6 +15,8 @@ A component is a Figma component that has behaviour: a graph, and props (data th
 - **Create Component** (`core/CreateComponent@1`): `parent` layer, optional `name`, `props` (an Object keyed by prop **name**, built with Make Object; renaming a prop does not rename the key you typed in Make Object), output `instance` (the new clip). It does `attachMovie(<symbol>, name, getNextHighestDepth())` on the parent, then `new <class>(clip, props, __g).init()`. **Remove Component** removes an instance (`removeMovieClip`).
 - A graph inside a component addresses layers by their path inside the symbol (`__g.base.<path>`); a menu graph cannot use a component's layers, and a component's graph cannot use the menu's.
 - **Depth:** a runtime instance is drawn above everything Figma placed in the parent (Figma layers have negative depths; `getNextHighestDepth()` starts at 0).
+- **Layout:** when the parent picked on Create Component is an auto-layout frame, the instances are stacked in it (`stackAdd` / `stackRemove` in the graph class, `flowAs2.ts`): the frame's direction, spacing, padding and counter-axis alignment, after the children Figma designed. A parent that is wired in is not laid out and does not list its instances.
+- **Navigator:** a preview build traces `[Inkwell] spawn <parent layer id> <component id> <clip path>` and `despawn <clip path>`; the Layers list shows those instances under their parent as dashed, italic rows tagged RUNTIME (`withRuntimeRows`, `traceStore.spawned`). They are not layers of the design and clear with the next build.
 - Checked in Ruffle 0.7.1 with the real FFDec build: two instances, one with a given prop and one with its default, each ran its On Load. Not run in the game.
 
 ## Not built yet
