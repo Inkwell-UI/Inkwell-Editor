@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react'
-import { CircleX, TriangleAlert } from 'lucide-react'
-import { DEPTH_RANGE, HOTKEY_RANGE, INPUT_CONTEXTS, MenuSettings, OFFSET_X_RANGE, OFFSET_Y_RANGE, UI_SCALE_RANGE, effectiveInputContext, themeModes, type UserDefaults } from '@inkwell-ui/spec'
+import { Check as Check2, CircleX, Copy, TriangleAlert } from 'lucide-react'
+import { DEPTH_RANGE, HOTKEY_RANGE, INPUT_CONTEXTS, MENU_NAME, MenuSettings, OFFSET_X_RANGE, OFFSET_Y_RANGE, SYSTEM_MENU_LABEL, UI_SCALE_RANGE, effectiveInputContext, themeModes, type UserDefaults } from '@inkwell-ui/spec'
 import { defaultMenuSettings, menuLint, minRuntimeOf, modIniPath, resolveMenuNames, type MenuSource } from '../../shared/menu'
 import { SCAN_KEYS } from '../../shared/scanCodes'
 import { inkwell } from '../hooks/api'
@@ -8,12 +8,13 @@ import { useActiveOverlay, useActiveSwf, useProject } from '../hooks/useProject'
 import { hasFocusGraph } from '../../main/lint/focus'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { Fold } from '../ui/Fold'
 
 const S = strings.menuCfg
 
 /** A number that is committed on blur or Enter, only when it is valid; Escape puts the stored value back. */
-function NumField({ label, value, min, max, step, int, onCommit, help, testId }: {
-  label: string; value: number | undefined; min: number; max: number; step?: number; int?: boolean; onCommit(v: number | undefined): void; help?: string; testId: string
+function NumField({ label, value, min, max, step, int, onCommit, help, placeholder, testId }: {
+  label: string; value: number | undefined; min: number; max: number; step?: number; int?: boolean; onCommit(v: number | undefined): void; help?: string; placeholder?: string; testId: string
 }) {
   const id = useId()
   const [draft, setDraft] = useState<string | undefined>()
@@ -28,13 +29,13 @@ function NumField({ label, value, min, max, step, int, onCommit, help, testId }:
   }
   return (
     <div className="field">
-      <label className="field-label" htmlFor={id}>{label}</label>
+      <div className="menu-label-row"><label className="field-label" htmlFor={id}>{label}</label></div>
       <input
-        id={id} type="number" min={min} max={max} step={step ?? 1} value={text} className={err ? 'is-invalid' : undefined} aria-invalid={!!err} data-testid={testId}
+        id={id} type="number" min={min} max={max} step={step ?? 1} value={text} placeholder={placeholder} title={help} className={err ? 'is-invalid' : undefined} aria-invalid={!!err} data-testid={testId}
         onChange={(e) => setDraft(e.target.value)} onBlur={commit}
         onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setDraft(undefined) }}
       />
-      {(err || help) && <p className={err ? 'tone-error' : 'dim'}>{err ?? help}</p>}
+      {err && <p className="tone-error">{err}</p>}
     </div>
   )
 }
@@ -58,7 +59,9 @@ export function MenuSettingsForm() {
   const stored = swf?.menu
   const [doc, setDoc] = useState<MenuSettings>(stored ?? defaultMenuSettings())
   const [msg, setMsg] = useState<{ ok: boolean; text: string }>()
+  const [otherKey, setOtherKey] = useState(false) // "Other code…" chosen: the scan code field shows until a listed key is picked
   useEffect(() => void setDoc(stored ?? defaultMenuSettings()), [swf?.id, stored])
+  useEffect(() => setOtherKey(false), [swf?.id])
   const modId = project?.modId ?? ''
 
   const source: MenuSource | undefined = swf ? { swf: swf.name, settings: doc } : undefined
@@ -106,90 +109,133 @@ export function MenuSettingsForm() {
       else t['modEvent'] = v
       return { ...d, triggers: t } as MenuSettings
     })
+  const systemMenu = (v: string | undefined) =>
+    edit((d) => {
+      const t: Record<string, unknown> = { ...d.triggers }
+      if (v === undefined) delete t['systemMenu']
+      else t['systemMenu'] = v
+      return { ...d, triggers: t } as MenuSettings
+    })
   const ctx = effectiveInputContext(doc)
   const key = doc.triggers.hotkey
   const known = key !== undefined && SCAN_KEYS.some((k) => k.code === key)
   const u = doc.userDefaults ?? {}
+  const showCode = otherKey || (key !== undefined && !known)
+  const pickKey = (v: string): void => {
+    setOtherKey(v === 'other')
+    if (v !== 'other') hotkey(v === '' ? undefined : Number(v))
+  }
 
   return (
     <div className="menu-form" data-testid="menu-settings">
       <h3 className="menu-form-head">{S.heading(swf.name)}</h3>
       {swf.menuError && <p className="tone-error" data-testid="menu-file-error">{S.fileError(swf.menuError)}</p>}
       <fieldset className="menu-cols" disabled={locked}>
-        <section className="menu-col" aria-labelledby="menu-author">
-          <h4 id="menu-author" title={S.writesTo(`swfs/${swf.name}/menu.json`)}>{S.author}</h4>
-          <div className="field" role="group" aria-label={S.flags}>
-            <span className="field-label">{S.flags}</span>
-            <Check label={S.pausesGame} checked={doc.flags.pausesGame} onChange={flag('pausesGame')} testId="menu-pauses" />
-            <Check label={S.cursor} checked={doc.flags.cursor} onChange={flag('cursor')} testId="menu-cursor" />
-            <Check label={S.modal} checked={doc.flags.modal} onChange={flag('modal')} testId="menu-modal" />
-            <Check label={S.closeOnEscape} checked={doc.flags.closeOnEscape} onChange={flag('closeOnEscape')} testId="menu-esc" />
-          </div>
-          <div className="field">
-            <label className="field-label" htmlFor="menu-context">{S.inputContext}</label>
-            <select id="menu-context" value={ctx} onChange={(e) => edit((d) => ({ ...d, inputContext: e.target.value as (typeof INPUT_CONTEXTS)[number] }))} data-testid="menu-context">
-              {INPUT_CONTEXTS.map((c) => <option key={c} value={c}>{S.inputContexts[c]}</option>)}
-            </select>
-          </div>
-          <NumField label={S.depth} value={doc.depth} min={DEPTH_RANGE.min} max={DEPTH_RANGE.max} int onCommit={(v) => edit((d) => ({ ...d, depth: v ?? 3 }))} testId="menu-depth" />
-          <div className="field" role="group" aria-label={S.triggers}>
-            <span className="field-label">{S.triggers}</span>
-            <Check label={S.papyrus(names.name)} checked={doc.triggers.papyrus} onChange={(v) => edit((d) => ({ ...d, triggers: { ...d.triggers, papyrus: v } }))} testId="menu-papyrus" />
-            <Check label={S.modEvent} checked={doc.triggers.modEvent !== undefined} onChange={(v) => modEvent(v ? `${modId}_Open` : undefined)} testId="menu-event-on" />
-            {doc.triggers.modEvent !== undefined && <ModEventField value={doc.triggers.modEvent} onCommit={modEvent} />}
-          </div>
-          <dl className="facts">
-            <dt>{S.menuName}</dt><dd className="mono" data-testid="menu-name" title={S.menuNameHelp}>{names.name}</dd>
-            <dt>{S.requires}</dt><dd data-testid="menu-requires" title={S.requiresHelp}>{minRuntimeOf(source)}</dd>
-          </dl>
-        </section>
-
-        <section className="menu-col" aria-labelledby="menu-user">
-          <h4 id="menu-user" title={S.writesTo(modIniPath(modId))}>{S.user}</h4>
-          <div className="field">
-            <label className="field-label" htmlFor="menu-key">{S.openKey}</label>
-            <div className="field-row">
-              <select id="menu-key" value={key === undefined ? '' : known ? String(key) : 'other'} onChange={(e) => hotkey(e.target.value === '' ? undefined : e.target.value === 'other' ? (key ?? 37) : Number(e.target.value))} data-testid="menu-key">
-                <option value="">{S.openKeyNone}</option>
-                {SCAN_KEYS.map((k) => <option key={k.code} value={k.code}>{k.name}</option>)}
-                {key !== undefined && !known && <option value="other">{key}</option>}
-              </select>
-              <input
-                key={key ?? 'none'} type="number" min={HOTKEY_RANGE.min} max={HOTKEY_RANGE.max} defaultValue={key ?? ''} aria-label={S.openKeyCode} title={S.openKeyCode} data-testid="menu-key-code" className="menu-key-code"
-                onBlur={(e) => { const n = Number(e.target.value); if (e.target.value.trim() === '') hotkey(undefined); else if (Number.isInteger(n) && n >= HOTKEY_RANGE.min && n <= HOTKEY_RANGE.max && n !== key) hotkey(n) }}
-                onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-              />
+        <div className="menu-col">
+          <section className="menu-group" aria-labelledby="menu-opens">
+            <h4 id="menu-opens">{S.opensWith}</h4>
+            <div className="menu-line">
+              <div className="menu-label-row"><label className="field-label" htmlFor="menu-key">{S.openKey}</label></div>
+              <div className="menu-line-ctl">
+                <select id="menu-key" title={S.openKeyHelp} value={showCode ? 'other' : key === undefined ? '' : String(key)} onChange={(e) => pickKey(e.target.value)} data-testid="menu-key">
+                  <option value="">{S.openKeyNone}</option>
+                  {SCAN_KEYS.map((k) => <option key={k.code} value={k.code}>{k.name}</option>)}
+                  <option value="other">{S.openKeyOther}</option>
+                </select>
+                {showCode && (
+                  <input
+                    key={key ?? 'none'} type="number" min={HOTKEY_RANGE.min} max={HOTKEY_RANGE.max} defaultValue={key ?? ''} aria-label={S.openKeyCode} title={S.openKeyCode} data-testid="menu-key-code" className="menu-key-code"
+                    onBlur={(e) => { const n = Number(e.target.value); if (e.target.value.trim() === '') hotkey(undefined); else if (Number.isInteger(n) && n >= HOTKEY_RANGE.min && n <= HOTKEY_RANGE.max && n !== key) hotkey(n) }}
+                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                  />
+                )}
+              </div>
             </div>
-            <p className="dim">{S.openKeyHelp}</p>
-          </div>
-          <div className="field">
-            <span className="field-label">{S.gamepad}</span>
-            <Btn label={S.gamepad} reason={S.gamepadReason} testId="menu-gamepad">{S.gamepadReason}</Btn>
-          </div>
-          <div className="field">
-            <label className="field-label" htmlFor="menu-theme">{S.theme}</label>
-            {themes.length >= 2 ? (
-              <select id="menu-theme" value={u.theme ?? ''} onChange={(e) => user('theme', e.target.value)} data-testid="menu-theme">
-                <option value="">{themes[0]}</option>
-                {u.theme && !themes.includes(u.theme) && <option value={u.theme}>{S.themeUnknown(u.theme)}</option>}
-                {themes.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            ) : (
-              <>
-                <input id="menu-theme" key={u.theme ?? ''} defaultValue={u.theme ?? ''} spellCheck={false} data-testid="menu-theme" onBlur={(e) => e.target.value !== (u.theme ?? '') && user('theme', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
-                <p className="dim">{S.themeNoCollection}</p>
-              </>
+            <div className="menu-line">
+              <span className="field-label">{S.gamepad}</span>
+              <div className="menu-line-ctl"><Btn label={S.gamepad} reason={S.gamepadReason} testId="menu-gamepad">{S.gamepadReason}</Btn></div>
+            </div>
+            <hr className="menu-rule" />
+            <div className="menu-line">
+              <div className="menu-label-row"><Check label={S.papyrus} checked={doc.triggers.papyrus} onChange={(v) => edit((d) => ({ ...d, triggers: { ...d.triggers, papyrus: v } }))} testId="menu-papyrus" /></div>
+              <div className="menu-line-ctl">
+                {doc.triggers.papyrus && (
+                  <div className="menu-copyable">
+                    <MenuNameField value={names.name} onCommit={(v) => edit((d) => { const { name: _old, ...rest } = d; return (v === `${modId}_${names.file}` ? rest : { ...rest, name: v }) as MenuSettings })} />
+                    <CopyBtn text={S.papyrusHelp(names.name)} label={S.papyrusCopy} testId="menu-papyrus-copy" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="menu-line">
+              <div className="menu-label-row"><Check label={S.modEvent} checked={doc.triggers.modEvent !== undefined} onChange={(v) => modEvent(v ? `${modId}_Open` : undefined)} testId="menu-event-on" /></div>
+              <div className="menu-line-ctl">
+                {doc.triggers.modEvent !== undefined && (
+                  <div className="menu-copyable">
+                    <ModEventField value={doc.triggers.modEvent} onCommit={modEvent} />
+                    <CopyBtn text={doc.triggers.modEvent} label={S.modEventCopy} testId="menu-event-copy" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="menu-line">
+              <div className="menu-label-row"><Check label={S.systemMenu} checked={doc.triggers.systemMenu !== undefined} onChange={(v) => systemMenu(v ? `$${names.name}` : undefined)} testId="menu-system-on" /></div>
+              <div className="menu-line-ctl">{doc.triggers.systemMenu !== undefined && <SystemMenuField value={doc.triggers.systemMenu} onCommit={systemMenu} />}</div>
+            </div>
+          </section>
+        </div>
+
+        <div className="menu-col">
+          <section className="menu-group" aria-labelledby="menu-while">
+            <h4 id="menu-while">{S.whileOpen}</h4>
+            <div className="menu-pair">
+              <Check label={S.pausesGame} checked={doc.flags.pausesGame} onChange={flag('pausesGame')} testId="menu-pauses" />
+              <Check label={S.cursor} checked={doc.flags.cursor} onChange={flag('cursor')} testId="menu-cursor" />
+              <Check label={S.modal} checked={doc.flags.modal} onChange={flag('modal')} testId="menu-modal" />
+              <Check label={S.closeOnEscape} checked={doc.flags.closeOnEscape} onChange={flag('closeOnEscape')} testId="menu-esc" />
+            </div>
+            <Fold id="menu-advanced" title={S.advanced} summary={S.advancedSummary(S.inputContexts[ctx] ?? ctx, doc.depth)}>
+              <div className="menu-pair">
+                <div className="field">
+                  <label className="field-label" htmlFor="menu-context">{S.inputContext}</label>
+                  <select id="menu-context" value={ctx} onChange={(e) => edit((d) => ({ ...d, inputContext: e.target.value as (typeof INPUT_CONTEXTS)[number] }))} data-testid="menu-context">
+                    {INPUT_CONTEXTS.map((c) => <option key={c} value={c}>{S.inputContexts[c]}</option>)}
+                  </select>
+                </div>
+                <NumField label={S.depth} value={doc.depth} min={DEPTH_RANGE.min} max={DEPTH_RANGE.max} int onCommit={(v) => edit((d) => ({ ...d, depth: v ?? 3 }))} testId="menu-depth" />
+              </div>
+            </Fold>
+          </section>
+
+          <section className="menu-group" aria-labelledby="menu-screen">
+            <h4 id="menu-screen" title={S.writesTo(modIniPath(modId))}>{S.onScreen}<span className="menu-group-note">{S.playerCanChange}</span></h4>
+            <div className="menu-trio">
+              <NumField label={S.uiScale} value={u.uiScale} min={UI_SCALE_RANGE.min} max={UI_SCALE_RANGE.max} step={0.05} onCommit={(v) => user('uiScale', v)} help={S.uiScaleHelp} placeholder="1" testId="menu-scale" />
+              <NumField label={S.offsetX} value={u.offsetX} min={OFFSET_X_RANGE.min} max={OFFSET_X_RANGE.max} int onCommit={(v) => user('offsetX', v)} help={S.offsetHelp} placeholder="0" testId="menu-offset-x" />
+              <NumField label={S.offsetY} value={u.offsetY} min={OFFSET_Y_RANGE.min} max={OFFSET_Y_RANGE.max} int onCommit={(v) => user('offsetY', v)} help={S.offsetHelp} placeholder="0" testId="menu-offset-y" />
+            </div>
+            {(themes.length >= 2 || u.theme) && (
+              <div className="field">
+                <div className="menu-label-row"><label className="field-label" htmlFor="menu-theme" title={S.themeHelp}>{S.theme}</label></div>
+                {themes.length >= 2 ? (
+                  <select id="menu-theme" value={u.theme ?? ''} onChange={(e) => user('theme', e.target.value)} data-testid="menu-theme">
+                    <option value="">{themes[0]}</option>
+                    {u.theme && !themes.includes(u.theme) && <option value={u.theme}>{S.themeUnknown(u.theme)}</option>}
+                    {themes.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                ) : (
+                  <input id="menu-theme" key={u.theme ?? ''} defaultValue={u.theme ?? ''} spellCheck={false} data-testid="menu-theme" onBlur={(e) => e.target.value !== (u.theme ?? '') && user('theme', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
+                )}
+              </div>
             )}
-            <p className="dim">{S.themeHelp}</p>
-          </div>
-          <NumField label={S.uiScale} value={u.uiScale} min={UI_SCALE_RANGE.min} max={UI_SCALE_RANGE.max} step={0.05} onCommit={(v) => user('uiScale', v)} help={S.uiScaleHelp} testId="menu-scale" />
-          <div className="field-row">
-            <NumField label={S.offsetX} value={u.offsetX} min={OFFSET_X_RANGE.min} max={OFFSET_X_RANGE.max} int onCommit={(v) => user('offsetX', v)} testId="menu-offset-x" />
-            <NumField label={S.offsetY} value={u.offsetY} min={OFFSET_Y_RANGE.min} max={OFFSET_Y_RANGE.max} int onCommit={(v) => user('offsetY', v)} testId="menu-offset-y" />
-          </div>
-          <p className="dim">{S.offsetHelp}</p>
-        </section>
+          </section>
+        </div>
       </fieldset>
+      <div className="menu-foot">
+        {/* with the Papyrus call on, the menu name is its editable field */}
+        {!doc.triggers.papyrus && <span>{S.menuName} <b className="mono" data-testid="menu-name" title={S.menuNameHelp}>{names.name}</b></span>}
+        <span className="menu-foot-end">{S.requires} <b data-testid="menu-requires" title={S.requiresHelp}>{minRuntimeOf(source)}</b></span>
+      </div>
       {msg && <p className={msg.ok ? 'dim' : 'tone-error'} role="status" data-testid="menu-status">{msg.text}</p>}
       {rows.length > 0 && (
         <section aria-labelledby="menu-issues">
@@ -207,6 +253,34 @@ export function MenuSettingsForm() {
   )
 }
 
+/** The menu name: the engine name and the Papyrus call's argument. Saved only when valid; the default name is stored as no name at all. */
+function MenuNameField({ value, onCommit }: { value: string; onCommit(v: string): void }) {
+  const [draft, setDraft] = useState<string | undefined>()
+  const text = draft ?? value
+  const err = !MENU_NAME.test(text)
+  const commit = (): void => {
+    if (draft !== undefined && !err && draft !== value) onCommit(draft)
+    setDraft(undefined)
+  }
+  return (
+    <div className="menu-stack">
+      <input value={text} aria-label={S.menuName} title={S.menuNameHelp} aria-invalid={err} className={err ? 'is-invalid mono' : 'mono'} spellCheck={false} data-testid="menu-name" onChange={(e) => setDraft(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setDraft(undefined) }} />
+      {err && <p className="tone-error">{S.menuNameInvalid}</p>}
+    </div>
+  )
+}
+
+/** Appears at the right of its row on hover or keyboard focus; the space is always reserved so the field does not jump. */
+function CopyBtn({ text, label, testId }: { text: string; label: string; testId: string }) {
+  const [done, setDone] = useState(false)
+  return (
+    <Btn
+      icon={done ? Check2 : Copy} variant="quiet" className="menu-copy" label={done ? S.copied : label} testId={testId}
+      onClick={() => { void navigator.clipboard?.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500) }}
+    />
+  )
+}
+
 function ModEventField({ value, onCommit }: { value: string; onCommit(v: string): void }) {
   const [draft, setDraft] = useState<string | undefined>()
   const text = draft ?? value
@@ -216,9 +290,25 @@ function ModEventField({ value, onCommit }: { value: string; onCommit(v: string)
     setDraft(undefined)
   }
   return (
-    <div className="field">
+    <div className="menu-stack">
       <input value={text} aria-label={S.modEventName} aria-invalid={err} className={err ? 'is-invalid' : undefined} spellCheck={false} data-testid="menu-event" onChange={(e) => setDraft(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setDraft(undefined) }} />
-      <p className={err ? 'tone-error' : 'dim'}>{S.modEventHelp}</p>
+      {err && <p className="tone-error">{S.modEventHelp}</p>}
+    </div>
+  )
+}
+
+function SystemMenuField({ value, onCommit }: { value: string; onCommit(v: string): void }) {
+  const [draft, setDraft] = useState<string | undefined>()
+  const text = draft ?? value
+  const err = text.length < SYSTEM_MENU_LABEL.min || text.length > SYSTEM_MENU_LABEL.max
+  const commit = (): void => {
+    if (draft !== undefined && !err && draft !== value) onCommit(draft)
+    setDraft(undefined)
+  }
+  return (
+    <div className="menu-stack">
+      <input value={text} aria-label={S.systemMenuLabel} aria-invalid={err} className={err ? 'is-invalid' : undefined} spellCheck={false} data-testid="menu-system-label" onChange={(e) => setDraft(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setDraft(undefined) }} />
+      {err && <p className="tone-error">{S.systemMenuHelp}</p>}
     </div>
   )
 }

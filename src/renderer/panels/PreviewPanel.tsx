@@ -44,7 +44,7 @@ const COMPACT_NARROW = 400 // ... or width (a narrow column)
  * Zone 3, the preview stage (UX 4.3): stage toolbar, the simulated screen with the stage fitted inside, safe zones, the Inspect overlay,
  * the Ruffle/GFx note with the active shims, the last-good-build indicator and the banners (build failed, Figma not connected, no SWFs).
  * Data: usePreviewBuilds() (keeps the last good build), the project (IR for Inspect), the sync state. The same component runs in the
- * popped-out window (`isPreviewWindow()`), where the toolbar shows "Dock" and a SWF picker.
+ * popped-out window (`isPreviewWindow()`), where the toolbar shows "Dock".
  * The backend is created here (RuffleBackend is the only 1.0 implementation; swap the line to plug in another PreviewBackend).
  */
 export function PreviewPanel() {
@@ -123,15 +123,6 @@ export function PreviewPanel() {
     if (target) useProjectStore.getState().setActiveSwf(target.id)
     if (err.nodeId) useSelectionStore.getState().selectFromLint({ key: err.key, nodeId: err.nodeId })
   }
-  const picker =
-    entries.length > 1 || inWindow ? (
-      <label className="inline">
-        <span className="sr-only">{strings.previewSwf}</span>
-        <select value={swf?.id ?? ''} onChange={(e) => useProjectStore.getState().setActiveSwf(e.target.value)} aria-label={strings.previewSwf} title={strings.previewSwf}>
-          {(project?.swfs ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-      </label>
-    ) : undefined
 
   const onStageKey = (e: React.KeyboardEvent): void => {
     // W3 pad emulation: in Play mode a menu with a focus graph gets arrows and Enter as the d-pad and A (the runtime's On Input plus GFx's press), not as Ruffle's own keys
@@ -190,7 +181,6 @@ export function PreviewPanel() {
           onZoom={(d) => setZoom((z) => stepZoom(z, d))}
           onZoomReset={() => setZoom(1)}
           compact={compact}
-          swfPicker={picker}
           {...(isMenu ? { menuControls: true, focusGraph: { on: focusOn, onToggle: () => setFocusOn(!focusOn) } } : {})}
         />
         {!compact && banners}

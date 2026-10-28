@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Ellipsis, Languages, MousePointer2, MousePointerClick, Pause, PictureInPicture2, Play, RefreshCw, ScanLine, Waypoints, ZoomIn, ZoomOut } from 'lucide-react'
 import { ASPECTS, type AspectId } from '../../shared/preview'
 import { useElementSize } from '../hooks/useElementSize'
@@ -31,8 +31,6 @@ export interface StageToolbarProps {
   onZoomReset(): void
   /** A small slot (the fixed preview of the Behaviour mode): essentials (Interact, Pause, SWF, aspect, reload, pop out); zoom and the long toggles sit in a "More" popover. */
   compact: boolean
-  /** SWF picker (the detached window has no top bar). */
-  swfPicker?: ReactNode
   /** Custom menu only: shows the language and UI scale controls (they need the Inkwell Runtime). */
   menuControls?: boolean
   /** Custom menu only (W3/W4): the Focus Graph mode toggle; the Prompts preview toggle shows with it. Absent = both disabled with a reason. */
@@ -102,7 +100,6 @@ export function StageToolbar(p: StageToolbarProps) {
       <ModeSwitch p={p} iconOnly={tight} />
       {tight ? (
         <>
-          {p.swfPicker}
           {aspect}
           {popout}
           <Btn icon={Ellipsis} label={strings.stage.more} pressed={more} onClick={() => setMore(!more)} testId="stage-more" />
@@ -120,7 +117,6 @@ export function StageToolbar(p: StageToolbarProps) {
           <span className="stage-sep" aria-hidden="true" />
           {player}
           <span className="stage-spacer" />
-          {p.swfPicker}
           {aspect}
           {zoom}
           {uiScale}

@@ -530,11 +530,34 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .menu-col .field-row > select { flex: 1 1 110px; min-width: 0; }
 .menu-col input.menu-key-code { width: 72px; flex: none; }
 .menu-form .mono { overflow-wrap: anywhere; }
-.menu-form .facts { grid-template-columns: 1fr; gap: 0; }
-.menu-form .facts dd { margin-bottom: 4px; }
 .menu-form .btn { white-space: normal; text-align: left; height: auto; }
 .menu-form .check { margin-top: 2px; }
 .menu-form .issue { display: flex; gap: 6px; align-items: flex-start; overflow-wrap: anywhere; }
+/* Menu settings groups (Opens with / While open / On screen). Everything is prefixed menu- because styles.css is one global sheet. */
+.menu-col { display: flex; flex-direction: column; gap: 14px; }
+.menu-group { min-width: 0; }
+.menu-group h4 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 0 6px; padding-bottom: 5px; border-bottom: 1px solid var(--line); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.menu-group-note { font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--fg-faint); }
+.menu-line { display: grid; grid-template-columns: minmax(96px, 140px) minmax(0, 1fr); gap: 8px; align-items: center; margin: 6px 0; }
+.menu-line-ctl { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.menu-line-ctl > select, .menu-line-ctl > .menu-stack { flex: 1 1 110px; min-width: 0; }
+.menu-label-row { display: flex; align-items: center; min-width: 0; }
+.menu-label-row .check { margin: 0; white-space: nowrap; }
+.menu-stack { display: flex; flex-direction: column; gap: 3px; }
+.menu-stack > p { margin: 0; font-size: 12px; }
+.menu-rule { border: 0; border-top: 1px solid var(--line); margin: 8px 0; }
+.menu-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 4px 16px; }
+.menu-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.menu-pair .field, .menu-trio .field { margin: 0; }
+.menu-foot { display: flex; justify-content: space-between; gap: 4px 16px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--fg-dim); }
+.menu-foot b { color: var(--fg); font-weight: 600; }
+.menu-foot-end { margin-left: auto; }
+.menu-group .fold { margin-top: 8px; }
+.menu-group .fold-body { padding: 4px 0 4px 18px; }
+.menu-copyable { position: relative; flex: 1; min-width: 0; }
+.menu-copyable input { width: 100%; box-sizing: border-box; padding-right: 30px; }
+.menu-copyable .menu-copy { position: absolute; top: 1px; right: 1px; min-height: 24px; padding: 2px 6px; opacity: 0; }
+.menu-copyable:hover .menu-copy, .menu-copyable:focus-within .menu-copy { opacity: 1; }
 
 
 /* Game dot popover, Trace & Watch game source (docs/dev-mode.md) */
