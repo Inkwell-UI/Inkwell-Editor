@@ -1,0 +1,10 @@
+{
+  "author": "Inkwell",
+  "deploy": {
+    "path": "",
+    "preset": "folder"
+  },
+  "modId": "SkyrimStopwatch",
+  "name": "Skyrim Stopwatch",
+  "version": "0.5.0"
+}

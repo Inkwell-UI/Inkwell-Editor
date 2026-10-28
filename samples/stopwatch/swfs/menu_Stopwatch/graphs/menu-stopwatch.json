@@ -1,0 +1,662 @@
+{
+  "comments": [],
+  "edges": [
+    {
+      "from": {
+        "node": "c25f48fc-1ee1-4775-ad20-a577703810d2",
+        "pin": "then"
+      },
+      "to": {
+        "node": "dbe84e02-2dd5-4099-9810-e13ebc2ba7da",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "25631cb1-c552-48fd-8900-91ee9b92874f",
+        "pin": "value"
+      },
+      "to": {
+        "node": "c4ee0bba-7001-4242-9be5-ec36fdaa7161",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "25631cb1-c552-48fd-8900-91ee9b92874f",
+        "pin": "value"
+      },
+      "to": {
+        "node": "34ded8bb-28d2-4e9f-ae4d-fcadc1daccca",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "25631cb1-c552-48fd-8900-91ee9b92874f",
+        "pin": "value"
+      },
+      "to": {
+        "node": "8f7f5d7a-5b4f-475a-b4c5-966d59c3a61d",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "8f7f5d7a-5b4f-475a-b4c5-966d59c3a61d",
+        "pin": "value"
+      },
+      "to": {
+        "node": "3a9edc5b-c66d-4a8c-94ec-403202953c4c",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "34ded8bb-28d2-4e9f-ae4d-fcadc1daccca",
+        "pin": "value"
+      },
+      "to": {
+        "node": "8c5f041b-88b5-4b41-b1ad-f063e0838a5f",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "c4ee0bba-7001-4242-9be5-ec36fdaa7161",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e32ccb78-ac07-4126-9d75-b74e7eabe04b",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "3a9edc5b-c66d-4a8c-94ec-403202953c4c",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fe7b0080-e568-49bb-9cf4-81c0ab799687",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "8c5f041b-88b5-4b41-b1ad-f063e0838a5f",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fe7b0080-e568-49bb-9cf4-81c0ab799687",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "e32ccb78-ac07-4126-9d75-b74e7eabe04b",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fe7b0080-e568-49bb-9cf4-81c0ab799687",
+        "pin": "c"
+      }
+    },
+    {
+      "from": {
+        "node": "fe7b0080-e568-49bb-9cf4-81c0ab799687",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dbe84e02-2dd5-4099-9810-e13ebc2ba7da",
+        "pin": "text"
+      }
+    },
+    {
+      "from": {
+        "node": "f4abc838-6ea6-4dec-9c58-adb5852358dc",
+        "pin": "then"
+      },
+      "to": {
+        "node": "b648ea94-1d29-4b82-8b56-b3e586e1554a",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "d4b50c52-0722-4f99-9eae-cb75028a10a4",
+        "pin": "then"
+      },
+      "to": {
+        "node": "0c55367d-e9c9-4e6f-8109-fa8a4cbefb50",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "63ede07a-a90c-4ab7-895b-b353b516b638",
+        "pin": "then"
+      },
+      "to": {
+        "node": "b1e09cff-62d5-466d-b086-a7fa7265a59f",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "b67d1785-eede-4a92-bd4f-f7605ee91cb3",
+        "pin": "then"
+      },
+      "to": {
+        "node": "124c32d5-44e9-411d-8621-f753d201bb6d",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "e242c135-a006-4047-9540-292463db9952",
+        "pin": "value"
+      },
+      "to": {
+        "node": "124c32d5-44e9-411d-8621-f753d201bb6d",
+        "pin": "condition"
+      }
+    },
+    {
+      "from": {
+        "node": "124c32d5-44e9-411d-8621-f753d201bb6d",
+        "pin": "true"
+      },
+      "to": {
+        "node": "5ad6644d-aca2-423d-920d-9d14c3081d3e",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "582c10fd-3ea3-4eec-865a-434ba1d61e9a",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ba79d176-0f94-4df2-892f-ad03e11015d3",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "ba79d176-0f94-4df2-892f-ad03e11015d3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "5ad6644d-aca2-423d-920d-9d14c3081d3e",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "5ad6644d-aca2-423d-920d-9d14c3081d3e",
+        "pin": "then"
+      },
+      "to": {
+        "node": "0792dc2a-9786-4062-8693-968f0cc067e8",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "a8355a38-3e3d-4b0b-8c26-66b6a39733b5",
+        "pin": "then"
+      },
+      "to": {
+        "node": "a7412707-4935-4036-a1c5-33368537b35f",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "af880cef-8cca-4108-8793-9a50af5b084b",
+        "pin": "then"
+      },
+      "to": {
+        "node": "d0e834de-ce43-412f-85b1-df0b728e6ce0",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "4f82f02a-b7c3-4164-8b35-a361d9d00a33",
+        "pin": "then"
+      },
+      "to": {
+        "node": "19933275-031f-4d69-857b-156a17c8d630",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "b648ea94-1d29-4b82-8b56-b3e586e1554a",
+        "pin": "then"
+      },
+      "to": {
+        "node": "3debd27f-48f3-493d-8e12-5e6956a08d08",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "3debd27f-48f3-493d-8e12-5e6956a08d08",
+        "pin": "then"
+      },
+      "to": {
+        "node": "5ad6644d-aca2-423d-920d-9d14c3081d3e",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "714be5de-8352-4164-90a8-98b1bc27ce92",
+        "pin": "then"
+      },
+      "to": {
+        "node": "31987139-a479-45dc-866a-0ec80b9180d0",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "f080e83c-0c7f-4e2b-a449-ef7cad21493d",
+        "pin": "then"
+      },
+      "to": {
+        "node": "714be5de-8352-4164-90a8-98b1bc27ce92",
+        "pin": "in"
+      }
+    }
+  ],
+  "groups": [],
+  "id": "menu-stopwatch",
+  "name": "menu_Stopwatch",
+  "nodes": [
+    {
+      "fields": {},
+      "id": "63ede07a-a90c-4ab7-895b-b353b516b638",
+      "kind": "core/OnLoad@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": -508.99320476829325
+      }
+    },
+    {
+      "fields": {
+        "name": "Update"
+      },
+      "id": "c25f48fc-1ee1-4775-ad20-a577703810d2",
+      "kind": "core/OnWidgetCall@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": 1250.0067952317067
+      }
+    },
+    {
+      "fields": {
+        "target": "1:6"
+      },
+      "id": "dbe84e02-2dd5-4099-9810-e13ebc2ba7da",
+      "kind": "core/SetText@1",
+      "pos": {
+        "x": -141.519166568763,
+        "y": 1261.0067952317067
+      }
+    },
+    {
+      "fields": {
+        "variable": "timer"
+      },
+      "id": "25631cb1-c552-48fd-8900-91ee9b92874f",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": 1457.0067952317067
+      }
+    },
+    {
+      "fields": {
+        "b": 60
+      },
+      "id": "c4ee0bba-7001-4242-9be5-ec36fdaa7161",
+      "kind": "core/Modulo@1",
+      "pos": {
+        "x": -1177.519166568763,
+        "y": 1485.5067952317067
+      }
+    },
+    {
+      "fields": {
+        "b": 60
+      },
+      "id": "34ded8bb-28d2-4e9f-ae4d-fcadc1daccca",
+      "kind": "core/Divide@1",
+      "pos": {
+        "x": -1177.519166568763,
+        "y": 1273.5067952317067
+      }
+    },
+    {
+      "fields": {
+        "b": 3600
+      },
+      "id": "8f7f5d7a-5b4f-475a-b4c5-966d59c3a61d",
+      "kind": "core/Divide@1",
+      "pos": {
+        "x": -1177.519166568763,
+        "y": 1061.5067952317067
+      }
+    },
+    {
+      "fields": {
+        "decimals": 0,
+        "digits": 2
+      },
+      "id": "3a9edc5b-c66d-4a8c-94ec-403202953c4c",
+      "kind": "core/FormatNumber@1",
+      "pos": {
+        "x": -809.519166568763,
+        "y": 1035.5067952317067
+      }
+    },
+    {
+      "fields": {
+        "digits": 2
+      },
+      "id": "8c5f041b-88b5-4b41-b1ad-f063e0838a5f",
+      "kind": "core/FormatNumber@1",
+      "pos": {
+        "x": -809.519166568763,
+        "y": 1247.5067952317067
+      }
+    },
+    {
+      "fields": {
+        "digits": 2
+      },
+      "id": "e32ccb78-ac07-4126-9d75-b74e7eabe04b",
+      "kind": "core/FormatNumber@1",
+      "pos": {
+        "x": -809.519166568763,
+        "y": 1459.5067952317067
+      }
+    },
+    {
+      "fields": {
+        "pattern": "{0}:{1}:{2}"
+      },
+      "id": "fe7b0080-e568-49bb-9cf4-81c0ab799687",
+      "kind": "core/Format@1",
+      "pos": {
+        "x": -509.519166568763,
+        "y": 1221.0067952317067
+      }
+    },
+    {
+      "fields": {
+        "name": "Reset"
+      },
+      "id": "f4abc838-6ea6-4dec-9c58-adb5852358dc",
+      "kind": "core/OnWidgetCall@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": 205.50679523170675
+      }
+    },
+    {
+      "fields": {
+        "value": 0,
+        "variable": "timer"
+      },
+      "id": "b648ea94-1d29-4b82-8b56-b3e586e1554a",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": -1177.519166568763,
+        "y": 199.50679523170675
+      }
+    },
+    {
+      "fields": {
+        "name": "Stop"
+      },
+      "id": "d4b50c52-0722-4f99-9eae-cb75028a10a4",
+      "kind": "core/OnWidgetCall@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": -50.49320476829325
+      }
+    },
+    {
+      "fields": {
+        "variable": "iscounting"
+      },
+      "id": "0c55367d-e9c9-4e6f-8109-fa8a4cbefb50",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": -1177.519166568763,
+        "y": -53.49320476829325
+      }
+    },
+    {
+      "fields": {
+        "name": "Start"
+      },
+      "id": "f080e83c-0c7f-4e2b-a449-ef7cad21493d",
+      "kind": "core/OnWidgetCall@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": -306.49320476829325
+      }
+    },
+    {
+      "fields": {
+        "value": true,
+        "variable": "iscounting"
+      },
+      "id": "31987139-a479-45dc-866a-0ec80b9180d0",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": -844.519166568763,
+        "y": -309.49320476829325
+      }
+    },
+    {
+      "fields": {
+        "name": "Reset"
+      },
+      "id": "b1e09cff-62d5-466d-b086-a7fa7265a59f",
+      "kind": "core/CallWidget@1",
+      "pos": {
+        "x": -1177.519166568763,
+        "y": -559.4932047682933
+      }
+    },
+    {
+      "fields": {
+        "repeat": true,
+        "seconds": 0.33
+      },
+      "id": "b67d1785-eede-4a92-bd4f-f7605ee91cb3",
+      "kind": "core/OnTimer@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": 412.50679523170675
+      }
+    },
+    {
+      "fields": {},
+      "id": "124c32d5-44e9-411d-8621-f753d201bb6d",
+      "kind": "core/Branch@1",
+      "pos": {
+        "x": -1177.519166568763,
+        "y": 475.00679523170675
+      }
+    },
+    {
+      "fields": {
+        "variable": "iscounting"
+      },
+      "id": "e242c135-a006-4047-9540-292463db9952",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": 667.5067952317067
+      }
+    },
+    {
+      "fields": {
+        "variable": "timer"
+      },
+      "id": "582c10fd-3ea3-4eec-865a-434ba1d61e9a",
+      "kind": "core/GetVariable@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": 831.5067952317067
+      }
+    },
+    {
+      "fields": {
+        "variable": "timer"
+      },
+      "id": "5ad6644d-aca2-423d-920d-9d14c3081d3e",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": -509.519166568763,
+        "y": 330.00679523170675
+      }
+    },
+    {
+      "fields": {
+        "b": 0.33
+      },
+      "id": "ba79d176-0f94-4df2-892f-ad03e11015d3",
+      "kind": "core/Add@1",
+      "pos": {
+        "x": -1177.519166568763,
+        "y": 605.0067952317067
+      }
+    },
+    {
+      "fields": {
+        "name": "Update"
+      },
+      "id": "0792dc2a-9786-4062-8693-968f0cc067e8",
+      "kind": "core/CallWidget@1",
+      "pos": {
+        "x": -209.519166568763,
+        "y": 321.00679523170675
+      }
+    },
+    {
+      "fields": {
+        "target": "1:9"
+      },
+      "id": "a8355a38-3e3d-4b0b-8c26-66b6a39733b5",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": -799.9932047682933
+      }
+    },
+    {
+      "fields": {
+        "name": "Start"
+      },
+      "id": "a7412707-4935-4036-a1c5-33368537b35f",
+      "kind": "core/CallWidget@1",
+      "pos": {
+        "x": -1172.519166568763,
+        "y": -806.4932047682933
+      }
+    },
+    {
+      "fields": {
+        "target": "1:7"
+      },
+      "id": "af880cef-8cca-4108-8793-9a50af5b084b",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": -1046.9932047682933
+      }
+    },
+    {
+      "fields": {
+        "name": "Reset"
+      },
+      "id": "d0e834de-ce43-412f-85b1-df0b728e6ce0",
+      "kind": "core/CallWidget@1",
+      "pos": {
+        "x": -1172.519166568763,
+        "y": -1053.4932047682933
+      }
+    },
+    {
+      "fields": {
+        "target": "1:12"
+      },
+      "id": "4f82f02a-b7c3-4164-8b35-a361d9d00a33",
+      "kind": "core/OnClick@1",
+      "pos": {
+        "x": -1477.519166568763,
+        "y": -1293.9932047682933
+      }
+    },
+    {
+      "fields": {
+        "name": "Stop"
+      },
+      "id": "19933275-031f-4d69-857b-156a17c8d630",
+      "kind": "core/CallWidget@1",
+      "pos": {
+        "x": -1172.519166568763,
+        "y": -1300.4932047682933
+      }
+    },
+    {
+      "fields": {
+        "variable": "iscounting"
+      },
+      "id": "3debd27f-48f3-493d-8e12-5e6956a08d08",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": -809.519166568763,
+        "y": 202.50679523170675
+      }
+    },
+    {
+      "fields": {
+        "value": 0,
+        "variable": "timer"
+      },
+      "id": "714be5de-8352-4164-90a8-98b1bc27ce92",
+      "kind": "core/SetVariable@1",
+      "pos": {
+        "x": -1177.519166568763,
+        "y": -312.49320476829325
+      }
+    }
+  ],
+  "scope": "menu",
+  "specVersion": 7,
+  "variables": [
+    {
+      "default": 0,
+      "id": "timer",
+      "name": "Timer",
+      "scope": "menu",
+      "type": "Number"
+    },
+    {
+      "default": false,
+      "id": "iscounting",
+      "name": "IsCounting",
+      "scope": "menu",
+      "type": "Bool"
+    }
+  ]
+}

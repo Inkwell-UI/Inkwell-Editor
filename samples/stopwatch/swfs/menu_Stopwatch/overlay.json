@@ -1,0 +1,10 @@
+{
+  "nodes": {
+    "1:2": {
+      "scripts": [
+        "menu-stopwatch"
+      ]
+    }
+  },
+  "specVersion": 8
+}

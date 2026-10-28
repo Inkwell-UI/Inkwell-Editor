@@ -1,0 +1,15 @@
+{
+  "depth": 3,
+  "flags": {
+    "closeOnEscape": true,
+    "cursor": true,
+    "modal": false,
+    "pausesGame": true
+  },
+  "specVersion": 8,
+  "triggers": {
+    "hotkey": 35,
+    "modEvent": "SkyrimStopwatch_Open",
+    "papyrus": true
+  }
+}

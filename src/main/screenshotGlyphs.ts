@@ -31,7 +31,12 @@ export async function runGlyphShots(o: { outDir: string; projectDir: string; win
   await wait(1500)
   for (const d of ['keyboard', 'xbox', 'playstation']) {
     const ok = await js<boolean>(`(() => { const e = document.querySelector('[data-testid="stage-prompts"]'); if (!e) return false; Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(e, ${JSON.stringify(d)}); e.dispatchEvent(new Event('change', { bubbles: true })); return true })()`)
-    if (!ok) throw new Error('The Prompts select is not on screen')
+    if (!ok) {
+      // a project without prompts (e.g. an example): one shot of the preview
+      await writeFile(join(o.outDir, 'g-preview.png'), (await main().webContents.capturePage()).toPNG())
+      console.log('[glyphs] shot g-preview (no Prompts control)')
+      break
+    }
     await wait(1200)
     await writeFile(join(o.outDir, `g-${d}.png`), (await main().webContents.capturePage()).toPNG())
     console.log(`[glyphs] shot g-${d}`)

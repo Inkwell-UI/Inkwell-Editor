@@ -1,0 +1,673 @@
+{
+  "id": "1:2",
+  "name": "menu_Stopwatch",
+  "nodes": {
+    "1:10": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "blend": "PASS_THROUGH",
+      "children": [],
+      "content": "Start",
+      "extra": {
+        "figma": {
+          "dashPattern": [],
+          "effects": [],
+          "layoutAlign": "INHERIT",
+          "layoutGrow": 0,
+          "layoutPositioning": "AUTO",
+          "layoutSizingHorizontal": "HUG",
+          "layoutSizingVertical": "HUG",
+          "maskType": "ALPHA",
+          "strokeCap": "NONE",
+          "strokeJoin": "MITER",
+          "strokeMiterLimit": 4,
+          "textCase": "ORIGINAL",
+          "textDecoration": "NONE"
+        }
+      },
+      "id": "1:10",
+      "letterSpacing": {
+        "unit": "percent",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "Start",
+      "opacity": 1,
+      "parent": "1:9",
+      "runs": [
+        {
+          "end": 5,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere/Medium"
+          },
+          "size": 48,
+          "start": 0
+        }
+      ],
+      "sizing": "autoWidth",
+      "textFit": "none",
+      "transform": {
+        "height": 57,
+        "rotation": 0,
+        "width": 70,
+        "x": 50,
+        "y": 0
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "1:12": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "autoLayout": {
+        "mode": "horizontal",
+        "padding": [
+          0,
+          50,
+          0,
+          50
+        ],
+        "spacing": 10
+      },
+      "blend": "PASS_THROUGH",
+      "children": [
+        "1:13"
+      ],
+      "clipContent": true,
+      "extra": {
+        "figma": {
+          "bottomLeftRadius": 0,
+          "bottomRightRadius": 0,
+          "cornerRadius": 0,
+          "counterAxisAlignItems": "CENTER",
+          "counterAxisSizingMode": "AUTO",
+          "counterAxisSpacing": 0,
+          "dashPattern": [],
+          "effects": [],
+          "layoutAlign": "INHERIT",
+          "layoutGrow": 0,
+          "layoutPositioning": "AUTO",
+          "layoutSizingHorizontal": "HUG",
+          "layoutSizingVertical": "HUG",
+          "layoutWrap": "NO_WRAP",
+          "maskType": "ALPHA",
+          "primaryAxisAlignItems": "CENTER",
+          "primaryAxisSizingMode": "AUTO",
+          "strokeCap": "NONE",
+          "strokeJoin": "MITER",
+          "strokeMiterLimit": 4,
+          "topLeftRadius": 0,
+          "topRightRadius": 0
+        }
+      },
+      "id": "1:12",
+      "name": "btn_stop",
+      "opacity": 1,
+      "parent": "1:4",
+      "transform": {
+        "height": 57,
+        "rotation": 0,
+        "width": 164,
+        "x": 498,
+        "y": 162
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "1:13": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "blend": "PASS_THROUGH",
+      "children": [],
+      "content": "Stop",
+      "extra": {
+        "figma": {
+          "dashPattern": [],
+          "effects": [],
+          "layoutAlign": "INHERIT",
+          "layoutGrow": 0,
+          "layoutPositioning": "AUTO",
+          "layoutSizingHorizontal": "HUG",
+          "layoutSizingVertical": "HUG",
+          "maskType": "ALPHA",
+          "strokeCap": "NONE",
+          "strokeJoin": "MITER",
+          "strokeMiterLimit": 4,
+          "textCase": "ORIGINAL",
+          "textDecoration": "NONE"
+        }
+      },
+      "id": "1:13",
+      "letterSpacing": {
+        "unit": "percent",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "Stop",
+      "opacity": 1,
+      "parent": "1:12",
+      "runs": [
+        {
+          "end": 4,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere/Medium"
+          },
+          "size": 48,
+          "start": 0
+        }
+      ],
+      "sizing": "autoWidth",
+      "textFit": "none",
+      "transform": {
+        "height": 57,
+        "rotation": 0,
+        "width": 64,
+        "x": 50,
+        "y": 0
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "1:2": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "blend": "PASS_THROUGH",
+      "children": [
+        "1:4"
+      ],
+      "clipContent": true,
+      "extra": {
+        "figma": {
+          "bottomLeftRadius": 0,
+          "bottomRightRadius": 0,
+          "cornerRadius": 0,
+          "counterAxisAlignItems": "MIN",
+          "counterAxisSizingMode": "FIXED",
+          "counterAxisSpacing": 0,
+          "dashPattern": [],
+          "effects": [],
+          "layoutAlign": "INHERIT",
+          "layoutGrow": 0,
+          "layoutPositioning": "AUTO",
+          "layoutSizingHorizontal": "FIXED",
+          "layoutSizingVertical": "FIXED",
+          "layoutWrap": "NO_WRAP",
+          "maskType": "ALPHA",
+          "primaryAxisAlignItems": "MIN",
+          "primaryAxisSizingMode": "AUTO",
+          "strokeCap": "NONE",
+          "strokeJoin": "MITER",
+          "strokeMiterLimit": 4,
+          "topLeftRadius": 0,
+          "topRightRadius": 0
+        }
+      },
+      "id": "1:2",
+      "name": "menu_Stopwatch",
+      "opacity": 1,
+      "parent": null,
+      "transform": {
+        "height": 1080,
+        "rotation": 0,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "1:4": {
+      "anchor": {
+        "h": "stretch",
+        "v": "stretch"
+      },
+      "blend": "PASS_THROUGH",
+      "children": [
+        "1:5",
+        "1:6",
+        "1:7",
+        "1:12",
+        "1:9"
+      ],
+      "clipContent": true,
+      "extra": {
+        "figma": {
+          "bottomLeftRadius": 0,
+          "bottomRightRadius": 0,
+          "cornerRadius": 0,
+          "counterAxisAlignItems": "MIN",
+          "counterAxisSizingMode": "FIXED",
+          "counterAxisSpacing": 0,
+          "dashPattern": [],
+          "effects": [],
+          "layoutAlign": "INHERIT",
+          "layoutGrow": 0,
+          "layoutPositioning": "AUTO",
+          "layoutSizingHorizontal": "FIXED",
+          "layoutSizingVertical": "FIXED",
+          "layoutWrap": "NO_WRAP",
+          "maskType": "ALPHA",
+          "primaryAxisAlignItems": "MIN",
+          "primaryAxisSizingMode": "AUTO",
+          "strokeCap": "NONE",
+          "strokeJoin": "MITER",
+          "strokeMiterLimit": 4,
+          "topLeftRadius": 0,
+          "topRightRadius": 0
+        }
+      },
+      "id": "1:4",
+      "name": "Box",
+      "opacity": 1,
+      "parent": "1:2",
+      "transform": {
+        "height": 278,
+        "rotation": 0,
+        "width": 817,
+        "x": 551,
+        "y": 401
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "1:5": {
+      "anchor": {
+        "h": "center",
+        "v": "stretch"
+      },
+      "blend": "PASS_THROUGH",
+      "children": [],
+      "extra": {
+        "figma": {
+          "bottomLeftRadius": 0,
+          "bottomRightRadius": 0,
+          "cornerRadius": 0,
+          "dashPattern": [],
+          "effects": [],
+          "layoutAlign": "INHERIT",
+          "layoutGrow": 0,
+          "layoutPositioning": "AUTO",
+          "layoutSizingHorizontal": "FIXED",
+          "layoutSizingVertical": "FIXED",
+          "maskType": "ALPHA",
+          "strokeCap": "NONE",
+          "strokeJoin": "MITER",
+          "strokeMiterLimit": 4,
+          "topLeftRadius": 0,
+          "topRightRadius": 0
+        }
+      },
+      "fills": [
+        {
+          "color": {
+            "b": 0.2,
+            "g": 0.14,
+            "r": 0.12
+          },
+          "opacity": 0.95,
+          "type": "solid"
+        }
+      ],
+      "id": "1:5",
+      "name": "Card background",
+      "opacity": 1,
+      "parent": "1:4",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 778,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 778,
+            "y": 279
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 279
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "strokes": [
+        {
+          "alignment": "center",
+          "fill": {
+            "color": {
+              "b": 0.4,
+              "g": 0.55,
+              "r": 0.62
+            },
+            "type": "solid"
+          },
+          "weight": 3
+        }
+      ],
+      "transform": {
+        "height": 279,
+        "rotation": 0,
+        "width": 778,
+        "x": 0,
+        "y": 0
+      },
+      "type": "shape",
+      "visible": true
+    },
+    "1:6": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "blend": "PASS_THROUGH",
+      "children": [],
+      "content": "$TIME",
+      "extra": {
+        "figma": {
+          "dashPattern": [],
+          "effects": [],
+          "layoutAlign": "INHERIT",
+          "layoutGrow": 0,
+          "layoutPositioning": "AUTO",
+          "layoutSizingHorizontal": "FIXED",
+          "layoutSizingVertical": "FIXED",
+          "maskType": "ALPHA",
+          "strokeCap": "NONE",
+          "strokeJoin": "MITER",
+          "strokeMiterLimit": 4,
+          "textCase": "ORIGINAL",
+          "textDecoration": "NONE"
+        }
+      },
+      "id": "1:6",
+      "letterSpacing": {
+        "unit": "percent",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "$TIME",
+      "opacity": 1,
+      "parent": "1:4",
+      "runs": [
+        {
+          "end": 5,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere/Medium"
+          },
+          "size": 48,
+          "start": 0
+        }
+      ],
+      "sizing": "autoHeight",
+      "textFit": "none",
+      "transform": {
+        "height": 57,
+        "rotation": 0,
+        "width": 671,
+        "x": 73,
+        "y": 63
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "1:7": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "autoLayout": {
+        "mode": "horizontal",
+        "padding": [
+          0,
+          50,
+          0,
+          50
+        ],
+        "spacing": 10
+      },
+      "blend": "PASS_THROUGH",
+      "children": [
+        "1:8"
+      ],
+      "clipContent": true,
+      "extra": {
+        "figma": {
+          "bottomLeftRadius": 0,
+          "bottomRightRadius": 0,
+          "cornerRadius": 0,
+          "counterAxisAlignItems": "CENTER",
+          "counterAxisSizingMode": "AUTO",
+          "counterAxisSpacing": 0,
+          "dashPattern": [],
+          "effects": [],
+          "layoutAlign": "INHERIT",
+          "layoutGrow": 0,
+          "layoutPositioning": "AUTO",
+          "layoutSizingHorizontal": "HUG",
+          "layoutSizingVertical": "HUG",
+          "layoutWrap": "NO_WRAP",
+          "maskType": "ALPHA",
+          "primaryAxisAlignItems": "CENTER",
+          "primaryAxisSizingMode": "AUTO",
+          "strokeCap": "NONE",
+          "strokeJoin": "MITER",
+          "strokeMiterLimit": 4,
+          "topLeftRadius": 0,
+          "topRightRadius": 0
+        }
+      },
+      "id": "1:7",
+      "name": "btn_reset",
+      "opacity": 1,
+      "parent": "1:4",
+      "transform": {
+        "height": 57,
+        "rotation": 0,
+        "width": 179,
+        "x": 319,
+        "y": 162
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "1:8": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "blend": "PASS_THROUGH",
+      "children": [],
+      "content": "Reset",
+      "extra": {
+        "figma": {
+          "dashPattern": [],
+          "effects": [],
+          "layoutAlign": "INHERIT",
+          "layoutGrow": 0,
+          "layoutPositioning": "AUTO",
+          "layoutSizingHorizontal": "HUG",
+          "layoutSizingVertical": "HUG",
+          "maskType": "ALPHA",
+          "strokeCap": "NONE",
+          "strokeJoin": "MITER",
+          "strokeMiterLimit": 4,
+          "textCase": "ORIGINAL",
+          "textDecoration": "NONE"
+        }
+      },
+      "id": "1:8",
+      "letterSpacing": {
+        "unit": "percent",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "Reset",
+      "opacity": 1,
+      "parent": "1:7",
+      "runs": [
+        {
+          "end": 5,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere/Medium"
+          },
+          "size": 48,
+          "start": 0
+        }
+      ],
+      "sizing": "autoWidth",
+      "textFit": "none",
+      "transform": {
+        "height": 57,
+        "rotation": 0,
+        "width": 79,
+        "x": 50,
+        "y": 0
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "1:9": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "autoLayout": {
+        "mode": "horizontal",
+        "padding": [
+          0,
+          50,
+          0,
+          50
+        ],
+        "spacing": 10
+      },
+      "blend": "PASS_THROUGH",
+      "children": [
+        "1:10"
+      ],
+      "clipContent": true,
+      "extra": {
+        "figma": {
+          "bottomLeftRadius": 0,
+          "bottomRightRadius": 0,
+          "cornerRadius": 0,
+          "counterAxisAlignItems": "CENTER",
+          "counterAxisSizingMode": "AUTO",
+          "counterAxisSpacing": 0,
+          "dashPattern": [],
+          "effects": [],
+          "layoutAlign": "INHERIT",
+          "layoutGrow": 0,
+          "layoutPositioning": "AUTO",
+          "layoutSizingHorizontal": "HUG",
+          "layoutSizingVertical": "HUG",
+          "layoutWrap": "NO_WRAP",
+          "maskType": "ALPHA",
+          "primaryAxisAlignItems": "CENTER",
+          "primaryAxisSizingMode": "AUTO",
+          "strokeCap": "NONE",
+          "strokeJoin": "MITER",
+          "strokeMiterLimit": 4,
+          "topLeftRadius": 0,
+          "topRightRadius": 0
+        }
+      },
+      "id": "1:9",
+      "name": "btn_start",
+      "opacity": 1,
+      "parent": "1:4",
+      "transform": {
+        "height": 57,
+        "rotation": 0,
+        "width": 170,
+        "x": 149,
+        "y": 162
+      },
+      "type": "frame",
+      "visible": true
+    }
+  },
+  "root": "1:2",
+  "specVersion": 8,
+  "stage": {
+    "height": 1080,
+    "width": 1920
+  },
+  "target": {
+    "kind": "customMenu"
+  },
+  "themes": []
+}
