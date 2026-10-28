@@ -561,6 +561,12 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .pack-item-title > span:not(.pack-tag) { color: var(--fg-faint); font-size: 12px; }
 .pack-item-desc { grid-column: 1; color: var(--fg-dim); font-size: 12px; min-width: 0; }
 .pack-item > .btn { grid-row: 1 / span 2; grid-column: 2; }
+.pack-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: -4px 0 0; }
+.pack-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 7px 10px; color: var(--fg-dim); cursor: pointer; font: inherit; }
+.pack-tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.pack-new-row { display: grid; grid-template-columns: 1fr 96px; gap: 10px; }
+.pack-new-row .input, .pack-add .input { width: 100%; }
+.pack-new-foot { display: flex; justify-content: flex-end; gap: 8px; }
 .pack-empty { text-align: center; color: var(--fg-dim); padding: 22px 12px; border: 1px dashed var(--line-strong); border-radius: 6px; }
 .pack-empty > b { display: block; color: var(--fg); font-weight: 600; margin-bottom: 2px; }
 .pack-tag { display: inline-block; font-size: 11px; color: var(--warn); border: 1px solid var(--warn); border-radius: 9px; padding: 0 7px; }

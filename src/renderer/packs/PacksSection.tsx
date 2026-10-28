@@ -66,7 +66,7 @@ export function PacksSection({ title, empty }: { title: string; empty: string })
         </div>
       )}
       {note && <p className={`tone-${note.tone} pack-note`} role={note.tone === 'error' ? 'alert' : 'status'}>{note.text}</p>}
-      {dialog === 'add' && <AddPackDialog onClose={() => setDialog(undefined)} onInstalled={(c) => changed(S.installed(c.id, c.version))} />}
+      {dialog === 'add' && <AddPackDialog onClose={() => setDialog(undefined)} onInstalled={(c) => changed(S.installed(c.id, c.version))} onCreated={(id) => changed(S.created(id))} />}
       {dialog === 'update' && <UpdatePacksDialog onClose={() => setDialog(undefined)} onInstalled={(c) => changed(S.installed(c.id, c.version))} />}
     </section>
   )
@@ -134,7 +134,8 @@ function Candidate({ c, action, trust, onCancel, onInstalled }: { c: PackCandida
 }
 
 /** One field takes a pack name (filters the Packs Index) or a GitHub address (a row of its own that fetches the latest release). */
-function AddPackDialog({ onClose, onInstalled }: { onClose(): void; onInstalled(c: PackCandidate): void }) {
+function AddPackDialog({ onClose, onInstalled, onCreated }: { onClose(): void; onInstalled(c: PackCandidate): void; onCreated(id: string): void }) {
+  const [tab, setTab] = useState<'github' | 'new'>('github')
   const [index, setIndex] = useState<{ list?: PackIndexEntry[]; error?: string }>({})
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
@@ -160,6 +161,11 @@ function AddPackDialog({ onClose, onInstalled }: { onClose(): void; onInstalled(
         <Candidate c={candidate} action={S.install} trust onCancel={() => setCandidate(undefined)} onInstalled={onInstalled} />
       ) : (
         <div className="pack-add" data-testid="packs-add-dialog">
+          <div className="pack-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected={tab === 'github'} onClick={() => setTab('github')} data-testid="packs-tab-github">{S.tabGithub}</button>
+            <button type="button" role="tab" aria-selected={tab === 'new'} onClick={() => setTab('new')} data-testid="packs-tab-new">{S.tabNew}</button>
+          </div>
+          {tab === 'new' ? <NewPackForm onCreated={onCreated} onCancel={onClose} /> : <>
           <div>
             <label className="field-label" htmlFor="packs-search">{S.search}</label>
             <div className="search-field">
@@ -191,9 +197,41 @@ function AddPackDialog({ onClose, onInstalled }: { onClose(): void; onInstalled(
           ))}
           {busy && <p className="dim">{S.working}</p>}
           {error && <p className="tone-error" role="alert">{error}</p>}
+          </>}
         </div>
       )}
     </Dialog>
+  )
+}
+
+/** "New local pack" tab: an empty pack in `<project>/libraries/<id>/`; functions are dragged onto it in the Library tab. Main validates the id and version. */
+function NewPackForm({ onCreated, onCancel }: { onCreated(id: string): void; onCancel(): void }) {
+  const [id, setId] = useState('')
+  const [version, setVersion] = useState('1.0.0')
+  const [description, setDescription] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string>()
+  const create = async (): Promise<void> => {
+    if (!inkwell) return
+    setBusy(true)
+    setError(undefined)
+    const r = await inkwell.createLibrary({ id: id.trim(), version: version.trim(), ...(description.trim() ? { description: description.trim() } : {}) })
+    setBusy(false)
+    if (r.ok) onCreated(r.id)
+    else setError(r.error)
+  }
+  const valid = /^[a-z0-9][a-z0-9._-]*$/.test(id.trim()) && /^\d+\.\d+\.\d+$/.test(version.trim())
+  return (
+    <form className="pack-add" onSubmit={(e) => e.preventDefault()} onKeyDown={(e) => e.key === 'Enter' && valid && !busy && void create()} data-testid="packs-new-form">
+      <div className="pack-new-row">
+        <div><label className="field-label" htmlFor="packs-new-id">{S.newId}</label><input id="packs-new-id" className="input" value={id} placeholder="my-pack" autoFocus autoComplete="off" spellCheck={false} onChange={(e) => setId(e.target.value)} data-testid="packs-new-id" /></div>
+        <div><label className="field-label" htmlFor="packs-new-version">{S.newVersion}</label><input id="packs-new-version" className="input" value={version} autoComplete="off" onChange={(e) => setVersion(e.target.value)} /></div>
+      </div>
+      <div><label className="field-label" htmlFor="packs-new-desc">{S.newDescription}</label><input id="packs-new-desc" className="input" value={description} placeholder={S.newDescriptionPlaceholder} onChange={(e) => setDescription(e.target.value)} /></div>
+      <p className="dim">{S.newHint}</p>
+      {error && <p className="tone-error" role="alert">{error}</p>}
+      <div className="pack-new-foot"><Btn onClick={onCancel}>{strings.lib.cancel}</Btn><Btn variant="primary" onClick={() => void create()} reason={valid ? (busy ? S.working : undefined) : S.newInvalid} testId="packs-new-create">{S.newCreate}</Btn></div>
+    </form>
   )
 }
 

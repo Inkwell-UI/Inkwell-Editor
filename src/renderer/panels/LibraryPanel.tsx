@@ -34,8 +34,6 @@ function PacksSection() {
   const swf = useActiveSwf()
   const packs = useLibraryPacks()
   const [replace, setReplace] = useState<{ id: string; path: string } | undefined>()
-  const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({ id: '', version: '1.0.0' })
   const done = (r: Awaited<ReturnType<NonNullable<typeof inkwell>['importLibrary']>>): void => {
     if ('cancelled' in r) return
     if (!r.ok && 'exists' in r) return setReplace({ id: r.id, path: r.path })
@@ -45,29 +43,12 @@ function PacksSection() {
   }
   const importNew = async (): Promise<void> => inkwell && done(await inkwell.importLibrary())
   const doReplace = async (): Promise<void> => inkwell && replace && done(await inkwell.importLibrary(replace))
-  const create = async (): Promise<void> => {
-    if (!inkwell) return
-    const r = await inkwell.createLibrary({ id: form.id.trim(), version: form.version.trim() })
-    if (!r.ok) return toast({ tone: 'error', title: strings.lib.packCreateFailed, text: r.error })
-    reloadPacks()
-    toast({ tone: 'ok', title: strings.lib.packCreated(r.id) })
-    setCreating(false)
-    setForm({ id: '', version: '1.0.0' })
-  }
   return (
     <section aria-labelledby="lib-libs" data-testid="library-libraries">
       <header className="section-title">
         <h3 id="lib-libs">{strings.lib.libraries}</h3>
-        <Btn label={strings.lib.newPackTip} onClick={() => setCreating(!creating)} pressed={creating} testId="library-new-pack">{strings.lib.newPack}</Btn>
         <Btn label={strings.lib.importTip} onClick={() => void importNew()} testId="library-import">{strings.lib.import}</Btn>
       </header>
-      {creating && (
-        <div className="lib-form">
-          <label className="gn-field"><span className="gn-field-label">{strings.lib.packId}</span><input autoFocus className="gn-input" value={form.id} placeholder="my-pack" onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))} onKeyDown={(e) => e.key === 'Enter' && void create()} data-testid="library-new-id" /></label>
-          <label className="gn-field"><span className="gn-field-label">{strings.lib.packVersion}</span><input className="gn-input" value={form.version} onChange={(e) => setForm((f) => ({ ...f, version: e.target.value }))} /></label>
-          <Btn variant="primary" onClick={() => void create()} testId="library-new-create">{strings.lib.packCreate}</Btn>
-        </div>
-      )}
       {replace && (
         <p className="tone-warn" role="alert">
           {strings.lib.importReplace(replace.id)} <Btn variant="danger" onClick={() => void doReplace()} testId="library-replace">{strings.lib.replace}</Btn> <Btn onClick={() => setReplace(undefined)}>{strings.lib.cancel}</Btn>
