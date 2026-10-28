@@ -27,3 +27,20 @@ Custom menus only. Spike S-A (owner, 2026-10-27): with `inputContext` menuMode t
 
 ## In game
 `yarn deploy:menu-gamepad` builds `samples/menu-gamepad` (4 buttons, overrides that break the geometry, an Accept and a Cancel prompt, hotkey F10) into `C:\Modding\MO2\mods\Inkwell Menu Gamepad Test` with the runtime DLL (`--to`, `--dll`, `--dev` as the other menu deploys). Steps: `TEST-IN-GAME-0.5.md`, Phase 3 checks.
+
+## For modders: the rules in one place (0.5, tested on Skyrim SE 1.7.104 with an Xbox-type pad)
+- **Input context.** A custom menu only gets pad input when its **Input Context** is `menuMode` (Menu tab; modal menus default to it). With `none` the d-pad does nothing. A focus graph needs `menuMode` (lint `focus-input-context`).
+- **What the pad does.** D-pad and A reach the menu as `On Input` (`Up`, `Down`, `Left`, `Right`, `Accept`); the focus graph moves focus. **B (Cancel) closes the menu** and cannot be changed in 0.5 (close-only). The left stick was not tested (the owner's run reported d-pad and buttons only).
+- **Which device.** The runtime reports `keyboardMouse` or `gamepad` and switches live while the menu is open. It does **not** say Xbox or PlayStation, so the glyph style is the player's choice in the mod's INI (`SKSE\Plugins\Inkwell\<modId>.ini`):
+  ```
+  [Prompts]
+  Gamepad=xbox
+  ```
+  `xbox` is the default; `playstation` shows the PlayStation set. The editor's stage toolbar **Prompts** switch only changes the preview.
+- **Menu replacements** (docs/contracts.md) use the game's own pad navigation: it reaches a replacement with no extra work (tested with no SkyUI, SkyUI 5.2 and SkyUI 6.11).
+- **Not tested:** AE (expected to work), a PlayStation pad itself (the glyphs were checked only as drawings via the INI; the runtime cannot tell the pad type).
+
+## The prompt glyphs
+The glyphs are drawn from the game's own button fonts, **`ControllerButtonsInverted`** (the grey ring and the letter) over a dark disc or pill of ours. They are the game's pad font, not the coloured button textures the vanilla menus show: **a custom menu cannot draw those textures** (`img://` finds no file by those names and importing from `hudmenu.swf` makes the game refuse the whole menu; both were tried in game, S-F and S-G in `TEST-IN-GAME-0.5.md`). Xbox A B X Y, LB RB LT RT, Start and Back and PlayStation Cross Circle Square Triangle, L1 R1 L2 R2 and Options use the font; the d-pad, Share and keyboard key caps are drawn shapes. The fonts come from the player's own install (Skyrim fonts the SWF names; nothing is shipped). Seen in game: A and B with the ring (Xbox set); PlayStation and the other glyphs not yet seen in game.
+- Fallback: `INKWELL_VECTOR_GLYPHS=1` builds drawn vector glyphs instead (use it if a player's game shows blank prompts).
+- Colours: the font glyphs are light grey. Tinting them in the Xbox colours was not done.
