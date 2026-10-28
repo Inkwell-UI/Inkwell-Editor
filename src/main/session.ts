@@ -232,6 +232,9 @@ export function createSession(deps: SessionDeps) {
     const info = server?.swfs().find((i) => i.name === name)
     if (info && !info.orphaned) server!.rebuild(info.id)
   }
+  /** A component's graph changed: every SWF may create that component, so every SWF is rebuilt (the preview runs the graphs). */
+  let lastTreesKey: string | undefined // the components of the Figma page as the plugin last reported them (this session)
+  const rebuildAllSwfs = (): void => void server?.swfs().forEach((i) => !i.orphaned && server!.rebuild(i.id))
   const pushProject = (): void => {
     clearTimeout(pushTimer)
     pushTimer = setTimeout(() => deps.broadcast(IPC.projectUpdate, projectState()), 50)
@@ -255,6 +258,7 @@ export function createSession(deps: SessionDeps) {
   }
 
   async function start(dir: string | undefined, keep?: { port: number }): Promise<void> {
+    lastTreesKey = undefined
     const initial: Record<string, Swf> = {}
     overlays.clear()
     graphs.clear()
@@ -354,6 +358,9 @@ export function createSession(deps: SessionDeps) {
     })
     srv.events.on('swfs', (infos: SwfInfo[], loose: Layer[], components: Layer[], trees: PageComponentTree[]) => {
       if (projectDir) void writeComponentTrees(projectDir, trees).catch(() => undefined) // the plugin lists every component on the page: the folder follows it
+      const treesKey = JSON.stringify(trees)
+      if (lastTreesKey !== undefined && treesKey !== lastTreesKey) rebuildAllSwfs() // a component was edited in Figma: the SWFs that create it carry its symbol
+      lastTreesKey = treesKey
       looseCount = loose.length
       update({ swfCount: infos.length, orphanedCount: infos.filter((i) => i.orphaned).length, looseLayers: loose, pageComponents: components, pageComponentTrees: trees, lintCount: lintTotal() })
       void refreshGraphLint().catch(() => undefined)
@@ -886,15 +893,20 @@ export function createSession(deps: SessionDeps) {
       if (await componentGraphExists(projectDir, componentId)) return { ok: false, error: 'This component already has a graph.' }
       const graph = newComponentGraph(componentId, name)
       const r = await writeComponentGraph(projectDir, graph)
+      if (r.ok) rebuildAllSwfs()
       return r.ok ? { ok: true, graph } : r
     },
     async saveComponentGraph(doc: unknown): Promise<GraphResult> {
       if (!projectDir) return { ok: false, error: 'No project is open.' }
-      return writeComponentGraph(projectDir, doc)
+      const r = await writeComponentGraph(projectDir, doc)
+      if (r.ok) rebuildAllSwfs()
+      return r
     },
     async deleteComponentGraph(componentId: string): Promise<GraphResult> {
       if (!projectDir) return { ok: false, error: 'No project is open.' }
-      return deleteComponentGraph(projectDir, componentId)
+      const r = await deleteComponentGraph(projectDir, componentId)
+      if (r.ok) rebuildAllSwfs()
+      return r
     },
     async createGraph(swf: string, name: string, scope: Graph['scope']): Promise<GraphResult<{ graph: Graph }>> {
       const m = graphs.get(swf)
