@@ -58,6 +58,12 @@ export async function runInventoryShots(o: { outDir: string; projectDir: string;
   await wait(600)
   check('Down moves the mark and the card follows', (await get('Menu_mc.items.text')).includes('> Steel Armor') && (await get('Menu_mc.card.text')).includes('Heavy armor'), JSON.stringify([await get('Menu_mc.items.text'), await get('Menu_mc.card.text')]))
   await snap('i1')
+  // the Target dialog of a replacement: contract and the "Built for" layers
+  await js(`document.querySelector('[aria-label^="Target:"]').click()`)
+  await wait(500)
+  const dialog = await js<string>(`(document.querySelector('[role="dialog"]') ?? document.body).innerText`)
+  check('the Target dialog shows the contract and the Built for layers', dialog.includes('Contract (game menu it replaces)') && dialog.includes('Built for') && dialog.includes('SkyUI 5.2'), JSON.stringify(dialog.slice(0, 300)))
+  await snap('i2-target')
   console.log(bad ? `[inventory] ${bad} check(s) FAILED` : '[inventory] all checks passed')
   return bad
 }
