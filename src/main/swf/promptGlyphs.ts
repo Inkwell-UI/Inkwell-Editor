@@ -14,6 +14,17 @@ export const glyphOwner = (id: string): string => id.slice(0, id.indexOf('#'))
 type Rgb = { r: number; g: number; b: number }
 const hex = (h: number): Rgb => ({ r: ((h >> 16) & 255) / 255, g: ((h >> 8) & 255) / 255, b: (h & 255) / 255 })
 const DARK = 0x1c1c1c
+/**
+ * The game's own button art: its font `ControllerButtons` (exported by the user's fonts_en.swf, alias `ControllerButtons`; nothing of it is shipped, the SWF only names the alias like any
+ * text) holds white pad glyphs on letters. Spec glyph -> [character, advance in em], read from the extracted font (xbox A B X Y = A B C D, LB G, RB L, LT I, RT N, Start O, Back E;
+ * playstation Cross a, Triangle b, Square c, Circle d, L1 g, R1 m, L2 j, R2 o, Options p). D-pad and Share stay vector. Unverified in game: INKWELL_VECTOR_GLYPHS=1 builds the vector set instead.
+ */
+const GAME_GLYPHS: Record<'xbox' | 'playstation', Record<string, [string, number]>> = {
+  xbox: { A: ['A', 1.094], B: ['B', 1.098], X: ['C', 1.099], Y: ['D', 1.102], LB: ['G', 1.396], RB: ['L', 1.415], LT: ['I', 1.414], RT: ['N', 1.418], Start: ['O', 1.102], Back: ['E', 1.106] },
+  playstation: { Cross: ['a', 1.1], Triangle: ['b', 1.099], Square: ['c', 1.103], Circle: ['d', 1.102], L1: ['g', 1.47], R1: ['m', 1.47], L2: ['j', 1.417], R2: ['o', 1.464], Options: ['p', 2.889] }
+}
+const gameGlyphs = (): boolean => process.env['INKWELL_VECTOR_GLYPHS'] !== '1'
+
 const FACE: Record<string, number> = { A: 0x6bbf3a, B: 0xe0443a, X: 0x3a7be0, Y: 0xe8c22c }
 
 /** Text width estimate of a glyph label: wide enough for "Enter"/"Options" at the glyph's font size. */
@@ -65,7 +76,7 @@ function firstText(nodes: Record<string, Node>, id: string): Extract<Node, { typ
   return undefined
 }
 
-interface Item { x: number; y: number; w: number; h: number; color: number; poly?: [number, number][]; stroke?: number; text?: string; size?: number }
+interface Item { x: number; y: number; w: number; h: number; color: number; poly?: [number, number][]; stroke?: number; text?: string; size?: number; font?: string }
 
 /** The parts of one glyph in a box `s` tall (local coordinates), and its width. */
 export function glyphParts(d: PromptDevice, g: string, s: number): { w: number; items: Item[] } {
@@ -74,6 +85,13 @@ export function glyphParts(d: PromptDevice, g: string, s: number): { w: number; 
   const letter = (text: string, color: number, w = s): Item => {
     const size = Math.round(s * (text.length > 1 ? 0.42 : 0.55))
     return { x: 0, y: Math.round((s - size * 1.25) / 2), w, h: Math.round(size * 1.25), color, text, size }
+  }
+  const game = d !== 'keyboard' && gameGlyphs() ? GAME_GLYPHS[d][g] : undefined
+  if (game) {
+    // the font's glyphs are about 1.04 em tall (-0.205..0.838 em around the baseline); the SWF font's ascent is 0.99 em, so the top of the glyph sits 0.155 em below the line top
+    const size = Math.round(s * 0.96)
+    const w = Math.round(game[1] * size)
+    return { w, items: [{ x: 0, y: -Math.round(0.155 * size), w, h: Math.round(size * 1.24), color: 0xffffff, text: game[0], size, font: 'ControllerButtons' }] }
   }
   if (g.startsWith('Dpad')) {
     const a = s * 0.32
@@ -131,8 +149,9 @@ function shapeNode(id: string, parent: string, it: Item): Node {
   return { ...base(id, 'part', parent, { x: it.x, y: it.y, width: it.w, height: it.h }), type: 'shape', paths: [path], fills: it.stroke ? [] : [paint], strokes: it.stroke ? [{ fill: paint, weight: it.stroke, alignment: 'center' as const }] : [] } as Node
 }
 
-function textNode(id: string, parent: string, it: Item, font: Extract<Node, { type: 'text' }>['runs'][number]['font']): Node {
+function textNode(id: string, parent: string, it: Item, labelFont: Extract<Node, { type: 'text' }>['runs'][number]['font']): Node {
   const text = it.text!
+  const font = it.font ? ({ kind: 'alias', name: it.font } as typeof labelFont) : labelFont
   return {
     ...base(id, 'key', parent, { x: it.x, y: it.y, width: it.w, height: it.h }), type: 'text', content: text,
     runs: [{ start: 0, end: text.length, font, size: it.size!, fill: { type: 'solid', color: hex(it.color) } }],

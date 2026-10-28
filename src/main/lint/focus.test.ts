@@ -71,12 +71,30 @@ describe('prompt glyphs', () => {
     const bare = { ...ir, nodes: { ...ir.nodes, '2:7': { ...ir.nodes['2:7']!, children: [] } } } as Swf
     expect(withPromptGlyphs(bare, { '2:7': { xbox: 'A' } }).lint.map((l) => l.code)).toEqual(['prompt-no-label'])
   })
-  it('draw every glyph of the set in the box height; key caps and pills widen with the name', () => {
-    for (const g of ['A', 'B', 'X', 'Y', 'LB', 'RT', 'Start', 'DpadUp']) expect(glyphParts('xbox', g, 48).items.length).toBeGreaterThan(1)
-    for (const g of ['Cross', 'Circle', 'Square', 'Triangle', 'L2', 'Options']) expect(glyphParts('playstation', g, 48).items.length).toBeGreaterThan(1)
-    expect(glyphParts('xbox', 'A', 48).w).toBe(48)
+  it('vector set (INKWELL_VECTOR_GLYPHS=1): every glyph in the box height; key caps and pills widen with the name', () => {
+    process.env['INKWELL_VECTOR_GLYPHS'] = '1'
+    try {
+      for (const g of ['A', 'B', 'X', 'Y', 'LB', 'RT', 'Start', 'DpadUp']) expect(glyphParts('xbox', g, 48).items.length).toBeGreaterThan(1)
+      for (const g of ['Cross', 'Circle', 'Square', 'Triangle', 'L2', 'Options']) expect(glyphParts('playstation', g, 48).items.length).toBeGreaterThan(1)
+      expect(glyphParts('xbox', 'A', 48).w).toBe(48)
+    } finally {
+      delete process.env['INKWELL_VECTOR_GLYPHS']
+    }
     expect(glyphParts('keyboard', 'E', 48).w).toBe(48)
     expect(glyphParts('keyboard', 'Enter', 48).w).toBeGreaterThan(48)
+  })
+  it("the game's ControllerButtons font draws the face buttons and shoulders (one text part each); d-pad, Share and keyboard stay vector", () => {
+    const one = (d: 'xbox' | 'playstation', g: string) => glyphParts(d, g, 48).items
+    expect(one('xbox', 'A')).toMatchObject([{ text: 'A', font: 'ControllerButtons' }])
+    expect(one('xbox', 'X')).toMatchObject([{ text: 'C' }])
+    expect(one('xbox', 'Y')).toMatchObject([{ text: 'D' }])
+    expect(one('playstation', 'Cross')).toMatchObject([{ text: 'a' }])
+    expect(one('playstation', 'Circle')).toMatchObject([{ text: 'd' }])
+    expect(glyphParts('xbox', 'A', 48).w).toBe(Math.round(1.094 * 46))
+    expect(glyphParts('playstation', 'Options', 48).w).toBeGreaterThan(2 * 48)
+    expect(one('xbox', 'DpadUp').length).toBeGreaterThan(1)
+    expect(one('playstation', 'Share').length).toBeGreaterThan(1)
+    expect(glyphParts('keyboard', 'Enter', 48).items.length).toBeGreaterThan(1)
   })
   it('golden menu class with a focus graph and a prompt', () => {
     expect(menuClassSource({ modId: 'M', swfCls: 'Menu', graphs: [], focus: { paths: ['a', 'p.b'], moves: [[1, 1, 1, 1], [0, 0, 0, 0]] }, prompts: [['pr.glyph_keyboard', 'pr.glyph_xbox', null]] })).toMatchSnapshot()

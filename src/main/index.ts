@@ -23,6 +23,7 @@ import { runDebugShots, runGraphShots } from './screenshotGraph'
 import { runPopupShots } from './screenshotPopup'
 import { runMenuShots } from './screenshotMenu'
 import { runDevShots } from './screenshotDev'
+import { runGlyphShots } from './screenshotGlyphs'
 import { runInventoryShots } from './screenshotInventory'
 import { runMenuNodesShots } from './screenshotMenuNodes'
 import { runSetupShots } from './screenshotSetup'
@@ -358,6 +359,8 @@ void app.whenReady().then(async () => {
     void runFontShots({ outDir: shotsDir, win: () => win }).then(() => app.exit(0), (e: unknown) => { console.error('[inkwell] font screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_DEV'])
     void runDevShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).then((bad) => app.exit(bad ? 1 : 0), (e: unknown) => { console.error('[inkwell] dev screenshots failed:', e); app.exit(1) })
+  else if (shotsDir && process.env['INKWELL_SHOTS_GLYPHS'])
+    void runGlyphShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).then((bad) => app.exit(bad ? 1 : 0), (e: unknown) => { console.error('[inkwell] glyph screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_INVENTORY'])
     void runInventoryShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).then((bad) => app.exit(bad ? 1 : 0), (e: unknown) => { console.error('[inkwell] inventory screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_MENU'] === 'nodes')
