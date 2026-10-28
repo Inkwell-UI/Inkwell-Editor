@@ -43,6 +43,7 @@ import { analyzeFont, isCharsetId, licenseVerdict } from './fonts/embed'
 import { fsTypeLabel } from './fonts/convert'
 import type { AddFontOutcome, ProjectFontInfo, ProjectFontsState } from '../shared/fonts'
 import { deleteGraph, readGraph, writeGraph } from './project/graphFiles'
+import { readComponentTrees, writeComponentTrees } from './project/componentTrees'
 import { componentGraphExists, deleteComponentGraph, readComponentGraphs, writeComponentGraph } from './project/componentFiles'
 import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
@@ -247,6 +248,12 @@ export function createSession(deps: SessionDeps) {
     pipeline = undefined
   }
 
+  /** The components kept on the Figma page, as last reported by the plugin (read from `figma/components/`), so they are known with Figma closed. */
+  const pageComponentState = async (): Promise<{ pageComponents: { id: string; name: string }[]; pageComponentTrees: PageComponentTree[] }> => {
+    const trees = projectDir ? await readComponentTrees(projectDir).catch(() => []) : []
+    return { pageComponents: trees.map((t) => ({ id: t.id, name: t.name })), pageComponentTrees: trees }
+  }
+
   async function start(dir: string | undefined, keep?: { port: number }): Promise<void> {
     const initial: Record<string, Swf> = {}
     overlays.clear()
@@ -346,12 +353,13 @@ export function createSession(deps: SessionDeps) {
       pushProject()
     })
     srv.events.on('swfs', (infos: SwfInfo[], loose: Layer[], components: Layer[], trees: PageComponentTree[]) => {
+      if (projectDir) void writeComponentTrees(projectDir, trees).catch(() => undefined) // the plugin lists every component on the page: the folder follows it
       looseCount = loose.length
       update({ swfCount: infos.length, orphanedCount: infos.filter((i) => i.orphaned).length, looseLayers: loose, pageComponents: components, pageComponentTrees: trees, lintCount: lintTotal() })
       void refreshGraphLint().catch(() => undefined)
       pushProject()
     })
-    update({ swfCount: srv.swfs().length, server: 'listening', error: undefined, port: srv.port, looseLayers: [], pageComponents: [], pageComponentTrees: [] })
+    update({ swfCount: srv.swfs().length, server: 'listening', error: undefined, port: srv.port, looseLayers: [], ...(await pageComponentState()) })
     refreshFfdec()
     await refreshGraphLint().catch(() => undefined)
   }
