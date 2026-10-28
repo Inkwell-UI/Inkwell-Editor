@@ -48,7 +48,7 @@ export function LibraryPanel() {
     <Panel title={strings.lib.title}>
       <div className="nav">
         <section aria-labelledby="lib-list" data-testid="library-section">
-          <header className="section-title">
+          <header className="section-title library-heading">
             <h3 id="lib-list">{strings.lib.heading}</h3>
             <RowMenu
               icon={Plus}
