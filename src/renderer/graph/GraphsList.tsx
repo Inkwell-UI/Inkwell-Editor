@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Check, Lock, Pencil, Trash2, Workflow, X } from 'lucide-react'
+import { Check, Lock, Pencil, Plus, Trash2, Workflow, X } from 'lucide-react'
 import { useStore } from 'zustand'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { usePacks } from '../hooks/usePacks'
@@ -28,7 +28,7 @@ export function GraphsList() {
     <section aria-labelledby="nav-graphs" data-testid="graphs-section">
       <header className="section-title">
         <h3 id="nav-graphs">{strings.nav.graphs}</h3>
-        <Btn label={strings.nav.addGraph} testId="graph-add-nav" onClick={() => void actions.add()} reason={actions.canAdd}>{strings.nav.addGraphShort}</Btn>
+        <Btn icon={Plus} variant="quiet" label={strings.nav.addGraph} testId="graph-add-nav" onClick={() => void actions.add()} reason={actions.canAdd} />
       </header>
       {actions.error && <p className="tone-error">{actions.error}</p>}
       {swf && loaded && mine.length === 0 && <p className="empty">{strings.nav.graphsEmpty}</p>}
