@@ -37,7 +37,7 @@ Using a text style (not loose fonts) is what makes rule 1 win: the editor never 
 
 ## 3. Components and layer names (create these in Figma)
 
-The generator reads the **layer names** and the roles you set in the editor Inspector. Use plain frames (instances and components are not compiled yet: `unsupported-node`). Keep these as ordinary frames in your kit and copy them into each design.
+The generator reads the **layer names** and the roles you set in the editor Inspector. Frames, instances and components all compile (an instance is drawn as the frame it is). Keep these as ordinary frames in your kit and copy them into each design.
 
 | Piece | Build it as | Then in the editor |
 | --- | --- | --- |

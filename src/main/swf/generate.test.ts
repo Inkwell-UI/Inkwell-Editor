@@ -189,12 +189,19 @@ describe('generate', () => {
       expect(g.shapes[0]!.svg).toContain('stroke-width="4"')
     })
 
-    it('instance/component nodes -> unsupported-node warning; an image without its asset -> image-missing-asset; compile continues', () => {
+    it('an image without its asset -> image-missing-asset; compile continues', () => {
       const img = { ...rectShape('i'), type: 'image', asset: 'h', scaleMode: 'fill' } as never
-      const inst = { ...rectShape('n'), type: 'instance', component: 'c' } as never
-      const g = gen([frame('f', ['i', 'n', 's']), img, inst, rectShape('s')])
-      expect(g.lint.map((l) => [l.severity, l.code, l.nodeId])).toEqual([['error', 'image-missing-asset', 'i'], ['warning', 'unsupported-node', 'n']])
+      const g = gen([frame('f', ['i', 's']), img, rectShape('s')])
+      expect(g.lint.map((l) => [l.severity, l.code, l.nodeId])).toEqual([['error', 'image-missing-asset', 'i']])
       expect(g.shapes.map((s) => s.nodeId)).toEqual(['s'])
+    })
+
+    it('an instance and a component draw like frames: their children are compiled, no unsupported-node', () => {
+      const inst = { ...frame('n', ['s']), type: 'instance', component: 'c' } as never
+      const comp = { ...frame('m', ['t']), type: 'component', variants: [] } as never
+      const g = gen([frame('f', ['n', 'm']), inst, comp, rectShape('s'), rectShape('t')])
+      expect(g.lint.filter((l) => l.code === 'unsupported-node')).toEqual([])
+      expect(g.shapes.map((s) => s.nodeId).sort()).toEqual(['s', 't'])
     })
 
     it('blend: PASS_THROUGH and NORMAL (any case, Figma sends upper case) are silent; others warn', () => {

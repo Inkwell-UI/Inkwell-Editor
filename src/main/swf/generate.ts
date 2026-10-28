@@ -1,4 +1,4 @@
-import { FOCUS_DIRS, type FocusGraph, type Graph, type MergedContract, type PromptDevice, type Swf } from '@inkwell-ui/spec'
+import { FOCUS_DIRS, type FocusGraph, type Graph, type MergedContract, type Node, type PromptDevice, type Swf } from '@inkwell-ui/spec'
 import { glyphId, glyphOwner, isGlyphNode, PROMPT_DEVICE_ORDER, withPromptGlyphs } from './promptGlyphs'
 import { ddsRel, isAssetHash, type ImageMode } from '../images/assets'
 import type { Rgba } from '../images/png'
@@ -258,6 +258,9 @@ const num = (n: number): string => String(Math.round(n * 1000) / 1000)
 
 const ASCII = Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)).join('')
 
+/** An instance or a component draws like the frame it is (its own background, clipping and auto layout, its real children); the link to the main component only matters to behaviour. */
+const asFrame = (n: Node | undefined) => (n && (n.type === 'instance' || n.type === 'component') ? { ...n, type: 'frame' as const, clipContent: n.clipContent ?? false } : n)
+
 export { ident } // shared with the editor UI (default instance names); one definition in shared/overlay.ts
 
 const comment = (s: string): string => s.replace(/[\r\n]+/g, ' ').replace(/\*\//g, '* /')
@@ -502,7 +505,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
     const names = new Set<string>(reserved)
     let depth = first.length + 1
     for (const cid of frame.children) {
-      const n = ir.nodes[cid]
+      const n = asFrame(ir.nodes[cid])
       if (!n) {
         lint.push(issue('warning', 'node-missing', cid, `Child "${cid}" is not in the node map; skipped.`))
         continue
@@ -514,10 +517,6 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       seen.add(cid)
       if (!n.visible) {
         lint.push(issue('info', 'node-hidden', cid, 'Hidden node not compiled.'))
-        continue
-      }
-      if (n.type === 'instance' || n.type === 'component') {
-        lint.push(issue('warning', 'unsupported-node', cid, `${n.type} nodes are not supported yet; "${n.name}" and its children are skipped.`))
         continue
       }
       if (n.blend && !['normal', 'pass_through'].includes(n.blend.toLowerCase())) // Figma sends upper case (PASS_THROUGH is every layer's default)

@@ -37,7 +37,7 @@ Read from the spec IR `Text` node (specVersion 2+): `align`, `verticalAlign`, `l
 
 ## Not supported (reported, compile continues)
 
-- `instance`, `component` nodes: warning `unsupported-node`, node and children skipped.
+- `instance`, `component` nodes: compiled as the frame they draw like (their own fills, clipping and auto layout, and their children); the link to the main component does nothing yet (behaviour comes with PLAN-COMPONENTS.md). A component set drawn inside a frame shows all its variants stacked.
 - Hidden nodes (`node-hidden`, info), masks (`mask-ignored`), blend modes (`blend-ignored`), bindings/themes, auto-layout (resolved positions are used as is), anchors.
 - Text: truncation, mixed styles (first run wins), embedded fonts (`font-unmapped`), gradient text fills (black), text shadow (unproven in game; never emitted).
 - Missing child, repeated node, invalid root: `node-missing`, `node-cycle`, `root-invalid`.
