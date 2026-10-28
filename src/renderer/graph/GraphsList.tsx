@@ -105,7 +105,7 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
       <Btn icon={X} label={strings.nav.deleteCancel} onClick={() => setConfirm(false)} />
     </>
   )
-  const sigText = sig ? strings.lib.signature(sig.inputs.map((p) => `${p.name}: ${p.type}`).join(', '), sig.outputs.map((p) => `${p.name}: ${p.type}`).join(', '), sig.exits.map((x) => x.name).join(', ')) : undefined
+  const sigText = sig ? strings.lib.signature(sig.inputs.map((p) => p.type), sig.outputs.map((p) => p.type), sig.exits.map((x) => x.name)) : undefined
   const commit = (): void => {
     if (editing !== undefined) onRename(editing)
     setEditing(undefined)

@@ -239,7 +239,8 @@ export const strings = {
     exportRun: 'Export',
     exported: (id: string, version: string, folder: string, zip: string) => `${id} ${version} exported to ${folder} and ${zip}. Upload the zip as pack.zip on a GitHub release to publish it.`,
     exportFailed: 'Could not export the pack',
-    signature: (inputs: string, outputs: string, exits: string) => `(${inputs}) → ${outputs || 'nothing'} · exits: ${exits}`
+    /** `(Number, Number): Number`: the argument types, then the output types; more than one exit adds them. */
+    signature: (inputs: string[], outputs: string[], exits: string[]) => `(${inputs.join(', ')})${outputs.length ? `: ${outputs.join(', ')}` : ''}${exits.length > 1 ? ` · exits: ${exits.join(', ')}` : ''}`
   },
 
   contracts: {
