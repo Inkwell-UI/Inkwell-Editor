@@ -22,6 +22,7 @@ import { graphEditorBlurred } from '../state/hotReload'
 import { useSelectionStore } from '../state/selectionStore'
 import { useTraceStore } from '../state/traceStore'
 import { strings } from '../strings'
+import { functionOfOption, functionOption } from '../model/functionSpawn'
 import { FUNCTION_DRAG } from './GraphsList'
 import { GraphContext, InkwellNode, type GraphCtx } from './NodeView'
 import './graph.css'
@@ -138,11 +139,27 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   // Space listens on the window: only open when the pointer is over this canvas
   const space = useSpaceMenu(wrap, (p) => wrap.current?.matches(':hover') && setMenu({ ...p, from: null }))
 
-  const options = useMemo(() => (menu ? spawnFor({ defs, spawn: sdefs, nodes: store.getState().nodes, edges: store.getState().edges, vars: store.getState().variables, sig: store.getState().signature, from: menu.from }) : []), [menu, defs, sdefs, store])
+  // "f PlusOne" in the search: only the functions (the SWF's and the packs'), each placed as a Call Function node. The menu keeps its own query, so it is read off the input's events.
+  const [spawnQuery, setSpawnQuery] = useState('')
+  useEffect(() => void (menu || setSpawnQuery('')), [menu])
+  const functionMode = !menu?.from && /^f\s/i.test(spawnQuery)
+  const functionOptions = useMemo(() => (functionMode ? functionGraphs(store).map(functionOption) : []), [functionMode, store, menu])
+  const nodeOptions = useMemo(() => (menu ? spawnFor({ defs, spawn: sdefs, nodes: store.getState().nodes, edges: store.getState().edges, vars: store.getState().variables, sig: store.getState().signature, from: menu.from }) : []), [menu, defs, sdefs, store])
+  const options = functionMode ? functionOptions : nodeOptions
   const pick = (o: SpawnOption<KwDef>): void => {
     if (!menu) return
     const id = crypto.randomUUID()
     const pos = rf.screenToFlowPosition({ x: menu.x, y: menu.y })
+    const fnId = functionOfOption(o)
+    if (fnId !== undefined) {
+      const fn = functionGraphs(store).find((g) => g.id === fnId)
+      const call = [...defs].find(([k, d]) => k.startsWith('core/') && d.kind === 'CallFunction')?.[0]
+      if (fn && call) {
+        store.getState().addNode({ id, kind: call, pos, fields: callFields(fn) })
+        store.getState().setSelection([id])
+      }
+      return setMenu(null)
+    }
     const wire = spawnWire(menu.from, id, o)
     store.getState().addNode({ id, kind: o.def.kind, pos }, wire)
     store.getState().setSelection([id])
@@ -318,6 +335,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
           </>
         )}
         {menu && (
+          <div style={{ display: 'contents' }} onInput={(e) => e.target instanceof HTMLInputElement && setSpawnQuery(e.target.value)}>
           <SpawnMenu<KwDef>
             x={menu.x}
             y={menu.y}
@@ -328,6 +346,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
             onPick={pick}
             onClose={() => (setMenu(null), wrap.current?.focus())}
           />
+          </div>
         )}
       </div>
     </GraphContext.Provider>
