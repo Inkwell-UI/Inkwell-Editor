@@ -111,12 +111,12 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
     setEditing(undefined)
   }
   return (
-    <li className={`graph-row${active ? ' is-selected' : ''}`} data-testid={`graph-row-${id}`} draggable={scope === 'function'} onDragStart={(e) => e.dataTransfer.setData(FUNCTION_DRAG, id)}>
+    <li className={`graph-row graph-row-grid${active ? ' is-selected' : ''}`} data-testid={`graph-row-${id}`} draggable={scope === 'function'} onDragStart={(e) => e.dataTransfer.setData(FUNCTION_DRAG, id)}>
       <div className="graph-row-main">
         {editing !== undefined ? (
           <>
             <input autoFocus className="gn-input" aria-label={strings.nav.renameGraph} value={editing} onChange={(e) => setEditing(e.target.value)} onKeyDown={(e) => e.key === 'Enter' ? commit() : e.key === 'Escape' && setEditing(undefined)} data-testid="graph-rename-input" />
-            <Btn icon={Check} label={strings.nav.renameOk} onClick={commit} />
+            <span className="graph-row-actions"><Btn icon={Check} label={strings.nav.renameOk} onClick={commit} /></span>
           </>
         ) : (
           <>
@@ -125,21 +125,23 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
               <span className="layer-name">{name}</span>
               {!fn && <span className="layer-type">{scope === 'menu' ? strings.nav.menuGraph : strings.nav.componentGraph}</span>}
             </button>
-            {fn ? (
-              locked ? <span className="row-reveal">{extra}</span> : confirm ? confirmButtons : (
-                // a function row stays quiet until it is hovered or focused: its extra action, then "..." with rename and delete
-                <span className="row-reveal">
+            <span className="graph-row-actions">
+              {fn ? (
+                locked ? <span className="row-reveal">{extra}</span> : confirm ? confirmButtons : (
+                  // a function row stays quiet until it is hovered or focused: its extra action, then "..." with rename and delete
+                  <span className="row-reveal">
+                    {extra}
+                    <RowMenu label={strings.lib.more} testId="graph-more" items={[{ label: strings.lib.rename, onClick: () => setEditing(name) }, { label: strings.lib.delete, danger: true, onClick: () => setConfirm(true) }]} />
+                  </span>
+                )
+              ) : (
+                <>
+                  <Btn icon={Pencil} variant="quiet" label={strings.nav.renameGraph} onClick={() => setEditing(name)} testId="graph-rename" />
+                  {confirm ? confirmButtons : <Btn icon={Trash2} variant="quiet" label={strings.nav.deleteGraph(name)} onClick={() => setConfirm(true)} testId="graph-delete" />}
                   {extra}
-                  <RowMenu label={strings.lib.more} testId="graph-more" items={[{ label: strings.lib.rename, onClick: () => setEditing(name) }, { label: strings.lib.delete, danger: true, onClick: () => setConfirm(true) }]} />
-                </span>
-              )
-            ) : (
-              <>
-                <Btn icon={Pencil} variant="quiet" label={strings.nav.renameGraph} onClick={() => setEditing(name)} testId="graph-rename" />
-                {confirm ? confirmButtons : <Btn icon={Trash2} variant="quiet" label={strings.nav.deleteGraph(name)} onClick={() => setConfirm(true)} testId="graph-delete" />}
-                {extra}
-              </>
-            )}
+                </>
+              )}
+            </span>
           </>
         )}
       </div>
