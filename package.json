@@ -25,6 +25,7 @@
     "deploy:menu-i18n": "tsx scripts/deploy-menu-i18n.ts",
     "deploy:menu-themes": "tsx scripts/deploy-menu-themes.ts",
     "deploy:menu-gamepad": "tsx scripts/deploy-menu-gamepad.ts",
+    "deploy:inventory": "tsx scripts/deploy-inventory-replacement.ts",
     "sync:core-pack": "node scripts/sync-core-pack.mjs",
     "sync:contracts": "node scripts/sync-contracts.mjs"
   },
