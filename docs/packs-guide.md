@@ -4,7 +4,7 @@ A **node pack** adds nodes (for the graph editor) without a new editor version. 
 
 ## Add a pack to a project
 
-1. Open **Assets** (left side) > **Node packs**. It lists the bundled core pack and the packs this project has installed, each with its state.
+1. Open the **Library** tab (left side, Behaviour mode). Its **Packs** list shows the bundled core pack and the packs this project has installed, each with its state.
 2. **Add Pack**: search the **Packs Index** by name, or type `owner/name` or a GitHub URL.
 3. The confirm view shows the repo, the version, the **SHA-256** of the downloaded `pack.zip`, how many nodes it has and its changelog. Read it, then confirm. Only then is anything written.
 4. The project now has `packs.lock` (commit it: it pins the exact pack version and hash) and `packs-cache/` (the downloaded copy; git-ignored).
@@ -22,7 +22,7 @@ The new nodes appear in the graph editor's Add menu like any other.
 ## Update and restore
 
 - **Check Updates** (only on request) shows the newer release's changelog first; nothing changes until you accept.
-- On another computer: open the project and use **Download** in Node packs to restore everything `packs.lock` lists. A pack removed from the index still restores from the source in its lock entry, with the same hash.
+- On another computer: open the project and use **Download** in the Library tab to restore everything `packs.lock` lists. A pack removed from the index still restores from the source in its lock entry, with the same hash.
 
 ## Writing your own pack
 

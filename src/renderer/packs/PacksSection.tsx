@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Download, Info, Lock, Plus, RefreshCw, Search } from 'lucide-react'
+import { Info, Search } from 'lucide-react'
 import type { PackCandidate, PackIndexEntry, PacksState } from '../../shared/packs'
 import { inkwell } from '../hooks/api'
-import { reloadPacks, useLibraryPacks, usePackList } from '../hooks/usePacks'
+import { reloadPacks } from '../hooks/usePacks'
 import { useProject } from '../hooks/useProject'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
@@ -11,69 +11,27 @@ import { Dialog } from '../ui/Dialog'
 const S = strings.assets.packs
 
 /**
- * Assets > Node packs (UX 4.2; 0.5 Phase 2): the bundled core pack and every pack of packs.lock with its cache state; Add (Packs Index search or a
- * GitHub URL), Download (restore what the cache lacks, hash checked), Check Updates (changelog first). Main does all network and file work.
+ * The state behind the Library tab's pack list (docs/graphs.md, Downloaded packs): packs.lock with the cache state of each pack (missing or not matching the hash), and the download that
+ * restores what the cache lacks. The dialogs below are opened from the Library tab; main does all network and file work.
  */
-export function PacksSection({ title, empty }: { title: string; empty: string }) {
+export function usePackLock() {
   const project = useProject()
-  const loaded = usePackList()
-  const local = useLibraryPacks().filter((p) => p.origin === 'library' || p.origin === 'imported')
   const [state, setState] = useState<PacksState>({ locked: [] })
   const [busy, setBusy] = useState(false)
-  const [note, setNote] = useState<{ tone: 'ok' | 'error'; text: string } | undefined>()
-  const [dialog, setDialog] = useState<'add' | 'update' | undefined>()
   const refresh = useCallback(() => void inkwell?.getPacksState().then(setState), [])
   useEffect(refresh, [refresh, project?.dir])
-  const changed = (text: string): void => {
-    setNote({ tone: 'ok', text })
-    setDialog(undefined)
-    reloadPacks()
-    refresh()
-  }
-  const restore = async (): Promise<void> => {
-    if (!inkwell) return
+  /** Downloads the locked packs the cache lacks (hash checked). Returns the problems, if any. */
+  const restore = async (): Promise<string | undefined> => {
+    if (!inkwell) return undefined
     setBusy(true)
     const r = await inkwell.restorePacks()
     setBusy(false)
-    if (!r.ok) return setNote({ tone: 'error', text: r.error })
+    if (!r.ok) return r.error
     reloadPacks()
     refresh()
-    setNote(r.errors.length ? { tone: 'error', text: r.errors.join('\n') } : { tone: 'ok', text: S.restored(r.restored) })
+    return r.errors.length ? r.errors.join(' ') : undefined
   }
-  const noProject = project ? undefined : S.noProject
-  const nodesOf = (id: string): number | undefined => loaded.find((p) => p.id === id)?.nodes
-  const core = loaded.find((p) => p.id === 'core')
-  return (
-    <section aria-labelledby="assets-packs" data-testid="packs-section">
-      <header className="section-title">
-        <h3 id="assets-packs">{title}</h3>
-        <Btn icon={Plus} haspopup="dialog" reason={noProject ?? state.lockError} onClick={() => setDialog('add')} testId="packs-add">{S.add}</Btn>
-        <Btn icon={RefreshCw} haspopup="dialog" reason={noProject ?? state.lockError ?? (state.locked.length ? undefined : empty)} onClick={() => setDialog('update')} testId="packs-updates">{strings.assets.sections[1]!.action}</Btn>
-      </header>
-      {state.lockError && <p className="tone-error" role="alert">{state.lockError}</p>}
-      <ul className="plain" data-testid="pack-list">
-        {core && <li><span className="mono">core</span> {core.version} <span className="dim">{S.bundled}, {strings.assets.packNodes(core.nodes)}</span></li>}
-        {state.locked.map((p) => (
-          <li key={p.id} data-state={p.state}>
-            <Lock size={12} aria-hidden="true" /> <span className="mono">{p.id}</span> {p.version}{' '}
-            {p.state === 'ok' ? <span className="dim">{strings.assets.packNodes(nodesOf(p.id) ?? 0)}</span> : <span className="tone-warn">{p.state === 'missing' ? S.missing : S.mismatch}</span>}
-          </li>
-        ))}
-        {local.map((p) => (
-          <li key={p.id} data-state="local"><span className="mono">{p.id}</span> {p.version} <span className="dim">{strings.lib.origin[p.origin ?? 'library']}, {strings.lib.packContents(p.nodes, p.functions.length)}</span></li>
-        ))}
-      </ul>
-      {!state.locked.length && !local.length && !state.lockError && <p className="empty">{empty}</p>}
-      {state.locked.some((p) => p.state !== 'ok') && (
-        <div className="row-actions">
-          <Btn icon={Download} label={S.downloadTip} reason={busy ? S.working : undefined} onClick={() => void restore()} testId="packs-restore">{S.download}</Btn>
-        </div>
-      )}
-      {note && <p className={`tone-${note.tone} pack-note`} role={note.tone === 'error' ? 'alert' : 'status'}>{note.text}</p>}
-      {dialog === 'add' && <AddPackDialog onClose={() => setDialog(undefined)} onInstalled={(c) => changed(S.installed(c.id, c.version))} onCreated={() => (setDialog(undefined), reloadPacks())} />}
-      {dialog === 'update' && <UpdatePacksDialog onClose={() => setDialog(undefined)} onInstalled={(c) => changed(S.installed(c.id, c.version))} />}
-    </section>
-  )
+  return { project, state, busy, refresh, restore }
 }
 
 /** What a click on Add or Fetch resolves: a GitHub address (owner/name or a github.com link), not a word to search the index for. */
@@ -138,7 +96,7 @@ function Candidate({ c, action, trust, onCancel, onInstalled }: { c: PackCandida
 }
 
 /** One field takes a pack name (filters the Packs Index) or a GitHub address (a row of its own that fetches the latest release). */
-function AddPackDialog({ onClose, onInstalled, onCreated }: { onClose(): void; onInstalled(c: PackCandidate): void; onCreated(id: string): void }) {
+export function AddPackDialog({ onClose, onInstalled, onCreated }: { onClose(): void; onInstalled(c: PackCandidate): void; onCreated(id: string): void }) {
   const [tab, setTab] = useState<'github' | 'new'>('github')
   const [index, setIndex] = useState<{ list?: PackIndexEntry[]; error?: string }>({})
   const [query, setQuery] = useState('')
@@ -244,7 +202,7 @@ function NewPackForm({ onCreated, onCancel }: { onCreated(id: string): void; onC
   )
 }
 
-function UpdatePacksDialog({ onClose, onInstalled }: { onClose(): void; onInstalled(c: PackCandidate): void }) {
+export function UpdatePacksDialog({ onClose, onInstalled }: { onClose(): void; onInstalled(c: PackCandidate): void }) {
   const [r, setR] = useState<{ updates: PackCandidate[]; errors: string[] } | { error: string }>()
   useEffect(() => void inkwell?.checkPackUpdates().then((x) => setR(x.ok ? x : { error: x.error })), [])
   return (

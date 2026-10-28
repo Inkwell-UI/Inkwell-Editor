@@ -1,9 +1,10 @@
 import { useState, type DragEvent } from 'react'
-import { ChevronDown, ChevronRight, Copy, Lock } from 'lucide-react'
+import { ChevronDown, ChevronRight, Copy, Download, Lock, Plus } from 'lucide-react'
 import type { Graph } from '@inkwell-ui/spec'
 import { FUNCTION_DRAG, GraphRowView, GraphsList } from '../graph/GraphsList'
 import { inkwell } from '../hooks/api'
 import { reloadPacks, useLibraryPacks, type LibraryPack } from '../hooks/usePacks'
+import { AddPackDialog, UpdatePacksDialog, usePackLock } from '../packs/PacksSection'
 import { useActiveSwf } from '../hooks/useProject'
 import { copyLibraryFunction, forgetLibraryFunction, moveFunctionToPack, openLibraryFunction, renameLibraryFunction, useGraphDocs } from '../state/graphDocs'
 import { findGraphStore } from '../state/graphStore'
@@ -35,6 +36,14 @@ function PacksSection() {
   const swf = useActiveSwf()
   const packs = useLibraryPacks()
   const [replace, setReplace] = useState<{ id: string; path: string } | undefined>()
+  const [dialog, setDialog] = useState<'add' | 'update' | undefined>()
+  const { project, state, busy, refresh, restore } = usePackLock()
+  const unavailable = state.locked.filter((p) => p.state !== 'ok') // in packs.lock but not loaded: the file is missing or does not match its hash
+  const installed = (): void => (setDialog(undefined), reloadPacks(), refresh())
+  const download = async (): Promise<void> => {
+    const err = await restore()
+    if (err) toast({ tone: 'error', title: strings.lib.downloadFailed, text: err })
+  }
   const done = (r: Awaited<ReturnType<NonNullable<typeof inkwell>['importLibrary']>>): void => {
     if ('cancelled' in r) return
     if (!r.ok && 'exists' in r) return setReplace({ id: r.id, path: r.path })
@@ -48,17 +57,36 @@ function PacksSection() {
     <section aria-labelledby="lib-libs" data-testid="library-libraries">
       <header className="section-title">
         <h3 id="lib-libs">{strings.lib.libraries}</h3>
-        <Btn label={strings.lib.importTip} onClick={() => void importNew()} testId="library-import">{strings.lib.import}</Btn>
+        <Btn icon={Plus} haspopup="dialog" label={strings.lib.addTip} reason={project ? state.lockError : strings.assets.packs.noProject} onClick={() => setDialog('add')} testId="packs-add">{strings.assets.packs.add}</Btn>
+        <RowMenu
+          label={strings.lib.more}
+          testId="library-section-more"
+          items={[
+            { label: strings.lib.import, onClick: () => void importNew() },
+            ...(state.locked.length ? [{ label: strings.lib.checkUpdates, onClick: () => setDialog('update') }] : [])
+          ]}
+        />
       </header>
+      {state.lockError && <p className="tone-error" role="alert">{state.lockError}</p>}
       {replace && (
         <p className="tone-warn" role="alert">
           {strings.lib.importReplace(replace.id)} <Btn variant="danger" onClick={() => void doReplace()} testId="library-replace">{strings.lib.replace}</Btn> <Btn onClick={() => setReplace(undefined)}>{strings.lib.cancel}</Btn>
         </p>
       )}
-      {packs.length === 0 && <p className="empty">{strings.lib.librariesEmpty}</p>}
       <ul className="graph-list" role="list">
         {swf && packs.map((p) => <PackRow key={p.id} pack={p} swf={swf} />)}
+        {unavailable.map((p) => (
+          <li key={p.id} className="graph-row" data-state={p.state}>
+            <div className="graph-row-main">
+              <span className="layer-main"><Lock size={14} aria-hidden="true" className="type-icon" /><span className="layer-name">{p.id}</span><span className="layer-type">{p.version}</span></span>
+              <Btn icon={Download} reason={busy ? strings.assets.packs.working : undefined} label={strings.assets.packs.downloadTip} onClick={() => void download()} testId="packs-restore">{strings.assets.packs.download}</Btn>
+            </div>
+            <div className="graph-row-events tone-warn">{p.state === 'missing' ? strings.assets.packs.missing : strings.assets.packs.mismatch}</div>
+          </li>
+        ))}
       </ul>
+      {dialog === 'add' && <AddPackDialog onClose={() => setDialog(undefined)} onInstalled={installed} onCreated={installed} />}
+      {dialog === 'update' && <UpdatePacksDialog onClose={() => setDialog(undefined)} onInstalled={installed} />}
     </section>
   )
 }

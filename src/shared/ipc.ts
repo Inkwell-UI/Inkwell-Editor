@@ -184,7 +184,7 @@ export interface InkwellApi {
   removeLibraryFunction(packId: string, fnId: string): Promise<GraphResult>
   /** Saves an edited library function back into its pack folder. */
   saveLibraryFunction(packId: string, graph: Graph): Promise<GraphResult>
-  /** Assets > Node packs (packs.lock and the cache), the Packs Index, a download for the install/update dialog (`owner/name` or a GitHub URL; nothing written), install it, re-download locked packs the cache lacks (hash checked), and newer releases with changelogs. Never reject; offline is an `error`. */
+  /** Library tab > Packs (packs.lock and the cache), the Packs Index, a download for the install/update dialog (`owner/name` or a GitHub URL; nothing written), install it, re-download locked packs the cache lacks (hash checked), and newer releases with changelogs. Never reject; offline is an `error`. */
   getPacksState(): Promise<PacksState>
   getPacksIndex(): Promise<PackResult<{ index: PackIndexEntry[] }>>
   resolvePack(input: string): Promise<PackResult<{ candidate: PackCandidate }>>

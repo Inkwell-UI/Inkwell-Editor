@@ -206,10 +206,12 @@ export const strings = {
     more: 'More actions',
     rename: 'Rename',
     delete: 'Delete',
+    addTip: 'Add a pack from GitHub, or create a local one',
+    checkUpdates: 'Check for updates',
+    downloadFailed: 'Could not download the packs',
     libraries: 'PACKS',
-    librariesEmpty: 'No packs yet. New pack… makes an empty one; drag a function onto it. Import… adds a pack folder or zip.',
     packVersion: 'Version',
-    dragHint: 'Add packs in Assets > Node packs. Drag a function onto a project pack to put it in that pack',
+    dragHint: 'Drag a function onto a local pack to put it in that pack',
     dropTip: 'Drop a function here to move it into this pack',
     moved: (name: string, id: string) => `${name} moved into ${id}.`,
     moveFailed: 'Could not move the function',
@@ -246,8 +248,7 @@ export const strings = {
   assets: {
     title: 'Assets',
     sections: [
-      { id: 'as2', title: 'IMPORTED CLASSES', action: '+ Import', reason: 'Not available yet', empty: 'No imported classes.' },
-      { id: 'packs', title: 'NODE PACKS (packs.lock)', action: 'Check Updates', reason: undefined, empty: 'No node packs in packs.lock. Add one from the Packs Index or a GitHub URL.' }
+      { id: 'as2', title: 'IMPORTED CLASSES', action: '+ Import', reason: 'Not available yet', empty: 'No imported classes.' }
     ],
     packNodes: (n: number) => `${n} nodes`,
     packs: {

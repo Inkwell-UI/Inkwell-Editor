@@ -807,7 +807,7 @@ export function createSession(deps: SessionDeps) {
       }
       return afterPackChange({ ok: true as const })
     },
-    /** Assets > Node packs (docs/graphs.md, Downloaded packs): state, index search, add by GitHub ref, install after the dialog, restore from packs.lock, check updates. Never reject. */
+    /** Library tab > Packs (docs/graphs.md, Downloaded packs): state, index search, add by GitHub ref, install after the dialog, restore from packs.lock, check updates. Never reject. */
     packsState: async (): Promise<PacksState> => (projectDir ? packManager.state(projectDir) : { locked: [] }),
     packsIndex: () => packManager.index(),
     async packsResolve(input: string): Promise<PackResult<{ candidate: PackCandidate }>> {
