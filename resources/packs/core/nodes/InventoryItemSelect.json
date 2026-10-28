@@ -29,8 +29,6 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/InventoryItemSelect.as2",
-  "extra": {
-    "contract": "InventoryMenu"
-  }
+  "contract": "InventoryMenu",
+  "as2Template": "templates/InventoryItemSelect.as2"
 }

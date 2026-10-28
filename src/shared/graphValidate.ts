@@ -36,16 +36,16 @@ export interface ValidateCtx {
   siblings?: readonly Graph[]
   /** The SWF's target kind (S7, S9): a HUD widget runs without the Inkwell Runtime (lint `runtime-required`), `saved` variables belong to a custom menu. Absent = those checks are skipped. */
   target?: 'hudWidget' | 'customMenu' | 'menuReplacement'
-  /** A menu replacement's `target.contract` (W5): contract nodes (`extra.contract`) are only allowed in a replacement of that contract. */
+  /** A menu replacement's `target.contract` (W5): contract nodes (`NodeDef.contract`) are only allowed in a replacement of that contract. */
   contract?: string
 }
 
 /** S7/S8: the node only works in a custom menu served by the Inkwell Runtime (the definition's `requiresRuntime`; core pack 0.3.0 sets it on all 20 such nodes). */
 export const needsRuntime = (d: NodeDef): boolean => d.requiresRuntime === true
 
-/** W5: the contract (engine menu) a contract node talks to (`extra.contract`, core pack 0.5.1 Inventory nodes); undefined for every other node. */
+/** W5: the contract (engine menu) a contract node talks to: the node field `contract` (Spec `NodeDef.contract`, core pack 0.5.3), else `extra.contract` of packs before it; undefined for every other node. */
 export const nodeContract = (d: NodeDef): string | undefined => {
-  const c = (d.extra as { contract?: unknown } | undefined)?.contract
+  const c = d.contract ?? (d.extra as { contract?: unknown } | undefined)?.contract
   return typeof c === 'string' ? c : undefined
 }
 

@@ -5,7 +5,7 @@ import { previewMock } from './replacementMock'
 // (scripts/spike-05b.ts, which worked in game with and without SkyUI): the class `mods.<modId>.<Swf>Contract`, installed at `_root.inkwellContract`
 // before any graph starts. It defines the contract's root functions, the object a function with members returns (the Inventory item list), the
 // ExternalInterface `call`/`respond` bridge of gfx.io.GameDelegate and the `_global` values the picked layers ask for (SkyUI 5.2's version statics).
-// Contract nodes (core pack, `extra.contract`) use only `on`, `send`, `select` and `list`; a Key listener fires `key:<Name>` handlers (Inventory: On Key) (Core-Pack docs/templates.md, Contract nodes). Pure text.
+// Contract nodes (core pack, `NodeDef.contract`) use only `on`, `send`, `select` and `list`; a Key listener fires `key:<Name>` handlers (Inventory: On Key) (Core-Pack docs/templates.md, Contract nodes). Pure text.
 
 export interface ReplacementGlue {
   /** The class source (`__Packages/mods/<mod>/<cls>.as`). */

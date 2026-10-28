@@ -24,10 +24,10 @@
     }
   ],
   "fields": {},
+  "contract": "InventoryMenu",
   "as2Template": "templates/InventoryOnInvalidateList.as2",
   "extra": {
     "entry": true,
-    "contract": "InventoryMenu",
     "contractCallback": "InvalidateListData"
   }
 }

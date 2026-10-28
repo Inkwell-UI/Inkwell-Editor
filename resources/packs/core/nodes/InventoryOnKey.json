@@ -20,9 +20,9 @@
       "description": "Up, Down, Left, Right, Enter, Tab, Escape or a letter"
     }
   },
+  "contract": "InventoryMenu",
   "as2Template": "templates/InventoryOnKey.as2",
   "extra": {
-    "entry": true,
-    "contract": "InventoryMenu"
+    "entry": true
   }
 }

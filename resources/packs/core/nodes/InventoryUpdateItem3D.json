@@ -24,8 +24,6 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/InventoryUpdateItem3D.as2",
-  "extra": {
-    "contract": "InventoryMenu"
-  }
+  "contract": "InventoryMenu",
+  "as2Template": "templates/InventoryUpdateItem3D.as2"
 }

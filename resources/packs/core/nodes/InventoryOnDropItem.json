@@ -14,10 +14,10 @@
     }
   ],
   "fields": {},
+  "contract": "InventoryMenu",
   "as2Template": "templates/InventoryOnDropItem.as2",
   "extra": {
     "entry": true,
-    "contract": "InventoryMenu",
     "contractCallback": "DropItem"
   }
 }

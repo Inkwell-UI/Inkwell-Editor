@@ -19,10 +19,10 @@
     }
   ],
   "fields": {},
+  "contract": "InventoryMenu",
   "as2Template": "templates/InventoryOnAttemptEquip.as2",
   "extra": {
     "entry": true,
-    "contract": "InventoryMenu",
     "contractCallback": "AttemptEquip"
   }
 }
