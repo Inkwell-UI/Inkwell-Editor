@@ -99,7 +99,7 @@
 .lib-form { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 8px; }
 .graph-row[draggable="true"] { cursor: grab; }
 .section-title.library-heading { margin-top: 0; } /* the first thing in the panel: the panel's own padding is the gap above it */
-.library-children { margin-left: 16px; } /* the functions of a group sit under its name */
+.graph-list.library-children, .empty.library-children { margin-left: 16px; } /* the functions of a group sit under its name */
 .row-reveal { display: inline-flex; gap: 2px; opacity: 0; }
 .graph-row-main:hover .row-reveal, .graph-row-main:focus-within .row-reveal, .row-reveal:has([aria-expanded='true']) { opacity: 1; }
 .row-menu { list-style: none; margin: 0; padding: 0; min-width: 130px; }
