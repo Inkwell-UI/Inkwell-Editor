@@ -23,6 +23,8 @@ export interface GenerateOptions {
   glyphs?: GlyphLookup
   /** Visual-scripting graphs of this SWF compiled to AS2 classes (docs/codegen.md). Absent or empty: nothing is added, the output is unchanged. */
   graphs?: { graphs: readonly Graph[]; packs: CodegenPacks }
+  /** Components kept away from the design (`componentSources.ts`): each is compiled into a library symbol with a linkage name (`componentLinkage`) that a graph attaches at runtime. */
+  components?: readonly { id: string; name: string; nodes: Record<string, Node> }[]
   /** Overlay `dataBinding` strings by Figma layer id; applied by the graph classes (docs/codegen.md, Data binding). Without graphs nothing is bound. */
   bindings?: Record<string, string>
   /** Overlay `role` by Figma layer id. A customMenu SWF makes its `button` and `list` layers focusable, and the preview's Play panel can click the `button` ones. */
@@ -74,6 +76,8 @@ export interface GenerateOptions {
 }
 
 export interface Generated {
+  /** The symbols compiled for `GenerateOptions.components`: Figma id, linkage name (what `attachMovie` takes) and character id. */
+  componentSymbols: { id: string; linkage: string; charId: number }[]
   /** Complete tag list, ready for `writeSwf` (ends with ShowFrame + End). */
   tags: Buffer[]
   /** SVG per shape, keyed by SWF character id (the file name FFDec -importShapes expects) and mapped to its node id. */
@@ -261,6 +265,9 @@ const ASCII = Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)).
 /** An instance or a component draws like the frame it is (its own background, clipping and auto layout, its real children); the link to the main component only matters to behaviour. */
 const asFrame = (n: Node | undefined) => (n && (n.type === 'instance' || n.type === 'component') ? { ...n, type: 'frame' as const, clipContent: n.clipContent ?? false } : n)
 
+/** The linkage name of a component's symbol (what `attachMovie` takes): stable, made from its Figma id. */
+export const componentLinkage = (figmaId: string): string => `inkwell_component_${figmaId.replace(/[^A-Za-z0-9]+/g, '_')}`
+
 export { ident } // shared with the editor UI (default instance names); one definition in shared/overlay.ts
 
 const comment = (s: string): string => s.replace(/[\r\n]+/g, ' ').replace(/\*\//g, '* /')
@@ -397,7 +404,9 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   const lint: LintIssue[] = []
   // W4: prompt glyphs are compiled from synthetic layers added to this build's copy of the IR (never saved); their lint is reported on the prompt
   const withGlyphs = source.target.kind === 'customMenu' && !opts.widget && opts.prompts && Object.keys(opts.prompts).length ? withPromptGlyphs(source, opts.prompts) : undefined
-  const ir = withGlyphs?.ir ?? source
+  const ir0 = withGlyphs?.ir ?? source
+  // the components' own layers are looked up like any other layer: Figma ids are unique across the file, so their nodes join this build's copy of the IR (never saved)
+  const ir = opts.components?.length ? { ...ir0, nodes: { ...Object.fromEntries(opts.components.flatMap((c) => Object.entries(c.nodes))), ...ir0.nodes } } : ir0
   if (withGlyphs) lint.push(...withGlyphs.lint)
   const defs: Buffer[] = []
   const shapes: Generated['shapes'] = []
@@ -675,6 +684,28 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   }
   if (root?.type === 'frame') lint.push(...offStage(ir))
 
+  // components (C2.2): each is a symbol of its own, exported under its linkage name; its layers are placed like a frame's, under a path of their own
+  const componentSymbols: Generated['componentSymbols'] = []
+  const componentTags: Buffer[] = []
+  for (const c of opts.components ?? []) {
+    // a component set draws its first variant (`variants[0].node` is the component itself for a single component)
+    const own = ir.nodes[c.id]
+    const first = own?.type === 'component' ? own.variants?.[0]?.node : undefined
+    const drawn = asFrame(ir.nodes[first ?? c.id])
+    if (!drawn || drawn.type !== 'frame') {
+      lint.push(issue('warning', 'component-missing', c.id, `The component "${c.name}" has nothing to compile; it is skipped.`))
+      continue
+    }
+    seen.add(c.id)
+    seen.add(drawn.id)
+    const path = `component.${ident(c.id.replace(/[^A-Za-z0-9]+/g, '_'))}`
+    const id = alloc()
+    defs.push(T.sprite(id, place(drawn, path, ...background(drawn, path))))
+    const linkage = componentLinkage(c.id)
+    componentTags.push(T.exportAssets([{ id, name: linkage }]))
+    componentSymbols.push({ id: c.id, linkage, charId: id })
+  }
+
   const mod = ident(opts.modId)
   const swfCls = ident(ir.id).replace(/^_?([a-z])/, (_, c: string) => c.toUpperCase())
   const as2: Generated['as2'] = []
@@ -765,6 +796,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
     ...[...fonts].map(([name, id]) => T.importAssets2('gfxfontlib.swf', { id, name })),
     ...defs,
     ...extra,
+    ...componentTags,
     ...mainPlaces,
     ...(frameCode.length ? [T.doAction()] : []),
     T.showFrame(),
@@ -776,7 +808,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   ]
   // synthetic glyph layers: their findings belong to the prompt, their font rows are not the author's text
   const lintOut = withGlyphs ? lint.map((l) => (isGlyphNode(l.nodeId) ? { ...l, nodeId: glyphOwner(l.nodeId), ...(l.nodeName !== undefined ? { nodeName: ir.nodes[glyphOwner(l.nodeId)]?.name ?? l.nodeName } : {}) } : l)) : lint
-  return { tags, shapes, as2, lint: lintOut, fonts: withGlyphs ? fontRows.filter((f) => !isGlyphNode(f.nodeId)) : fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls, layerPaths: Object.fromEntries(layerPaths), contractProvided: glue?.provided ?? {} }
+  return { componentSymbols, tags, shapes, as2, lint: lintOut, fonts: withGlyphs ? fontRows.filter((f) => !isGlyphNode(f.nodeId)) : fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls, layerPaths: Object.fromEntries(layerPaths), contractProvided: glue?.provided ?? {} }
 }
 
 /** `node-off-stage`: a visible layer whose box lies entirely outside the frame (the stage), so it never shows. One warning per subtree. */

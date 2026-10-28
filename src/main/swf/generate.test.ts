@@ -189,6 +189,18 @@ describe('generate', () => {
       expect(g.shapes[0]!.svg).toContain('stroke-width="4"')
     })
 
+    it('a component kept away from the design becomes a symbol with a linkage name, its layers compiled and placed inside it', () => {
+      const comp = { ...frame('c1', ['cs']), type: 'component', variants: [{ name: 'Default', node: 'c1' }] }
+      const g = generate(swf([frame('f', ['s']), rectShape('s')]), { modId: 'MyMod', components: [{ id: 'c1', name: 'ListItem', nodes: { c1: comp as never, cs: { ...rectShape('cs'), parent: 'c1' } } }] })
+      expect(g.componentSymbols).toMatchObject([{ id: 'c1', linkage: 'inkwell_component_c1' }])
+      expect(g.shapes.map((x) => x.nodeId).sort()).toEqual(['cs', 's'])
+      expect(g.lint).toEqual([])
+      const t = tagsOf(g)
+      expect(t.some((x) => x.code === TAG.ExportAssets && x.body.includes('inkwell_component_c1'))).toBe(true)
+      expect(g.layerPaths['cs']).toMatch(/^component\.c1\./)
+      expect(generate(swf([frame('f', ['s']), rectShape('s')]), { modId: 'MyMod' }).componentSymbols).toEqual([]) // nothing asked, nothing added
+    })
+
     it('an image without its asset -> image-missing-asset; compile continues', () => {
       const img = { ...rectShape('i'), type: 'image', asset: 'h', scaleMode: 'fill' } as never
       const g = gen([frame('f', ['i', 's']), img, rectShape('s')])
