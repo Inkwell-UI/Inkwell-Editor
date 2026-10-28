@@ -1,0 +1,29 @@
+{
+  "kind": "RawAS2",
+  "major": 1,
+  "title": "Raw AS2",
+  "category": "Debug",
+  "milestone": "0.5",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "code": {
+      "type": "string",
+      "pattern": "^[\\s\\S]*$",
+      "format": "multiline",
+      "default": ""
+    }
+  },
+  "as2Template": "templates/RawAS2.as2"
+}

@@ -431,7 +431,9 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
             )
         } else {
           if (/\{\{(next|guarded)\./.test(raw)) throw new Skip('a continuation placeholder must be alone on its line.')
-          out.push({ t: i.menu ? toBridgeLog(fill(raw, n, d, args, outs)) : fill(raw, n, d, args, outs), n: n.id })
+          const filled = i.menu ? toBridgeLog(fill(raw, n, d, args, outs)) : fill(raw, n, d, args, outs)
+          // a multi-line field (Raw AS2) must stay one entry per line, or the source map's line numbers drift
+          for (const t of filled.split(/\r?\n/)) out.push({ t, n: n.id })
           if (flow && raw === lines[0]) {
             if (!isEntry) out.push({ t: `__g.rn("${safeId(n.id)}");`, n: n.id }) // the line after the header comment (an entry reports in its handler)
             const tm = timerOf(d)

@@ -1715,6 +1715,26 @@ exports[`golden AS2 per node kind > core/Random@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/RawAS2@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/RawAS2@1
+                
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/Refresh@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;

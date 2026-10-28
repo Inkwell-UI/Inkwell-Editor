@@ -161,3 +161,16 @@ describe('Get Time and On Update (V13.4: time from getTimer, no per-frame event)
     expect(out).not.toContain('onEnterFrame')
   })
 })
+
+describe('Raw AS2', () => {
+  it('writes its code verbatim, one source-map line per code line, inside the guarded handler', () => {
+    const g = graph('raw', [entry, node('x', 'core/RawAS2@1', { code: 'var a = 1;\nif (a) {\n    trace("{{x}}");\n}' })], [wire('e', 'then', 'x', 'in')])
+    const r = gen(g)
+    expect(r.issues).toEqual([])
+    const lines = r.classes[0]!.source.split('\n')
+    const i = lines.findIndex((l) => l.trim() === 'var a = 1;')
+    expect(lines.slice(i, i + 4).map((l) => l.trim())).toEqual(['var a = 1;', 'if (a) {', 'trace("{{x}}");', '}'])
+    expect(lines[i + 1]!.startsWith(lines[i]!.match(/^\s*/)![0])).toBe(true)
+    for (let k = 0; k < 4; k++) expect(r.classes[0]!.map.lines[String(i + 1 + k)]).toBe('x')
+  })
+})
