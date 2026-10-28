@@ -2,12 +2,14 @@ import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { NodeDef, PackManifest } from '@inkwell-ui/spec'
 import type { LoadedPack, PackSet } from '../../shared/graphs'
+import { TOOL_VERSION } from '../../shared/product'
+import { satisfies } from '../../shared/semverRange'
 
 /**
  * Reads a pack folder: `manifest.json` plus `nodes/*.json` (one NodeDef each), validated with the Spec schemas. Packs are data only; nothing in a
  * pack is ever executed. A node file that fails to read or validate is listed in `problems` and skipped, the rest of the pack still loads.
  * Downloaded packs come here too, from `<project>/packs-cache/` once their zip matches packs.lock (`manager.ts`).
- * shortcut: `compatible.tool` is kept but not evaluated: the editor's own version (package.json 0.1.0) is not the tool version packs name (core says ^0.2.0); evaluate it once the editor carries a real version (Phase 7).
+ * A pack whose `compatible.tool` the editor's version (`TOOL_VERSION`) does not satisfy is refused with a plain message and loads no nodes (its graphs keep their nodes as unknown, never dropped).
  */
 export async function loadPack(dir: string): Promise<{ pack?: LoadedPack; problems: string[] }> {
   const problems: string[] = []
@@ -17,6 +19,7 @@ export async function loadPack(dir: string): Promise<{ pack?: LoadedPack; proble
   } catch (e) {
     return { problems: [`${dir}: manifest.json: ${e instanceof Error ? e.message : String(e)}`] }
   }
+  if (!satisfies(TOOL_VERSION, manifest.compatible.tool)) return { problems: [`${manifest.id}@${manifest.version}: built for Inkwell ${manifest.compatible.tool}; this is ${TOOL_VERSION}. Update Inkwell or the pack.`] }
   const nodes: NodeDef[] = []
   const seen = new Set<string>()
   const files = (await readdir(join(dir, 'nodes')).catch(() => [])).filter((f) => f.endsWith('.json')).sort()
