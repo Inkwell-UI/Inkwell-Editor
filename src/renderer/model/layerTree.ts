@@ -76,12 +76,12 @@ export function buildLayerTree(ir: Swf, overlay: OverlayDoc | undefined, lint: r
 }
 
 /** Keeps nodes whose name, role or type contains the query (case-insensitive) and the ancestors leading to them. Empty query keeps all. */
-export function filterTree(root: LayerNode, query: string): LayerNode | undefined {
+export function filterTree(root: LayerNode, query: string, alsoHit: (id: string) => boolean = () => false): LayerNode | undefined {
   const q = query.trim().toLowerCase()
   if (!q) return root
   const go = (n: LayerNode): LayerNode | undefined => {
     const kids = n.children.flatMap((c) => go(c) ?? [])
-    const hit = n.name.toLowerCase().includes(q) || (n.role ?? '').toLowerCase().includes(q) || n.type.toLowerCase().includes(q)
+    const hit = n.name.toLowerCase().includes(q) || (n.role ?? '').toLowerCase().includes(q) || n.type.toLowerCase().includes(q) || alsoHit(n.id)
     return hit || kids.length ? { ...n, children: kids } : undefined
   }
   return go(root)
@@ -95,10 +95,14 @@ export function filterTree(root: LayerNode, query: string): LayerNode | undefine
 /** The row id (and selection id) of a component instance a graph made: its clip path under a prefix no Figma id has. */
 export const runtimeRowId = (clipPath: string): string => `runtime:${clipPath}`
 
-export function withRuntimeRows(rows: readonly LayerRow[], spawned: readonly { parent: string; component: string; path: string }[], nameOf: (componentId: string) => string): LayerRow[] {
+/** Whether an instance a graph made matches the (lower-cased) filter: by its name or its Runtime tag. */
+export const runtimeMatches = (name: string, q: string): boolean => !q || name.toLowerCase().includes(q) || 'runtime'.includes(q)
+
+export function withRuntimeRows(rows: readonly LayerRow[], spawned: readonly { parent: string; component: string; path: string }[], nameOf: (componentId: string) => string, query = ''): LayerRow[] {
   const out = [...rows]
+  const q = query.trim().toLowerCase()
   for (const parent of rows) {
-    const mine = spawned.filter((s) => s.parent === parent.id)
+    const mine = spawned.filter((s) => s.parent === parent.id && runtimeMatches(nameOf(s.component), q))
     if (!mine.length) continue
     // they are the layer's children: it gets a twisty of its own, and collapsing it hides them
     const i = out.indexOf(parent)

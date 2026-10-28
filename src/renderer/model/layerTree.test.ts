@@ -53,6 +53,12 @@ describe('withRuntimeRows', () => {
     expect(out[3]).toMatchObject({ name: 'ListItem', runtime: true, depth: 2 })
     expect(withRuntimeRows([row('lone', 1)], [{ parent: 'lone', component: 'c1', path: 'x' }], () => 'n')[0]).toMatchObject({ hasChildren: true }) // a layer with only runtime children is expandable too
   })
+  it('a filter keeps the instances whose name (or the Runtime tag) matches, and none otherwise', () => {
+    const spawned = [{ parent: 'p', component: 'c1', path: 'x' }]
+    expect(withRuntimeRows(rows, spawned, () => 'ListItem', 'list').map((r) => r.id)).toContain('runtime:x')
+    expect(withRuntimeRows(rows, spawned, () => 'ListItem', 'runt').map((r) => r.id)).toContain('runtime:x')
+    expect(withRuntimeRows(rows, spawned, () => 'ListItem', 'zzz').map((r) => r.id)).not.toContain('runtime:x')
+  })
   it('a collapsed parent, or one that is not listed, shows none', () => {
     const collapsed = [row('p', 1, { hasChildren: true, expanded: false })]
     expect(withRuntimeRows(collapsed, [{ parent: 'p', component: 'c1', path: 'x' }], () => 'n')).toHaveLength(1) // still one row: the twisty stays so it can be opened

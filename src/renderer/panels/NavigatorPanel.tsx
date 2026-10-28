@@ -4,7 +4,7 @@ import { GraphsList } from '../graph/GraphsList'
 import { useComponentIr } from '../hooks/useComponentIr'
 import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
-import { buildLayerTree, filterTree, flattenTree, withRuntimeRows, type Badge, type LayerRow } from '../model/layerTree'
+import { buildLayerTree, filterTree, flattenTree, runtimeMatches, withRuntimeRows, type Badge, type LayerRow } from '../model/layerTree'
 import { computeOrphans } from '../model/orphans'
 import { inkwell } from '../hooks/api'
 import { discardOrphanSwf, discardOverlayOrphan, relinkOverlayOrphan } from '../state/orphanActions'
@@ -68,11 +68,14 @@ export function NavigatorPanel() {
     () => (comp === 'unavailable' ? undefined : comp ? buildLayerTree(comp.ir, comp.inSwf ? (overlay ?? swf?.overlay) : undefined, []) : swf ? buildLayerTree(swf.ir, overlay ?? swf.overlay, lint) : undefined),
     [comp, swf, overlay, lint]
   )
-  const filtered = tree ? filterTree(tree, query) : undefined
   const spawned = useTraceStore((s) => s.spawned)
+  const nameOf = (id: string): string => sync?.pageComponents?.find((c) => c.id === id)?.name ?? id
+  const q = query.trim().toLowerCase()
+  // a layer stays in a filtered list when an instance a graph made under it matches
+  const filtered = tree ? filterTree(tree, query, (id) => !comp && spawned.some((s) => s.parent === id && runtimeMatches(nameOf(s.component), q))) : undefined
   const designRows: LayerRow[] = filtered ? flattenTree(filtered, collapsed, query.trim() !== '') : []
   // the instances a graph made while the preview runs, under the layer they were added to (not in a component's own layer list)
-  const flat = comp || query.trim() ? designRows : withRuntimeRows(designRows, spawned, (id) => sync?.pageComponents?.find((c) => c.id === id)?.name ?? id)
+  const flat = comp ? designRows : withRuntimeRows(designRows, spawned, nameOf, query)
   const orphans = useMemo(() => computeOrphans((project?.swfs ?? []).map((s) => (s.id === swf?.id && overlay ? { ...s, overlay } : s))), [project, swf, overlay])
   const unreachable = [...(sync?.looseLayers ?? []).map((l) => ({ ...l, note: strings.nav.unreachableLoose })), ...(sync?.unreachableNodes ?? []).map((l) => ({ id: l.id, name: l.name, note: strings.nav.unreachableInSwf(l.swfName) }))]
 
