@@ -161,7 +161,7 @@ async function main(): Promise<void> {
 
   const menu = {
     depth: 3, flags: { closeOnEscape: true, cursor: true, modal: true, pausesGame: true }, inputContext: 'menuMode', minRuntime: '0.4.0',
-    name: MENU, specVersion: 7, swf: `Interface/Inkwell/${MOD}/Menu.swf`, triggers: { hotkey: 88, modEvent: `${MOD}_Open`, papyrus: true }
+    name: MENU, specVersion: 7, swf: `Interface/Inkwell/${MOD}/Menu.swf`, triggers: { hotkey: 68, modEvent: `${MOD}_Open`, papyrus: true }
   }
   const mj = resolve(dest, 'SKSE', 'Plugins', 'Inkwell', 'menus', `${MENU}.json`)
   mkdirSync(dirname(mj), { recursive: true })
@@ -170,6 +170,6 @@ async function main(): Promise<void> {
   const outDll = resolve(dest, 'SKSE', 'Plugins', 'Inkwell.dll')
   mkdirSync(dirname(outDll), { recursive: true })
   copyFileSync(dll, outDll)
-  console.log(`deployed spike 05E to ${dest} (menu ${MENU}, hotkey F12)`)
+  console.log(`deployed spike 05E to ${dest} (menu ${MENU}, hotkey F10)`)
 }
 main().catch((e: unknown) => { console.error(e instanceof Error ? e.message : e); process.exitCode = 1 })
