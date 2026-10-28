@@ -166,7 +166,7 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .layer-row { display: flex; align-items: center; gap: 2px; border-radius: 4px; min-height: 26px; }
 .layer-row:hover { background: var(--hover); }
 .layer-row.is-selected { background: var(--accent-bg); box-shadow: inset 2px 0 0 var(--accent); }
-.layer-row.is-runtime { font-style: italic; border: 1px dashed var(--line-strong); cursor: default; }
+.layer-row.is-runtime { font-style: italic; cursor: default; }
 .layer-row.is-runtime .layer-type { font-style: normal; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); }
 .twisty { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 0; color: var(--fg-dim); cursor: pointer; padding: 0; flex: none; }
 .layer-main { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; text-align: left; font: inherit; color: var(--fg); background: transparent; border: 0; padding: 3px 4px; cursor: pointer; border-radius: 4px; }
