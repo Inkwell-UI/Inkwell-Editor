@@ -7,13 +7,13 @@ import { GraphCanvas } from '../graph/GraphCanvas'
 import { useGraphActions } from '../graph/useGraphActions'
 import { inkwell } from '../hooks/api'
 import { useSwfGraphs } from '../hooks/useGraphs'
-import { usePacks } from '../hooks/usePacks'
+import { useLibraryPacks, usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
 import { eventNodes } from '../model/graphModel'
 import { tidyPositions } from '../model/graphLayout'
 import { ownersOfGraph } from '../model/graphNav'
-import { makeFunction, menuGraphId, openGraphs, setActiveGraph, useGraphDocs } from '../state/graphDocs'
-import type { GraphStore } from '../state/graphStore'
+import { makeFunction, menuGraphId, openGraphs, openLibraryFunction, setActiveGraph, useGraphDocs } from '../state/graphDocs'
+import { findGraphStore, type GraphStore } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
@@ -109,8 +109,17 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
   const node = selectedNode ? nodeIndex(nodes).get(selectedNode) : undefined
   const nodeTitle = node ? (defs.get(node.data.kind)?.title ?? node.data.kind) : undefined
   const menu = menuGraphId(swf.id)
-  const ids = useGraphDocs((s) => s.ids[swf.id]) ?? [graphId]
+  const allIds = useGraphDocs((s) => s.ids[swf.id]) ?? [graphId]
   const names = new Map(openGraphs(swf.id).map((g) => [g.id, g.name])) // the open graph's own name is live (`name`); siblings update on the next render
+  // the dropdown lists graphs of the same kind: from a graph, the SWF's graphs; from a function, the functions that can be edited (the SWF's and those of local packs)
+  const isFunction = useStore(store, (s) => s.meta.scope === 'function')
+  const localPacks = useLibraryPacks().filter((p) => p.origin === 'library')
+  const choices: { id: string; label: string; pick(): void }[] = isFunction
+    ? [
+        ...allIds.filter((id) => findGraphStore(swf.id, id)?.getState().meta.scope === 'function').map((id) => ({ id, label: id === graphId ? name : (names.get(id) ?? id), pick: () => setActiveGraph(swf.id, id) })),
+        ...localPacks.flatMap((p) => p.functions.map((fn) => ({ id: fn.id, label: `${fn.id === graphId ? name : fn.name} (${p.id})`, pick: () => openLibraryFunction({ id: swf.id, name: swf.name }, fn) })))
+      ]
+    : allIds.filter((id) => findGraphStore(swf.id, id)?.getState().meta.scope !== 'function').map((id) => ({ id, label: id === graphId ? name : (names.get(id) ?? id), pick: () => setActiveGraph(swf.id, id) }))
   return (
     <>
       <nav className="breadcrumb" aria-label={strings.graph.breadcrumbLabel}>
@@ -128,9 +137,9 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
         >
           {(close) => (
             <ul className="menu" role="listbox" aria-label={strings.graph.pickGraph}>
-              {ids.map((id) => (
-                <li key={id} role="option" aria-selected={id === graphId}>
-                  <button type="button" className={id === graphId ? 'is-selected' : undefined} onClick={() => { setActiveGraph(swf.id, id); close() }}>{id === graphId ? name : (names.get(id) ?? id)}</button>
+              {choices.map((c) => (
+                <li key={c.id} role="option" aria-selected={c.id === graphId}>
+                  <button type="button" className={c.id === graphId ? 'is-selected' : undefined} onClick={() => { c.pick(); close() }}>{c.label}</button>
                 </li>
               ))}
             </ul>
