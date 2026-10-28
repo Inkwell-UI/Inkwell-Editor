@@ -54,6 +54,24 @@ for (const f of F) {
   tags.push(T.defineEditText({ id, wPx: f.w, hPx: f.h, fontId: FONT_ALIAS, sizePx: f.size, color: white, text: f.text, wordWrap: !!f.multiline, multiline: !!f.multiline, autoSize: false, align: 0, leadingPx: 0 }))
   tags.push(T.placeObject2({ depth: depth++, charId: id, name: f.name, x: f.x, y: f.y }))
 }
+// S-G (2026-10-28): the game's button bitmaps are exported by Interface/hudmenu.swf (360_A.png, PS3_A.png, Enter.png, ...; found with FFDec, not shipped). Import them like a font from gfxfontlib.swf:
+// one ImportAssets2 per asset, then a shape filled with the imported bitmap. Left group: url 'hudmenu.swf' (like gfxfontlib.swf); right group: '../../hudmenu.swf' (relative to this SWF).
+const IMPORTS: { url: string; name: string }[] = [
+  ...['360_A.png', '360_B.png', 'PS3_A.png', 'Enter.png'].map((name) => ({ url: 'hudmenu.swf', name })),
+  ...['360_A.png', '360_B.png', 'PS3_A.png', 'Enter.png'].map((name) => ({ url: '../../hudmenu.swf', name }))
+]
+IMPORTS.forEach((im, i) => {
+  const bid = nextId++
+  const sid = nextId++
+  const lid = nextId++
+  const x = 1000 + (i % 4) * 190
+  const y = 540 + Math.floor(i / 4) * 200
+  tags.push(T.importAssets2(im.url, { id: bid, name: im.name }))
+  tags.push(T.defineBitmapShape({ id: sid, bitmapId: bid, rect: { x: 0, y: 0, w: 64, h: 64 }, scale: 1, tx: 0, ty: 0 }))
+  tags.push(T.placeObject2({ depth: depth++, charId: sid, x, y }))
+  tags.push(T.defineEditText({ id: lid, wPx: 180, hPx: 60, fontId: FONT_ALIAS, sizePx: 16, color: white, text: `${i < 4 ? 'hudmenu.swf' : '../../hudmenu.swf'}${im.name}`, wordWrap: true, multiline: true, autoSize: false, align: 0, leadingPx: 0 }))
+  tags.push(T.placeObject2({ depth: depth++, charId: lid, x, y: y + 70 }))
+})
 tags.push(T.doAction(), T.showFrame(), T.endTag())
 
 const as2 = `// Spike 05 S-E (not product code).
