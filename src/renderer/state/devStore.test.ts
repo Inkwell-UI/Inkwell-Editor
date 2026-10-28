@@ -133,13 +133,11 @@ describe('Trace & Watch panel', () => {
   it('Ruffle preview source is the default and keeps its notice', () => {
     const html = render()
     expect(html).toContain(strings.dev.sourceRuffle)
-    expect(html).toContain(strings.trace.notice)
   })
   it('Game source, never connected: the empty state "Start Skyrim with Dev Mode enabled" and no hot reload', () => {
     useDevStore.getState().setSource('game')
     const html = render()
     expect(html).toContain('Start Skyrim with Dev Mode enabled')
-    expect(html).toContain(strings.dev.gameNotice)
     expect(html).toContain(strings.dev.reloadNeedsGame) // Trigger Hot Reload carries its reason
   })
   it('Game source with a session: lines with level, source and node id, the watch table; disconnected it is greyed with a note', () => {

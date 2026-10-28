@@ -51,12 +51,6 @@ function TargetField() {
   const toggle = (l: string, on: boolean): void => set(kind, { layers: ['engine', 'skyui52', 'skyui6'].filter((x) => x === 'engine' || (x === l ? on : layers.includes(x))) })
   return (
     <div className="field">
-      <label className="field-label" htmlFor="swf-target">{t.label}</label>
-      <select id="swf-target" value={kind} data-testid="swf-target" onChange={(e) => set(e.target.value as TargetKind)}>
-        <option value="hudWidget">{t.hudWidget}</option>
-        <option value="customMenu">{t.customMenu}</option>
-        <option value="menuReplacement">{t.menuReplacement}</option>
-      </select>
       {kind === 'menuReplacement' && (
         <>
           <label className="field-label" htmlFor="swf-contract">{t.contract}</label>
@@ -79,7 +73,6 @@ function TargetField() {
           <p className="dim">{t.layersHelp}</p>
         </>
       )}
-      <p className="dim">{t.help}</p>
       {err && <p className="tone-error">{err}</p>}
     </div>
   )
@@ -92,7 +85,6 @@ function StubDialog() {
   if (open === 'configOwnership' && kind === 'customMenu')
     return (
       <Dialog title={strings.dialogs.config.title} onClose={close} wide>
-        <TargetField />
         <MenuSettingsForm />
       </Dialog>
     )
@@ -100,11 +92,6 @@ function StubDialog() {
     return (
       <Dialog title={strings.dialogs.config.title} onClose={close}>
         <TargetField />
-        <p>{strings.dialogs.config.body}</p>
-        <div className="two-col">
-          <section><h3>{strings.dialogs.config.author}</h3><p className="dim">{strings.dialogs.config.authorNote}</p></section>
-          <section><h3>{strings.dialogs.config.user}</h3><p className="dim">{strings.dialogs.config.userNote}</p></section>
-        </div>
       </Dialog>
     )
   if (open === 'figmaSetup')

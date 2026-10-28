@@ -97,10 +97,12 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         </ul>
       </section>
 
-      <section aria-labelledby="insp-gfx">
-        <h4 id="insp-gfx">{strings.insp.gfx}</h4>
-        {node.type === 'text' ? <TextMapping node={node} /> : node.type === 'frame' ? <FrameMapping node={node} isRoot={swf?.ir.root === node.id} /> : <p className="empty">{strings.insp.gfxNone(strings.nav.typeNames[node.type] ?? node.type)}</p>}
-      </section>
+      {(node.type === 'text' || node.type === 'frame') && (
+        <section aria-labelledby="insp-gfx">
+          <h4 id="insp-gfx">{strings.insp.gfx}</h4>
+          {node.type === 'text' ? <TextMapping node={node} /> : <FrameMapping node={node} isRoot={swf?.ir.root === node.id} />}
+        </section>
+      )}
 
       {node.type === 'text' && (
         <section aria-labelledby="insp-font">
@@ -125,7 +127,6 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
             <Btn icon={Redo2} label={strings.insp.redo} reason={undo.canRedo ? undefined : strings.insp.nothingToRedo} onClick={undo.redo} testId="overlay-redo" />
           </span>
         </div>
-        <p className="dim">{strings.insp.overlayNote}</p>
         <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
         {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
         {entry.role === 'prompt' && <PromptField swfId={swfId} nodeId={node.id} value={(entry as { prompt?: Record<string, string> }).prompt} />}
@@ -137,7 +138,6 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         {EMBEDDED_FONTS_UI && node.type === 'text' && <EmbeddedFontField swfId={swfId} nodeId={node.id} value={(entry as { font?: string }).font} />}
         {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
         {isWidgetFrame && <DebugHotkeyField swfId={swfId} nodeId={node.id} value={debugHotkeyOf(entry)} />}
-        <p className="dim contract">{strings.insp.contractLine}</p>
         {strings.insp.disabledControls.filter((c, i) => !(isWidgetFrame && i === 0)).map((c) => (
           <div key={c.label} className="field">
             <span className="field-label">{c.label}</span>
@@ -167,15 +167,13 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
 function TextMapping({ node }: { node: Extract<Node, { type: 'text' }> }) {
   const f = describeTextMapping(node)
   const flags = f.sizing.flags
-  const to = flags.autoSize
-    ? ['autoSize', flags.wordWrap ? 'wordWrap' : strings.insp.noWrap, flags.multiline && flags.wordWrap && 'multiline'].filter(Boolean).join(', ')
-    : `${strings.insp.fixedField}${flags.wordWrap ? ` (${strings.insp.wraps})` : ''}`
+  const detail = flags.wordWrap ? strings.insp.wraps : flags.autoSize ? strings.insp.noWrap : undefined
   return (
     <dl className="facts">
-      <dt>{strings.insp.sizing}</dt><dd>{strings.insp.sizingNames[f.sizing.value]} <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {to}</dd>
-      {f.verticalAlign && <><dt>{strings.insp.vAlign}</dt><dd>{strings.insp.alignNames[f.verticalAlign]} <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {strings.insp.gfxVerticalAlign}</dd></>}
-      {f.textAutoSize && <><dt>{strings.insp.fit}</dt><dd>{f.textAutoSize} <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {strings.insp.gfxTextAutoSize}</dd></>}
-      {f.letterSpacingPx !== undefined && <><dt>{strings.insp.spacing}</dt><dd>{f.letterSpacingPx} px <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> letterSpacing</dd></>}
+      <dt>{strings.insp.sizing}</dt><dd>{[strings.insp.sizingNames[f.sizing.value], detail].filter(Boolean).join(', ')}</dd>
+      {f.verticalAlign && <><dt>{strings.insp.vAlign}</dt><dd>{strings.insp.alignNames[f.verticalAlign]}</dd></>}
+      {f.textAutoSize && <><dt>{strings.insp.fit}</dt><dd>{f.textAutoSize}</dd></>}
+      {f.letterSpacingPx !== undefined && <><dt>{strings.insp.spacing}</dt><dd>{f.letterSpacingPx} px</dd></>}
       {f.truncate && <><dt>{strings.insp.truncate}</dt><dd className="tone-warn">{strings.insp.truncateNote}</dd></>}
     </dl>
   )
@@ -183,20 +181,14 @@ function TextMapping({ node }: { node: Extract<Node, { type: 'text' }> }) {
 
 /** A nested frame is a MovieClip: fills become clips under its children, clipContent a clip layer (swf/generate.ts `background`). */
 function FrameMapping({ node, isRoot }: { node: Extract<Node, { type: 'frame' }>; isRoot: boolean }) {
-  let images = 0
-  let solids = 0
-  const fills = (node.fills ?? []).flatMap((f, i) => {
-    if (f.type !== 'image' && isRoot) return []
-    const name = f.type === 'image' ? (images++ ? `imageFill_${images}` : 'imageFill') : solids++ ? `fill_${solids}` : 'fill'
-    return [<Fragment key={i}><dt>{strings.insp.gfxFrameFill(f.type, i + 1)}</dt><dd>{f.type} <span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {strings.insp.gfxFrameFillTo(f.type, name)}</dd></Fragment>]
-  })
+  const fills = (node.fills ?? []).flatMap((f, i) => (f.type !== 'image' && isRoot ? [] : [<Fragment key={i}><dt>{strings.insp.gfxFrameFill(i + 1)}</dt><dd>{strings.insp.gfxFrameFillTo(f.type)}</dd></Fragment>]))
   return (
     <>
       {isRoot && <p className="dim">{strings.insp.gfxFrameRoot}</p>}
       {!isRoot && fills.length === 0 && !node.clipContent && <p className="empty">{strings.insp.gfxFrameNone}</p>}
       <dl className="facts">
         {fills}
-        {node.clipContent && <><dt>{strings.insp.gfxFrameClip}</dt><dd><span className="arrow" aria-label={strings.insp.mapsTo}>&rarr;</span> {strings.insp.gfxFrameClipTo}</dd></>}
+        {node.clipContent && <><dt>{strings.insp.gfxFrameClip}</dt><dd>{strings.insp.gfxFrameClipTo}</dd></>}
       </dl>
     </>
   )

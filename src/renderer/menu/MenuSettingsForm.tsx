@@ -117,8 +117,7 @@ export function MenuSettingsForm() {
       {swf.menuError && <p className="tone-error" data-testid="menu-file-error">{S.fileError(swf.menuError)}</p>}
       <fieldset className="menu-cols" disabled={locked}>
         <section className="menu-col" aria-labelledby="menu-author">
-          <h4 id="menu-author">{S.author}</h4>
-          <p className="dim mono">{S.writesTo(`swfs/${swf.name}/menu.json`)}</p>
+          <h4 id="menu-author" title={S.writesTo(`swfs/${swf.name}/menu.json`)}>{S.author}</h4>
           <div className="field" role="group" aria-label={S.flags}>
             <span className="field-label">{S.flags}</span>
             <Check label={S.pausesGame} checked={doc.flags.pausesGame} onChange={flag('pausesGame')} testId="menu-pauses" />
@@ -141,19 +140,18 @@ export function MenuSettingsForm() {
           </div>
           <dl className="facts">
             <dt>{S.menuName}</dt><dd className="mono" data-testid="menu-name" title={S.menuNameHelp}>{names.name}</dd>
-            <dt>{S.requires}</dt><dd data-testid="menu-requires" title={S.requiresHelp}>{minRuntimeOf(source)} <span className="dim">({S.requiresHelp})</span></dd>
+            <dt>{S.requires}</dt><dd data-testid="menu-requires" title={S.requiresHelp}>{minRuntimeOf(source)}</dd>
           </dl>
         </section>
 
         <section className="menu-col" aria-labelledby="menu-user">
-          <h4 id="menu-user">{S.user}</h4>
-          <p className="dim mono">{S.writesTo(modIniPath(modId))}</p>
+          <h4 id="menu-user" title={S.writesTo(modIniPath(modId))}>{S.user}</h4>
           <div className="field">
             <label className="field-label" htmlFor="menu-key">{S.openKey}</label>
             <div className="field-row">
               <select id="menu-key" value={key === undefined ? '' : known ? String(key) : 'other'} onChange={(e) => hotkey(e.target.value === '' ? undefined : e.target.value === 'other' ? (key ?? 37) : Number(e.target.value))} data-testid="menu-key">
                 <option value="">{S.openKeyNone}</option>
-                {SCAN_KEYS.map((k) => <option key={k.code} value={k.code}>{k.name} ({k.code})</option>)}
+                {SCAN_KEYS.map((k) => <option key={k.code} value={k.code}>{k.name}</option>)}
                 {key !== undefined && !known && <option value="other">{key}</option>}
               </select>
               <input
@@ -190,7 +188,6 @@ export function MenuSettingsForm() {
             <NumField label={S.offsetY} value={u.offsetY} min={OFFSET_Y_RANGE.min} max={OFFSET_Y_RANGE.max} int onCommit={(v) => user('offsetY', v)} testId="menu-offset-y" />
           </div>
           <p className="dim">{S.offsetHelp}</p>
-          <p className="dim">{S.devMode}</p>
         </section>
       </fieldset>
       {msg && <p className={msg.ok ? 'dim' : 'tone-error'} role="status" data-testid="menu-status">{msg.text}</p>}

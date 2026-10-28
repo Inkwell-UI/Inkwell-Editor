@@ -93,7 +93,6 @@ export function TracePanel() {
           <Btn onClick={clear} testId="trace-clear" reason={lines.length ? undefined : strings.trace.nothingToClear}>{strings.trace.clear}</Btn>
         </span>
       </div>
-      <p className="dim" data-testid="trace-notice">{game ? strings.dev.gameNotice : strings.trace.notice}</p>
       {reload.text && <p className={reload.bad ? 'tone-error' : 'dim'} data-testid="reload-result" role="status">{reload.text}</p>}
       {greyed && seen && <p className="dim" data-testid="trace-greyed">{strings.dev.greyedNote}</p>}
       <div className="trace">

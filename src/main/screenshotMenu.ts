@@ -129,13 +129,13 @@ export async function runMenuShots(o: { outDir: string; projectDir: string; win:
     await snap('m3-real-click')
   } else console.log('[menu] SKIPPED real click: status was', await get('status.text'), 'player', JSON.stringify(rect))
 
-  // ---- Menu settings panel (Layout mode, left tab) edits menu.json
+  // ---- the settings button next to the SWF type opens the menu form as a dialog and edits menu.json
   key('1', ['control'])
   await wait(500)
-  await must('[data-testid="tab-menuSettings"]')
-  await until('menu settings form', () => has('[data-testid="menu-settings"]'))
+  await must('[data-testid="target-pill"]')
+  await until('menu settings form', () => has('.dialog [data-testid="menu-settings"]'))
   check('the form shows the stored values: depth 3, hotkey F8 (66), requires 0.3.0', (await js<string>(`document.querySelector('[data-testid="menu-depth"]').value`)) === '3' && (await js<string>(`document.querySelector('[data-testid="menu-key-code"]').value`)) === '66' && (await text('[data-testid="menu-requires"]')).includes('0.3.0'))
-  check('the Gamepad combo is disabled with its reason', (await js<string>(`document.querySelector('[data-testid="menu-gamepad"]').getAttribute('aria-disabled') + '|' + document.querySelector('[data-testid="menu-gamepad"]').title`)).includes('planned 0.5'))
+  check('the Gamepad combo is disabled with its reason', (await js<string>(`document.querySelector('[data-testid="menu-gamepad"]').getAttribute('aria-disabled') + '|' + document.querySelector('[data-testid="menu-gamepad"]').title`)).includes('Not available'))
   await snap('m4-menu-panel-layout')
   await setValue('[data-testid="menu-depth"]', '6')
   await commit('[data-testid="menu-depth"]')
@@ -160,10 +160,6 @@ export async function runMenuShots(o: { outDir: string; projectDir: string; win:
   check('UI scale 1.25 and offset 40 are saved under userDefaults', JSON.stringify((await menuJson())['userDefaults']) === JSON.stringify({ offsetX: 40, offsetY: 0, uiScale: 1.25 }), JSON.stringify((await menuJson())['userDefaults']))
   await snap('m6-menu-panel-edited')
 
-  // ---- the Target pill opens the same form as a dialog
-  await must('[data-testid="target-pill"]')
-  await until('dialog form', () => has('.dialog [data-testid="menu-settings"]'))
-  await snap('m7-menu-dialog')
   key('Escape')
   await wait(300)
 

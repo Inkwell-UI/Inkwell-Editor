@@ -81,6 +81,43 @@ function WorkspaceSwitcher() {
   )
 }
 
+const TARGET_KINDS = ['hudWidget', 'customMenu', 'menuReplacement'] as const
+
+/** The SWF's type (a dropdown) and, joined to it, the button for its settings. */
+function TargetPill() {
+  const swf = useActiveSwf()
+  const show = useDialogStore((s) => s.show)
+  const kind = swf?.ir.target.kind
+  return (
+    <div className="pill-split">
+      <Popover
+        label={strings.top.targetList}
+        trigger={(p, open) => (
+          <button type="button" className={`btn btn-pill-l${kind && kind !== 'hudWidget' ? ' is-joined' : ''}`} {...p} disabled={!swf} data-testid="target-kind" title={strings.top.targetList}>
+            <span className="btn-label">{kind ? strings.top.kindNames[kind] : strings.top.noTarget}</span>
+            <ChevronDown size={14} aria-hidden="true" className={open ? 'flip' : undefined} />
+          </button>
+        )}
+      >
+        {(close) => (
+          <ul className="menu" role="listbox" aria-label={strings.top.targetList}>
+            {TARGET_KINDS.map((k) => (
+              <li key={k} role="option" aria-selected={k === kind}>
+                <button type="button" className={k === kind ? 'is-selected' : undefined} onClick={() => { close(); if (swf && k !== kind) void inkwell?.setSwfTarget(swf.name, k) }}>{strings.top.kindNames[k]}</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Popover>
+      {kind && kind !== 'hudWidget' && (
+        <button type="button" className="btn btn-pill-r" onClick={() => show('configOwnership')} title={strings.top.targetSettings} aria-label={strings.top.targetSettings} data-testid="target-pill">
+          <Settings2 size={14} aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  )
+}
+
 /** Zone 1 (UX 4.1): project, SWF switcher, target pill, workspace switcher, Setup, Build All and Deploy (which also packages). */
 export function TopBar() {
   const project = useProject()
@@ -94,9 +131,7 @@ export function TopBar() {
   return (
     <header className="topbar" aria-label={strings.top.label}>
       <SwfSwitcher />
-      <Btn icon={Settings2} onClick={() => show('configOwnership')} label={strings.top.targetLabel(swf?.ir.target.kind)} testId="target-pill" className="btn-pill">
-        {swf ? strings.top.kindNames[swf.ir.target.kind] : strings.top.noTarget}
-      </Btn>
+      <TargetPill />
       <WorkspaceSwitcher />
       <span className="spacer" />
       <Btn icon={Hammer} variant="primary" onClick={() => void inkwell?.buildAll()} reason={buildReason} testId="build-all">{compiling ? strings.top.building : strings.top.buildAll}</Btn>

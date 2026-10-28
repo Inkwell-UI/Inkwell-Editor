@@ -65,7 +65,7 @@ function Targets({ close }: { close(): void }) {
       {hasCustom && <p className="dim">{strings.deploy.custom}</p>}
       {hasCustom && (
         <div data-testid="dev-deploy">
-          <label className="check" title={strings.deploy.devToggleNote}>
+          <label className="check" title={strings.deploy.devToggleTip}>
             <input type="checkbox" checked={devDeploy} onChange={(e) => void inkwell?.devSetDeploy(e.target.checked)} data-testid="dev-deploy-toggle" /> {strings.deploy.devToggle}
           </label>
           <p className="dim">{strings.deploy.devToggleNote}</p>
@@ -187,7 +187,7 @@ export function ConfirmDialog() {
           </>
         )}
         {p.notes.map((n, i) => <p key={i} className="dim">{n}</p>)}
-        {!pkg && <p className="dim">{strings.deploy.confirmNote}</p>}
+        {!pkg && <p className="dim" title={strings.deploy.confirmTip}>{strings.deploy.confirmNote}</p>}
         <div className="row-actions">
           <Btn variant="primary" onClick={() => void accept()} reason={blocked ? strings.deploy.blockedReason(g.blocking.length) : undefined} testId="deploy-confirm-ok">{pkg ? strings.deploy.packageSave : strings.deploy.confirm}</Btn>
           <Btn onClick={cancel} testId="deploy-confirm-cancel">{strings.deploy.cancel}</Btn>

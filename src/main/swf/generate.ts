@@ -472,7 +472,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       const depth = skip + bg.length + 1
       if (f.type !== 'image') {
         if (n.id === ir.root) {
-          lint.push(issue('info', 'frame-fill-root-skipped', n.id, 'The root frame is the stage and is transparent in game; its solid and gradient fills are not drawn. Use a rectangle for a background.'))
+          lint.push(issue('info', 'frame-fill-root-skipped', n.id, 'The root frame is transparent in game, so its fills are not drawn. Use a rectangle for a background.'))
           continue
         }
         const svg = rectSvg(n.transform.width, n.transform.height, f, n.id, lint)

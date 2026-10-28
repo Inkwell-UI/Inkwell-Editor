@@ -34,18 +34,15 @@ describe('panel registry', () => {
     expect(WORKSPACE_IDS.every((i) => has(i, 'preview') && has(i, 'inspector') && has(i, 'lintBudget'))).toBe(true)
   })
 
-  it('the Menu settings panel is registered, a tab in the left group of Layout and Behaviour only (the target pill opens the same form in a dialog)', () => {
-    expect(panelRegistry.menuSettings.title).toBe('Menu')
-    expect(typeof panelRegistry.menuSettings.useTabInfo).toBe('function')
+  it('the left tab groups of Layout and Behaviour have no Menu settings tab (the target pill opens that form in a dialog)', () => {
     const left = (id: (typeof WORKSPACE_IDS)[number]): string[] => {
       const row = (WORKSPACES[id].layout as { children: LayoutNode[] }).children[0] as { children: { kind: string; tabs?: { panel: string }[] }[] }
       return row.children[0]!.tabs!.map((t) => t.panel)
     }
-    expect(left('layout')).toEqual(['navigator', 'assets', 'menuSettings'])
+    expect(left('layout')).toEqual(['navigator', 'assets'])
     const col = (WORKSPACES.behaviour.layout as { children: LayoutNode[] }).children[0] as { children: { tabs?: { panel: string }[]; panel?: string }[] }
-    expect(col.children[0]!.tabs!.map((t) => t.panel)).toEqual(['navigator', 'contracts', 'menuSettings']) // Behaviour: the left column is [tabs, variables]
+    expect(col.children[0]!.tabs!.map((t) => t.panel)).toEqual(['navigator', 'contracts']) // Behaviour: the left column is [tabs, variables]
     expect(col.children[1]!.panel).toBe('variables')
-    expect(layoutPanelIds(WORKSPACES.localization.layout)).not.toContain('menuSettings')
   })
 
   it('Behaviour: the left column (navigator, variables) runs the full height; beside it the graph owns the centre, the right column is [fixed preview, inspector] with no splitter between, and the dock sits under graph and right column', () => {

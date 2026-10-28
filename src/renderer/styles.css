@@ -46,6 +46,10 @@ select:focus-visible, input:not([type=checkbox], [type=radio], [type=range]):foc
 .btn-select { min-width: 150px; justify-content: space-between; }
 .btn-label { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
 .btn-pill { border-radius: 999px; }
+.pill-split { display: inline-flex; }
+.btn-pill-l { border-radius: 999px; padding-left: 12px; }
+.btn-pill-l.is-joined { border-radius: 999px 0 0 999px; }
+.btn-pill-r { border-radius: 0 999px 999px 0; margin-left: -1px; padding-right: 10px; }
 .btn-dot { background: transparent; border-color: transparent; }
 .btn-dot:hover { background: var(--hover); }
 .flip { transform: rotate(180deg); }
