@@ -98,7 +98,7 @@
 .gn-pin-val { margin-right: 6px; padding: 0 5px; border-radius: 8px; font-size: 10px; line-height: 15px; color: var(--fg); background: var(--accent-bg); border: 1px solid var(--line-strong); max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-form { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 8px; }
 .graph-row[draggable="true"] { cursor: grab; }
-.library-heading { margin-top: 0; } /* the first thing in the panel: the panel's own padding is the gap above it */
+.section-title.library-heading { margin-top: 0; } /* the first thing in the panel: the panel's own padding is the gap above it */
 .row-reveal { display: inline-flex; gap: 2px; opacity: 0; }
 .graph-row-main:hover .row-reveal, .graph-row-main:focus-within .row-reveal, .row-reveal:has([aria-expanded='true']) { opacity: 1; }
 .row-menu { list-style: none; margin: 0; padding: 0; min-width: 130px; }
