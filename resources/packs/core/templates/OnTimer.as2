@@ -1,5 +1,10 @@
 // [{{node.id}}] core/OnTimer@1
+clearInterval(__g.t_{{node.uid}});
+__g.l_{{node.uid}} = getTimer();
 __g.t_{{node.uid}} = setInterval(function() {
+    // shortcut: the game's setInterval may fire early or in bursts in a paused menu; ignore ticks before half the period by wall clock, drop it if getTimer lies too
+    if (getTimer() - __g.l_{{node.uid}} < {{field.seconds}} * 500) return;
+    __g.l_{{node.uid}} = getTimer();
     if (!{{field.repeat}}) {
         clearInterval(__g.t_{{node.uid}});
     }

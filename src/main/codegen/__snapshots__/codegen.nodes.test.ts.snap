@@ -27,7 +27,12 @@ exports[`Delay retriggers; Cancel Delay and Stop Timer find timers by name > gol
             __g.Run();
         };
         // [tm] core/OnTimer@1
+        clearInterval(__g.t_tm);
+        __g.l_tm = getTimer();
         __g.t_tm = setInterval(function() {
+            // shortcut: the game's setInterval may fire early or in bursts in a paused menu; ignore ticks before half the period by wall clock, drop it if getTimer lies too
+            if (getTimer() - __g.l_tm < 1 * 500) return;
+            __g.l_tm = getTimer();
             if (!true) {
                 clearInterval(__g.t_tm);
             }

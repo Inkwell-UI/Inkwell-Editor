@@ -1586,7 +1586,12 @@ exports[`golden AS2 per node kind > core/OnTimer@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
         // [n1] core/OnTimer@1
+        clearInterval(__g.t_n1);
+        __g.l_n1 = getTimer();
         __g.t_n1 = setInterval(function() {
+            // shortcut: the game's setInterval may fire early or in bursts in a paused menu; ignore ticks before half the period by wall clock, drop it if getTimer lies too
+            if (getTimer() - __g.l_n1 < 1 * 500) return;
+            __g.l_n1 = getTimer();
             if (!true) {
                 clearInterval(__g.t_n1);
             }
