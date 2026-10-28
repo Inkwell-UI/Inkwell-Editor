@@ -1,5 +1,5 @@
 import { LOC_KEY, pinCompat, SAVED_TYPES, type Graph, type GraphNode, type NodeDef, type PinType } from '@inkwell-ui/spec'
-import { resolvePins, type ResolvedPin } from '../../shared/graphValidate'
+import { isFunctionEntry, resolvePins, type ResolvedPin } from '../../shared/graphValidate'
 import { parseBindings, type BindProp } from '../../shared/graphBinding'
 import { FLOW_RUN_PIN, FLOW_TIMER_PIN } from '../../shared/devLink'
 import { ident } from '../../shared/overlay'
@@ -38,6 +38,8 @@ export interface GraphClass {
   source: string
   map: SourceMap
   calls: WidgetCall[]
+  /** A function graph: the class is created per call by Call Function, never by the frame code or the menu class. */
+  fn?: boolean
 }
 
 export interface CodegenInput {
@@ -77,7 +79,10 @@ interface Line {
 const ind = (lines: Line[], s: string): Line[] => lines.map((l) => ({ ...l, t: s + l.t }))
 const PH = /\{\{(\w+)(?:\.(\w+))?\}\}/g
 const COMPONENT = new Set<PinType>(['Text', 'Button', 'List', 'Image', 'Clip'])
-const AS2_TYPE = { String: 'String', Number: 'Number', Bool: 'Boolean' } as const
+const AS2_TYPE = { String: 'String', Number: 'Number', Bool: 'Boolean', Array: 'Array', Object: 'Object' } as const
+/** Parameter types of On Widget Call / Call Widget (the Papyrus API) and the wider set a function signature allows. */
+type ParamType = keyof typeof AS2_TYPE
+const WIDGET_TYPES: readonly ParamType[] = ['String', 'Number', 'Bool']
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/
 
 class Skip {
@@ -156,8 +161,9 @@ export function toBridgeLog(line: string): string {
 const key = (node: string, pin: string): string => `${node}\u0000${pin}`
 
 /** Generates one AS2 class for one graph. */
-function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssue[], first: boolean): GraphClass {
+function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssue[], first: boolean, fnCls: ReadonlyMap<string, string>): GraphClass {
   const file = `__Packages/mods/${ident(i.modId)}/${cls}.as`
+  const fn = g.scope === 'function' // a function: its own class, one instance per call (`run` instead of `init`, docs/functions.md)
   const dev = i.menu === true && i.dev === true
   const flow = i.preview === true || dev // flow trace calls (rn/wt/wf/wx): the preview traces them, a dev build sends them as pins
   const issue =(message: string, nodeId?: string): void => void issues.push({ graphId: g.id, ...(nodeId ? { nodeId } : {}), code: 'graph-codegen', message })
@@ -166,7 +172,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   const pinsOf = new Map<string, ReturnType<typeof resolvePins>>()
   for (const n of g.nodes) {
     const d = defOf(n)
-    if (d) pinsOf.set(n.id, resolvePins(d, n, g.variables))
+    if (d) pinsOf.set(n.id, resolvePins(d, n, g.variables, g.signature))
   }
   // unique identifier-safe node ids and variable names
   const uids = new Map<string, string>()
@@ -210,7 +216,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     prop === 'text' ? `${clip}.text = String(${x});` : prop === 'visible' ? `${clip}._visible = (${x} == true || ${x} == "true");` : prop === 'alpha' ? `${clip}._alpha = Number(${x});` : `new Color(${clip}).setRGB(Number(${x}));`
   const binders = new Map<string, string[]>() // variable id -> statements that copy it to its bound properties
   const mockBound: string[] = []
-  for (const [layer, str] of Object.entries(i.bindings ?? {}).sort(([a], [b]) => (a < b ? -1 : 1))) {
+  for (const [layer, str] of Object.entries(fn ? {} : (i.bindings ?? {})).sort(([a], [b]) => (a < b ? -1 : 1))) {
     const clip = clipOf(layer)
     if (clip === undefined) continue
     for (const b of parseBindings(str).bindings) {
@@ -222,7 +228,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   }
 
   /** Saved scope only exists in a menu served by the runtime (S5); elsewhere the variable is a plain menu variable (the lint `runtime-required` says so). */
-  const isSaved = (v: Graph['variables'][number]): boolean => i.menu === true && v.scope === 'saved' && (SAVED_TYPES as readonly string[]).includes(v.type)
+  const isSaved = (v: Graph['variables'][number]): boolean => !fn && i.menu === true && v.scope === 'saved' && (SAVED_TYPES as readonly string[]).includes(v.type)
 
   const bodyOf = (n: GraphNode, d: NodeDef): string[] => {
     const t = i.packs.templates.get(`${n.kind}`)
@@ -288,22 +294,41 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         }
         case 'params': {
           const dyn = (d.extra as { dynamicOutputs?: string } | undefined)?.dynamicOutputs
-          return paramsOf(n, dyn).map((p) => `${uids.get(n.id)}_${p.name}:${AS2_TYPE[p.type]}`).join(', ')
+          return paramsOf(n, dyn, !!callsFn(d)).map((p) => `${uids.get(n.id)}_${p.name}:${AS2_TYPE[p.type]}`).join(', ')
         }
         case 'args': {
           const dyn = (d.extra as { dynamicInputs?: string } | undefined)?.dynamicInputs
-          return paramsOf(n, dyn).map((p) => args.get(p.name) ?? 'undefined').join(', ')
+          // Function Exit: the data inputs after the static ones come from the signature outputs; Call Function: from its copy of the signature inputs
+          if (!dyn) return (pinsOf.get(n.id)?.inputs ?? []).slice(d.inputs.length).map((p) => args.get(p.name) ?? 'undefined').join(', ')
+          return paramsOf(n, dyn, !!callsFn(d)).map((p) => args.get(p.name) ?? 'undefined').join(', ')
+        }
+        case 'fn': {
+          const target = fieldOf(n, d, nm)
+          const c = typeof target === 'string' ? fnCls.get(target) : undefined
+          if (!c) throw new Skip(`there is no function graph "${String(target)}".`)
+          return `mods.${ident(i.modId)}.${c}`
+        }
+        case 'exit': {
+          const id = fieldOf(n, d, nm)
+          const x = g.signature?.exits.find((e) => e.id === id)
+          if (!x || !IDENT.test(x.name)) throw new Skip('the exit is not one of the signature or its name is not an identifier.')
+          return x.name
         }
         default: throw new Skip(`unknown placeholder {{${k}${name ? '.' + name : ''}}}.`)
       }
     })
 
-  const paramsOf = (n: GraphNode, dyn: string | undefined): WidgetCall['params'] => {
+  const callsFn = (d: NodeDef): string | undefined => (d.extra as { callsFunction?: string } | undefined)?.callsFunction
+  /** Typed entries of a dynamic pin field. `wide` (function nodes) also allows Array and Object; widget calls stay at the three types the Papyrus API has. */
+  function paramsOf(n: GraphNode, dyn: string | undefined, wide?: false): WidgetCall['params']
+  function paramsOf(n: GraphNode, dyn: string | undefined, wide: boolean): { name: string; type: ParamType }[]
+  function paramsOf(n: GraphNode, dyn: string | undefined, wide = false): { name: string; type: ParamType }[] {
     const list = dyn ? n.fields[dyn] : []
     if (!Array.isArray(list)) return []
+    const allowed: readonly ParamType[] = wide ? (Object.keys(AS2_TYPE) as ParamType[]) : WIDGET_TYPES
     return list.map((p: { name?: unknown; type?: unknown }) => {
-      if (typeof p?.name !== 'string' || !IDENT.test(p.name) || (p.type !== 'String' && p.type !== 'Number' && p.type !== 'Bool')) throw new Skip('a parameter needs an identifier name and the type String, Number or Bool.')
-      return { name: p.name, type: p.type }
+      if (typeof p?.name !== 'string' || !IDENT.test(p.name) || !allowed.includes(p.type as ParamType)) throw new Skip(`a parameter needs an identifier name and the type ${allowed.join(', ')}.`)
+      return { name: p.name, type: p.type as ParamType }
     })
   }
 
@@ -398,6 +423,30 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
       const outs = new Set((pinsOf.get(n.id)?.outputs ?? []).filter((p) => p.type !== 'Exec').map((p) => p.name))
       const out: Line[] = [...ctx.pre]
       for (const raw of lines) {
+        const exitsAt = /^(\s*)\{\{exits\}\}\s*$/.exec(raw)
+        if (exitsAt) {
+          // Call Function: one closure per exit of the copied signature; the data outputs are the closure parameters, the continuation of the exit pin runs inside (guarded)
+          const dx = (d.extra as { dynamicExits?: string } | undefined)?.dynamicExits
+          const exitNames = (dx && Array.isArray(n.fields[dx]) ? (n.fields[dx] as { name?: unknown }[]) : []).map((x) => {
+            if (typeof x?.name !== 'string' || !IDENT.test(x.name)) throw new Skip('an exit needs an identifier name.')
+            return x.name
+          })
+          const outParams = paramsOf(n, (d.extra as { dynamicOutputs?: string } | undefined)?.dynamicOutputs, true).map((p) => `${uids.get(n.id)}_${p.name}:${AS2_TYPE[p.type]}`).join(', ')
+          const at = exitsAt[1]!
+          exitNames.forEach((name, k) => {
+            const sub = chain(n, name, ctx)
+            out.push(
+              { t: `${at}${name}: function(${outParams}) {`, n: n.id },
+              { t: `${at}    try {`, n: n.id },
+              ...ind(sub, at + '        '),
+              { t: `${at}    } catch (e) {`, n: n.id },
+              { t: `${at}        __g.fail("${safeId(ctx.entry)}", e);`, n: n.id },
+              { t: `${at}    }`, n: n.id },
+              { t: `${at}}${k < exitNames.length - 1 ? ',' : ''}`, n: n.id }
+            )
+          })
+          continue
+        }
         const own = /^(\s*)\{\{(next|guarded)\.(\w+)\}\}\s*$/.exec(raw)
         if (own) {
           if (!(pinsOf.get(n.id)?.outputs ?? []).some((p) => p.name === own[3] && p.type === 'Exec')) throw new Skip(`template uses the unknown exec output "${own[3]}".`)
@@ -473,7 +522,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     const vn = varNames.get(vid)!
     init.push({ t: `__g.b_${vn} = function() {` }, { t: '    try {' }, ...stmts.map((t) => ({ t: `        ${t}` })), { t: '    } catch (e) {' }, { t: `        __g.fail("binding:${vn}", e);` }, { t: '    }' }, { t: '};' }, { t: `__g.b_${vn}();` })
   }
-  if (i.preview) {
+  if (i.preview && !fn) {
     // Ruffle Play mode: `_global.Inkwell.mock` is filled by the editor (inkwellMock callback); a variable named like a key takes its value, then bindings follow
     const fromMock = g.variables.flatMap((v) => {
       const x = `m[${as2Literal(v.name)}]`
@@ -489,9 +538,22 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   }
   const calls: WidgetCall[] = []
   const root: Ctx = { cache: new Cache(), pre: [], entry: '', stack: new Set() }
+  let runParams = ''
+  let fnEntered = false
   for (const n of g.nodes) {
     const d = defOf(n)
     if (!d || (d.extra as { entry?: unknown } | undefined)?.entry !== true) continue
+    if (isFunctionEntry(d) !== fn) continue // events belong to menu graphs, the Function Entry to a function; the validator reports the others
+    if (fn) {
+      if (fnEntered) continue
+      fnEntered = true
+      const sigIn = g.signature?.inputs ?? []
+      if (sigIn.some((p) => !IDENT.test(p.name))) {
+        issue('A function input name must be a plain identifier; the function was left empty.', n.id)
+        continue
+      }
+      runParams = sigIn.map((p) => `${uids.get(n.id)}_${p.name}:${AS2_TYPE[p.type]}`).join(', ')
+    }
     const lines = emit(n, { ...root, cache: new Cache() })
     init.push(...lines)
     if (n.kind.split('/')[1]?.startsWith('OnWidgetCall@') && lines.length > 1) {
@@ -516,14 +578,26 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     { t: `// Generated by Inkwell from the graph "${g.name.replace(/[\r\n]+/g, ' ').replace(/\*\//g, '* /')}" (${g.id.replace(/[\r\n]+/g, ' ')}). Do not edit.` },
     { t: '// AS2 sealing is a compile-time check only and the FFDec AS2 compiler does not parse the keyword `dynamic`; members are added freely (s_, t_, h_, v_).' },
     { t: `class mods.${ident(i.modId)}.${cls} {` },
-    { t: '    var base;' },
-    { t: '    var inputHandlers;' },
-    ...(i.menu ? [{ t: '    var bridge;' }, { t: '    var messageHandlers;' }, { t: '    var modEventHandlers;' }] : []),
-    { t: `    function ${cls}(base) {` },
-    { t: '        this.base = base;' },
-    { t: '        this.inputHandlers = {};' },
-    ...(i.menu ? [{ t: '        this.messageHandlers = [];' }, { t: '        this.modEventHandlers = [];' }] : []),
-    { t: '    }' },
+    ...(fn
+      ? [
+          // a function: one instance per call (own timers, counters and locals); `owner` is the calling instance, `exits` the closures Function Exit calls
+          { t: '    var base;' }, { t: '    var owner;' }, { t: '    var exits;' },
+          ...(i.menu ? [{ t: '    var bridge;' }] : []),
+          { t: `    function ${cls}(base, owner, exits) {` },
+          { t: '        this.base = base;' }, { t: '        this.owner = owner;' }, { t: '        this.exits = exits;' },
+          ...(i.menu ? [{ t: '        this.bridge = owner.bridge;' }] : []),
+          { t: '    }' }
+        ]
+      : [
+          { t: '    var base;' },
+          { t: '    var inputHandlers;' },
+          ...(i.menu ? [{ t: '    var bridge;' }, { t: '    var messageHandlers;' }, { t: '    var modEventHandlers;' }] : []),
+          { t: `    function ${cls}(base) {` },
+          { t: '        this.base = base;' },
+          { t: '        this.inputHandlers = {};' },
+          ...(i.menu ? [{ t: '        this.messageHandlers = [];' }, { t: '        this.modEventHandlers = [];' }] : []),
+          { t: '    }' }
+        ]),
     { t: '    // logs the failing node id; e is a string or a plain object {node, message} (GFx has no Error class)' },
     { t: '    function fail(nodeId, e) {' },
     { t: '        var msg = "";' },
@@ -602,9 +676,13 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '    function wx(nodeId, key) {' },
           { t: '        this.tm(nodeId, "cancel " + key);' },
           { t: '    }' },
-          { t: '    function dumpVariables() {' },
-          ...g.variables.map((v) => ({ t: `        this.bridge.watch(${as2Literal(g.id)}, ${as2Literal(v.name)}, "${v.scope}", this.v_${varNames.get(v.id)});` })),
-          { t: '    }' }
+          ...(fn
+            ? []
+            : [
+                { t: '    function dumpVariables() {' },
+                ...g.variables.map((v) => ({ t: `        this.bridge.watch(${as2Literal(g.id)}, ${as2Literal(v.name)}, "${v.scope}", this.v_${varNames.get(v.id)});` })),
+                { t: '    }' }
+              ])
         ]
       : []),
     ...(i.preview
@@ -631,40 +709,44 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '    }' }
         ]
       : []),
-    { t: i.menu ? '    // glue: the menu class (docs/menus.md) calls handleInput / handleMessage / handleModEvent; the runtime forwards the engine events to it' : '    // On Input glue: the host calls handleInput("<action>"); 0.2 has no input source yet (the runtime comes in 0.3)' },
-    { t: '    function addInputHandler(action, fn) {' },
-    { t: '        if (this.inputHandlers[action] == undefined) this.inputHandlers[action] = [];' },
-    { t: '        this.inputHandlers[action].push(fn);' },
-    { t: '    }' },
-    { t: '    function handleInput(action) {' },
-    { t: '        var list = this.inputHandlers[action];' },
-    { t: '        for (var k = 0; k < list.length; k++) list[k]();' },
-    { t: '    }' },
-    ...(i.menu
-      ? [
-          { t: '    // On Runtime Message (S7): name = Inkwell_API.Set* key; a handler registered under "" takes any name' },
-          { t: '    function addMessageHandler(name, fn) {' },
-          { t: '        this.messageHandlers.push({ name: name, fn: fn });' },
-          { t: '    }' },
-          { t: '    function handleMessage(name, text, number, flag) {' },
-          { t: '        for (var k = 0; k < this.messageHandlers.length; k++) {' },
-          { t: '            var h = this.messageHandlers[k];' },
-          { t: '            if (h.name == "" || h.name == name) h.fn(name, text, number, flag);' },
-          { t: '        }' },
-          { t: '    }' },
-          { t: '    // On Mod Event (S7): fires only while the menu is open (the runtime drops events while it is closed)' },
-          { t: '    function addModEventHandler(name, fn) {' },
-          { t: '        this.modEventHandlers.push({ name: name, fn: fn });' },
-          { t: '    }' },
-          { t: '    function handleModEvent(name, strArg, numArg) {' },
-          { t: '        for (var k = 0; k < this.modEventHandlers.length; k++) {' },
-          { t: '            var h = this.modEventHandlers[k];' },
-          { t: '            if (h.name == name) h.fn(strArg, numArg);' },
-          { t: '        }' },
-          { t: '    }' }
-        ]
-      : []),
-    { t: '    function init() {' }
+    ...(fn
+      ? []
+      : [
+      { t: i.menu ? '    // glue: the menu class (docs/menus.md) calls handleInput / handleMessage / handleModEvent; the runtime forwards the engine events to it' : '    // On Input glue: the host calls handleInput("<action>"); 0.2 has no input source yet (the runtime comes in 0.3)' },
+      { t: '    function addInputHandler(action, fn) {' },
+      { t: '        if (this.inputHandlers[action] == undefined) this.inputHandlers[action] = [];' },
+      { t: '        this.inputHandlers[action].push(fn);' },
+      { t: '    }' },
+      { t: '    function handleInput(action) {' },
+      { t: '        var list = this.inputHandlers[action];' },
+      { t: '        for (var k = 0; k < list.length; k++) list[k]();' },
+      { t: '    }' },
+      ...(i.menu
+        ? [
+            { t: '    // On Runtime Message (S7): name = Inkwell_API.Set* key; a handler registered under "" takes any name' },
+            { t: '    function addMessageHandler(name, fn) {' },
+            { t: '        this.messageHandlers.push({ name: name, fn: fn });' },
+            { t: '    }' },
+            { t: '    function handleMessage(name, text, number, flag) {' },
+            { t: '        for (var k = 0; k < this.messageHandlers.length; k++) {' },
+            { t: '            var h = this.messageHandlers[k];' },
+            { t: '            if (h.name == "" || h.name == name) h.fn(name, text, number, flag);' },
+            { t: '        }' },
+            { t: '    }' },
+            { t: '    // On Mod Event (S7): fires only while the menu is open (the runtime drops events while it is closed)' },
+            { t: '    function addModEventHandler(name, fn) {' },
+            { t: '        this.modEventHandlers.push({ name: name, fn: fn });' },
+            { t: '    }' },
+            { t: '    function handleModEvent(name, strArg, numArg) {' },
+            { t: '        for (var k = 0; k < this.modEventHandlers.length; k++) {' },
+            { t: '            var h = this.modEventHandlers[k];' },
+            { t: '            if (h.name == name) h.fn(strArg, numArg);' },
+            { t: '        }' },
+            { t: '    }' }
+          ]
+        : []),
+        ]),
+    { t: fn ? `    function run(${runParams}) {` : '    function init() {' }
   ]
   const all = [...head, ...ind(init, '        '), { t: '    }' }, { t: '}' }]
   const lines: Record<string, string> = {}
@@ -672,7 +754,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     if (l.n) lines[String(k + 1)] = l.n
   })
   return {
-    graphId: g.id, cls, path: file, calls,
+    graphId: g.id, cls, path: file, calls, ...(fn ? { fn: true } : {}),
     source: all.map((l) => l.t).join('\n') + '\n',
     map: { version: 1, graph: g.id, file, lines }
   }
@@ -682,11 +764,14 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
 export function generateGraphClasses(i: CodegenInput): { classes: GraphClass[]; issues: CodegenIssue[] } {
   const issues: CodegenIssue[] = []
   const used = new Set<string>()
-  const classes = i.graphs.map((g, k) => {
+  const names = i.graphs.map((g) => {
     let cls = `${i.swfCls}Graph_${ident(g.id)}`
     for (let k = 2; used.has(cls); k++) cls = `${i.swfCls}Graph_${ident(g.id)}_${k}`
     used.add(cls)
-    return generateOne(g, cls, i, issues, k === 0)
+    return cls
   })
+  const fnCls = new Map(i.graphs.flatMap((g, k) => (g.scope === 'function' ? [[g.id, names[k]!] as const] : [])))
+  const firstGraph = i.graphs.findIndex((g) => g.scope !== 'function') // the preview's mock hooks go to the first graph that is started by the frame code
+  const classes = i.graphs.map((g, k) => generateOne(g, names[k]!, i, issues, k === firstGraph, fnCls))
   return { classes, issues }
 }

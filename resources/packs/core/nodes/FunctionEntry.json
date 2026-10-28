@@ -1,0 +1,22 @@
+{
+  "kind": "FunctionEntry",
+  "major": 1,
+  "title": "Function Entry",
+  "category": "Functions",
+  "milestone": "0.6",
+  "pure": false,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/FunctionEntry.as2",
+  "extra": {
+    "entry": true,
+    "functionEntry": true,
+    "signatureOutputs": "inputs"
+  }
+}

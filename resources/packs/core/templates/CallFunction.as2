@@ -1,0 +1,4 @@
+// [{{node.id}}] core/CallFunction@1
+(new {{fn.function}}(__g.base, __g, {
+    {{exits}}
+})).run({{args}});

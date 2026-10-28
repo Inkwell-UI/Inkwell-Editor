@@ -73,6 +73,7 @@
   /* graph node categories (header stripe, spawn menu swatch) */
   --cat-events: #f97316;
   --cat-flow: #a78bfa;
+  --cat-functions: #2dd4bf;
   --cat-variables: #34d399;
   --cat-logic: #60a5fa;
   --cat-components: #f472b6;

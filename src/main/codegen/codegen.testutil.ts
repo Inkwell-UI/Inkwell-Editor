@@ -14,6 +14,7 @@ export const graph = (id: string, nodes: GraphNode[], edges: Graph['edges'], var
 
 const isEntry = (d: NodeDef): boolean => (d.extra as { entry?: boolean } | undefined)?.entry === true
 const isEditorOnly = (d: NodeDef): boolean => (d.extra as { editorOnly?: boolean } | undefined)?.editorOnly === true
+const isFunctionNode = (d: NodeDef): boolean => ['FunctionEntry', 'FunctionExit', 'CallFunction'].includes(d.kind)
 
 /** Field values: schema default, else first enum value, else a type zero. Component pins point at the layer id `L`. */
 function fieldsFor(d: NodeDef): Record<string, unknown> {
@@ -28,7 +29,7 @@ function fieldsFor(d: NodeDef): Record<string, unknown> {
 
 /** A graph that exercises one node kind: entries are followed by Log; exec nodes hang off On Widget Call and every exec output leads to a Log; a pure node feeds a Log message. null for editor-only kinds. */
 export function kindGraph(packId: string, d: NodeDef): Graph | null {
-  if (isEditorOnly(d)) return null
+  if (isEditorOnly(d) || isFunctionNode(d)) return null // function nodes need a function graph and a caller: functions.test.ts
   const kind = `${packId}/${d.kind}@${d.major}`
   const n = node('n1', kind, fieldsFor(d))
   const nodes: GraphNode[] = [n]

@@ -1,0 +1,70 @@
+{
+  "kind": "CallFunction",
+  "major": 1,
+  "title": "Call Function",
+  "category": "Functions",
+  "milestone": "0.6",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [],
+  "fields": {
+    "function": {
+      "type": "string",
+      "default": "",
+      "description": "Id of the function graph to call"
+    },
+    "inputs": {
+      "type": "array",
+      "default": [],
+      "description": "Copy of the function's signature inputs; the editor keeps it up to date",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["Bool", "Number", "String", "Array", "Object"] }
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "default": [],
+      "description": "Copy of the function's signature outputs",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["Bool", "Number", "String", "Array", "Object"] }
+        }
+      }
+    },
+    "exits": {
+      "type": "array",
+      "default": [],
+      "description": "Copy of the function's signature exits",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" }
+        }
+      }
+    }
+  },
+  "as2Template": "templates/CallFunction.as2",
+  "extra": {
+    "callsFunction": "function",
+    "dynamicInputs": "inputs",
+    "dynamicOutputs": "outputs",
+    "dynamicExits": "exits"
+  }
+}

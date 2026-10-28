@@ -13,6 +13,7 @@ export type GraphCode =
   | 'graph-duplicate-handler'
   | 'graph-bad-wire'
   | 'graph-widget-call'
+  | 'graph-function'
   | 'runtime-required'
   | 'saved-variable-invalid'
   | 'contract-node-target'
@@ -51,14 +52,23 @@ export const nodeContract = (d: NodeDef): string | undefined => {
 
 const isPinType = (v: unknown): v is PinType => PinType.safeParse(v).success
 const isEntry = (d: NodeDef): boolean => (d.extra as { entry?: unknown } | undefined)?.entry === true
+export const isFunctionEntry = (d: NodeDef): boolean => (d.extra as { functionEntry?: unknown } | undefined)?.functionEntry === true
+export const isFunctionExit = (d: NodeDef): boolean => (d.extra as { signatureInputs?: unknown } | undefined)?.signatureInputs !== undefined
+/** The field of a Call Function node that names the function graph (`extra.callsFunction`), undefined for every other node. */
+export const callsFunction = (d: NodeDef): string | undefined => {
+  const f = (d.extra as { callsFunction?: unknown } | undefined)?.callsFunction
+  return typeof f === 'string' ? f : undefined
+}
 const isEditorOnly = (d: NodeDef): boolean => (d.extra as { editorOnly?: unknown } | undefined)?.editorOnly === true
 const component = (t: PinType): boolean => t === 'Text' || t === 'Button' || t === 'List' || t === 'Image' || t === 'Clip'
 
 /**
  * Effective pins of a node. `typeFrom: "<field>"` takes the type from the field (a pin type name) or from the graph variable whose id is in the field
  * (`connection` stays at the declared type); `extra.dynamicOutputs` / `extra.dynamicInputs: "<field>"` append one data output / input per `{name, type}` entry of that array field (On Widget Call params / Call Widget args).
+ * Functions: `extra.dynamicExits: "<field>"` appends one Exec output per `{name}` entry (Call Function); `extra.signatureOutputs` / `extra.signatureInputs: "inputs" | "outputs"`
+ * append data pins from that list of the graph's own `signature` (Function Entry / Function Exit), so `sig` is the signature of the graph the node lives in.
  */
-export function resolvePins(def: NodeDef, node: Pick<GraphNode, 'fields'>, vars: Graph['variables']): { inputs: ResolvedPin[]; outputs: ResolvedPin[] } {
+export function resolvePins(def: NodeDef, node: Pick<GraphNode, 'fields'>, vars: Graph['variables'], sig?: Graph['signature']): { inputs: ResolvedPin[]; outputs: ResolvedPin[] } {
   const typed = (p: NodeDef['inputs'][number]): ResolvedPin => {
     const f = (p as { typeFrom?: unknown }).typeFrom
     const v = typeof f === 'string' && f !== 'connection' ? node.fields[f] : undefined
@@ -70,7 +80,21 @@ export function resolvePins(def: NodeDef, node: Pick<GraphNode, 'fields'>, vars:
     const list = typeof f === 'string' && Array.isArray(node.fields[f]) ? (node.fields[f] as { name?: unknown; type?: unknown }[]) : []
     return list.flatMap((p) => (typeof p?.name === 'string' && isPinType(p.type) ? [{ name: p.name, type: p.type, hasDefault: true }] : []))
   }
-  return { inputs: [...def.inputs.map(typed), ...dynamic('dynamicInputs')], outputs: [...def.outputs.map(typed), ...dynamic('dynamicOutputs')] }
+  const extra = def.extra as Record<string, unknown> | undefined
+  const exits = (): ResolvedPin[] => {
+    const f = extra?.['dynamicExits']
+    const list = typeof f === 'string' && Array.isArray(node.fields[f]) ? (node.fields[f] as { name?: unknown }[]) : []
+    return list.flatMap((x) => (typeof x?.name === 'string' ? [{ name: x.name, type: 'Exec' as const, hasDefault: false }] : []))
+  }
+  const fromSig = (key: 'signatureInputs' | 'signatureOutputs'): ResolvedPin[] => {
+    const which = extra?.[key]
+    const list = which === 'inputs' || which === 'outputs' ? sig?.[which] : undefined
+    return (list ?? []).map((p) => ({ name: p.name, type: p.type, hasDefault: true }))
+  }
+  return {
+    inputs: [...def.inputs.map(typed), ...dynamic('dynamicInputs'), ...fromSig('signatureInputs')],
+    outputs: [...def.outputs.map(typed), ...exits(), ...dynamic('dynamicOutputs'), ...fromSig('signatureOutputs')]
+  }
 }
 
 const kindOf = (n: GraphNode): string => n.kind.split('/')[1] ?? ''
@@ -102,7 +126,7 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
       continue
     }
     defOf.set(n.id, d)
-    pins.set(n.id, resolvePins(d, n, g.variables))
+    pins.set(n.id, resolvePins(d, n, g.variables, g.signature))
   }
   const wiredInputs = new Map<string, Set<string>>() // node id -> input pins with a wire
   const execOut = new Map<string, string[]>() // node id -> successors over Exec wires
@@ -169,7 +193,7 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
     if (s.id === g.id) continue
     for (const n of s.nodes) {
       const d = ctx.defs.get(n.kind)
-      if (d && isEntry(d) && !handlers.has(handlerKey(n, d))) handlers.set(handlerKey(n, d), s.name)
+      if (d && isEntry(d) && !isFunctionEntry(d) && !handlers.has(handlerKey(n, d))) handlers.set(handlerKey(n, d), s.name)
     }
   }
   for (const n of g.nodes) {
@@ -188,18 +212,19 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
         add(n.id, 'graph-required-pin', 'error', `The "${p.name}" input needs a wire${component(p.type) ? ' or a target layer' : ''}.`, { pin: p.name })
       }
     }
-    if (isEntry(d)) {
+    if (isEntry(d) && !isFunctionEntry(d)) {
       const k = handlerKey(n, d)
       const first = handlers.get(k)
       if (first !== undefined) {
         const where = first === g.name ? 'node in this graph' : `graph "${first}"`
         add(n.id, 'graph-duplicate-handler', 'error', `Another ${where} already handles ${d.title} for the same target or name.`)
       } else handlers.set(k, g.name)
-    } else if (mine.inputs.some((p) => p.type === 'Exec') && !execIn.has(n.id)) {
+    } else if (!isEntry(d) && mine.inputs.some((p) => p.type === 'Exec') && !execIn.has(n.id)) {
       add(n.id, 'graph-dangling-exec', 'warning', `${d.title} is not reached by any event: its exec input has no wire, so it never runs.`)
     }
   }
   widgetCalls(g, defOf, execOut, add)
+  functions(g, defOf, ctx.siblings ?? [], add)
   // cycle in exec flow: iterative DFS, reports the node that closes each loop
   const state = new Map<string, 1 | 2>()
   for (const root of execOut.keys()) {
@@ -255,6 +280,68 @@ function widgetCalls(g: Graph, defOf: ReadonlyMap<string, NodeDef>, execOut: Rea
   }
   for (const [name, calls] of callsIn)
     for (const c of calls) if (leadsTo(nm(c), name)) add(c.id, 'graph-widget-call', 'error', `Calling "${nm(c)}" from "${name}" leads back into "${name}"; the call would never finish.`)
+}
+
+const AS2_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/
+const CALL_FIELDS = ['function', 'inputs', 'outputs', 'exits']
+const sameList = (a: readonly object[], b: readonly object[], keys: string[]): boolean =>
+  a.length === b.length && a.every((x, i) => keys.every((k) => (x as Record<string, unknown>)[k] === (b[i] as Record<string, unknown>)[k]))
+
+/**
+ * Functions (docs/functions.md): a function graph has one Function Entry, its Function Exit nodes name an exit of its signature, the signature names are AS2 identifiers,
+ * and no other graph has Entry or Exit nodes. Call Function must name a function graph of the same SWF, hold an up-to-date copy of its signature (compared by id,
+ * name and type) and must not lead back into its own function (a recursion would never finish).
+ */
+function functions(g: Graph, defOf: ReadonlyMap<string, NodeDef>, siblings: readonly Graph[], add: (nodeId: string, code: GraphCode, level: 'error' | 'warning', message: string) => void): void {
+  const fns = new Map(siblings.filter((s) => s.scope === 'function' && s.signature).map((s) => [s.id, s]))
+  if (g.scope === 'function' && g.signature) fns.set(g.id, g)
+  const mine = g.nodes.flatMap((n) => (defOf.has(n.id) ? [{ n, d: defOf.get(n.id)! }] : []))
+  const anchor = mine[0]?.n.id
+  if (g.scope !== 'function') {
+    for (const { n, d } of mine) if (isFunctionEntry(d) || isFunctionExit(d)) add(n.id, 'graph-function', 'error', `${d.title} only works in a function graph.`)
+  } else {
+    const sig = g.signature
+    const entries = mine.filter(({ d }) => isFunctionEntry(d))
+    if (entries.length === 0 && anchor) add(anchor, 'graph-function', 'error', 'A function needs a Function Entry node: nothing starts it.')
+    for (const { n } of entries.slice(1)) add(n.id, 'graph-function', 'error', 'A function has one Function Entry.')
+    for (const { n, d } of mine) if ((d.extra as { entry?: unknown } | undefined)?.entry === true && !isFunctionEntry(d)) add(n.id, 'graph-function', 'error', `${d.title} is an event; a function is started by its Function Entry.`)
+    if (sig) {
+      const exitIds = new Set(sig.exits.map((x) => x.id))
+      const used = new Set<string>()
+      for (const { n, d } of mine) {
+        if (!isFunctionExit(d)) continue
+        const id = String(n.fields['exit'] ?? '')
+        if (!exitIds.has(id)) add(n.id, 'graph-function', 'error', 'This Function Exit does not name an exit of the signature; pick one.')
+        used.add(id)
+      }
+      if (anchor) {
+        for (const x of sig.exits) if (!used.has(x.id)) add(anchor, 'graph-function', 'warning', `The exit "${x.name}" has no Function Exit node, so a caller never continues through it.`)
+        for (const [kind, list] of [['input', sig.inputs], ['output', sig.outputs], ['exit', sig.exits]] as const)
+          for (const p of list) if (!AS2_NAME.test(p.name)) add(anchor, 'graph-function', 'error', `The ${kind} name "${p.name}" must be a plain identifier (letters, digits, underscore; not starting with a digit).`)
+        // an unwired input of a Call Function node reads the node's field of the same name, so these four names would read its own settings
+        for (const p of sig.inputs) if (CALL_FIELDS.includes(p.name)) add(anchor, 'graph-function', 'error', `The input name "${p.name}" is reserved (a call node keeps its settings under that name); pick another.`)
+        for (const o of sig.outputs) if (sig.exits.some((x) => x.name === o.name)) add(anchor, 'graph-function', 'error', `"${o.name}" is both an output and an exit; a call node could not tell the two pins apart.`)
+      }
+    }
+  }
+  const callees = (f: Graph): string[] => f.nodes.flatMap((n) => (typeof n.fields['function'] === 'string' && n.kind.split('/')[1]?.startsWith('CallFunction@') ? [n.fields['function'] as string] : []))
+  const reaches = (from: string, target: string, seen = new Set<string>()): boolean =>
+    from === target || (!seen.has(from) && (seen.add(from), (fns.has(from) ? callees(fns.get(from)!) : []).some((c) => reaches(c, target, seen))))
+  for (const { n, d } of mine) {
+    const field = callsFunction(d)
+    if (!field) continue
+    const target = String(n.fields[field] ?? '')
+    const f = fns.get(target)
+    if (!f?.signature) {
+      add(n.id, 'graph-function', 'error', target === '' ? 'Pick the function this node calls.' : `There is no function graph "${target}" in this SWF.`)
+      continue
+    }
+    const s = f.signature
+    const copy = (k: string): readonly object[] => (Array.isArray(n.fields[k]) ? (n.fields[k] as object[]) : [])
+    if (!sameList(copy('inputs'), s.inputs, ['id', 'name', 'type']) || !sameList(copy('outputs'), s.outputs, ['id', 'name', 'type']) || !sameList(copy('exits'), s.exits, ['id', 'name']))
+      add(n.id, 'graph-function', 'error', `The signature of "${f.name}" changed since this call was made; update the call.`)
+    if (g.scope === 'function' && reaches(target, g.id)) add(n.id, 'graph-function', 'error', `Calling "${f.name}" leads back into "${g.name}"; a recursive call would never finish.`)
+  }
 }
 
 /** Graph nodes whose targeted Figma layer is gone: the orphans of a graph (they stay in the file; the same rule as overlay entries). */

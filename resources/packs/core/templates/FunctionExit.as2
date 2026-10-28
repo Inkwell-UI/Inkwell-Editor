@@ -1,0 +1,2 @@
+// [{{node.id}}] core/FunctionExit@1
+__g.exits.{{exit.exit}}({{args}});
