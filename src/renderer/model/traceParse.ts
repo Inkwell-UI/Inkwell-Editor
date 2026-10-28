@@ -18,6 +18,7 @@ export type TraceLine =
   | { kind: 'cancel'; key: string }
   | { kind: 'spawn'; parent: string; component: string; path: string }
   | { kind: 'despawn'; path: string }
+  | { kind: 'bounds'; path: string; x: number; y: number; width: number; height: number }
   | { kind: 'text'; message: string }
 
 export const TRACE_MARK = '[Inkwell]'
@@ -36,6 +37,8 @@ export function parseTrace(raw: string): TraceLine | null {
   if (cancel) return { kind: 'cancel', key: cancel[1]! }
   const spawn = /^spawn (\S+) (\S+) (\S+)$/.exec(s)
   if (spawn) return { kind: 'spawn', parent: spawn[1]!, component: spawn[2]!, path: spawn[3]! }
+  const bounds = /^bounds (\S+) (\S+) (\S+) (\S+) (\S+)$/.exec(s)
+  if (bounds) return { kind: 'bounds', path: bounds[1]!, x: Number(bounds[2]), y: Number(bounds[3]), width: Number(bounds[4]), height: Number(bounds[5]) }
   const despawn = /^despawn (\S+)$/.exec(s)
   if (despawn) return { kind: 'despawn', path: despawn[1]! }
   const run = /^run (.+)$/s.exec(s)

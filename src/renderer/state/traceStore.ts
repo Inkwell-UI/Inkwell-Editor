@@ -25,6 +25,8 @@ export interface SpawnedInstance {
   parent: string
   component: string
   path: string
+  /** Its box on the stage (design px), as last traced: the preview outlines it when its row is selected. */
+  box?: { x: number; y: number; width: number; height: number }
 }
 export interface TraceStore {
   /** The instances alive in the preview, in creation order. */
@@ -51,6 +53,7 @@ export const useTraceStore = create<TraceStore>()((set) => ({
     const line = parseTrace(raw)
     if (!line) return
     if (line.kind === 'spawn') return set((s) => ({ spawned: [...s.spawned.filter((x) => x.path !== line.path), { parent: line.parent, component: line.component, path: line.path }] }))
+    if (line.kind === 'bounds') return set((s) => ({ spawned: s.spawned.map((x) => (x.path === line.path ? { ...x, box: { x: line.x, y: line.y, width: line.width, height: line.height } } : x)) }))
     if (line.kind === 'despawn') return set((s) => ({ spawned: s.spawned.filter((x) => x.path !== line.path) }))
     if (line.kind === 'run') return set((s) => ({ runs: { ...s.runs, [line.node]: (s.runs[line.node] ?? 0) + 1 } }))
     if (line.kind === 'wait') return set((s) => ({ waits: { ...s.waits, [line.node]: { key: line.key, at, ms: line.ms, n: (s.waits[line.node]?.n ?? 0) + 1, state: 'running' } } }))

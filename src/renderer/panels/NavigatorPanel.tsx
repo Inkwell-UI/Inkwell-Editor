@@ -111,13 +111,13 @@ export function NavigatorPanel() {
                 if (r.runtime)
                   return (
                     <li key={r.id} role="none">
-                      <div className="layer-row is-runtime" role="treeitem" aria-level={r.depth + 1} aria-selected={false} style={{ paddingLeft: 4 + r.depth * 14 }} title={strings.nav.runtimeTip} data-testid="layer-runtime">
+                      <div className={`layer-row is-runtime${selected === r.id ? ' is-selected' : ''}`} role="treeitem" aria-level={r.depth + 1} aria-selected={selected === r.id} style={{ paddingLeft: 4 + r.depth * 14 }} title={strings.nav.runtimeTip} data-testid="layer-runtime">
                         <span className="twisty" aria-hidden="true" />
-                        <span className="layer-main">
+                        <button type="button" className="layer-main" data-layer-id={r.id} onClick={() => select(r.id, 'navigator')}>
                           <Sparkles size={14} aria-hidden="true" className="type-icon" />
                           <span className="layer-name">{r.name}</span>
                           <span className="layer-type">{strings.nav.runtimeTag}</span>
-                        </span>
+                        </button>
                       </div>
                     </li>
                   )

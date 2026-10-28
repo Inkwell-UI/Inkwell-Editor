@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { CircleX, Link2Off, WifiOff } from 'lucide-react'
 import type { AspectId } from '../../shared/preview'
 import { inkwell } from '../hooks/api'
@@ -29,6 +29,7 @@ import { useLintStore } from '../state/lintStore'
 import { isPreviewWindow, usePopoutStore } from '../state/popoutStore'
 import { useProjectStore } from '../state/projectStore'
 import { useTraceStore } from '../state/traceStore'
+import { runtimeRowId } from '../model/layerTree'
 import { useSelectionStore } from '../state/selectionStore'
 import { useWorkspaceStore } from '../state/workspaceStore'
 import { strings } from '../strings'
@@ -55,6 +56,9 @@ export function PreviewPanel() {
   const detached = usePopoutStore((s) => s.detached)
   const inWindow = isPreviewWindow()
   const selected = useSelectionStore((s) => s.component)
+  const spawned = useTraceStore((s) => s.spawned)
+  // the boxes of the component instances a graph made (their rows in the Layers list), so selecting one outlines it
+  const runtimeBounds = useMemo(() => new Map(spawned.flatMap((s) => (s.box ? [[runtimeRowId(s.path), s.box] as const] : []))), [spawned])
   const select = useSelectionStore((s) => s.selectComponent)
   const [mode, setMode] = useState<StageMode>('inspect')
   const [aspect, setAspect] = useState<AspectId>('16:9')
@@ -197,7 +201,7 @@ export function PreviewPanel() {
               {ctl && build?.bytes ? (
                 <AspectFrame aspect={aspect}>
                   <SwfViewport backend={ctl.backend} stage={build.stage} />
-                  {swf && <InspectOverlay ir={swf.ir} stage={build.stage} active={mode === 'inspect' && !(isMenu && focusOn)} selected={selected} onSelect={(id) => select(id, 'stage')} />}
+                  {swf && <InspectOverlay ir={swf.ir} stage={build.stage} active={mode === 'inspect' && !(isMenu && focusOn)} selected={selected} extraBounds={runtimeBounds} onSelect={(id) => select(id, 'stage')} />}
                   {swf && isMenu && focusOn && <FocusGraphOverlay ir={swf.ir} swfId={swf.id} swfName={swf.name} stage={build.stage} active={mode === 'inspect'} onSelect={(id) => select(id, 'stage')} />}
                   <SafeZoneOverlay visible={safe} />
                 </AspectFrame>

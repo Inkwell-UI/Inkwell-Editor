@@ -161,12 +161,23 @@ export function stackAttachCode(n: Frame, nodes: Swf['nodes'], pathOf: (id: stri
 /**
  * The graph class methods behind Create and Remove Component, emitted into every graph class that has one of those nodes. `stackAdd` places a new instance in an auto-layout parent
  * (`restack` lays out the live instances of `parent.inkwellDyn`); `stackRemove` removes one. In a preview build they trace `[Inkwell] spawn <parent id> <component id> <clip path>` and
- * `[Inkwell] despawn <clip path>`, so the editor can list the instances a graph made (`parent.inkwellId` is set by the frame code for a parent picked on the node).
+ * `[Inkwell] despawn <clip path>`, and `[Inkwell] bounds <clip path> <x> <y> <w> <h>` (the box on the stage, after every layout), so the editor can list the instances a graph made (`parent.inkwellId` is set by the frame code for a parent picked on the node).
  */
 export const stackMethods = (preview: boolean): string[] => [
+  ...(preview
+    ? [
+        '    function bnd(clip) {',
+        '        var b = clip.getBounds(_root);',
+        '        trace("[Inkwell] bounds " + clip + " " + b.xMin + " " + b.yMin + " " + (b.xMax - b.xMin) + " " + (b.yMax - b.yMin));',
+        '    }'
+      ]
+    : []),
   '    function stackAdd(parent, clip, component) {',
   ...(preview ? ['        trace("[Inkwell] spawn " + parent.inkwellId + " " + component + " " + clip);'] : []),
-  '        if (parent.inkwellStack == undefined) return;',
+  '        if (parent.inkwellStack == undefined) {',
+  ...(preview ? ['            this.bnd(clip);'] : []),
+  '            return;',
+  '        }',
   '        if (parent.inkwellDyn == undefined) parent.inkwellDyn = [];',
   '        parent.inkwellDyn.push(clip);',
   '        this.restack(parent);',
@@ -196,6 +207,7 @@ export const stackMethods = (preview: boolean): string[] => [
   '            c._x = vert ? cp : pos;',
   '            c._y = vert ? pos : cp;',
   '            pos += size + s.spacing;',
+  ...(preview ? ['            this.bnd(c);'] : []),
   '        }',
   '    }'
 ]

@@ -92,6 +92,9 @@ export function filterTree(root: LayerNode, query: string): LayerNode | undefine
  * Puts the instances a graph made (Create Component, seen in the preview) under the layer they were added to, after its own children. A parent that is collapsed, filtered out or not in this
  * SWF shows none of them. They are rows of their own (`runtime`), named like their component.
  */
+/** The row id (and selection id) of a component instance a graph made: its clip path under a prefix no Figma id has. */
+export const runtimeRowId = (clipPath: string): string => `runtime:${clipPath}`
+
 export function withRuntimeRows(rows: readonly LayerRow[], spawned: readonly { parent: string; component: string; path: string }[], nameOf: (componentId: string) => string): LayerRow[] {
   const out = [...rows]
   for (const parent of rows) {
@@ -99,7 +102,7 @@ export function withRuntimeRows(rows: readonly LayerRow[], spawned: readonly { p
     if (!mine.length || !(parent.expanded || !parent.hasChildren)) continue
     let at = out.indexOf(parent) + 1
     while (at < out.length && out[at]!.depth > parent.depth) at++
-    out.splice(at, 0, ...mine.map((s) => ({ id: `runtime:${s.path}`, name: nameOf(s.component), type: 'runtime', badges: [], depth: parent.depth + 1, hasChildren: false, expanded: false, runtime: true }) as LayerRow))
+    out.splice(at, 0, ...mine.map((s) => ({ id: runtimeRowId(s.path), name: nameOf(s.component), type: 'runtime', badges: [], depth: parent.depth + 1, hasChildren: false, expanded: false, runtime: true }) as LayerRow))
   }
   return out
 }

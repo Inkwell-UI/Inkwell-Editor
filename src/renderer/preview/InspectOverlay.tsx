@@ -12,6 +12,8 @@ export interface InspectOverlayProps {
   /** Inspect: the overlay takes the pointer (hover outline, click selects). Play: it passes everything through to the SWF and draws nothing. */
   active: boolean
   selected: string | undefined
+  /** Boxes of things that are not in the IR (the component instances a graph made, by their row id): outlined when selected. */
+  extraBounds?: ReadonlyMap<string, { x: number; y: number; width: number; height: number }>
   onSelect(nodeId: string): void
 }
 
@@ -20,7 +22,7 @@ export interface InspectOverlayProps {
  * nodes use their rotated bounding box. Hover outlines the component under the pointer, a click selects it (selection model source `stage`),
  * the selected one keeps an outline. It only shows what Figma owns; nothing here moves or resizes anything.
  */
-export function InspectOverlay({ ir, stage, active, selected, onSelect }: InspectOverlayProps) {
+export function InspectOverlay({ ir, stage, active, selected, extraBounds, onSelect }: InspectOverlayProps) {
   const [ref, size] = useElementSize<HTMLDivElement>()
   const [hover, setHover] = useState<string>()
   const fit = fitStage(size, stage)
@@ -33,7 +35,7 @@ export function InspectOverlay({ ir, stage, active, selected, onSelect }: Inspec
     return p ? hitTest(ir, p) : undefined
   }
   const outline = (id: string | undefined, cls: string): React.ReactNode => {
-    const b = id ? bounds.get(id) : undefined
+    const b = id ? (bounds.get(id) ?? extraBounds?.get(id)) : undefined
     if (!id || !b) return null
     return <div className={`inspect-outline ${cls}`} style={{ left: fit.x + b.x * fit.scale, top: fit.y + b.y * fit.scale, width: b.width * fit.scale, height: b.height * fit.scale }} data-node={id} />
   }

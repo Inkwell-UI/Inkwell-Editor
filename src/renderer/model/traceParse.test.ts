@@ -28,6 +28,7 @@ describe('parseTrace', () => {
   })
   it('instances made by Create Component', () => {
     expect(parseTrace('[Inkwell] spawn 36:8 36:5 _level0.menu_list.frame_8.component1')).toEqual({ kind: 'spawn', parent: '36:8', component: '36:5', path: '_level0.menu_list.frame_8.component1' })
+    expect(parseTrace('[Inkwell] bounds _level0.a.b 10 40.5 200 50')).toEqual({ kind: 'bounds', path: '_level0.a.b', x: 10, y: 40.5, width: 200, height: 50 })
     expect(parseTrace('[Inkwell] despawn _level0.a.b')).toEqual({ kind: 'despawn', path: '_level0.a.b' })
   })
   it('formats the clock', () => {

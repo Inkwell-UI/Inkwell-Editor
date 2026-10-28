@@ -4,6 +4,8 @@ import { redoSwf, undoSwf } from '../state/overlayStore'
 import { useProjectStore } from '../state/projectStore'
 import { isPreviewWindow, usePopoutStore } from '../state/popoutStore'
 import { useSelectionStore } from '../state/selectionStore'
+import { useTraceStore } from '../state/traceStore'
+import { runtimeRowId } from '../model/layerTree'
 import { useWorkspaceStore } from '../state/workspaceStore'
 import { strings } from '../strings'
 import { Workspace } from '../workspace/Workspace'
@@ -91,7 +93,7 @@ export function AppShell() {
 
   // a selection whose node vanished (IR changed, other SWF) is dropped
   useEffect(() => {
-    useSelectionStore.getState().prune((id) => !!swf?.ir.nodes[id])
+    useSelectionStore.getState().prune((id) => !!swf?.ir.nodes[id] || useTraceStore.getState().spawned.some((s) => runtimeRowId(s.path) === id)) // a component instance a graph made is not an IR node
   }, [swf])
 
   if (project === undefined) return <><TitleBar /><div className="loading" role="status">{strings.loading}</div></>
