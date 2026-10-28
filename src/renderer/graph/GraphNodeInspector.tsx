@@ -2,6 +2,7 @@ import { incoming, nodeIndex } from '@nicklaj/knotwork'
 import { useMemo } from 'react'
 import { useStore } from 'zustand'
 import { useSwfGraphs } from '../hooks/useGraphs'
+import { useComponentIr } from '../hooks/useComponentIr'
 import { usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf, useDockRows } from '../hooks/useProject'
 import { fieldRows, layerOptions, nodePins } from '../model/graphModel'
@@ -21,7 +22,8 @@ export function GraphNodeInspector() {
   const { store, activeId } = useSwfGraphs()
   const nodeId = useSelectionStore((s) => s.graphNode)
   const rows = useDockRows()
-  const layers = useMemo(() => (swf ? layerOptions(swf.ir, overlay) : []), [swf, overlay])
+  const comp = useComponentIr()
+  const layers = useMemo(() => (comp === 'unavailable' ? [] : comp ? layerOptions(comp.ir, comp.inSwf ? overlay : undefined) : swf ? layerOptions(swf.ir, overlay) : []), [comp, swf, overlay])
   const nodes = useStore(store ?? emptyStore, (s) => s.nodes)
   const variables = useStore(store ?? emptyStore, (s) => s.variables)
   const signature = useStore(store ?? emptyStore, (s) => s.signature)

@@ -53,7 +53,7 @@ import { generate } from './swf/generate'
 import { loadCodegenPacks } from './codegen/packs'
 import { createBuildPipeline } from './sync/buildPipeline'
 import { contractsDir, layersProblem, loadContracts } from './lint/contract'
-import { startSyncServer, type Layer, type SwfInfo } from './sync/syncServer'
+import { startSyncServer, type Layer, type PageComponentTree, type SwfInfo } from './sync/syncServer'
 
 export interface SessionDeps {
   appPath: string
@@ -345,13 +345,13 @@ export function createSession(deps: SessionDeps) {
       void refreshGraphLint().catch(() => undefined) // a deleted layer can orphan a graph node
       pushProject()
     })
-    srv.events.on('swfs', (infos: SwfInfo[], loose: Layer[], components: Layer[]) => {
+    srv.events.on('swfs', (infos: SwfInfo[], loose: Layer[], components: Layer[], trees: PageComponentTree[]) => {
       looseCount = loose.length
-      update({ swfCount: infos.length, orphanedCount: infos.filter((i) => i.orphaned).length, looseLayers: loose, pageComponents: components, lintCount: lintTotal() })
+      update({ swfCount: infos.length, orphanedCount: infos.filter((i) => i.orphaned).length, looseLayers: loose, pageComponents: components, pageComponentTrees: trees, lintCount: lintTotal() })
       void refreshGraphLint().catch(() => undefined)
       pushProject()
     })
-    update({ swfCount: srv.swfs().length, server: 'listening', error: undefined, port: srv.port, looseLayers: [], pageComponents: [] })
+    update({ swfCount: srv.swfs().length, server: 'listening', error: undefined, port: srv.port, looseLayers: [], pageComponents: [], pageComponentTrees: [] })
     refreshFfdec()
     await refreshGraphLint().catch(() => undefined)
   }

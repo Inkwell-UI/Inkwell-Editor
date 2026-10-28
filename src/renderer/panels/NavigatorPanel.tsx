@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, CircleX, Component, DollarSign, FileCode, Frame, Gamepad2, Image as ImageIcon, Link2, Search, Shapes, TriangleAlert, Type, Workflow, type LucideIcon } from 'lucide-react'
 import { GraphsList } from '../graph/GraphsList'
+import { useComponentIr } from '../hooks/useComponentIr'
 import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import { buildLayerTree, filterTree, flattenTree, type Badge, type LayerRow } from '../model/layerTree'
@@ -61,7 +62,11 @@ export function NavigatorPanel() {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
 
   const lint = useMemo(() => rows.filter((r) => swf && r.swfName === swf.name && r.nodeId).map((r) => ({ nodeId: r.nodeId!, severity: r.severity })), [rows, swf])
-  const tree = useMemo(() => (swf ? buildLayerTree(swf.ir, overlay ?? swf.overlay, lint) : undefined), [swf, overlay, lint])
+  const comp = useComponentIr() // a component's graph is open: the layers are what the component is made of, not the menu
+  const tree = useMemo(
+    () => (comp === 'unavailable' ? undefined : comp ? buildLayerTree(comp.ir, comp.inSwf ? (overlay ?? swf?.overlay) : undefined, []) : swf ? buildLayerTree(swf.ir, overlay ?? swf.overlay, lint) : undefined),
+    [comp, swf, overlay, lint]
+  )
   const filtered = tree ? filterTree(tree, query) : undefined
   const flat: LayerRow[] = filtered ? flattenTree(filtered, collapsed, query.trim() !== '') : []
   const orphans = useMemo(() => computeOrphans((project?.swfs ?? []).map((s) => (s.id === swf?.id && overlay ? { ...s, overlay } : s))), [project, swf, overlay])
@@ -90,8 +95,10 @@ export function NavigatorPanel() {
         {workspace !== 'layout' && <GraphsList />}
 
         <section aria-labelledby="nav-layers">
-          <header className="section-title"><h3 id="nav-layers">{strings.nav.layers}</h3></header>
-          {!swf ? (
+          <header className="section-title"><h3 id="nav-layers">{comp && comp !== 'unavailable' ? strings.nav.componentLayers(comp.name) : strings.nav.layers}</h3></header>
+          {comp === 'unavailable' ? (
+            <p className="empty">{strings.nav.componentUnknown}</p>
+          ) : !swf ? (
             <p className="empty">{strings.nav.noSwf}</p>
           ) : flat.length ? (
             <ul className="tree" role="tree" aria-label={strings.nav.layers} onKeyDown={onKey}>

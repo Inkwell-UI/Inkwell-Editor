@@ -14,6 +14,7 @@ import {
   SelectNode,
   SPEC_VERSION,
   type EditorMessage,
+  type Node as IrNode,
   type Swf,
   type SyncIssue
 } from '@inkwell-ui/spec'
@@ -77,6 +78,13 @@ export function unreachableNodes(ir: Swf): string[] {
   return Object.keys(ir.nodes).filter((id) => !seen.has(id))
 }
 
+/** The inside of a component kept on the page: the component's node and everything under it. */
+export interface PageComponentTree {
+  id: string
+  name: string
+  nodes: Record<string, IrNode>
+}
+
 export const UNREACHABLE_MESSAGE = 'this layer is not inside an exported frame'
 
 interface Entry {
@@ -94,7 +102,8 @@ export async function startSyncServer(opts: SyncServerOptions) {
   const store = new Map<string, Entry>() // swf id -> state
   for (const [name, ir] of Object.entries(opts.initial ?? {})) store.set(ir.id, { ir, name, orphaned: false })
   let loose: Layer[] = []
-  let pageComponents: Layer[] = [] // components kept on the page away from the design (not synced yet)
+  let pageComponents: Layer[] = [] // components kept on the page away from the design (not synced like a SWF)
+  let componentTrees: PageComponentTree[] = [] // what each of them is made of, so the editor can show it
   const ready = new Set<WebSocket>() // sockets that finished the hello handshake
   let selection: string[] = []
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -120,7 +129,7 @@ export async function startSyncServer(opts: SyncServerOptions) {
   }
   const infos = (): SwfInfo[] => [...store].map(([id, e]) => ({ id, name: e.name, orphaned: e.orphaned }))
   const swfsChanged = (): void => {
-    events.emit('swfs', infos(), loose, pageComponents)
+    events.emit('swfs', infos(), loose, pageComponents, componentTrees)
   }
   /** Project-level status (no swfId): loose layers and orphaned swfs. */
   const projectStatus = (): void => {
@@ -270,6 +279,8 @@ export async function startSyncServer(opts: SyncServerOptions) {
       for (const [id, e] of store) e.orphaned = !frames.has(id) // kept either way; never deleted
       loose = m.loose.map((l) => ({ id: l.id, name: l.name }))
       pageComponents = (m.components ?? []).map((l) => ({ id: l.id, name: l.name }))
+      componentTrees = (m.componentTrees ?? []).map((t) => ({ id: t.id, name: t.name, nodes: Object.fromEntries(t.nodes.map((n) => [n.id, n])) }))
+      for (const t of componentTrees) requestAssets(ws, { nodes: t.nodes } as unknown as Swf) // its images are needed like a SWF's
       swfsChanged()
       projectStatus()
     } else if (m.type === 'asset') {

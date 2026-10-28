@@ -1,3 +1,4 @@
+import type { Node as IrNode } from '@inkwell-ui/spec'
 import type { DeployState } from './deploy'
 import type { BuildTiming } from './timing'
 
@@ -35,6 +36,8 @@ export interface SyncUiState {
   looseLayers?: LayerRef[]
   /** Components kept on the Figma page away from the design (from the plugin's `swfs` message). The Components tab adds the ones found inside the SWFs. */
   pageComponents?: LayerRef[]
+  /** What each of those is made of (the component's node and everything under it, by id), so a component's composition can be shown although it is in no SWF. */
+  pageComponentTrees?: { id: string; name: string; nodes: Record<string, IrNode> }[]
   /** Nodes inside a SWF that no root reaches (`unreachable-node` in the SWF's build status). */
   unreachableNodes?: (LayerRef & { swfName: string })[]
   /** A Figma plugin with an unknown secret is waiting for Allow / Deny (protocol 4). The window shows the prompt; the Figma dot reads "Waiting for approval". */

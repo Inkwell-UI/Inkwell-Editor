@@ -114,6 +114,8 @@ export const strings = {
     deleteConfirm: 'Delete graph file',
     deleteCancel: 'Keep it',
     layers: 'LAYERS',
+    componentLayers: (name: string) => `INSIDE ${name.toUpperCase()}`,
+    componentUnknown: 'This component is not in any frame, so its layers are known only while Figma is connected.',
     noSwf: 'No SWF yet.',
     noLayers: 'This SWF has no layers.',
     noMatch: 'No layer matches.',

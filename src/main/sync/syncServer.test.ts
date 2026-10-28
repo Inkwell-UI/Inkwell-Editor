@@ -162,6 +162,18 @@ describe('syncServer', () => {
     expect(s.ir('hud')).toBeDefined() // not deleted
   })
 
+  it('swfs message: components kept on the page are not loose and their inside is passed on', async () => {
+    const s = await start({ initial: { hud: sample() }, onChange: vi.fn() })
+    const c = await ready(s)
+    const seen = new Promise<any[]>((r) => s.events.once('swfs', (i, l, comps, trees) => r([l, comps, trees])))
+    const comp = { ...frame('5:1', ['5:2']), type: 'component', variants: [] }
+    c.ws.send(JSON.stringify({ type: 'swfs', frames: [{ id: 'hud', name: 'hud' }], loose: [], components: [{ id: '5:1', name: 'ListItem' }], componentTrees: [{ id: '5:1', name: 'ListItem', nodes: [comp, { ...rectShape('5:2'), parent: '5:1' }] }] }))
+    const [loose, comps, trees] = await seen
+    expect(loose).toEqual([])
+    expect(comps).toEqual([{ id: '5:1', name: 'ListItem' }])
+    expect(trees).toMatchObject([{ id: '5:1', name: 'ListItem', nodes: { '5:1': { type: 'component' }, '5:2': { type: 'shape' } } }])
+  })
+
   it('removing the frame root keeps the last IR, marks it orphaned and builds nothing', async () => {
     const onChange = vi.fn()
     const s = await start({ initial: { hud: sample() }, onChange })
