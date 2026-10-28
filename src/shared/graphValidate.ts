@@ -14,6 +14,7 @@ export type GraphCode =
   | 'graph-bad-wire'
   | 'graph-widget-call'
   | 'graph-function'
+  | 'graph-prop'
   | 'runtime-required'
   | 'saved-variable-invalid'
   | 'contract-node-target'
@@ -227,6 +228,7 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
   }
   widgetCalls(g, defOf, execOut, add)
   functions(g, defOf, ctx.siblings ?? [], ctx.library ?? new Map(), add)
+  propNodes(g, defOf, add)
   // cycle in exec flow: iterative DFS, reports the node that closes each loop
   const state = new Map<string, 1 | 2>()
   for (const root of execOut.keys()) {
@@ -294,6 +296,17 @@ const sameList = (a: readonly object[], b: readonly object[], keys: string[]): b
  * and no other graph has Entry or Exit nodes. Call Function must name a function graph of the same SWF, hold an up-to-date copy of its signature (compared by id,
  * name and type) and must not lead back into its own function (a recursion would never finish).
  */
+/** Get Prop (`extra.readsProp`) reads a prop of the component the graph belongs to: only a component graph has props, and the prop has to exist. */
+function propNodes(g: Graph, defOf: ReadonlyMap<string, NodeDef>, add: (nodeId: string, code: GraphCode, level: 'error' | 'warning', message: string) => void): void {
+  for (const n of g.nodes) {
+    const d = defOf.get(n.id)
+    const key = (d?.extra as { readsProp?: unknown } | undefined)?.readsProp
+    if (!d || typeof key !== 'string') continue
+    if (g.scope !== 'blueprint') add(n.id, 'graph-prop', 'error', `${d.title} only works in a component graph.`)
+    else if (!(g.props ?? []).some((p) => p.id === n.fields[key])) add(n.id, 'graph-prop', 'error', `${d.title}: pick a prop of this component${typeof n.fields[key] === 'string' && n.fields[key] ? ' (the one it read is gone)' : ''}.`)
+  }
+}
+
 function functions(g: Graph, defOf: ReadonlyMap<string, NodeDef>, siblings: readonly Graph[], library: ReadonlyMap<string, Graph>, add: (nodeId: string, code: GraphCode, level: 'error' | 'warning', message: string) => void): void {
   const fns = new Map([...library, ...siblings.filter((s) => s.scope === 'function' && s.signature).map((s) => [s.id, s] as const)])
   if (g.scope === 'function' && g.signature) fns.set(g.id, g)

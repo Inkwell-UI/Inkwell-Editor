@@ -71,9 +71,11 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
   const wired = useStore(ctx.store, (s) => wiredKey(s.edges, id))
   const outs = useStore(ctx.store, (s) => outgoing(s.edges, id).map((e) => pinName(e.sourceHandle)).join(','))
   const bad = new Set(badPins ? badPins.split(',') : [])
-  const callKey = (def?.extra as { callsFunction?: string } | undefined)?.callsFunction
-  // choosing the function of a Call Function node also copies its signature and re-points the wires
-  const setField = (key: string, value: unknown): void => (key === callKey && typeof value === 'string' ? pointCall(ctx.store, id, value) : ctx.store.getState().setField(id, key, value))
+  const props = useStore(ctx.store, (s) => s.props)
+  const { callsFunction: callKey, readsProp: propKey } = (def?.extra ?? {}) as { callsFunction?: string; readsProp?: string }
+  // choosing the function of a Call Function node also copies its signature and re-points the wires; choosing the prop of a Get Prop node copies its type
+  const setField = (key: string, value: unknown): void =>
+    key === callKey && typeof value === 'string' ? pointCall(ctx.store, id, value) : key === propKey && typeof value === 'string' ? ctx.store.getState().setNodeProp(id, value) : ctx.store.getState().setField(id, key, value)
   const fctx = { setField, layers: ctx.layers, variables: ctx.variables, badPins: bad }
 
   if (!def) {
@@ -121,7 +123,7 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
     )
   }
 
-  const rows = fieldRows(def, { data }, pins, new Set(wired.split(',')), { sig: ctx.signature, functions: callKey ? functionChoices(ctx.store) : [] })
+  const rows = fieldRows(def, { data }, pins, new Set(wired.split(',')), { sig: ctx.signature, props, functions: callKey ? functionChoices(ctx.store) : [] })
   const rowOf = new Map(rows.map((r) => [r.key, r]))
   const pinRows = (list: typeof pins.inputs, side: 'inputs'): React.ReactNode =>
     list.map((p) => {

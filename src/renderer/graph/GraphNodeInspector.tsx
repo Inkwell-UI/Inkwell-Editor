@@ -25,15 +25,16 @@ export function GraphNodeInspector() {
   const nodes = useStore(store ?? emptyStore, (s) => s.nodes)
   const variables = useStore(store ?? emptyStore, (s) => s.variables)
   const signature = useStore(store ?? emptyStore, (s) => s.signature)
+  const props = useStore(store ?? emptyStore, (s) => s.props)
   const node = nodeId ? nodeIndex(nodes).get(nodeId) : undefined
   if (!store || !node || !swf) return <OpenComponentProps><p className="empty">{strings.insp.gnNone}</p></OpenComponentProps>
   const def = defs.get(node.data.kind)
   const mine = rows.filter((r) => r.swfName === swf.name && r.graphId === activeId && r.graphNodeId === node.id)
   const pins = def ? nodePins(defs, node, variables, signature) : undefined
   const wired = new Set(incoming(store.getState().edges, node.id).map((e) => pinName(e.targetHandle)))
-  const callKey = (def?.extra as { callsFunction?: string } | undefined)?.callsFunction
-  const list = def && pins ? fieldRows(def, node, pins, wired, { sig: signature, functions: callKey ? functionChoices(store) : [] }) : []
-  const ctx = { setField: (k: string, v: unknown) => (k === callKey && typeof v === 'string' ? pointCall(store, node.id, v) : store.getState().setField(node.id, k, v)), layers, variables }
+  const { callsFunction: callKey, readsProp: propKey } = (def?.extra ?? {}) as { callsFunction?: string; readsProp?: string }
+  const list = def && pins ? fieldRows(def, node, pins, wired, { sig: signature, props, functions: callKey ? functionChoices(store) : [] }) : []
+  const ctx = { setField: (k: string, v: unknown) => (k === callKey && typeof v === 'string' ? pointCall(store, node.id, v) : k === propKey && typeof v === 'string' ? store.getState().setNodeProp(node.id, v) : store.getState().setField(node.id, k, v)), layers, variables }
   return (
     <div className="insp" data-testid="graph-node-inspector">
       <header className="insp-head">
@@ -63,4 +64,4 @@ export function GraphNodeInspector() {
 
 import { create } from 'zustand'
 import type { GraphState } from '../state/graphStore'
-const emptyStore = create<Pick<GraphState, 'nodes' | 'variables' | 'signature'>>(() => ({ nodes: [], variables: [], signature: undefined }))
+const emptyStore = create<Pick<GraphState, 'nodes' | 'variables' | 'signature' | 'props'>>(() => ({ nodes: [], variables: [], signature: undefined, props: undefined }))

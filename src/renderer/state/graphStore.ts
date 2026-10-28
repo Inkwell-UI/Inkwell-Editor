@@ -76,6 +76,8 @@ export interface GraphState extends Doc {
   setSignature(next: NonNullable<Graph['signature']>): void
   /** Component graphs: replaces the props. */
   setProps(next: NonNullable<Graph['props']>): void
+  /** Get Prop: reads the prop `propId` (the node also keeps a copy of its type, which gives its output pin the type). */
+  setNodeProp(nodeId: string, propId: string): void
   /** Call Function: points the node at `fn` (copies its signature; wires of pins that no longer exist are dropped). */
   setCallTarget(nodeId: string, fn: Graph): void
   /** Refreshes every Call Function node that calls `fn` and holds an out-of-date copy of its signature. */
@@ -218,7 +220,21 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
             const g = applySignature(toGraph(s), next)
             return { signature: next, edges: toFlow(g).edges }
           }),
-        setProps: (next) => set({ props: next }),
+        setProps: (next) =>
+          set((s) => ({
+            props: next,
+            // every Get Prop node keeps the type of its prop up to date
+            nodes: s.nodes.map((n) => {
+              const f = n.data.fields
+              const p = n.data.kind.startsWith('core/GetProp@') ? next.find((x) => x.id === f['prop']) : undefined
+              return p && f['propType'] !== p.type ? { ...n, data: { ...n.data, fields: { ...f, propType: p.type } } } : n
+            })
+          })),
+        setNodeProp: (nodeId, propId) =>
+          set((s) => {
+            const p = s.props?.find((x) => x.id === propId)
+            return { nodes: s.nodes.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, fields: { ...n.data.fields, prop: propId, ...(p ? { propType: p.type } : {}) } } } : n)) }
+          }),
         setCallTarget: (nodeId, fn) =>
           set((s) => {
             const g = toGraph(s)

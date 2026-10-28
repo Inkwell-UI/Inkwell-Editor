@@ -1,0 +1,36 @@
+{
+  "kind": "GetProp",
+  "major": 1,
+  "title": "Get Prop",
+  "category": "Variables",
+  "milestone": "0.6",
+  "pure": true,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": "",
+      "typeFrom": "propType"
+    }
+  ],
+  "fields": {
+    "prop": {
+      "type": "string",
+      "description": "Id of a prop of the component this graph belongs to"
+    },
+    "propType": {
+      "type": "string",
+      "default": "String",
+      "description": "Copy of the prop's type; the editor keeps it up to date"
+    }
+  },
+  "as2Template": "templates/GetProp.as2",
+  "extra": {
+    "volatile": true,
+    "readsProp": "prop",
+    "managedFields": [
+      "propType"
+    ]
+  }
+}

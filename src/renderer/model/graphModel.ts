@@ -191,6 +191,8 @@ export interface FieldRow {
 /** What the field rows of function nodes need to know: the signature of the graph the node lives in (Function Exit's exits) and the function graphs of the SWF (Call Function's target). */
 export interface FunctionCtx {
   sig?: Graph['signature']
+  /** The props of the component graph the node lives in (Get Prop's choice). */
+  props?: Graph['props']
   functions?: readonly { id: string; name: string }[]
 }
 
@@ -205,11 +207,15 @@ export function fieldRows(def: NodeDef, node: Pick<FlowNode, 'data'>, pins: Pins
   const f = node.data.fields
   const rows: FieldRow[] = []
   const inputNames = new Set(def.inputs.map((p) => p.name))
-  const x = (def.extra ?? {}) as { managedFields?: string[]; callsFunction?: string; signatureInputs?: string }
+  const x = (def.extra ?? {}) as { managedFields?: string[]; callsFunction?: string; signatureInputs?: string; readsProp?: string }
   for (const [key, raw] of Object.entries(def.fields)) {
     if (inputNames.has(key) || x.managedFields?.includes(key)) continue // managed fields (a call's copy of the signature) are kept by the editor, not typed
     if (key === x.callsFunction) {
       rows.push({ key, label: 'function', kind: 'choice', value: f[key], choices: (fn.functions ?? []).map((g) => ({ value: g.id, label: g.name })) })
+      continue
+    }
+    if (key === x.readsProp) {
+      rows.push({ key, label: 'prop', kind: 'choice', value: f[key], choices: (fn.props ?? []).map((p) => ({ value: p.id, label: `${p.name} (${p.type})` })) })
       continue
     }
     if (key === 'exit' && x.signatureInputs) {
