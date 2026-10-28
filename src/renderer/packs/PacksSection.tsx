@@ -215,10 +215,15 @@ function NewPackForm({ onCreated, onCancel }: { onCreated(id: string): void; onC
     if (!inkwell) return
     setBusy(true)
     setError(undefined)
-    const r = await inkwell.createLibrary({ id: id.trim(), version: version.trim(), ...(description.trim() ? { description: description.trim() } : {}) })
-    setBusy(false)
-    if (r.ok) onCreated(r.id)
-    else setError(r.error)
+    try {
+      const r = await inkwell.createLibrary({ id: id.trim(), version: version.trim(), ...(description.trim() ? { description: description.trim() } : {}) })
+      if (r.ok) onCreated(r.id)
+      else setError(r.error)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e)) // e.g. the main process predates this feature: restart the editor
+    } finally {
+      setBusy(false)
+    }
   }
   const valid = /^[a-z0-9][a-z0-9._-]*$/.test(id.trim()) && /^\d+\.\d+\.\d+$/.test(version.trim())
   return (
