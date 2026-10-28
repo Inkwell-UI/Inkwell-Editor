@@ -46,20 +46,19 @@ export function InspectorPanel() {
   if (inspects === 'graphNode')
     return (
       <Panel title={strings.insp.title}>
-        <OpenComponentProps />
         <GraphNodeInspector />
       </Panel>
     )
   if (!node || !swf)
     return (
       <Panel title={strings.insp.title}>
-        <OpenComponentProps />
-        <p className="empty">{strings.insp.none}</p>
+        <OpenComponentProps>
+          <p className="empty">{strings.insp.none}</p>
+        </OpenComponentProps>
       </Panel>
     )
   return (
     <Panel title={strings.insp.title}>
-      <OpenComponentProps />
       <ComponentInspector key={`${swf.id}/${node.id}`} swfName={swf.name} swfId={swf.id} node={node} highlight={issue} />
     </Panel>
   )

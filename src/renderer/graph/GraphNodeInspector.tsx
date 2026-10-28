@@ -10,6 +10,7 @@ import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { isFunctionEntry, isFunctionExit } from '../../shared/graphValidate'
 import { FieldEditor } from './FieldEditors'
+import { OpenComponentProps } from './PropsEditor'
 import { SignatureEditor } from './SignatureEditor'
 
 /** The Inspector body for a selected graph node (UX 4.5): its kind, the issues pinned to it (the one lint source) and the same field editors as the node. */
@@ -25,7 +26,7 @@ export function GraphNodeInspector() {
   const variables = useStore(store ?? emptyStore, (s) => s.variables)
   const signature = useStore(store ?? emptyStore, (s) => s.signature)
   const node = nodeId ? nodeIndex(nodes).get(nodeId) : undefined
-  if (!store || !node || !swf) return <p className="empty">{strings.insp.gnNone}</p>
+  if (!store || !node || !swf) return <OpenComponentProps><p className="empty">{strings.insp.gnNone}</p></OpenComponentProps>
   const def = defs.get(node.data.kind)
   const mine = rows.filter((r) => r.swfName === swf.name && r.graphId === activeId && r.graphNodeId === node.id)
   const pins = def ? nodePins(defs, node, variables, signature) : undefined
