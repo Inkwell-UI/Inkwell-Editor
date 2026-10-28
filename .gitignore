@@ -4,3 +4,4 @@ dist
 tools/ffdec-wrapper/build
 scratch
 build
+dist-portable
