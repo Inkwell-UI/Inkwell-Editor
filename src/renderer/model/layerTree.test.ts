@@ -51,10 +51,11 @@ describe('withRuntimeRows', () => {
     const out = withRuntimeRows(rows, [{ parent: 'p', component: 'c1', path: '_level0.a.i0' }, { parent: 'p', component: 'c1', path: '_level0.a.i1' }], () => 'ListItem')
     expect(out.map((r) => r.id)).toEqual(['root', 'p', 'kid', 'runtime:_level0.a.i0', 'runtime:_level0.a.i1', 'other'])
     expect(out[3]).toMatchObject({ name: 'ListItem', runtime: true, depth: 2 })
+    expect(withRuntimeRows([row('lone', 1)], [{ parent: 'lone', component: 'c1', path: 'x' }], () => 'n')[0]).toMatchObject({ hasChildren: true }) // a layer with only runtime children is expandable too
   })
   it('a collapsed parent, or one that is not listed, shows none', () => {
     const collapsed = [row('p', 1, { hasChildren: true, expanded: false })]
-    expect(withRuntimeRows(collapsed, [{ parent: 'p', component: 'c1', path: 'x' }], () => 'n')).toHaveLength(1)
+    expect(withRuntimeRows(collapsed, [{ parent: 'p', component: 'c1', path: 'x' }], () => 'n')).toHaveLength(1) // still one row: the twisty stays so it can be opened
     expect(withRuntimeRows(rows, [{ parent: 'elsewhere', component: 'c1', path: 'x' }], () => 'n')).toHaveLength(rows.length)
   })
 })

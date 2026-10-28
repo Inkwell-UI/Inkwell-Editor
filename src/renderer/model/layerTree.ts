@@ -90,7 +90,7 @@ export function filterTree(root: LayerNode, query: string): LayerNode | undefine
 /** Visible rows in tree order. While filtering, everything on a matching path is expanded; otherwise `collapsed` ids hide their children. */
 /**
  * Puts the instances a graph made (Create Component, seen in the preview) under the layer they were added to, after its own children. A parent that is collapsed, filtered out or not in this
- * SWF shows none of them. They are rows of their own (`runtime`), named like their component.
+ * SWF shows none of them (a layer that has them is expandable, like one with layers inside). They are rows of their own (`runtime`), named like their component.
  */
 /** The row id (and selection id) of a component instance a graph made: its clip path under a prefix no Figma id has. */
 export const runtimeRowId = (clipPath: string): string => `runtime:${clipPath}`
@@ -99,8 +99,12 @@ export function withRuntimeRows(rows: readonly LayerRow[], spawned: readonly { p
   const out = [...rows]
   for (const parent of rows) {
     const mine = spawned.filter((s) => s.parent === parent.id)
-    if (!mine.length || !(parent.expanded || !parent.hasChildren)) continue
-    let at = out.indexOf(parent) + 1
+    if (!mine.length) continue
+    // they are the layer's children: it gets a twisty of its own, and collapsing it hides them
+    const i = out.indexOf(parent)
+    out[i] = { ...parent, hasChildren: true }
+    if (!parent.expanded) continue
+    let at = i + 1
     while (at < out.length && out[at]!.depth > parent.depth) at++
     out.splice(at, 0, ...mine.map((s) => ({ id: runtimeRowId(s.path), name: nameOf(s.component), type: 'runtime', badges: [], depth: parent.depth + 1, hasChildren: false, expanded: false, runtime: true }) as LayerRow))
   }
