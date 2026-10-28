@@ -639,6 +639,35 @@ exports[`golden AS2 per node kind > core/FocusComponent@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/For@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/For@1
+                var n1_body = function(n1_index) {
+                    // [l_body] core/Log@1
+                    trace("[Inkwell] info l_body: " + "");
+                };
+                var n1_first = 0;
+                var n1_last = 9;
+                if (n1_last - n1_first > 10000) n1_last = n1_first + 10000;
+                for (var n1_i = n1_first; n1_i <= n1_last; n1_i++) {
+                    n1_body(n1_i);
+                }
+                // [l_completed] core/Log@1
+                trace("[Inkwell] info l_completed: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/ForEach@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;

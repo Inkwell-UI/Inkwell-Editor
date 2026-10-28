@@ -1,0 +1,43 @@
+{
+  "kind": "For",
+  "major": 1,
+  "title": "For",
+  "category": "Flow",
+  "milestone": "0.6",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "first",
+      "type": "Number",
+      "default": 0,
+      "description": "First index"
+    },
+    {
+      "name": "last",
+      "type": "Number",
+      "default": 9,
+      "description": "Last index, included (0 to 9 runs the body 10 times); at most 10000 runs"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "body",
+      "type": "Exec"
+    },
+    {
+      "name": "completed",
+      "type": "Exec"
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/For.as2"
+}

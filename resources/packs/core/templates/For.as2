@@ -1,0 +1,11 @@
+// [{{node.id}}] core/For@1
+var {{node.uid}}_body = function({{out.index}}) {
+    {{next.body}}
+};
+var {{node.uid}}_first = {{in.first}};
+var {{node.uid}}_last = {{in.last}};
+if ({{node.uid}}_last - {{node.uid}}_first > 10000) {{node.uid}}_last = {{node.uid}}_first + 10000;
+for (var {{node.uid}}_i = {{node.uid}}_first; {{node.uid}}_i <= {{node.uid}}_last; {{node.uid}}_i++) {
+    {{node.uid}}_body({{node.uid}}_i);
+}
+{{next.completed}}
