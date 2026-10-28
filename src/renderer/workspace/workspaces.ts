@@ -52,8 +52,8 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
       kind: 'split',
       direction: 'row',
       children: [
-        // the left column runs the full height: navigator (with the library of functions, the components and contracts as tabs) above the variables
-        { kind: 'split', direction: 'column', size: 1.3, children: [{ ...tabs(['navigator', 'library', 'components', 'contracts']), size: 3 }, { kind: 'panel', panel: 'variables', size: 2 }] },
+        // the left column runs the full height: navigator (with contracts as a tab), the library and the components (tabs of one group), then the variables
+        { kind: 'split', direction: 'column', size: 1.3, children: [{ ...tabs(['navigator', 'contracts']), size: 3 }, { ...tabs(['library', 'components']), size: 2 }, { kind: 'panel', panel: 'variables', size: 2 }] },
         {
           kind: 'split',
           direction: 'column',

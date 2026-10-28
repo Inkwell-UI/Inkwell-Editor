@@ -41,8 +41,9 @@ describe('panel registry', () => {
     }
     expect(left('layout')).toEqual(['navigator', 'assets'])
     const col = (WORKSPACES.behaviour.layout as { children: LayoutNode[] }).children[0] as { children: { tabs?: { panel: string }[]; panel?: string }[] }
-    expect(col.children[0]!.tabs!.map((t) => t.panel)).toEqual(['navigator', 'library', 'components', 'contracts']) // Behaviour: the left column is [tabs, variables]
-    expect(col.children[1]!.panel).toBe('variables')
+    expect(col.children[0]!.tabs!.map((t) => t.panel)).toEqual(['navigator', 'contracts']) // Behaviour: the left column is [tabs, library + components tabs, variables]
+    expect(col.children[1]!.tabs!.map((t) => t.panel)).toEqual(['library', 'components'])
+    expect(col.children[2]!.panel).toBe('variables')
   })
 
   it('Behaviour: the left column (navigator, variables) runs the full height; beside it the graph owns the centre, the right column is [fixed preview, inspector] with no splitter between, and the dock sits under graph and right column', () => {

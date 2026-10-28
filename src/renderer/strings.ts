@@ -206,13 +206,9 @@ export const strings = {
     title: 'Components',
     heading: 'COMPONENTS',
     empty: 'No components yet. Make a component in Figma and it shows up here, in a frame or away from the design.',
-    where: (swf?: string) => swf ?? 'Not placed in a frame',
-    addGraph: 'Add a graph',
-    openGraph: 'Open graph',
     noSwf: 'Select a SWF first: the Graph panel shows the graph in it',
     graphFailed: 'Could not create the graph',
-    props: (props: readonly { name: string; type: string }[]) => (props.length ? `(${props.map((p) => `${p.name}: ${p.type}`).join(', ')})` : 'no props'),
-    instances: (n: number) => (n === 0 ? 'Not used yet' : `Used ${n} time${n === 1 ? '' : 's'}`)
+    props: (props: readonly { name: string; type: string }[]) => `(${props.map((p) => `${p.name}: ${p.type}`).join(', ')})`
   },
 
   lib: {

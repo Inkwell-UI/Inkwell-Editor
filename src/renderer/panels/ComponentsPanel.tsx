@@ -1,13 +1,14 @@
 import { useEffect } from 'react'
-import { Component, Crosshair, Plus, Workflow } from 'lucide-react'
+import { Component, Crosshair } from 'lucide-react'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useProject } from '../hooks/useProject'
 import { createComponentGraph, loadComponentGraphs, useComponentGraphs } from '../state/componentGraphs'
-import { openComponentGraph } from '../state/graphDocs'
+import { openComponentGraph, useGraphDocs } from '../state/graphDocs'
 import { useSyncState } from '../hooks/useSyncState'
 import { figmaSelectReason } from '../model/connection'
 import { componentRows } from '../model/componentList'
 import { useMemo } from 'react'
+import { useSelectionStore } from '../state/selectionStore'
 import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
@@ -19,6 +20,7 @@ export function ComponentsPanel() {
   const swf = useActiveSwf()
   const sync = useSyncState()
   const graphs = useComponentGraphs((s) => s.graphs)
+  const activeId = useGraphDocs((s) => (swf ? s.active[swf.id] : undefined))
   useEffect(() => void (inkwell && loadComponentGraphs(inkwell)), [project?.dir])
   const rows = useMemo(() => componentRows((project?.swfs ?? []).map((s) => s.ir), sync?.pageComponents), [project, sync?.pageComponents])
   const reason = figmaSelectReason(sync, { notConnected: strings.selectInFigmaReason, pending: strings.selectInFigmaPending })
@@ -30,6 +32,7 @@ export function ComponentsPanel() {
   // the graph of a component: made on first use, then opened in the Graph panel (which borrows the active SWF)
   const openGraph = async (id: string, name: string): Promise<void> => {
     if (!inkwell || !swf) return
+    useSelectionStore.getState().clear() // nothing selected: the Inspector shows this graph's props
     const have = graphs[id] ?? (await createComponentGraph(id, name, inkwell).then((r) => (r.ok ? r.graph : undefined)))
     if (!have) return void useToastStore.getState().push({ tone: 'error', title: strings.comp.graphFailed })
     openComponentGraph({ id: swf.id, name: swf.name }, have)
@@ -41,18 +44,24 @@ export function ComponentsPanel() {
           <header className="section-title"><h3 id="comp-list">{strings.comp.heading}</h3></header>
           {rows.length === 0 && <p className="empty">{strings.comp.empty}</p>}
           <ul className="graph-list" role="list">
-            {rows.map((r) => (
-              <li key={r.id} className="graph-row" data-testid="component-row">
-                <div className="graph-row-main">
-                  <span className="layer-main"><Component size={14} aria-hidden="true" className="type-icon" /><span className="layer-name">{r.name}</span><span className="layer-type">{strings.comp.where(r.swfName)}</span></span>
-                  <span className="row-reveal">
-                    <Btn icon={graphs[r.id] ? Workflow : Plus} variant="quiet" label={graphs[r.id] ? strings.comp.openGraph : strings.comp.addGraph} reason={swf ? undefined : strings.comp.noSwf} onClick={() => void openGraph(r.id, r.name)} testId="component-graph" />
-                    <Btn icon={Crosshair} variant="quiet" label={strings.selectInFigma} reason={reason} onClick={() => select(r.id)} testId="component-select" />
-                  </span>
-                </div>
-                <div className="graph-row-events">{strings.comp.instances(r.instances)}{graphs[r.id] ? ` · ${strings.comp.props(graphs[r.id]!.props ?? [])}` : ''}</div>
-              </li>
-            ))}
+            {rows.map((r) => {
+              const g = graphs[r.id]
+              const active = !!g && g.id === activeId
+              return (
+                <li key={r.id} className={`graph-row graph-row-grid${active ? ' is-selected' : ''}`} data-testid="component-row">
+                  <div className="graph-row-main">
+                    <button type="button" className="layer-main" aria-pressed={active} title={swf ? undefined : strings.comp.noSwf} disabled={!swf} onClick={() => void openGraph(r.id, r.name)} data-testid="component-graph">
+                      <Component size={14} aria-hidden="true" className="type-icon" />
+                      <span className="layer-name">{r.name}</span>
+                    </button>
+                    <span className="graph-row-actions">
+                      <span className="row-reveal"><Btn icon={Crosshair} variant="quiet" label={strings.selectInFigma} reason={reason} onClick={() => select(r.id)} testId="component-select" /></span>
+                    </span>
+                  </div>
+                  {!!g?.props?.length && <div className="graph-row-events dim">{strings.comp.props(g.props)}</div>}
+                </li>
+              )
+            })}
           </ul>
         </section>
       </div>
