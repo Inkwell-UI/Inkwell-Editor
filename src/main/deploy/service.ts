@@ -8,6 +8,7 @@ import { corePackDir } from '../packs'
 import { exportGate } from '../lint/gate'
 import { loadVanillaHashes, vanillaCacheRoot } from '../vanilla/cache'
 import { isConfirmed, isGameData, packageDir, packageFileName, resolveTarget, targetList, withConfirmed } from './plan'
+import { contractsDir, loadContracts } from '../lint/contract'
 import { commitDeploy, prepareDeploy, type DeployInput, type DeploySwf, type Prepared } from './run'
 import { writeAtomic } from './write'
 import { writeZip } from './zip'
@@ -60,7 +61,7 @@ export function createDeployService(d: DeployDeps) {
       const input: DeployInput = {
         modId: p.modId, modName: p.name, swfs: p.swfs, root: t.root, gameDirs, ...(p.imageMode ? { imageMode: p.imageMode } : {}), ...(p.assets ? { assets: p.assets } : {}), ...(p.localization ? { localization: p.localization } : {}), ...(scope === 'active' && activeName ? { only: activeName } : {}),
         buildDir: join(p.dir, 'build'), ffdec: d.ffdec(), ...(resolved.papyrusExe ? { papyrusExe: resolved.papyrusExe } : {}),
-        ...(dev ? { dev } : {}), ...(pkg ? { package: true } : {}), stubsDir: join(d.appPath, 'resources/papyrus-stubs'), packs: (await loadCodegenPacks(d.packDirs?.() ?? [corePackDir(d.appPath)])).packs, vanillaHashes: await loadVanillaHashes(vanillaCacheRoot(d.userData))
+        ...(dev ? { dev } : {}), ...(pkg ? { package: true } : {}), stubsDir: join(d.appPath, 'resources/papyrus-stubs'), packs: (await loadCodegenPacks(d.packDirs?.() ?? [corePackDir(d.appPath)])).packs, vanillaHashes: await loadVanillaHashes(vanillaCacheRoot(d.userData)), contracts: await loadContracts(contractsDir(d.appPath)).catch(() => [])
       }
       const r = await prepareDeploy(input)
       if (!r.ok) {

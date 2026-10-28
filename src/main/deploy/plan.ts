@@ -47,6 +47,8 @@ export interface SwfLike {
   menu?: MenuSettings
   /** customMenu: runtime features the SWF uses (`RuntimeFeature` names; they raise `minRuntime`). */
   features?: readonly string[]
+  /** menuReplacement: the game file it replaces, relative to Data/ (the contract's engine layer `swf`, e.g. `Interface/inventorymenu.swf`); absent = unknown contract, not deployed. */
+  replaces?: string
 }
 
 /** Folder a target writes to, or the reason it has none. A leaf name (mod name) may not contain separators. */
@@ -116,7 +118,7 @@ const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
  * project + settings -> the files a deploy writes. Layout (design spec "Menus, contracts and SkyUI"):
  * hudWidget -> Interface/exported/widgets/<modId>/<Widget>.swf, Scripts/*.pex (only with a Papyrus compiler), Source/Scripts/*.psc, <modId>.esp (once);
  * customMenu -> Interface/Inkwell/<modId>/<Swf>.swf (O2, `menuSwfPath`), SKSE/Plugins/Inkwell/menus/<menu>.json, and once per mod the commented default
- * SKSE/Plugins/Inkwell/<modId>.ini (created if absent, never overwritten; docs/menus.md) and the runtime check (`<modId>_RuntimeCheck.esp`, Scripts/*.pex, Source/Scripts/*.psc; needs the Papyrus compiler); menuReplacement is not deployed.
+ * SKSE/Plugins/Inkwell/<modId>.ini (created if absent, never overwritten; docs/menus.md) and the runtime check (`<modId>_RuntimeCheck.esp`, Scripts/*.pex, Source/Scripts/*.psc; needs the Papyrus compiler); menuReplacement -> the contract's `swf` (a loose file that wins over the BSA copy).
  */
 export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; gameDirs: string[]; hasPapyrus: boolean; only?: string; dev?: boolean; translationLanguages?: readonly string[] }): DeployPlan {
   const plan: DeployPlan = { root: o.root, files: [], lint: [], notes: [], errors: [], widgets: {} }
@@ -171,7 +173,8 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
           plan.notes.push(runtimeCheckNote(c.esp))
         } else plan.lint.push({ severity: 'warning', code: 'papyrus-compiler-missing', message: 'No Papyrus compiler is set: the runtime check (the in-game message when Inkwell Runtime is missing or too old) cannot be generated for this menu mod. Set INKWELL_PAPYRUS or the compiler path in Settings.' })
       }
-    } else plan.lint.push({ severity: 'warning', code: 'menu-replacement-skipped', message: `"${s.name}" is a menu replacement; replacements are not deployed yet.` })
+    } else if (s.replaces) add(s.replaces)
+    else plan.lint.push({ severity: 'warning', code: 'menu-replacement-skipped', message: `"${s.name}" is a menu replacement without a known contract; it is not deployed.` })
   }
   // Dev deploy (docs/dev-mode.md): the runtime-wide Inkwell.ini with DevMode=1 and the token, only next to a custom menu (HUD widgets do not use the runtime)
   const firstMenu = swfs.find((s) => s.kind === 'customMenu')

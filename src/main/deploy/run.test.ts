@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { MenuSettings, Swf } from '@inkwell-ui/spec'
+import { ContractLayer, MenuSettings, Swf } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
 import { createAssetStore } from '../images/assets'
@@ -116,6 +116,40 @@ describe('prepareDeploy guards', () => {
     expect(existsSync(i.root)).toBe(false)
   })
 
+  describe('menu replacement', () => {
+    const layer = ContractLayer.parse({ schemaVersion: 1, menu: 'InventoryMenu', layer: 'engine', swf: 'Interface/inventorymenu.swf', entries: [] })
+    const inv = (lint: DeploySwf['build'] extends infer B ? (B extends { lint: infer L } ? L : never) : never = []): DeploySwf => ({
+      name: 'inv', orphaned: false, kind: 'menuReplacement', ir: { root: 'r', nodes: { r: frame('r', []) }, target: { kind: 'menuReplacement', contract: 'InventoryMenu', layers: ['engine'] } } as unknown as Swf, build: { state: 'done', lint }
+    })
+
+    it("deploys its built SWF to the contract's file, next to a custom menu that is unaffected", async () => {
+      const i = input({ swfs: [swf('wheel'), inv()], contracts: [layer] })
+      writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+      writeFileSync(join(i.buildDir, 'inv.swf'), 'FWS-inventory')
+      const r = await prepareDeploy(i)
+      expect(r.ok && r.prepared.info.map((f) => f.rel)).toContain('Interface/inventorymenu.swf')
+      expect(r.ok && r.prepared.files.get('Interface/inventorymenu.swf')?.data.toString()).toBe('FWS-inventory')
+    })
+
+    it('never ships an unmodified vanilla inventorymenu.swf', async () => {
+      const i = input({ swfs: [inv()], contracts: [layer] })
+      writeFileSync(join(i.buildDir, 'inv.swf'), 'vanilla-inventory')
+      const r = await prepareDeploy({ ...i, vanillaHashes: new Set([sha256(Buffer.from('vanilla-inventory'))]) })
+      expect(r).toMatchObject({ ok: false, error: expect.stringContaining('Interface/inventorymenu.swf') })
+      expect(existsSync(i.root)).toBe(false)
+    })
+
+    it('a contract error keeps the replacement out of the deploy and blocks the gate, while other lint does not', async () => {
+      const bad = { severity: 'error' as const, code: 'contract-missing', message: '_root.Menu_mc', nodeId: 'r' }
+      const i = input({ swfs: [inv([bad, { severity: 'error', code: 'font-unmapped', message: 'x', nodeId: 'r' }])], contracts: [layer] })
+      writeFileSync(join(i.buildDir, 'inv.swf'), 'FWS-inventory')
+      const r = await prepareDeploy(i)
+      if (!r.ok) throw new Error(r.error)
+      expect(r.prepared.files.has('Interface/inventorymenu.swf')).toBe(false)
+      expect(r.prepared.issues).toEqual([{ ...bad, swf: 'inv' }])
+    })
+  })
+
   it('refuses the game Data folder before compiling anything', async () => {
     const r = await prepareDeploy(input({ root: 'C:\\Games\\Skyrim Special Edition\\Data', gameDirs: ['C:\\Games\\Skyrim Special Edition'] }))
     expect(r).toMatchObject({ ok: false, error: expect.stringContaining('Data folder') })
@@ -137,11 +171,12 @@ describe('prepareDeploy guards', () => {
     expect(await issue({ ...swf('wheel'), build: { state: 'failed', lint: [] } })).toMatchObject([{ code: 'build-not-ready', message: expect.stringContaining('last build failed') }])
   })
 
-  it("a menu replacement is not deployed, but its contract lint (and only that) is a gate error; unbuilt is build-not-ready", async () => {
+  it("a menu replacement without a known contract is not deployed, but its contract lint (and only that) is a gate error; unbuilt is build-not-ready", async () => {
     const lint = [{ severity: 'error' as const, code: 'contract-missing', message: '_root.Menu_mc', nodeId: 'r' }, { severity: 'error' as const, code: 'font-unmapped', message: 'x', nodeId: 'r' }]
     const inv: DeploySwf = { ...swf('inv'), kind: 'menuReplacement', build: { state: 'done', lint } }
     const i = input({ swfs: [swf('wheel'), inv] })
     writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    writeFileSync(join(i.buildDir, 'inv.swf'), 'FWS-inv')
     const r = await prepareDeploy(i)
     if (!r.ok) throw new Error(r.error)
     expect(r.prepared.issues.filter((x) => x.swf === 'inv')).toEqual([{ ...lint[0], swf: 'inv' }])

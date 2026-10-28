@@ -618,7 +618,7 @@ export const strings = {
       contractNone: 'None (not checked)',
       layers: 'Built for',
       layerNames: { engine: 'The game (always)', skyui52: 'SkyUI 5.2 players (adds its version check globals)', skyui6: 'SkyUI 6 players' } as Record<string, string>,
-      layersHelp: 'The contract check and the generated engine glue follow these layers. Menu replacements are not deployed yet.',
+      layersHelp: 'The contract check and the generated engine glue follow these layers.',
       error: (e: string) => `Could not change the target: ${e}`
     },
     kindNames: { hudWidget: 'hudWidget', customMenu: 'customMenu', menuReplacement: 'menuReplacement' } as Record<string, string>,

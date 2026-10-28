@@ -17,6 +17,7 @@ import { devIniText, devReloadPaths, RUNTIME_INI_REL } from '../runtime/devIni'
 import { hasFocusGraph } from '../lint/focus'
 import { keyedTexts, localizationLint, type LocSwf } from '../lint/localization'
 import { planDeploy, projectMinRuntime, safeJoin, translationFilePath, type DeployPlan, type SwfLike } from './plan'
+import type { ContractLayer } from '@inkwell-ui/spec'
 import { readManifest, staleFiles, writeDeploy } from './write'
 
 export interface DeploySwf extends SwfLike {
@@ -50,6 +51,8 @@ export interface DeployInput {
   ffdec: WidgetOptions['ffdec']
   papyrusExe?: string
   stubsDir?: string
+  /** The contract layers (`loadContracts`): a menu replacement deploys to its contract's `swf`. */
+  contracts?: readonly ContractLayer[]
   /** Hashes of the vanilla SWF cache; empty when it is not built. */
   vanillaHashes: ReadonlySet<string>
   /** Project image mode; 'dds' also writes textures/Inkwell/<modId>/<hash>.dds for every image the deployed SWFs use (docs/images.md). */
@@ -107,7 +110,8 @@ const notReady = (s: DeploySwf, buildDir: string): string =>
 
 export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome> {
   // a customMenu SWF's runtime features raise its minRuntime (menu JSON, runtime check, dialog); everything below reads this list
-  const i: DeployInput = { ...input, swfs: input.swfs.map((s) => (s.kind === 'customMenu' ? { ...s, features: menuFeatures(s) } : s)) }
+  const replaces = (s: DeploySwf): string | undefined => input.contracts?.find((l) => l.menu === s.ir.target.contract && l.layer === 'engine')?.swf
+  const i: DeployInput = { ...input, swfs: input.swfs.map((s) => (s.kind === 'customMenu' ? { ...s, features: menuFeatures(s) } : s.kind === 'menuReplacement' && replaces(s) ? { ...s, replaces: replaces(s)! } : s)) }
   const plan = planDeploy({ modId: i.modId, swfs: i.swfs, root: i.root, gameDirs: i.gameDirs, hasPapyrus: !!i.papyrusExe, ...(i.only ? { only: i.only } : {}), ...(i.dev ? { dev: true } : {}), ...(i.localization ? { translationLanguages: i.localization.languages } : {}) })
   if (plan.errors.length) return { ok: false, error: plan.errors.join(' '), lint: plan.lint }
   const timer = createStageTimer()
@@ -127,9 +131,15 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
   try {
     for (const s of i.swfs.filter((x) => !x.orphaned && (!i.only || x.name === i.only))) {
       if (s.kind === 'menuReplacement') {
-        // not deployed yet (the plan warns), but its contract check is a gate (W5): read from its latest build, like a custom menu's lint
-        if (!s.build || s.build.state !== 'done') issues.push({ severity: 'error', code: 'build-not-ready', message: notReady(s, i.buildDir), swf: s.name })
-        else issues.push(...s.build.lint.filter((l) => l.code.startsWith('contract-')).map((l) => ({ ...l, swf: s.name })))
+        // its contract check is a gate (W5), read from its latest build like a custom menu's lint; no other lint blocks it
+        const data = s.build?.state === 'done' ? await readFile(join(i.buildDir, `${s.name}.swf`)).catch(() => undefined) : undefined
+        if (!data) issues.push({ severity: 'error', code: 'build-not-ready', message: notReady(s, i.buildDir), swf: s.name })
+        else {
+          issues.push(...s.build!.lint.filter((l) => l.code.startsWith('contract-')).map((l) => ({ ...l, swf: s.name })))
+          const dest = s.replaces
+          // the vanilla check below runs on every .swf written, so an unmodified Bethesda file never leaves
+          if (dest && allowed.has(dest) && !issues.some((l) => l.swf === s.name && l.severity === 'error')) files.set(dest, { data, swf: s.name })
+        }
         continue
       }
       const first = issues.length
