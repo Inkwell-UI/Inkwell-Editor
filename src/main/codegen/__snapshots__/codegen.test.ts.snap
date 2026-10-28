@@ -788,6 +788,24 @@ exports[`golden AS2 per node kind > core/GetInputDevice@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/GetLocalizedText@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function() {
+            try {
+                // [l] core/Log@1
+                trace("[Inkwell] info l: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run();
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/GetPosition@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;

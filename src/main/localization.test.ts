@@ -104,6 +104,8 @@ describe('localization lint', () => {
   it('finds the keyed text layers', () => {
     expect(keyedTexts([sw()])).toMatchObject([{ swf: 'menu', nodeId: 't', key: '$Inkwell_M_Start', text: 'Hello', layer: 'Title' }])
     expect(keyedTexts([{ ...sw(), orphaned: true }])).toEqual([])
+    expect(keyedTexts([{ ...sw(), systemMenu: '$Inkwell_M_Entry' }]).map((t) => t.key)).toContain('$Inkwell_M_Entry')
+    expect(keyedTexts([{ ...sw(), systemMenu: 'Plain text' }]).map((t) => t.key)).not.toContain('Plain text')
     expect(keyedTexts([sw('customMenu', { r: { locKey: '$A' }, zz: { locKey: '$B' } })])).toEqual([]) // not text nodes, or not in the IR
   })
   it('is quiet when everything matches, or when there is nothing keyed and no table', () => {

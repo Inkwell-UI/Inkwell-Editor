@@ -13,10 +13,14 @@ export interface LocSwf {
   overlay?: Record<string, Record<string, unknown>>
   /** The SWF's graphs: a Set Text whose unwired `text` is a `$KEY` is a keyed text too (V13.2, translated at run time). */
   graphs?: readonly Graph[]
+  /** customMenu: `triggers.systemMenu`; a `$KEY` there is a keyed text of the table (its source text lives only in the table, like a graph key). */
+  systemMenu?: string
 }
 
 /** Set Text: in a menu its `text` goes through `__g.tr` (codegen); a `$KEY` literal there is a graph key. */
 export const SET_TEXT = /^core\/SetText@/
+/** Get Localized Text: its unwired `key` pin is a graph key too. */
+export const GET_LOC_TEXT = /^core\/GetLocalizedText@/
 
 /** A keyed text layer: the overlay `locKey` of a node that is a text node of the IR. */
 export interface KeyedText {
@@ -41,11 +45,13 @@ export function keyedTexts(swfs: readonly LocSwf[]): KeyedText[] {
       if (typeof key !== 'string' || !key || n?.type !== 'text') continue
       out.push({ swf: s.name, nodeId: id, layer: n.name, key, text: n.content, kind: s.kind })
     }
+    if (s.kind === 'customMenu' && s.systemMenu && LOC_KEY.test(s.systemMenu)) out.push({ swf: s.name, nodeId: 'systemMenu', layer: 'Menu settings > System entry', key: s.systemMenu, text: '', kind: s.kind, graph: 'systemMenu' })
     for (const g of s.graphs ?? []) {
-      const wired = new Set(g.edges.filter((e) => e.to.pin === 'text').map((e) => e.to.node))
+      const wired = new Set(g.edges.filter((e) => e.to.pin === 'text' || e.to.pin === 'key').map((e) => `${e.to.node}/${e.to.pin}`))
       for (const n of g.nodes) {
-        const key = n.fields['text']
-        if (SET_TEXT.test(n.kind) && typeof key === 'string' && LOC_KEY.test(key) && !wired.has(n.id)) out.push({ swf: s.name, nodeId: n.id, layer: `${g.name} > Set Text`, key, text: '', kind: s.kind, graph: g.id })
+        const pin = GET_LOC_TEXT.test(n.kind) ? 'key' : 'text'
+        const key = n.fields[pin]
+        if ((SET_TEXT.test(n.kind) || GET_LOC_TEXT.test(n.kind)) && typeof key === 'string' && LOC_KEY.test(key) && !wired.has(`${n.id}/${pin}`)) out.push({ swf: s.name, nodeId: n.id, layer: `${g.name} > ${pin === 'key' ? 'Get Localized Text' : 'Set Text'}`, key, text: '', kind: s.kind, graph: g.id })
       }
     }
   }

@@ -1,0 +1,2 @@
+// [{{node.id}}] core/GetLocalizedText@1
+__g.tr({{in.key}})

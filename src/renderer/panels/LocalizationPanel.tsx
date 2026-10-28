@@ -30,6 +30,7 @@ export function LocalizationPanel() {
   const swfs: LocSwf[] = useMemo(
     () => (project?.swfs ?? []).map((s) => ({
       name: s.name, kind: s.ir.target.kind, orphaned: s.orphaned, ir: s.ir as Swf, overlay: (getOverlayDoc(s.id)?.nodes ?? s.overlay.nodes ?? {}) as Record<string, Record<string, unknown>>,
+      ...(s.menu?.triggers.systemMenu ? { systemMenu: s.menu.triggers.systemMenu } : {}),
       graphs: (graphIds[s.id] ?? []).flatMap((id) => { const g = findGraphStore(s.id, id); return g ? [toGraph(g.getState())] : [] })
     })),
     [project, graphIds]

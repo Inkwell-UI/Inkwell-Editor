@@ -1,0 +1,24 @@
+{
+  "kind": "GetLocalizedText",
+  "major": 1,
+  "title": "Get Localized Text",
+  "category": "Components",
+  "milestone": "0.5",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "key",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/GetLocalizedText.as2"
+}

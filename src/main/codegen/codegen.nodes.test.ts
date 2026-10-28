@@ -130,6 +130,13 @@ describe('keyed Set Text in a menu (V13.2)', () => {
     expect(src).toContain('    function tr(s) {')
     expect(genMenu(g, false).classes[0]!.source).not.toContain('__g.tr(')
   })
+  it('Get Localized Text translates in a menu and gives the key in a widget', () => {
+    const g = graph('k', [entry, node('l', 'core/GetLocalizedText@1', { key: '$Inkwell_M_Start' }), node('a', 'core/SetText@1', { target: 'L' })], [wire('e', 'then', 'a', 'in'), wire('l', 'value', 'a', 'text')])
+    const src = genMenu(g).classes[0]!.source
+    expect(src).toContain('__g.tr("$Inkwell_M_Start")')
+    expect(src).toContain('    function tr(s) {')
+    expect(genMenu(g, false).classes[0]!.source).not.toContain('__g.tr(')
+  })
 })
 
 describe('auto layout hook', () => {

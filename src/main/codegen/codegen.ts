@@ -385,6 +385,11 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
       if (e instanceof Skip) throw new Skip(`${d.title}: ${e.message}`)
       throw e
     }
+    // Get Localized Text asks the menu class's translator; a HUD widget has none, so it gives the key itself
+    if (/^core\/GetLocalizedText@/.test(n.kind)) {
+      if (i.menu) usesTr = true
+      else expr = args.get('key') ?? '""'
+    }
     const volatile = inVol || (d.extra as { volatile?: unknown } | undefined)?.volatile === true
     const out = d.outputs[0]?.name ?? 'value'
     if (i.preview || dev) expr = `__g.pv("${safeId(n.id)}", "${safeId(out)}", ${expr})`
