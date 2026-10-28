@@ -25,9 +25,9 @@ export function useComponentIr(): ComponentIr | 'unavailable' | undefined {
   const component = meta?.scope === 'blueprint' && typeof meta.component === 'string' ? meta.component : undefined
   return useMemo(() => {
     if (!component) return undefined
+    const tree = sync?.pageComponentTrees?.find((t) => t.id === component) // the page's copy wins: a SWF can still hold an older one of a component that was moved out of its frame
     const own = swf?.ir.nodes[component]
-    if (swf && own) return { componentId: component, name: own.name, ir: { ...swf.ir, root: component }, inSwf: true }
-    const tree = sync?.pageComponentTrees?.find((t) => t.id === component)
+    if (!tree && swf && own) return { componentId: component, name: own.name, ir: { ...swf.ir, root: component }, inSwf: true }
     if (!tree) return 'unavailable'
     const ir = { specVersion: SPEC_VERSION, id: component, name: tree.name, target: { kind: 'hudWidget' }, stage: { width: 1280, height: 720 }, root: component, nodes: tree.nodes } as unknown as Swf
     return { componentId: component, name: tree.name, ir, inSwf: false }
