@@ -181,7 +181,7 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
           <Btn variant="primary" onClick={() => void exportPack()} testId="library-export-run">{strings.lib.exportRun}</Btn>
         </div>
       )}
-      {open && <ul className="graph-list" role="list" title={note}>
+      {open && <ul className="graph-list library-children" role="list" title={note}>
         {pack.functions.map((fn) => (
           <GraphRowView
             key={fn.id}

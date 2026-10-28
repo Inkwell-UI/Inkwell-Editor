@@ -47,8 +47,8 @@ export function FunctionRows({ actions }: { actions: ReturnType<typeof useGraphA
   return (
     <>
       {actions.error && <p className="tone-error">{actions.error}</p>}
-      {swf && loaded && mine.length === 0 && <p className="empty">{strings.lib.empty}</p>}
-      <ul className="graph-list" role="list">
+      {swf && loaded && mine.length === 0 && <p className="empty library-children">{strings.lib.empty}</p>}
+      <ul className="graph-list library-children" role="list">
         {swf && mine.map((id) => <GraphRow key={id} swfId={swf.id} id={id} active={id === activeId} actions={actions} />)}
       </ul>
     </>
