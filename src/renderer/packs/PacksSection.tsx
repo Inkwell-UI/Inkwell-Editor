@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Download, Info, Lock, Plus, RefreshCw, Search } from 'lucide-react'
 import type { PackCandidate, PackIndexEntry, PacksState } from '../../shared/packs'
 import { inkwell } from '../hooks/api'
-import { reloadPacks, usePackList } from '../hooks/usePacks'
+import { reloadPacks, useLibraryPacks, usePackList } from '../hooks/usePacks'
 import { useProject } from '../hooks/useProject'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
@@ -17,6 +17,7 @@ const S = strings.assets.packs
 export function PacksSection({ title, empty }: { title: string; empty: string }) {
   const project = useProject()
   const loaded = usePackList()
+  const local = useLibraryPacks().filter((p) => p.origin === 'library')
   const [state, setState] = useState<PacksState>({ locked: [] })
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<{ tone: 'ok' | 'error'; text: string } | undefined>()
@@ -58,15 +59,18 @@ export function PacksSection({ title, empty }: { title: string; empty: string })
             {p.state === 'ok' ? <span className="dim">{strings.assets.packNodes(nodesOf(p.id) ?? 0)}</span> : <span className="tone-warn">{p.state === 'missing' ? S.missing : S.mismatch}</span>}
           </li>
         ))}
+        {local.map((p) => (
+          <li key={p.id} data-state="local"><span className="mono">{p.id}</span> {p.version} <span className="dim">{strings.lib.origin['library']}, {strings.lib.packContents(p.nodes, p.functions.length)}</span></li>
+        ))}
       </ul>
-      {!state.locked.length && !state.lockError && <p className="empty">{empty}</p>}
+      {!state.locked.length && !local.length && !state.lockError && <p className="empty">{empty}</p>}
       {state.locked.some((p) => p.state !== 'ok') && (
         <div className="row-actions">
           <Btn icon={Download} label={S.downloadTip} reason={busy ? S.working : undefined} onClick={() => void restore()} testId="packs-restore">{S.download}</Btn>
         </div>
       )}
       {note && <p className={`tone-${note.tone} pack-note`} role={note.tone === 'error' ? 'alert' : 'status'}>{note.text}</p>}
-      {dialog === 'add' && <AddPackDialog onClose={() => setDialog(undefined)} onInstalled={(c) => changed(S.installed(c.id, c.version))} onCreated={(id) => changed(S.created(id))} />}
+      {dialog === 'add' && <AddPackDialog onClose={() => setDialog(undefined)} onInstalled={(c) => changed(S.installed(c.id, c.version))} onCreated={() => (setDialog(undefined), reloadPacks())} />}
       {dialog === 'update' && <UpdatePacksDialog onClose={() => setDialog(undefined)} onInstalled={(c) => changed(S.installed(c.id, c.version))} />}
     </section>
   )

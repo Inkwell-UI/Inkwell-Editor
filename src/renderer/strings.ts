@@ -258,7 +258,6 @@ export const strings = {
       addTitle: 'Add a node pack',
       tabGithub: 'From GitHub',
       tabNew: 'New local pack',
-      created: (id: string) => `Pack ${id} created. Drag functions onto it in the Library tab.`,
       newId: 'Pack id',
       newVersion: 'Version',
       newDescription: 'Description (optional)',
