@@ -48,6 +48,7 @@ export const IPC = {
   uiEvent: 'ui:event',
   figmaSelection: 'figma:selection',
   menuSettings: 'menu:settings',
+  menuProjectSettings: 'menu:projectSettings',
   menuSaveNow: 'menu:save-now',
   menuUndo: 'menu:undo',
   menuRedo: 'menu:redo',
@@ -188,6 +189,8 @@ export interface InkwellApi {
   onFigmaSelection(cb: (ids: string[]) => void): () => void
   /** Edit > Settings in the application menu. */
   onOpenSettings(cb: () => void): () => void
+  /** Edit > Project Settings in the application menu. */
+  onOpenProjectSettings(cb: () => void): () => void
   /** File > Save in the application menu: writes the edits still waiting for their debounce. */
   onSaveNow(cb: () => void): () => void
   /** Edit > Undo and Redo of the title bar menu (the window decides: a text field keeps its own undo, otherwise the active SWF's history). */

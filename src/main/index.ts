@@ -333,7 +333,8 @@ async function buildMenu(): Promise<void> {
       submenu: [
         { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
         { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }, { type: 'separator' },
-        { label: strings.menu.settings, accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) }
+        { label: strings.menu.settings, accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) },
+        { label: strings.menu.projectSettings, accelerator: 'CmdOrCtrl+Shift+,', click: () => win?.webContents.send(IPC.menuProjectSettings) }
       ]
     }
   ]

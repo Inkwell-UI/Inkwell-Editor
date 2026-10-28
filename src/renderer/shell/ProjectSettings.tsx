@@ -7,10 +7,7 @@ import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 
 const s = strings.settings.project
-/** Everything the section shows, lowercased, for the Settings search. */
-export const PROJECT_TEXT = `${s.title} ${s.modId} ${s.modIdHelp}`.toLowerCase()
-
-/** Settings section "Project" (only with a project open): the Mod id, checked while typing; a rename warns that the deployed file names change. */
+/** Project Settings section (only with a project open): the Mod id, checked while typing; a rename warns that the deployed file names change. */
 export function ProjectSettings() {
   const project = useProject()
   const current = project?.modId ?? ''

@@ -14,6 +14,7 @@ import { useDialogStore } from '../state/dialogStore'
 import { flushGraphSaves } from '../state/graphStore'
 import { Toasts } from '../ui/Toasts'
 import { Dialogs } from './Dialogs'
+import { ProjectSettingsView } from './ProjectSettingsView'
 import { SettingsView } from './SettingsView'
 import { StartScreen } from './StartScreen'
 import { StatusBar } from './StatusBar'
@@ -43,7 +44,9 @@ function WorkspaceView() {
 export function AppShell() {
   const project = useProject()
   const swf = useActiveSwf()
-  const settingsOpen = useDialogStore((s) => s.open) === 'settings'
+  const open = useDialogStore((s) => s.open)
+  const settingsOpen = open === 'settings'
+  const projectSettingsOpen = open === 'projectSettings' && !!project
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -72,6 +75,8 @@ export function AppShell() {
 
   // Edit > Settings in the application menu
   useEffect(() => inkwell?.onOpenSettings(() => useDialogStore.getState().show('settings')), [])
+  // Edit > Project Settings (no project open: nothing to show)
+  useEffect(() => inkwell?.onOpenProjectSettings(() => useDialogStore.getState().show('projectSettings')), [])
   // Edit > Undo / Redo of the title bar menu: a field being edited keeps its own undo, anything else is the active SWF's history
   useEffect(() => {
     const run = (name: 'undo' | 'redo'): void => {
@@ -104,7 +109,7 @@ export function AppShell() {
     <div className="shell">
       <TitleBar />
       <TopBar />
-      <main className="shell-main">{settingsOpen ? <SettingsView /> : <WorkspaceView />}</main>
+      <main className="shell-main">{settingsOpen ? <SettingsView /> : projectSettingsOpen ? <ProjectSettingsView /> : <WorkspaceView />}</main>
       <StatusBar />
       <Dialogs />
       <Toasts />

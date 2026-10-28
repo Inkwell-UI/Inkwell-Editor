@@ -8,11 +8,10 @@ import { useSettingsStore } from '../state/settingsStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { FIGMA_PLUGINS_TEXT, FigmaPlugins } from './FigmaPlugins'
-import { PROJECT_TEXT, ProjectSettings } from './ProjectSettings'
 
 const MIRROR_TEXT = `${strings.top.mirror} ${strings.top.mirrorNote} ${strings.settings.general}`.toLowerCase()
 
-/** The Settings view (Edit > Settings): replaces the workspace. A search field filters every setting and check below it; Esc or Back returns. */
+/** The editor-wide Settings view (Edit > Settings; per-project ones are in ProjectSettingsView): replaces the workspace. A search field filters every setting and check below it; Esc or Back returns. */
 export function SettingsView() {
   const close = useDialogStore((s) => s.close)
   const mirror = useSettingsStore((s) => s.mirrorFigma)
@@ -47,7 +46,6 @@ export function SettingsView() {
             <p className="dim">{strings.top.mirrorNote}</p>
           </section>
         )}
-        {(!query.trim() || PROJECT_TEXT.includes(query.trim().toLowerCase())) && <ProjectSettings />}
         {(!query.trim() || FIGMA_PLUGINS_TEXT.includes(query.trim().toLowerCase())) && <FigmaPlugins />}
         <SetupDoctorPanel query={query} />
         {(!query.trim() || STARTER_TEXT.includes(query.trim().toLowerCase())) && <StarterKit />}

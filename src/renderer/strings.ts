@@ -697,7 +697,7 @@ export const strings = {
   },
 
   /** The application menu (built in the main process). */
-  menu: { file: 'File', edit: 'Edit', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All', quit: 'Exit', label: 'Application menu', settings: 'Settings...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project' },
+  menu: { file: 'File', edit: 'Edit', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All', quit: 'Exit', label: 'Application menu', settings: 'Settings...', projectSettings: 'Project Settings...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project' },
 
   settings: {
     title: 'Settings',
@@ -707,7 +707,8 @@ export const strings = {
     searchPlaceholder: 'Search settings...',
     general: 'General',
     project: {
-      title: 'Project',
+      title: 'Project Settings',
+      backTip: 'Close the project settings (Esc)',
       modId: 'Mod id',
       modIdHelp: 'Letters and digits only, starting with a letter. It names the deployed files, the AS2 classes and the Papyrus scripts.',
       renameWarning: (from: string, to: string) =>

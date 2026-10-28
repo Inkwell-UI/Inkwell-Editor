@@ -57,6 +57,7 @@ const api: InkwellApi = {
   onUiEvent: (cb) => on(IPC.uiEvent, cb),
   onFigmaSelection: (cb) => on(IPC.figmaSelection, cb),
   onOpenSettings: (cb) => on(IPC.menuSettings, cb),
+  onOpenProjectSettings: (cb) => on(IPC.menuProjectSettings, cb),
   onSaveNow: (cb) => on(IPC.menuSaveNow, cb),
   onUndo: (cb) => on(IPC.menuUndo, cb),
   onRedo: (cb) => on(IPC.menuRedo, cb),
