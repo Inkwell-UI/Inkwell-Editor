@@ -40,6 +40,8 @@ export const IPC = {
   packsInstall: 'packs:install',
   packsRestore: 'packs:restore',
   packsUpdates: 'packs:updates',
+  libraryCreate: 'library:create',
+  libraryAddFunction: 'library:addFunction',
   libraryExport: 'library:export',
   libraryImport: 'library:import',
   libraryRemove: 'library:remove',
@@ -168,8 +170,12 @@ export interface InkwellApi {
   graphAs2(swfName: string, graph: Graph): Promise<GraphResult<{ as2: GraphAs2 }>>
   /** Node definitions of the loaded packs (the bundled core pack, then the project's cached packs that match packs.lock). Data only; `problems` lists files that failed their schema. */
   getPacks(): Promise<PackSet>
-  /** Library functions (docs/functions.md, Libraries): asks for a folder, writes the ticked functions of the SWF as a pack folder and zip there. `cancelled` when the folder dialog was closed. */
-  exportLibrary(swfName: string, selected: string[], pack: { id: string; version: string; description?: string; credits?: string; license?: string }): Promise<GraphResult<{ folder: string; zip: string; functions: string[]; dependencies: Record<string, string> }> | { ok: false; cancelled: true }>
+  /** Packs of the project (docs/functions.md, Libraries): a new empty pack `<project>/libraries/<id>/`. */
+  createLibrary(pack: { id: string; version: string; description?: string; credits?: string }): Promise<GraphResult<{ id: string }>>
+  /** Writes a function graph of the SWF into the pack (`functions/<id>.json`); the renderer then retargets the calls and deletes the SWF's copy. */
+  addFunctionToLibrary(packId: string, graph: Graph): Promise<GraphResult<{ id: string }>>
+  /** Asks for a folder and writes the pack there as a folder and a zip (a new `version` is written back into the project's manifest). `cancelled` when the folder dialog was closed. */
+  exportLibrary(packId: string, version?: string): Promise<GraphResult<{ folder: string; zip: string; version: string; functions: string[]; dependencies: Record<string, string> }> | { ok: false; cancelled: true }>
   /** Asks for a pack folder or zip and copies it into `<project>/libraries/<id>/`. `exists` = that id is already there (call again with `replace`). `cancelled` when the dialog was closed. */
   importLibrary(replace?: { id: string; path: string }): Promise<GraphResult<{ id: string; version: string; functions: string[]; nodes: number }> | { ok: false; error: string; exists: true; id: string; path: string } | { ok: false; cancelled: true }>
   removeLibrary(id: string): Promise<GraphResult>

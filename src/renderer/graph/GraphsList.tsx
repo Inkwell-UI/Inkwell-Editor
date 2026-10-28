@@ -15,6 +15,9 @@ import { useGraphActions } from './useGraphActions'
  * The Navigator's GRAPHS section (UX 4.2): one row per graph of the active SWF (name, scope, its events), `[+ Graph]`, rename and delete. With `functions` it is the Library's list instead:
  * only the function graphs (name, signature), `[+ Function]`. Functions never show in the Navigator.
  */
+/** The drag payload of a function row: its id. The Library's project packs accept it. */
+export const FUNCTION_DRAG = 'application/x-inkwell-function'
+
 export function GraphsList({ functions = false }: { functions?: boolean }) {
   const swf = useActiveSwf()
   const { ids, activeId, loaded } = useSwfGraphs()
@@ -60,7 +63,7 @@ function Row({ swfId, id, active, actions, store }: { swfId: string; id: string;
     setEditing(undefined)
   }
   return (
-    <li className={`graph-row${active ? ' is-selected' : ''}`} data-testid={`graph-row-${id}`}>
+    <li className={`graph-row${active ? ' is-selected' : ''}`} data-testid={`graph-row-${id}`} draggable={scope === 'function'} onDragStart={(e) => e.dataTransfer.setData(FUNCTION_DRAG, id)}>
       <div className="graph-row-main">
         {editing !== undefined ? (
           <>

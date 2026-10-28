@@ -32,7 +32,7 @@ import { createTrust } from './sync/figmaTrust'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { corePackDir, loadPacks } from './packs'
-import { exportLibrary, importLibrary, localLibraryDirs, removeLibrary, type ImportResult } from './packs/libraries'
+import { addFunctionToLibrary, createLibrary, exportPack, importLibrary, localLibraryDirs, removeLibrary, type ImportResult } from './packs/libraries'
 import { createPackManager, lockedPacks, parseGitHubRef, readLock, type Fetch } from './packs/manager'
 import type { PackCandidate, PackResult, PacksState } from '../shared/packs'
 import { loadProject, type ProjectMeta } from './project'
@@ -761,14 +761,22 @@ export function createSession(deps: SessionDeps) {
      * Library functions (docs/functions.md): export the SWF's functions you ticked as a pack folder + zip in `outDir`; import a pack folder or zip into `<project>/libraries/<id>/`
      * (an existing id answers `exists` and is replaced with `replace`); remove one; save an edited library function back into its pack folder.
      */
-    async libraryExport(swf: string, selected: string[], pack: { id: string; version: string; description?: string; credits?: string; license?: string }, outDir: string) {
-      const m = graphs.get(swf)
-      if (!projectDir || !m) return { ok: false as const, error: 'No such swf in the open project' }
+    async libraryCreate(pack: { id: string; version: string; description?: string; credits?: string }) {
+      if (!projectDir) return { ok: false as const, error: 'No project is open.' }
+      return afterPackChange(await createLibrary(projectDir, pack, TOOL_VERSION))
+    },
+    async libraryAddFunction(packId: string, doc: unknown) {
+      const parsed = Graph.safeParse(doc)
+      if (!projectDir || !parsed.success || parsed.data.scope !== 'function') return { ok: false as const, error: parsed.success ? 'No project is open.' : (parsed.error.issues[0]?.message ?? 'Invalid graph') }
+      return afterPackChange(await addFunctionToLibrary(projectDir, packId, parsed.data))
+    },
+    async libraryExport(packId: string, version: string | undefined, outDir: string) {
+      if (!projectDir) return { ok: false as const, error: 'No project is open.' }
       const set = await getPacks()
-      const library = (await (codegenPacks ??= loadCodegenPacks(packDirs))).packs.functions
-      return exportLibrary({
-        functions: [...m.values()].filter((g) => g.scope === 'function'), selected, pack, defs: defIndex(set),
-        ...(library ? { library } : {}), packVersions: new Map(set.packs.map((p) => [p.manifest.id, p.manifest.version])), toolVersion: TOOL_VERSION, outDir
+      const library = (await (codegenPacks ??= loadCodegenPacks(packDirs))).packs.functions ?? new Map<string, Graph>()
+      return exportPack({
+        projectDir, packId, ...(version ? { version } : {}), defs: defIndex(set), library,
+        packVersions: new Map(set.packs.map((p) => [p.manifest.id, p.manifest.version])), toolVersion: TOOL_VERSION, outDir
       })
     },
     async libraryImport(src: string, replace?: boolean): Promise<Awaited<ReturnType<typeof importLibrary>>> {

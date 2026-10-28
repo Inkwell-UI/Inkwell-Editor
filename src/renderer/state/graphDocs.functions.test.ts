@@ -5,7 +5,7 @@ import { graph, loadCore, node, wire } from '../../main/codegen/codegen.testutil
 import { newFunctionGraph } from '../../shared/functions'
 import { emptyGraph, newGraphId, summarize } from '../../shared/graphs'
 import { validateGraph } from '../../shared/graphValidate'
-import { addFunction, loadSwfGraphs, makeFunction, resetGraphDocs, useGraphDocs } from './graphDocs'
+import { addFunction, loadSwfGraphs, makeFunction, moveFunctionToPack, resetGraphDocs, useGraphDocs } from './graphDocs'
 import { findGraphStore, flushGraphSaves, setGraphSaver, toGraph } from './graphStore'
 import { getOverlayStore, resetOverlays, setOverlaySaver, undoSwf } from './overlayStore'
 
@@ -88,5 +88,29 @@ describe('Make function', () => {
     expect(r.ok).toBe(false)
     expect(api.createGraph).not.toHaveBeenCalled()
     expect(useGraphDocs.getState().ids['swf']).toEqual(['main'])
+  })
+})
+
+describe('drag a function onto a pack', () => {
+  it('writes it to the pack, calls say <pack>/<id>, and the SWF copy is gone', async () => {
+    const fn = newFunctionGraph('fade', 'Fade', () => 'f1')
+    const main = graph('main', [node('ol', 'core/OnLoad@1'), node('c', 'core/CallFunction@1', { function: 'fade', inputs: fn.signature!.inputs, outputs: fn.signature!.outputs, exits: fn.signature!.exits })], [wire('ol', 'then', 'c', 'in')])
+    const api = { ...fakeApi([main, fn]), addFunctionToLibrary: vi.fn(async (_p: string, g: Graph) => ({ ok: true as const, id: g.id })) }
+    await loadSwfGraphs(swf, api)
+    const r = await moveFunctionToPack({ swf, fnId: 'fade', packId: 'my-pack' }, api)
+    expect(r).toEqual({ ok: true, id: 'my-pack/fade' })
+    expect(api.addFunctionToLibrary).toHaveBeenCalledWith('my-pack', expect.objectContaining({ id: 'fade', scope: 'function' }))
+    expect(api.deleteGraph).toHaveBeenCalledWith('Hud', 'fade')
+    expect(useGraphDocs.getState().ids['swf']).toEqual(['main'])
+    expect(toGraph(findGraphStore('swf', 'main')!.getState()).nodes.find((x) => x.id === 'c')!.fields['function']).toBe('my-pack/fade')
+  })
+
+  it('changes nothing when the pack refuses', async () => {
+    const fn = newFunctionGraph('fade', 'Fade', () => 'f1')
+    const api = { ...fakeApi([fn]), addFunctionToLibrary: vi.fn(async () => ({ ok: false as const, error: 'nope' })) }
+    await loadSwfGraphs(swf, api)
+    expect(await moveFunctionToPack({ swf, fnId: 'fade', packId: 'my-pack' }, api)).toEqual({ ok: false, error: 'nope' })
+    expect(api.deleteGraph).not.toHaveBeenCalled()
+    expect(useGraphDocs.getState().ids['swf']).toEqual(['fade'])
   })
 })

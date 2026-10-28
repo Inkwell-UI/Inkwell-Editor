@@ -61,16 +61,18 @@ export interface LibraryPack {
   id: string
   version: string
   origin: LoadedPack['origin']
+  /** Number of pure nodes. */
+  nodes: number
   /** The pack's functions, ids qualified (`<packId>/<functionId>`). */
   functions: Graph[]
 }
-/** The loaded packs that have functions (the Library tab's LIBRARIES list). */
+/** Every loaded pack (the Library tab's list). */
 export function useLibraryPacks(): readonly LibraryPack[] {
   const [list, setList] = useState<readonly LibraryPack[]>([])
   const gen = usePackGeneration()
   useEffect(() => {
     let live = true
-    void packSet()?.then((s) => live && setList(s.packs.filter((p) => (p.functions?.length ?? 0) > 0).map((p) => ({ id: p.manifest.id, version: p.manifest.version, origin: p.origin, functions: (p.functions ?? []).map((g) => ({ ...g, id: `${p.manifest.id}/${g.id}` })) }))))
+    void packSet()?.then((s) => live && setList(s.packs.map((p) => ({ id: p.manifest.id, version: p.manifest.version, origin: p.origin, nodes: p.nodes.length, functions: (p.functions ?? []).map((g) => ({ ...g, id: `${p.manifest.id}/${g.id}` })) }))))
     return () => void (live = false)
   }, [gen])
   return list

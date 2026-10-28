@@ -76,6 +76,8 @@ export interface GraphState extends Doc {
   setCallTarget(nodeId: string, fn: Graph): void
   /** Refreshes every Call Function node that calls `fn` and holds an out-of-date copy of its signature. */
   syncCalls(fn: Graph): void
+  /** Every Call Function of `from` now calls `to` (a function moved into a pack; the signature is the same). */
+  retargetCalls(from: string, to: string): void
   /** Replaces the nodes, wires and groups with those of `g` (Make function: the selection became a call). One undo entry. */
   applyGraph(g: Graph): void
   beginDrag(): void
@@ -224,6 +226,13 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
             if (staleCalls(g, fn).length === 0) return s
             return withNodeData(s, refreshCalls(g, fn))
           }),
+        retargetCalls: (from, to) =>
+          set((s) => {
+            const g = toGraph(s)
+            const hit = (n: Graph['nodes'][number]): boolean => n.kind.split('/')[1]?.startsWith('CallFunction@') === true && n.fields['function'] === from
+            if (!g.nodes.some(hit)) return s
+            return withNodeData(s, { ...g, nodes: g.nodes.map((n) => (hit(n) ? { ...n, fields: { ...n.fields, function: to } } : n)) })
+          }),
         applyGraph: (g) => set((s) => ({ ...toFlow(g), meta: s.meta, nodes: toFlow(g).nodes })),
         beginDrag: () => history.beginDrag(store),
         endDrag: () => history.endDrag(store)
@@ -255,6 +264,20 @@ function syncCallers(swfId: string, fnId: string, fn: Graph): void {
     t.pause()
     try {
       e.store.getState().syncCalls(fn)
+    } finally {
+      t.resume()
+    }
+  }
+}
+
+/** A function of the SWF moved into a pack: every graph of the SWF calls it by its new id. Not recorded in the histories (the file move is not undoable either). */
+export function retargetCalls(swfId: string, from: string, to: string): void {
+  for (const [key, e] of stores) {
+    if (!key.startsWith(`${swfId}/`)) continue
+    const t = e.store.temporal.getState()
+    t.pause()
+    try {
+      e.store.getState().retargetCalls(from, to)
     } finally {
       t.resume()
     }

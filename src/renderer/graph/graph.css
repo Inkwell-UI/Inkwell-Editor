@@ -97,5 +97,6 @@
 .gn-pin-val.is-game { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
 .gn-pin-val { margin-right: 6px; padding: 0 5px; border-radius: 8px; font-size: 10px; line-height: 15px; color: var(--fg); background: var(--accent-bg); border: 1px solid var(--line-strong); max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-form { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 8px; }
-.lib-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.graph-row[draggable="true"] { cursor: grab; }
+.pack-row.is-drop { outline: 1px dashed var(--accent); outline-offset: -1px; background: var(--accent-bg); }
 .lib-fns { margin: 2px 0 0 14px; display: flex; flex-direction: column; gap: 2px; }

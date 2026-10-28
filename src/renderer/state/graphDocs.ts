@@ -4,7 +4,7 @@ import type { InkwellApi } from '../../shared/ipc'
 import { extractFunction } from '../../shared/functions'
 import { scriptsOf } from '../../shared/graphs'
 import type { OverlayDoc } from '../../shared/overlay'
-import { dropGraphStore, findGraphStore, getGraphStore, resetGraphs, saveGraphNow, toGraph, type GraphStore } from './graphStore'
+import { dropGraphStore, findGraphStore, getGraphStore, resetGraphs, retargetCalls, saveGraphNow, toGraph, type GraphStore } from './graphStore'
 import { editNode } from './overlayStore'
 
 /**
@@ -21,6 +21,7 @@ interface DocsState {
 }
 export const useGraphDocs = create<DocsState>(() => ({ ids: {}, active: {}, loaded: {}, error: undefined }))
 type Api = Pick<InkwellApi, 'listGraphs' | 'loadGraph' | 'createGraph' | 'deleteGraph'>
+type MoveApi = Pick<InkwellApi, 'deleteGraph' | 'addFunctionToLibrary'>
 interface SwfRef {
   id: string
   name: string
@@ -114,6 +115,26 @@ export async function makeFunction(o: { swf: SwfRef; store: GraphStore; selected
 export function openLibraryFunction(swf: SwfRef, fn: Graph): void {
   getGraphStore(swf.id, `@lib:${fn.id.split('/')[0]}`, fn)
   setActiveGraph(swf.id, fn.id)
+}
+
+/**
+ * Drag a function onto a pack: the function graph is written into the pack (`functions/<id>.json`), every call of it in the SWF now says `<packId>/<id>` and the SWF's own copy is deleted,
+ * so the function lives in one place. Refused (nothing changed) when it calls a function that is still the SWF's own or the pack already has that id.
+ */
+export async function moveFunctionToPack(o: { swf: SwfRef; fnId: string; packId: string }, api: MoveApi): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const store = findGraphStore(o.swf.id, o.fnId)
+  if (!store || store.getState().meta.scope !== 'function') return { ok: false, error: 'Only a function can be moved into a pack.' }
+  const r = await api.addFunctionToLibrary(o.packId, toGraph(store.getState()))
+  if (!r.ok) return r
+  const to = `${o.packId}/${o.fnId}`
+  retargetCalls(o.swf.id, o.fnId, to)
+  dropGraphStore(o.swf.id, o.fnId)
+  const d = await api.deleteGraph(o.swf.name, o.fnId)
+  useGraphDocs.setState((s) => {
+    const ids = (s.ids[o.swf.id] ?? []).filter((id) => id !== o.fnId)
+    return { ids: { ...s.ids, [o.swf.id]: ids }, active: s.active[o.swf.id] === o.fnId ? { ...s.active, [o.swf.id]: ids[0] } : s.active }
+  })
+  return d.ok ? { ok: true, id: to } : d
 }
 
 /** "Copy to project": an editable function of the SWF with the library function's content. Calls it makes to other library functions stay library calls. */

@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Graph } from '@inkwell-ui/spec'
@@ -9,7 +9,8 @@ import { loadCodegenPacks } from '../codegen/packs'
 import { newFunctionGraph, callFields } from '../../shared/functions'
 import { validateGraph } from '../../shared/graphValidate'
 import { corePack } from '../codegen/codegen.testutil'
-import { exportLibrary, importLibrary, localLibraryDirs, removeLibrary } from './libraries'
+import { loadPack } from './index'
+import { addFunctionToLibrary, createLibrary, exportPack, importLibrary, localLibraryDirs, removeLibrary } from './libraries'
 
 const packs = await loadCore()
 const tmp = () => mkdtempSync(join(tmpdir(), 'inkwell-libtest-'))
@@ -31,49 +32,74 @@ function project() {
   outer.edges = [wire(oFe, 'then', 'c', 'in'), wire('c', 'Done', oFx, 'in')] as Graph['edges']
   return { inner, outer }
 }
-const base = (out: string, selected: string[], fns: Graph[]) => ({
-  functions: fns, selected, pack: { id: 'my-lib', version: '1.0.0', description: 'Helpers', credits: 'Me' },
-  defs: packs.defs, packVersions: new Map([['core', '0.5.5']]), toolVersion: '0.5.0', outDir: out
+/** A project with the pack "my-lib" holding inner and outer (outer calls my-lib/inner), made the way the editor does: create, then add each function. */
+async function packed() {
+  const { inner, outer } = project()
+  const projectDir = tmp()
+  expect((await createLibrary(projectDir, { id: 'my-lib', version: '1.0.0', description: 'Helpers' }, '0.5.0')).ok).toBe(true)
+  const q = { ...outer, nodes: outer.nodes.map((x) => (x.id === 'c' ? { ...x, fields: { ...x.fields, function: 'my-lib/inner' } } : x)) } as Graph
+  expect((await addFunctionToLibrary(projectDir, 'my-lib', inner)).ok).toBe(true)
+  expect((await addFunctionToLibrary(projectDir, 'my-lib', q)).ok).toBe(true)
+  return { projectDir, inner, outer }
+}
+const exp = async (projectDir: string, over: Record<string, unknown> = {}) => {
+  const { packs: cg } = await loadCodegenPacks([corePack, ...(await localLibraryDirs(projectDir))])
+  return exportPack({ projectDir, packId: 'my-lib', defs: packs.defs, library: cg.functions ?? new Map(), packVersions: new Map([['core', '0.5.5']]), toolVersion: '0.5.0', outDir: tmp(), ...over })
+}
+
+describe('createLibrary and addFunctionToLibrary', () => {
+  it('makes an empty pack the loader accepts, refuses bad ids, versions and duplicates', async () => {
+    const dir = tmp()
+    expect((await createLibrary(dir, { id: 'a-pack', version: '1.0.0' }, '0.5.0')).ok).toBe(true)
+    const [d] = await localLibraryDirs(dir)
+    expect((await loadPack(d!)).problems).toEqual([])
+    expect(((await createLibrary(dir, { id: 'a-pack', version: '1.0.0' }, '0.5.0')) as { error: string }).error).toContain('already')
+    expect(((await createLibrary(dir, { id: 'core', version: '1.0.0' }, '0.5.0')) as { error: string }).error).toContain('core')
+    expect(((await createLibrary(dir, { id: 'Bad Id', version: '1.0.0' }, '0.5.0')) as { error: string }).error).toContain('lower-case')
+    expect(((await createLibrary(dir, { id: 'x', version: '1.0' }, '0.5.0')) as { error: string }).error).toContain('1.0.0')
+  })
+
+  it('refuses a function that calls a project function, naming it, or one the pack already has', async () => {
+    const { outer } = project()
+    const dir = tmp()
+    await createLibrary(dir, { id: 'my-lib', version: '1.0.0' }, '0.5.0')
+    expect(((await addFunctionToLibrary(dir, 'my-lib', outer)) as { error: string }).error).toContain('"inner"')
+    const { inner } = project()
+    expect((await addFunctionToLibrary(dir, 'my-lib', inner)).ok).toBe(true)
+    expect(((await addFunctionToLibrary(dir, 'my-lib', inner)) as { error: string }).error).toContain('already has')
+  })
 })
 
-describe('exportLibrary', () => {
-  it('writes the pack folder and a zip; calls between the functions become <pack>/<id>', async () => {
-    const { inner, outer } = project()
-    const out = tmp()
-    const r = await exportLibrary(base(out, ['inner', 'outer'], [inner, outer]))
+describe('exportPack', () => {
+  it('writes the pack folder and a zip, with dependencies recomputed and the new version written back', async () => {
+    const { projectDir } = await packed()
+    const r = await exp(projectDir, { version: '1.1.0' })
     if (!r.ok) throw new Error(r.error)
     expect(r.dependencies).toEqual({ core: '^0.5.5' })
     const manifest = JSON.parse(readFileSync(join(r.folder, 'manifest.json'), 'utf8'))
-    expect(manifest).toMatchObject({ id: 'my-lib', version: '1.0.0', compatible: { tool: '^0.5.0' }, extra: { description: 'Helpers', credits: 'Me' } })
-    const exported = JSON.parse(readFileSync(join(r.folder, 'functions/outer.json'), 'utf8')) as Graph
-    expect(exported.nodes.find((x) => x.id === 'c')!.fields['function']).toBe('my-lib/inner')
+    expect(manifest).toMatchObject({ id: 'my-lib', version: '1.1.0', compatible: { tool: '^0.5.0' }, extra: { description: 'Helpers' } })
+    expect(JSON.parse(readFileSync(join(projectDir, 'libraries/my-lib/manifest.json'), 'utf8')).version).toBe('1.1.0')
+    expect(existsSync(join(r.folder, 'functions/outer.json'))).toBe(true)
+    expect(r.zip.endsWith('my-lib-1.1.0.zip')).toBe(true)
     expect(existsSync(r.zip)).toBe(true)
-    expect(r.zip.endsWith('my-lib-1.0.0.zip')).toBe(true)
   })
 
-  it('refuses a selected function that calls one that is not selected, naming it', async () => {
-    const { inner, outer } = project()
-    const r = await exportLibrary(base(tmp(), ['outer'], [inner, outer]))
-    expect(r).toEqual({ ok: false, error: expect.stringContaining('"Outer" calls "Inner", which is not ticked') })
-  })
-
-  it('refuses bad ids, versions, the core id, an empty selection and a function with errors', async () => {
-    const { inner, outer } = project()
-    const go = (over: Record<string, unknown>) => exportLibrary({ ...base(tmp(), ['inner'], [inner, outer]), ...over } as never)
-    expect(((await go({ pack: { id: 'Bad Id', version: '1.0.0' } })) as { error: string }).error).toContain('lower-case')
-    expect(((await go({ pack: { id: 'core', version: '1.0.0' } })) as { error: string }).error).toContain('core')
-    expect(((await go({ pack: { id: 'x', version: '1.0' } })) as { error: string }).error).toContain('1.0.0')
-    expect(((await go({ selected: [] })) as { error: string }).error).toContain('Tick')
-    const broken = { ...inner, nodes: inner.nodes.filter((x) => !x.kind.includes('FunctionEntry')) } as Graph
-    expect(((await go({ functions: [broken, outer] })) as { error: string }).error).toContain('has errors')
+  it('refuses an empty pack, a bad version, an unknown pack and a function with errors', async () => {
+    const dir = tmp()
+    await createLibrary(dir, { id: 'my-lib', version: '1.0.0' }, '0.5.0')
+    expect(((await exp(dir)) as { error: string }).error).toContain('empty')
+    const { projectDir, inner } = await packed()
+    expect(((await exp(projectDir, { version: '1.0' })) as { error: string }).error).toContain('1.0.0')
+    expect((await exp(projectDir, { packId: 'nope' })).ok).toBe(false)
+    const broken = { ...inner, nodes: inner.nodes.filter((x) => !x.kind.includes('FunctionEntry')) }
+    writeFileSync(join(projectDir, 'libraries/my-lib/functions/inner.json'), JSON.stringify(broken))
+    expect(((await exp(projectDir)) as { error: string }).error).toContain('has errors')
   })
 })
 
 describe('importLibrary and the loader', () => {
   it('imports an exported zip into libraries/, the functions load as <pack>/<id>, and a caller compiles them', async () => {
-    const { inner, outer } = project()
-    const out = tmp()
-    const e = await exportLibrary(base(out, ['inner', 'outer'], [inner, outer]))
+    const e = await exp((await packed()).projectDir)
     if (!e.ok) throw new Error(e.error)
     const projectDir = tmp()
     const r = await importLibrary(projectDir, e.zip)
@@ -101,8 +127,7 @@ describe('importLibrary and the loader', () => {
   })
 
   it('imports a folder too; an existing id is only replaced on request; core is refused; remove deletes it', async () => {
-    const { inner, outer } = project()
-    const e = await exportLibrary(base(tmp(), ['inner'], [inner, outer]))
+    const e = await exp((await packed()).projectDir)
     if (!e.ok) throw new Error(e.error)
     const projectDir = tmp()
     expect((await importLibrary(projectDir, e.folder)).ok).toBe(true)

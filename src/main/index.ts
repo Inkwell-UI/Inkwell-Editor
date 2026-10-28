@@ -208,9 +208,11 @@ ipcMain.handle(IPC.graphsDelete, (_e, swf: string, id: string) => session.delete
 ipcMain.handle(IPC.swfDiscard, (_e, swfId: string) => session.discardSwf(swfId))
 ipcMain.handle(IPC.graphsAs2, (_e, swf: string, g: unknown) => session.graphAs2(swf, g))
 ipcMain.handle(IPC.packsGet, () => session.getPacks())
-ipcMain.handle(IPC.libraryExport, async (_e, swf: string, selected: string[], pack: { id: string; version: string; description?: string; credits?: string; license?: string }) => {
-  const out = await pickFolder('Export library to…')
-  return out ? session.libraryExport(swf, selected, pack, out) : { ok: false as const, cancelled: true as const }
+ipcMain.handle(IPC.libraryCreate, (_e, pack: { id: string; version: string; description?: string; credits?: string }) => session.libraryCreate(pack))
+ipcMain.handle(IPC.libraryAddFunction, (_e, packId: string, g: unknown) => session.libraryAddFunction(String(packId), g))
+ipcMain.handle(IPC.libraryExport, async (_e, packId: string, version?: string) => {
+  const out = await pickFolder('Export pack to…')
+  return out ? session.libraryExport(String(packId), version === undefined ? undefined : String(version), out) : { ok: false as const, cancelled: true as const }
 })
 ipcMain.handle(IPC.libraryImport, async (_e, replace?: { id: string; path: string }) => {
   let path = replace?.path
