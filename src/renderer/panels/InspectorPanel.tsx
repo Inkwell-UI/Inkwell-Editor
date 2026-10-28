@@ -10,6 +10,7 @@ import { ensureKey, renameKey } from '../../shared/localizationOps'
 import { debugHotkeyOf, ident, instanceNameError, ROLES, widgetAnchorOf, type WidgetAnchor } from '../../shared/overlay'
 import type { FontRow } from '../../shared/syncState'
 import { GraphNodeInspector } from '../graph/GraphNodeInspector'
+import { OpenComponentProps } from '../graph/PropsEditor'
 import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import type { DockRow } from '../model/lintRows'
@@ -45,17 +46,20 @@ export function InspectorPanel() {
   if (inspects === 'graphNode')
     return (
       <Panel title={strings.insp.title}>
+        <OpenComponentProps />
         <GraphNodeInspector />
       </Panel>
     )
   if (!node || !swf)
     return (
       <Panel title={strings.insp.title}>
+        <OpenComponentProps />
         <p className="empty">{strings.insp.none}</p>
       </Panel>
     )
   return (
     <Panel title={strings.insp.title}>
+      <OpenComponentProps />
       <ComponentInspector key={`${swf.id}/${node.id}`} swfName={swf.name} swfId={swf.id} node={node} highlight={issue} />
     </Panel>
   )

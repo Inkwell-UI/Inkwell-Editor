@@ -69,8 +69,9 @@
 .gn-params { display: flex; flex-direction: column; gap: 4px; }
 .gn-param { display: grid; grid-template-columns: minmax(0, 1fr) 62px auto; gap: 4px; align-items: center; }
 .signature { padding: 2px 0 6px; }
-.props-editor { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px 8px; border-bottom: 1px solid var(--line); }
-.props-editor .gn-param { grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr) auto; }
+.props-editor { display: flex; flex-direction: column; gap: 4px; padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+.props-editor .gn-param { grid-template-columns: minmax(0, 1fr) 70px; }
+.props-editor .gn-param > .gn-icon { justify-self: end; }
 .sig-title { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--fg-dim); }
 .sig-body { display: flex; flex-direction: column; gap: 10px; }
 .sig-group { display: flex; flex-direction: column; gap: 4px; }

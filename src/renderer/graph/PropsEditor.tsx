@@ -3,6 +3,7 @@ import { FUNCTION_PIN_TYPES } from '@inkwell-ui/spec'
 import { useStore } from 'zustand'
 import { strings } from '../strings'
 import type { GraphStore } from '../state/graphStore'
+import { useSwfGraphs } from '../hooks/useGraphs'
 import { NameBox } from './SignatureEditor'
 
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/
@@ -17,7 +18,13 @@ export function propNameProblem(props: readonly Prop[], index: number, name: str
 
 const zero = (t: Prop['type']): unknown => (t === 'Number' ? 0 : t === 'Bool' ? false : t === 'String' ? '' : undefined)
 
-/** The data a component takes (its props), above the canvas of a component's graph: name, type, default. Every change is one `setProps` (undoable). */
+/** The props of the open graph when it is a component's graph, else nothing: the Inspector shows it above whatever is selected. */
+export function OpenComponentProps() {
+  const { store } = useSwfGraphs()
+  return store && store.getState().meta.scope === 'blueprint' ? <PropsEditor store={store} /> : null
+}
+
+/** The data a component takes (its props), in the Inspector while a component's graph is open: name, type, default. Every change is one `setProps` (undoable). */
 export function PropsEditor({ store }: { store: GraphStore }) {
   const props = useStore(store, (s) => s.props)
   if (!props) return null
