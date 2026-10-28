@@ -14,6 +14,36 @@ import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Dialog } from '../ui/Dialog'
 import { Popover } from '../ui/Popover'
+import { Tip } from '../ui/Tip'
+
+function TargetGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="deploy-group" role="group" aria-label={title}>
+      <div className="deploy-group-h">{title}</div>
+      {children}
+    </div>
+  )
+}
+
+function TargetRow({ t, label, tip, onPick }: { t: DeployTargetInfo; label?: string; tip?: string; onPick(id: DeployTargetInfo['id']): void }) {
+  const off = t.disabledReason
+  return (
+    <div className="deploy-row">
+      <button
+        type="button"
+        className={`deploy-target${off ? ' is-disabled' : ''}`}
+        aria-disabled={off ? true : undefined}
+        title={off ? `${t.label}: ${off}` : strings.deploy.pathLabel(t.path ?? '')}
+        data-testid={`deploy-${t.id}`}
+        onClick={() => !off && onPick(t.id)}
+      >
+        <span className="deploy-target-name">{label ?? t.label}</span>
+        <span className="deploy-target-path mono">{t.path ?? off}</span>
+      </button>
+      {tip && <Tip text={tip} />}
+    </div>
+  )
+}
 
 function Targets({ close }: { close(): void }) {
   const [targets, setTargets] = useState<DeployTargetInfo[]>()
@@ -28,55 +58,42 @@ function Targets({ close }: { close(): void }) {
   useEffect(() => void inkwell?.getDeployTargets().then(setTargets), [project?.dir])
   const hasCustom = project?.swfs.some((s) => !s.orphaned && s.ir.target.kind === 'customMenu')
   const lint = countSeverities(useDockRows()) // what the dock shows now; the deploy itself is gated in main on the deployed SWFs
+  const pick = (id: DeployTargetInfo['id']): void => {
+    close()
+    void start(id, swf?.name)
+  }
+  const folders = targets?.filter((t) => !isPackageTarget(t.id))
+  const zip = targets?.find((t) => t.id === 'package') // 'vortex' saves the same zip; the menu offers it once
   return (
     <div className="details deploy-menu">
-      <h3>{strings.deploy.targetsTitle}</h3>
-      <ul className="menu" role="menu" aria-label={strings.deploy.menuLabel}>
-        {targets?.map((t) => {
-          const off = t.disabledReason
-          return (
-            <li key={t.id} role="none">
-              <button
-                type="button"
-                role="menuitem"
-                className={`deploy-target${off ? ' is-disabled' : ''}`}
-                aria-disabled={off ? true : undefined}
-                title={off ? `${t.label}: ${off}` : strings.deploy.pathLabel(t.path ?? '')}
-                data-testid={`deploy-${t.id}`}
-                onClick={() => {
-                  if (off) return
-                  close()
-                  void start(t.id, swf?.name)
-                }}
-              >
-                <span className="deploy-target-name">{t.label}</span>
-                <span className="deploy-target-path mono">{t.path ?? off}</span>
-                {!off && <span className="dim">{isPackageTarget(t.id) ? strings.deploy.targetNotes[t.id] : t.confirmed ? strings.deploy.confirmed : strings.deploy.notConfirmed}</span>}
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-      <fieldset className="scope">
-        <legend>{strings.deploy.scopeLabel}</legend>
-        <label className="check"><input type="radio" name="deploy-scope" checked={scope === 'all'} onChange={() => setScope('all')} /> {strings.deploy.scopeAll}</label>
-        <label className="check"><input type="radio" name="deploy-scope" checked={scope === 'active'} disabled={!swf} onChange={() => setScope('active')} /> {strings.deploy.scopeActive(swf?.name)}</label>
-      </fieldset>
-      {hasCustom && <p className="dim">{strings.deploy.custom}</p>}
-      {hasCustom && (
-        <div data-testid="dev-deploy">
-          <label className="check" title={strings.deploy.devToggleTip}>
-            <input type="checkbox" checked={devDeploy} onChange={(e) => void inkwell?.devSetDeploy(e.target.checked)} data-testid="dev-deploy-toggle" /> {strings.deploy.devToggle}
-          </label>
-          <p className="dim">{strings.deploy.devToggleNote}</p>
-        </div>
-      )}
-      <p className={lint.errors ? 'tone-error' : 'dim'} data-testid="deploy-lint-summary">
-        {strings.deploy.lintSummary(lint.errors, lint.warnings)}. {project?.strictMode ? strings.deploy.strictOn : strings.deploy.strictOff}
-      </p>
-      <div className="row-actions">
-        <Btn icon={FolderCog} onClick={() => { close(); show('settings') }} testId="deploy-folders">{strings.deploy.setFolders}</Btn>
+      <div className="deploy-head">
+        <h3>{strings.deploy.targetsTitle}</h3>
+        <Btn icon={FolderCog} variant="quiet" label={strings.deploy.setFolders} onClick={() => { close(); show('settings') }} testId="deploy-folders" />
       </div>
+      {(lint.errors > 0 || lint.warnings > 0) && (
+        <p className={lint.errors ? 'tone-error' : 'tone-warn'} data-testid="deploy-lint-summary">
+          {strings.deploy.lintLine(lint.errors, lint.warnings)}
+          {!lint.errors && `. ${project?.strictMode ? strings.deploy.strictOn : strings.deploy.strictOff}`}
+        </p>
+      )}
+      <div className="deploy-scope" role="radiogroup" aria-label={strings.deploy.scopeLabel}>
+        <label className={scope === 'all' ? 'on' : undefined}><input type="radio" className="sr-only" name="deploy-scope" checked={scope === 'all'} onChange={() => setScope('all')} />{strings.deploy.scopeAll}</label>
+        <label className={scope === 'active' ? 'on' : undefined} title={swf?.name}><input type="radio" className="sr-only" name="deploy-scope" checked={scope === 'active'} disabled={!swf} onChange={() => setScope('active')} />{strings.deploy.scopeActive(swf?.name)}</label>
+      </div>
+      <TargetGroup title={strings.deploy.folderGroup}>
+        {folders?.map((t) => <TargetRow key={t.id} t={t} label={strings.deploy.shortLabels[t.id]} onPick={pick} />)}
+        {hasCustom && (
+          <label className="check deploy-dev" title={strings.deploy.devToggleTip} data-testid="dev-deploy">
+            <input type="checkbox" checked={devDeploy} onChange={(e) => void inkwell?.devSetDeploy(e.target.checked)} data-testid="dev-deploy-toggle" /> {strings.deploy.devToggle}
+            <Tip text={strings.deploy.devToggleTip} />
+          </label>
+        )}
+      </TargetGroup>
+      {zip && (
+        <TargetGroup title={strings.deploy.zipGroup}>
+          <TargetRow t={zip} label={strings.deploy.zipLabel} tip={strings.deploy.zipTip} onPick={pick} />
+        </TargetGroup>
+      )}
     </div>
   )
 }

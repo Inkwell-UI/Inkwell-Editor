@@ -354,12 +354,23 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .input:disabled { color: var(--fg-faint); }
 .deploy-menu { width: min(420px, 90vw); }
 .deploy-menu h3 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-dim); }
-.deploy-target { display: flex !important; flex-direction: column; gap: 1px; }
-.deploy-target.is-disabled { color: var(--fg-faint) !important; cursor: not-allowed !important; }
-.deploy-target-name { font-weight: 600; }
-.deploy-target-path { overflow-wrap: anywhere; color: var(--fg-dim); }
-.scope { border: 0; border-top: 1px solid var(--line); margin: 8px 0 0; padding: 6px 0 0; }
-.scope legend { font-size: 12px; color: var(--fg-dim); padding: 0 4px 0 0; }
+.deploy-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.deploy-head h3 { margin: 0; }
+.deploy-menu > p { margin: 0 0 6px; }
+.deploy-scope { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px; margin-bottom: 8px; background: var(--sunken); border: 1px solid var(--line); border-radius: 6px; }
+.deploy-scope label { text-align: center; padding: 4px 6px; border-radius: 4px; color: var(--fg-dim); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.deploy-scope label.on { background: var(--accent-bg); color: var(--fg); }
+.deploy-scope label:has(:focus-visible) { outline: 2px solid var(--focus); }
+.deploy-group { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.deploy-group:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+.deploy-group-h { font-size: 12px; color: var(--fg-dim); padding: 0 8px 2px; }
+.deploy-row { display: flex; align-items: center; gap: 4px; }
+.deploy-dev { padding: 2px 8px; }
+.deploy-target { display: flex; flex: 1; min-width: 0; align-items: baseline; gap: 8px; text-align: left; background: transparent; border: 0; color: var(--fg); padding: 5px 8px; border-radius: 4px; font: inherit; cursor: pointer; }
+.deploy-target:hover, .deploy-target:focus-visible { background: var(--hover); }
+.deploy-target.is-disabled { color: var(--fg-faint); cursor: not-allowed; }
+.deploy-target-name { font-weight: 600; white-space: nowrap; }
+.deploy-target-path { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg-dim); }
 .deploy-path { padding: 6px 8px; background: var(--sunken); border: 1px solid var(--line); border-radius: 6px; overflow-wrap: anywhere; }
 .file-list { max-height: 220px; overflow: auto; margin: 4px 0 8px; padding: 6px 8px; background: var(--sunken); border: 1px solid var(--line); border-radius: 6px; }
 .file-list li { padding: 1px 0; overflow-wrap: anywhere; }

@@ -109,14 +109,5 @@ export async function runSetupShots(o: { outDir: string; projectDir: string; win
     await until('package toast', () => has('[data-testid="toast-action"]'), 120000)
     await snap('u-package-done')
     console.log('[shots] package toast:', await js<string>(`document.querySelector('[data-testid="toast-action"]').closest('[data-testid="toast"]').innerText.replace(/\\n/g, ' | ')`))
-    await js(`document.querySelectorAll('[data-testid="toast"] button[aria-label]').forEach((b) => b.click())`)
-    await must('[data-testid="deploy"]')
-    await until('deploy menu', () => has('[data-testid="deploy-vortex"]'))
-    await wait(300)
-    await snap('v-vortex-menu')
-    await must('[data-testid="deploy-vortex"]')
-    await until('vortex toast', () => has('[data-testid="toast-action"]'), 120000)
-    await snap('v-vortex-done')
-    console.log('[shots] vortex toast:', await js<string>(`document.querySelector('[data-testid="toast-action"]').closest('[data-testid="toast"]').innerText.replace(/\\n/g, ' | ')`))
   }
 }

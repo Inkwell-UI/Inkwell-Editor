@@ -891,18 +891,21 @@ export const strings = {
 
   deploy: {
     menuLabel: 'Deploy targets',
-    targetsTitle: 'Deploy target',
+    targetsTitle: 'Deploy',
     scopeLabel: 'What to deploy',
-    scopeAll: 'All SWFs of the project',
-    scopeActive: (name?: string) => (name ? `Only the active SWF (${name})` : 'Only the active SWF'),
+    scopeAll: 'All SWFs',
+    scopeActive: (name?: string) => (name ? `${name} only` : 'Active SWF only'),
+    folderGroup: 'Install into a mod folder',
+    zipGroup: 'Save as a zip',
+    zipLabel: 'For MO2 or Vortex',
+    zipTip: 'MO2: Install a new mod from archive. Vortex: Mods > Install From File.',
+    shortLabels: { mo2Mod: 'MO2 mod folder', mo2Overwrite: 'MO2 overwrite' } as Record<string, string>,
+    lintLine: (e: number, w: number) => `${e ? `${e} error(s) block this deploy` : `${w} warning(s)`}`,
     pathLabel: (p: string) => `Writes to ${p}`,
-    notConfirmed: 'First deploy here asks for confirmation',
-    confirmed: 'Confirmed for this project',
     noProject: 'Open a project to deploy',
     noFfdec: 'FFDec or Java was not found',
     noSwfs: 'No SWF to deploy yet',
-    setFolders: 'Set deploy folders...',
-    custom: 'Custom menus: the SWF, the menu JSON and a default INI (kept if it already exists) are written. Inkwell Runtime is a separate mod.',
+    setFolders: 'Set deploy folders',
     keepExisting: ' (written only if it does not exist yet)',
     confirmTitle: 'Deploy to a new folder?',
     confirmBody: 'This is the first deploy of this project to:',
@@ -931,10 +934,6 @@ export const strings = {
     toastDone: 'Deployed',
     toastFailed: 'Deploy failed',
     // Package Mod and the Vortex target: the same files as a deploy, saved as one zip (docs/deploy.md, Package)
-    targetNotes: {
-      package: 'Saves a zip you choose the place of; install it with MO2 (Install a new mod from archive) or Vortex',
-      vortex: 'Vortex has no folder Inkwell may write into: this saves the zip, then install it in Vortex (Mods > Install From File)'
-    } as Record<string, string>,
     packageSave: 'Save zip...',
     packageRunning: 'Packaging...',
     saveTitle: 'Save mod package',
@@ -950,8 +949,7 @@ export const strings = {
     openFolder: 'Open folder',
     // Dev deploy (docs/dev-mode.md)
     devToggle: 'Dev deploy',
-    devToggleNote: 'For testing. Never included in packages.',
-    devToggleTip: 'Off by default. On: deploys write Inkwell.ini with DevMode=1 and a token, build custom menus with live-inspection hooks and hot-reload the open menu.',
+    devToggleTip: 'For testing. Writes Inkwell.ini with DevMode=1 and a token, adds live-inspection hooks to custom menus and hot-reloads the open menu. Never included in zips.',
     devToggleOn: 'Dev deploy is on for this project',
     devIniFile: ' (dev mode and token, merged into the existing file)',
     toastDevDone: 'Dev deployed'
