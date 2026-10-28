@@ -13,7 +13,7 @@ import { useStore } from 'zustand'
 import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import type { SwfDoc } from '../../shared/projectState'
 import { categoriesOf, categoryVar, connectionRule, layerOptions, nodePins, nodeTarget, PIN_STYLE, spawnDefs, spawnFor, spawnWire, type SpawnFromPin } from '../model/graphModel'
-import { findGraphStore, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
+import { findGraphStore, getLibraryFunctions, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
 import { createGraphValidation } from '../state/graphValidation'
 import { droppedVariable, VARIABLE_DRAG } from '../model/variables'
 import { menuGraphId, openGraphs } from '../state/graphDocs'
@@ -76,6 +76,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
         defs,
         layers: new Set(Object.keys(swf.ir.nodes)),
         siblings: openGraphs(swf.id),
+        library: getLibraryFunctions(),
         target: swf.ir.target.kind,
         ...(swf.ir.target.contract ? { contract: swf.ir.target.contract } : {})
       })),

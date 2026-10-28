@@ -5,7 +5,7 @@ import { createContext, memo, useContext } from 'react'
 import { useStore } from 'zustand'
 import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import { categoryVar, fieldRows, nodePins, PIN_STYLE, type FieldRow, type LayerOption } from '../model/graphModel'
-import { functionGraphs, inHandle, outHandle, pinName, pointCall, type FlowNode, type GraphStore } from '../state/graphStore'
+import { functionChoices, inHandle, outHandle, pinName, pointCall, type FlowNode, type GraphStore } from '../state/graphStore'
 import type { createGraphValidation } from '../state/graphValidation'
 import { usePinBadge } from '../state/devStore'
 import { useRunCount, useTraceStore } from '../state/traceStore'
@@ -121,7 +121,7 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
     )
   }
 
-  const rows = fieldRows(def, { data }, pins, new Set(wired.split(',')), { sig: ctx.signature, functions: callKey ? functionGraphs(ctx.store) : [] })
+  const rows = fieldRows(def, { data }, pins, new Set(wired.split(',')), { sig: ctx.signature, functions: callKey ? functionChoices(ctx.store) : [] })
   const rowOf = new Map(rows.map((r) => [r.key, r]))
   const pinRows = (list: typeof pins.inputs, side: 'inputs'): React.ReactNode =>
     list.map((p) => {

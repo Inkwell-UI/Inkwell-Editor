@@ -261,12 +261,34 @@ function syncCallers(swfId: string, fnId: string, fn: Graph): void {
   }
 }
 
-/** The function graphs of the SWF that owns `store` (a Call Function node's choices). */
+/** Library functions of the loaded packs by `<packId>/<functionId>` (the graph's id is that qualified id). Set when the pack set arrives (`hooks/usePacks`). */
+let library: ReadonlyMap<string, Graph> = new Map()
+export const getLibraryFunctions = (): ReadonlyMap<string, Graph> => library
+/** New pack set: every call to a library function whose copy of the signature is out of date is refreshed, in every open graph of every SWF (derived data, not recorded in the histories). */
+export function setLibraryFunctions(next: ReadonlyMap<string, Graph>): void {
+  library = next
+  for (const e of stores.values()) {
+    const t = e.store.temporal.getState()
+    t.pause()
+    try {
+      for (const fn of next.values()) e.store.getState().syncCalls(fn)
+    } finally {
+      t.resume()
+    }
+  }
+}
+
+/** The function graphs a Call Function node of `store` can call: the SWF's own (a library function that is open for editing is not one of them) and the libraries'. */
 export function functionGraphs(store: GraphStore): Graph[] {
   const swfId = [...stores].find(([, e]) => e.store === store)?.[0].split('/')[0]
   if (swfId === undefined) return []
-  return [...stores].flatMap(([key, e]) => (key.startsWith(`${swfId}/`) && e.store.getState().meta.scope === 'function' ? [toGraph(e.store.getState())] : []))
+  const own = [...stores].flatMap(([key, e]) => (key.startsWith(`${swfId}/`) && e.store.getState().meta.scope === 'function' && !key.slice(swfId.length + 1).includes('/') ? [toGraph(e.store.getState())] : []))
+  return [...own, ...library.values()]
 }
+
+/** `functionGraphs` as picker entries: a library function shows its pack after the name. */
+export const functionChoices = (store: GraphStore): { id: string; name: string }[] =>
+  functionGraphs(store).map((g) => ({ id: g.id, name: g.id.includes('/') ? `${g.name} (${g.id.split('/')[0]})` : g.name }))
 
 /** Points a Call Function node of `store` at the function graph `fnId` of the same SWF. */
 export function pointCall(store: GraphStore, nodeId: string, fnId: string): void {

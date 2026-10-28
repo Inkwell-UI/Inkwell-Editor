@@ -1,6 +1,8 @@
 import type { NodeDef } from '@inkwell-ui/spec'
 import { useEffect, useState } from 'react'
-import { defIndex, type PackSet } from '../../shared/graphs'
+import type { Graph } from '@inkwell-ui/spec'
+import { defIndex, type LoadedPack, type PackSet } from '../../shared/graphs'
+import { setLibraryFunctions } from '../state/graphStore'
 import { inkwell } from './api'
 import { useProject } from './useProject'
 
@@ -16,7 +18,12 @@ export function reloadPacks(): void {
 }
 const EMPTY: ReadonlyMap<string, NodeDef> = new Map()
 const NO_PACKS: readonly PackSummary[] = []
-const packSet = (): Promise<PackSet> | undefined => inkwell && (cached ??= inkwell.getPacks())
+const packSet = (): Promise<PackSet> | undefined =>
+  inkwell &&
+  (cached ??= inkwell.getPacks().then((s) => {
+    setLibraryFunctions(libraryMap(s))
+    return s
+  }))
 let lastDir: string | undefined | null = null // null = not seen yet
 
 /** Re-renders on `reloadPacks`, and reloads when the open project changes (each project has its own packs.lock). */
@@ -44,6 +51,29 @@ export function usePacks(): ReadonlyMap<string, NodeDef> {
     return () => void (live = false)
   }, [gen])
   return defs
+}
+
+/** Every library function of a pack set by `<packId>/<functionId>`; the graph's id is that qualified id. */
+export const libraryMap = (s: PackSet): ReadonlyMap<string, Graph> =>
+  new Map(s.packs.flatMap((p) => (p.functions ?? []).map((g) => [`${p.manifest.id}/${g.id}`, { ...g, id: `${p.manifest.id}/${g.id}` }] as const)))
+
+export interface LibraryPack {
+  id: string
+  version: string
+  origin: LoadedPack['origin']
+  /** The pack's functions, ids qualified (`<packId>/<functionId>`). */
+  functions: Graph[]
+}
+/** The loaded packs that have functions (the Library tab's LIBRARIES list). */
+export function useLibraryPacks(): readonly LibraryPack[] {
+  const [list, setList] = useState<readonly LibraryPack[]>([])
+  const gen = usePackGeneration()
+  useEffect(() => {
+    let live = true
+    void packSet()?.then((s) => live && setList(s.packs.filter((p) => (p.functions?.length ?? 0) > 0).map((p) => ({ id: p.manifest.id, version: p.manifest.version, origin: p.origin, functions: (p.functions ?? []).map((g) => ({ ...g, id: `${p.manifest.id}/${g.id}` })) }))))
+    return () => void (live = false)
+  }, [gen])
+  return list
 }
 
 export interface PackSummary { id: string; version: string; nodes: number }

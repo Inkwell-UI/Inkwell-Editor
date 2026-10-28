@@ -5,7 +5,7 @@ import { useSwfGraphs } from '../hooks/useGraphs'
 import { usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf, useDockRows } from '../hooks/useProject'
 import { fieldRows, layerOptions, nodePins } from '../model/graphModel'
-import { functionGraphs, pinName, pointCall } from '../state/graphStore'
+import { functionChoices, pinName, pointCall } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { isFunctionEntry, isFunctionExit } from '../../shared/graphValidate'
@@ -31,7 +31,7 @@ export function GraphNodeInspector() {
   const pins = def ? nodePins(defs, node, variables, signature) : undefined
   const wired = new Set(incoming(store.getState().edges, node.id).map((e) => pinName(e.targetHandle)))
   const callKey = (def?.extra as { callsFunction?: string } | undefined)?.callsFunction
-  const list = def && pins ? fieldRows(def, node, pins, wired, { sig: signature, functions: callKey ? functionGraphs(store) : [] }) : []
+  const list = def && pins ? fieldRows(def, node, pins, wired, { sig: signature, functions: callKey ? functionChoices(store) : [] }) : []
   const ctx = { setField: (k: string, v: unknown) => (k === callKey && typeof v === 'string' ? pointCall(store, node.id, v) : store.getState().setField(node.id, k, v)), layers, variables }
   return (
     <div className="insp" data-testid="graph-node-inspector">

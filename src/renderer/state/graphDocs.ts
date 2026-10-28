@@ -107,6 +107,26 @@ export async function makeFunction(o: { swf: SwfRef; store: GraphStore; selected
   return { ok: true, id: r.fn.id }
 }
 
+/**
+ * Opens a library function in the Graph panel to edit it in place. Its store is named `@lib:<packId>`, so every change is saved back into that pack folder (`bridge.ts`); it is not one of the
+ * SWF's own graphs (no entry in the SWF's list, so it never shows in the project's functions).
+ */
+export function openLibraryFunction(swf: SwfRef, fn: Graph): void {
+  getGraphStore(swf.id, `@lib:${fn.id.split('/')[0]}`, fn)
+  setActiveGraph(swf.id, fn.id)
+}
+
+/** "Copy to project": an editable function of the SWF with the library function's content. Calls it makes to other library functions stay library calls. */
+export async function copyLibraryFunction(o: { swf: SwfRef; fn: Graph }, api: Api): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const created = await api.createGraph(o.swf.name, o.fn.name, 'function')
+  if (!created.ok) return created
+  const g: Graph = { ...o.fn, id: created.graph.id }
+  getGraphStore(o.swf.id, o.swf.name, g)
+  saveGraphNow(o.swf.id, g.id)
+  addId(o.swf.id, g.id, true)
+  return { ok: true, id: g.id }
+}
+
 /** Deletes the graph file and detaches its id from every layer that lists it (`scripts`). */
 export async function removeGraph(o: { swf: SwfRef; overlay: OverlayDoc | undefined; graphId: string }, api: Api): Promise<{ ok: true } | { ok: false; error: string }> {
   const r = await api.deleteGraph(o.swf.name, o.graphId)

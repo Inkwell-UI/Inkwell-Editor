@@ -45,6 +45,17 @@ Errors: Entry/Exit outside a function graph; a function without a Function Entry
 - **Calls follow the signature:** the signature is part of the graph store's document. When it changes (edit, undo or redo) the Function Entry / Exit wires follow their pin by id, and every Call Function node in the SWF's other graphs is refreshed (`syncCalls`, not recorded in their histories: they are derived, and undoing the signature brings them back). A call node's own `function` field is a picker; choosing another function copies that signature and drops the wires of pins that no longer exist (`pointCall`). The copied lists are hidden (`extra.managedFields`).
 - **Function Exit** has an exit picker (the signature's exits). The Functions node category has its own colour.
 
+## Libraries (export, import, use)
+
+A library is a **pack folder with a `functions/` folder**: `manifest.json`, `functions/<id>.json` (one function graph each, the id is the file name), `CHANGELOG.md`; a pack may also have `nodes/` and `templates/`. A pack's function is called as `<packId>/<functionId>` (the `function` field of a Call Function node).
+
+- **Export** (Library tab > Export…): tick functions, give the pack id, version, description, credits; the editor asks for a folder and writes `<folder>/<packId>/` (the pack folder) and `<folder>/<packId>-<version>.zip` (the same files at the zip's root; upload it as `pack.zip` on a GitHub release `v<version>` to publish: `Inkwell-Core-Pack/docs/packs.md`). `main/packs/libraries.ts` `exportLibrary`. Refused, nothing written, when: the id is invalid or `core`, the version is not `x.y.z`, a ticked function calls a project function you did not tick (it names it), or a ticked function has graph errors. Calls between the exported functions are rewritten to `<packId>/<id>`. `dependencies` lists every pack whose nodes or functions they use (`^<installed version>`), `compatible.tool` is `^<editor major.minor>.0`.
+- **Import** (Library tab > Import…): a pack folder or zip is read with the normal loader (a broken pack is refused with its problems) and copied to `<project>/libraries/<packId>/`. There is no `packs.lock` entry or hash: it is the project's own copy and travels with the project (git). An id that is already there asks before it is replaced; `core` is refused. Packs installed from GitHub (Assets > Node packs) that have functions show up in the same list.
+- **Use:** the Call Function picker lists the SWF's functions and then the libraries' (`Name (packId)`). The compiler compiles every library function a SWF calls, transitively, into that SWF (one class each, `<Swf>Graph_<pack>_<id>`); the library is not needed at runtime. A call to a library that is not installed is a `graph-function` error ("not installed").
+- **By reference:** calls hold a copy of the signature like local calls. When a pack changes (an update, an edit, a replaced import) every call whose copy is out of date is refreshed when the pack set loads (wires follow by pin id; `setLibraryFunctions`, not recorded in undo).
+- **Edit in place:** a library function opens in the Graph panel (Library tab > the function name) and every change is written back into its pack folder (`saveLibraryFunction`; the store is named `@lib:<packId>`). For a project library (`libraries/`) that is the project's own file. For a pack installed from GitHub it is the downloaded copy in `packs-cache/`: an update or restore replaces it, and the editor says so in the tooltip. **Copy to project** makes an ordinary function of the SWF from a library function.
+- **Remove:** project libraries only (deletes `libraries/<id>/`); calls to its functions then show "not installed".
+
 ## Verified
 
 - Unit tests: `codegen/functions.test.ts` (generated AS2, frame code, validation). Real FFDec compile of a function and its caller, game and preview flavour: `codegen/functions.integration.test.ts`.
@@ -52,7 +63,10 @@ Errors: Entry/Exit outside a function graph; a function without a Function Entry
 
 ## Known limits (v1)
 
+- The UI (including the whole Library tab: export, import, open, copy, remove) is untested by eye; export, import, loading, compiling and validating a library are covered by `main/packs/libraries.test.ts`, the store side by `state/graphStore.library.test.ts`. Nothing of a library ran in Ruffle or the game yet.
 - The UI is untested by eye. Make Function does not pull pure nodes that only feed the selection into the function; they stay outside and arrive as inputs.
 - `rn`/`wt` flow-trace sequence numbers (`rc`, `tq`) are per instance, so in a Dev build the order of timer traces across a function and its caller is not global. Preview traces carry node ids without a graph id, so a node id reused in two graphs would be ambiguous (matters for libraries, Phase 2).
 - A call placed on two exec paths is emitted twice, like any exec node (`docs/codegen.md`).
-- Functions are per SWF; sharing across SWFs is Phase 2 (libraries).
+- Trace ids (`run <node>`, `pin <node>.<pin>`) carry no graph id: a library function whose node ids equal ones in the calling graph is ambiguous in the preview's pin badges.
+- A library function that is open for editing while its pack is replaced keeps the version it was opened with.
+- Versions are only compared by the author (`dependencies` ranges are written, not yet checked on import); a library built for newer nodes than are installed shows its nodes as unknown pack nodes.
