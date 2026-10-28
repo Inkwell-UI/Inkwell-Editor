@@ -6,6 +6,7 @@ import { computeBounds, hitTest } from '../model/hitTest'
 import { editNode, editOverlay } from '../state/overlayStore'
 import { patchNodeOverlay } from '../../shared/overlay'
 import { strings } from '../strings'
+import { forwardToStage } from './forwardInput'
 import { fitStage, toStagePoint } from './geometry'
 
 /** Props of FocusGraphOverlay. */
@@ -87,7 +88,8 @@ export function FocusGraphOverlay({ ir, swfId, swfName, stage, active, onSelect 
       className={`focus-overlay${active ? ' is-active' : ''}`}
       data-testid="focus-overlay"
       onPointerDown={active ? (e) => { const id = pick(e); if (id) (e.currentTarget.setPointerCapture(e.pointerId), setDrag({ from: id, ...local(e) })) } : undefined}
-      onPointerMove={drag ? (e) => setDrag({ ...drag, ...local(e) }) : undefined}
+      onPointerMove={(e) => (active && forwardToStage(ref.current, e), drag && setDrag({ ...drag, ...local(e) }))}
+      onWheel={active ? (e) => forwardToStage(ref.current, e) : undefined}
       onPointerUp={active ? up : undefined}
     >
       <svg className="focus-svg" width={size.width} height={size.height} aria-hidden="true">

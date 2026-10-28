@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Swf } from '@inkwell-ui/spec'
 import { useElementSize } from '../hooks/useElementSize'
 import { computeBounds, hitTest } from '../model/hitTest'
+import { forwardToStage } from './forwardInput'
 import { fitStage, toStagePoint } from './geometry'
 
 /** Props of InspectOverlay. */
@@ -44,7 +45,8 @@ export function InspectOverlay({ ir, stage, active, selected, extraBounds, onSel
       ref={ref}
       className={`inspect-overlay${active ? ' is-active' : ''}`}
       data-testid="inspect-overlay"
-      onPointerMove={active ? (e) => setHover(pick(e)) : undefined}
+      onPointerMove={active ? (e) => (setHover(pick(e)), forwardToStage(ref.current, e)) : undefined}
+      onWheel={active ? (e) => forwardToStage(ref.current, e) : undefined}
       onPointerLeave={active ? () => setHover(undefined) : undefined}
       onPointerDown={active ? (e) => { const id = pick(e); if (id) onSelect(id) } : undefined}
     >
