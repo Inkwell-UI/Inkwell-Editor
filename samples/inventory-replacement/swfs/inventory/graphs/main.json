@@ -13,6 +13,46 @@
     },
     {
       "from": {
+        "node": "fe",
+        "pin": "item"
+      },
+      "to": {
+        "node": "eqf",
+        "pin": "object"
+      }
+    },
+    {
+      "from": {
+        "node": "eqf",
+        "pin": "value"
+      },
+      "to": {
+        "node": "eqc",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "eqc",
+        "pin": "value"
+      },
+      "to": {
+        "node": "eqs",
+        "pin": "condition"
+      }
+    },
+    {
+      "from": {
+        "node": "eqs",
+        "pin": "value"
+      },
+      "to": {
+        "node": "fmt",
+        "pin": "d"
+      }
+    },
+    {
+      "from": {
         "node": "render",
         "pin": "then"
       },
@@ -841,13 +881,50 @@
     },
     {
       "fields": {
-        "pattern": "{0}{1}{2}\n"
+        "pattern": "{0}{1}{2}{3}\n"
       },
       "id": "fmt",
       "kind": "core/Format@1",
       "pos": {
         "x": 1080,
         "y": 200
+      }
+    },
+    {
+      "fields": {
+        "key": "equipState",
+        "valueType": "Number"
+      },
+      "id": "eqf",
+      "kind": "core/GetField@1",
+      "pos": {
+        "x": 680,
+        "y": 500
+      }
+    },
+    {
+      "fields": {
+        "b": 0,
+        "op": ">",
+        "valueType": "Number"
+      },
+      "id": "eqc",
+      "kind": "core/Compare@1",
+      "pos": {
+        "x": 880,
+        "y": 500
+      }
+    },
+    {
+      "fields": {
+        "ifFalse": "",
+        "ifTrue": "  [equipped]"
+      },
+      "id": "eqs",
+      "kind": "core/Select@1",
+      "pos": {
+        "x": 1080,
+        "y": 500
       }
     },
     {

@@ -258,7 +258,7 @@
       "transform": {
         "height": 560,
         "rotation": 0,
-        "width": 520,
+        "width": 400,
         "x": 330,
         "y": 90
       },
@@ -308,11 +308,11 @@
       "sizing": "fixed",
       "textFit": "none",
       "transform": {
-        "height": 560,
+        "height": 250,
         "rotation": 0,
-        "width": 350,
-        "x": 880,
-        "y": 90
+        "width": 480,
+        "x": 760,
+        "y": 430
       },
       "truncate": false,
       "type": "text",
