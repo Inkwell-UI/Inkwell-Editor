@@ -17,6 +17,7 @@
     "spike:05a": "tsx scripts/spike-05a.ts",
     "spike:05e": "tsx scripts/spike-05e.ts",
     "compile:widget": "tsx scripts/compile-widget.ts",
+    "compile:system-injector": "tsx scripts/compile-system-injector.ts",
     "compile:images": "tsx scripts/compile-images.ts",
     "deploy:widget": "tsx scripts/deploy-widget.ts",
     "deploy:graph-popup": "tsx scripts/deploy-graph-popup.ts",

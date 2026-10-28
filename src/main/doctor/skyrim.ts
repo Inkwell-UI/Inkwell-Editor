@@ -77,7 +77,8 @@ const RUNTIMES: Record<string, string> = {
   '1.6.678.0': 'AE 1.6.678',
   '1.6.1130.0': 'AE 1.6.1130',
   '1.6.1170.0': 'AE 1.6.1170',
-  '1.6.1179.0': 'AE 1.6.1179'
+  '1.6.1179.0': 'AE 1.6.1179',
+  '1.7.104.0': '1.7.104'
 }
 export function runtimeLabel(version: string): { label: string; known: boolean } {
   const known = RUNTIMES[version]

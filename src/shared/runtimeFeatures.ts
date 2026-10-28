@@ -7,6 +7,7 @@ export const RUNTIME_FEATURE_SINCE = {
   savedVariables: FIRST_RUNTIME_VERSION,
   list: FIRST_RUNTIME_VERSION,
   focusGraph: FIRST_RUNTIME_VERSION, // W3: needs only On Input (Up/Down/Left/Right) and menuMode, both in the first runtime
+  systemMenu: '0.5.1', // `triggers.systemMenu`: the runtime adds the Journal System page entry
   translation: '0.4.0' // `inkwell.translate` / `inkwell.language` and the translation files the runtime reads itself (SPEC-CHANGES V13.2)
 } as const
 export type RuntimeFeature = keyof typeof RUNTIME_FEATURE_SINCE

@@ -44,7 +44,7 @@ export function resolveMenuNames(modId: string, m: MenuSource): { name: string; 
 }
 
 /** The highest Inkwell Runtime version what the SWF uses needs (S3 rule 1). Every 0.3 feature is in the first runtime. */
-export const minRuntimeOf = (m: MenuSource): string => minRuntimeFor(['menu', ...(m.features ?? [])])
+export const minRuntimeOf = (m: MenuSource): string => minRuntimeFor(['menu', ...(m.settings?.triggers?.systemMenu !== undefined ? ['systemMenu'] : []), ...(m.features ?? [])])
 
 export type MenuProblem = { code: string; message: string }
 

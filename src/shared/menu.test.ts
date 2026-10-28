@@ -19,6 +19,16 @@ describe('names', () => {
   })
 })
 
+describe('triggers.systemMenu', () => {
+  it('reaches the MenuDef and raises the minimum runtime to 0.5.1; an empty label is refused', () => {
+    const m = src('wheel', { triggers: { systemMenu: '$WHEEL' } })
+    expect(buildMenuDef('MyMod', m).def?.triggers.systemMenu).toBe('$WHEEL')
+    expect(minRuntimeOf(m)).toBe('0.5.1')
+    expect(minRuntimeOf(src('wheel'))).toBe('0.3.0')
+    expect(buildMenuDef('MyMod', { swf: 'x', settings: { ...defaultMenuSettings(), triggers: { papyrus: true, systemMenu: '' } } as MenuSettings }).problems).not.toEqual([])
+  })
+})
+
 describe('flat layout (O2 fallback)', () => {
   it('flatMenuSettings puts the SWF at Interface/<menuName>.swf, in the MenuDef too; the default stays the sub-path', () => {
     const m = src('menu')
