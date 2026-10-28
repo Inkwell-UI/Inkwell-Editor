@@ -58,7 +58,7 @@ describe.skipIf(!can)('samples/menu-gamepad (real FFDec)', () => {
     const xml = await run(false)
     expect(xml).toContain('__Packages.mods.InkwellMenuGamepad.MenuMenu')
     for (const s of ['disableFocusKeys', 'focusMoves', 'showPrompts', 'Prompts', 'glyph_playstation']) expect(xml).toContain(hex(s))
-    expect(xml).toContain('ControllerButtons') // the game's pad glyph font, imported by alias like any text font
+    expect(xml).toContain('ControllerButtonsInverted') // the game's pad glyph outline font, imported by alias like any text font
     expect(xml).not.toContain(hex('inkwellPad'))
   }, 120_000)
 

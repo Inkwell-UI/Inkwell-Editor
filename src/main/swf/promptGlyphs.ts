@@ -16,7 +16,7 @@ const hex = (h: number): Rgb => ({ r: ((h >> 16) & 255) / 255, g: ((h >> 8) & 25
 const DARK = 0x1c1c1c
 /**
  * The game's own button art: its font `ControllerButtons` (exported by the user's fonts_en.swf, alias `ControllerButtons`; nothing of it is shipped, the SWF only names the alias like any
- * text) holds white pad glyphs on letters. Spec glyph -> [character, advance in em], read from the extracted font (xbox A B X Y = A B C D, LB G, RB L, LT I, RT N, Start O, Back E;
+ * text) holds white pad glyphs on letters (and `ControllerButtonsInverted` the same as outlines). Spec glyph -> [character, advance in em], read from the extracted font (xbox A B X Y = A B C D, LB G, RB L, LT I, RT N, Start O, Back E;
  * playstation Cross a, Triangle b, Square c, Circle d, L1 g, R1 m, L2 j, R2 o, Options p). D-pad and Share stay vector. Unverified in game: INKWELL_VECTOR_GLYPHS=1 builds the vector set instead.
  */
 const GAME_GLYPHS: Record<'xbox' | 'playstation', Record<string, [string, number]>> = {
@@ -88,10 +88,13 @@ export function glyphParts(d: PromptDevice, g: string, s: number): { w: number; 
   }
   const game = d !== 'keyboard' && gameGlyphs() ? GAME_GLYPHS[d][g] : undefined
   if (game) {
-    // the font's glyphs are about 1.04 em tall (-0.205..0.838 em around the baseline); the SWF font's ascent is 0.99 em, so the top of the glyph sits 0.155 em below the line top
+    // the look of the game's own prompts: a dark disc (round buttons) or pill (shoulders, triggers, Options) of ours behind the game's outline font `ControllerButtonsInverted` (grey ring and letter,
+    // transparent inside). The glyphs are about 1.04 em tall (-0.205..0.838 em around the baseline); the SWF font's ascent is 0.99 em, so the glyph top sits 0.155 em below the line top.
     const size = Math.round(s * 0.96)
     const w = Math.round(game[1] * size)
-    return { w, items: [{ x: 0, y: -Math.round(0.155 * size), w, h: Math.round(size * 1.24), color: 0xffffff, text: game[0], size, font: 'ControllerButtons' }] }
+    const round = game[1] < 1.2
+    const backing: Item = { ...box(w, s), color: 0x1c1c1c, poly: round ? circle(w / 2, s / 2, Math.min(w, s) / 2) : chamfer(0, 0, w, s, s * 0.3) }
+    return { w, items: [backing, { x: 0, y: -Math.round(0.155 * size), w, h: Math.round(size * 1.24), color: 0xc8c8c8, text: game[0], size, font: 'ControllerButtonsInverted' }] }
   }
   if (g.startsWith('Dpad')) {
     const a = s * 0.32

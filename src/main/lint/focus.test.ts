@@ -83,13 +83,13 @@ describe('prompt glyphs', () => {
     expect(glyphParts('keyboard', 'E', 48).w).toBe(48)
     expect(glyphParts('keyboard', 'Enter', 48).w).toBeGreaterThan(48)
   })
-  it("the game's ControllerButtons font draws the face buttons and shoulders (one text part each); d-pad, Share and keyboard stay vector", () => {
+  it("the game's ControllerButtons font draws the face buttons and shoulders (a dark backing and one text part each); d-pad, Share and keyboard stay vector", () => {
     const one = (d: 'xbox' | 'playstation', g: string) => glyphParts(d, g, 48).items
-    expect(one('xbox', 'A')).toMatchObject([{ text: 'A', font: 'ControllerButtons' }])
-    expect(one('xbox', 'X')).toMatchObject([{ text: 'C' }])
-    expect(one('xbox', 'Y')).toMatchObject([{ text: 'D' }])
-    expect(one('playstation', 'Cross')).toMatchObject([{ text: 'a' }])
-    expect(one('playstation', 'Circle')).toMatchObject([{ text: 'd' }])
+    expect(one('xbox', 'A')).toMatchObject([{ poly: expect.any(Array) }, { text: 'A', font: 'ControllerButtonsInverted' }]) // a dark disc of ours behind the game's outline glyph
+    expect(one('xbox', 'X')[1]).toMatchObject({ text: 'C' })
+    expect(one('xbox', 'Y')[1]).toMatchObject({ text: 'D' })
+    expect(one('playstation', 'Cross')[1]).toMatchObject({ text: 'a' })
+    expect(one('playstation', 'Circle')[1]).toMatchObject({ text: 'd' })
     expect(glyphParts('xbox', 'A', 48).w).toBe(Math.round(1.094 * 46))
     expect(glyphParts('playstation', 'Options', 48).w).toBeGreaterThan(2 * 48)
     expect(one('xbox', 'DpadUp').length).toBeGreaterThan(1)
