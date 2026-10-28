@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile, cp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, resolve, sep } from 'node:path'
@@ -13,6 +14,14 @@ import { loadPack } from './index'
  * project's own copy, kept in git with the project). Create makes an empty one, the editor moves functions into it, export writes the folder and a zip, import copies one in.
  */
 export const LIBRARIES_DIR = 'libraries'
+/**
+ * A pack in `libraries/` is either local (made here, editable, what you publish yourself) or imported (copied in by Import…, immutable: copy its functions to the project to change them).
+ * Import leaves this marker file in the pack folder; its absence means local.
+ */
+export const IMPORTED_MARK = '.imported'
+export const isImportedPack = (dir: string): boolean => existsSync(join(dir, IMPORTED_MARK))
+const localPackError = (projectDir: string, id: string): string | undefined =>
+  isImportedPack(join(projectDir, LIBRARIES_DIR, id)) ? `The pack "${id}" was imported, so it cannot be edited. Copy its functions to the project to change them.` : undefined
 const PACK_ID = /^[a-z0-9][a-z0-9._-]*$/
 const SEMVER = /^\d+\.\d+\.\d+$/
 
@@ -59,6 +68,8 @@ export async function createLibrary(projectDir: string, p: { id: string; version
 /** Moves a function graph (already saved in the renderer's terms: its calls are checked here) into the pack: refuses a function that calls one of the SWF's own functions (a pack cannot see them) or an id the pack has. */
 export async function addFunctionToLibrary(projectDir: string, packId: string, fn: Graph): Promise<Fallible<{ id: string }>> {
   if (!PACK_ID.test(packId)) return { ok: false, error: 'Not a pack id.' }
+  const imported = localPackError(projectDir, packId)
+  if (imported) return { ok: false, error: imported }
   const own = callsOf(fn).find((c) => !c.includes('/'))
   if (own) return { ok: false, error: `"${fn.name}" calls the project function "${own}". Move that one into a pack first: a pack cannot call functions of the project.` }
   const file = join(projectDir, LIBRARIES_DIR, packId, 'functions', `${fn.id}.json`)
@@ -94,6 +105,8 @@ export interface ExportInput {
  */
 export async function exportPack(i: ExportInput): Promise<Fallible<{ folder: string; zip: string; version: string; functions: string[]; dependencies: Record<string, string> }>> {
   const src = join(i.projectDir, LIBRARIES_DIR, i.packId)
+  const imported = localPackError(i.projectDir, i.packId)
+  if (imported) return { ok: false, error: imported }
   const r = await loadPack(src)
   if (!r.pack) return { ok: false, error: r.problems[0] ?? `There is no pack "${i.packId}" in this project.` }
   if (r.problems.length) return { ok: false, error: r.problems[0]! }
@@ -176,6 +189,7 @@ export async function importLibrary(projectDir: string, src: string, opts: { rep
     await rm(target, { recursive: true, force: true })
     await mkdir(dirname(target), { recursive: true })
     await cp(dir, target, { recursive: true, filter: (s) => !/[\\/](node_modules|\.git)([\\/]|$)/.test(s) })
+    await writeFile(join(target, IMPORTED_MARK), '')
     return { ok: true, id, version: r.pack.manifest.version, functions: (r.pack.functions ?? []).map((g) => g.id), nodes: r.pack.nodes.length }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
@@ -187,6 +201,8 @@ export async function importLibrary(projectDir: string, src: string, opts: { rep
 /** Deletes one function of a project pack. Calls to it then show the lint error "not installed". */
 export async function removeLibraryFunction(projectDir: string, packId: string, fnId: string): Promise<Fallible<Record<never, never>>> {
   if (!PACK_ID.test(packId) || !/^[a-z0-9][a-z0-9._-]*$/.test(fnId)) return { ok: false, error: 'Not a function of a project pack.' }
+  const imported = localPackError(projectDir, packId)
+  if (imported) return { ok: false, error: imported }
   const file = join(projectDir, LIBRARIES_DIR, packId, 'functions', `${fnId}.json`)
   if (!(await stat(file).catch(() => undefined))) return { ok: false, error: `"${packId}" is not a project pack with a function "${fnId}".` }
   await rm(file)

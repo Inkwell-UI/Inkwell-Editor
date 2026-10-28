@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Check, Pencil, Trash2, Workflow, X } from 'lucide-react'
+import { Check, Lock, Pencil, Trash2, Workflow, X } from 'lucide-react'
 import { useStore } from 'zustand'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { usePacks } from '../hooks/usePacks'
@@ -63,13 +63,15 @@ function Row({ swfId, id, active, actions, store }: { swfId: string; id: string;
  * One graph row (name, scope tag, rename, delete with confirm, signature line). The Library's pack rows use it for a pack's functions too, so a function looks the same in a pack as in the
  * project's list; `extra` adds buttons after the delete one.
  */
-export function GraphRowView({ id, name, scope, sig, events = [], active, onOpen, onRename, onDelete, extra }: {
+export function GraphRowView({ id, name, scope, sig, events = [], active, locked, onOpen, onRename, onDelete, extra }: {
   id: string
   name: string
   scope: string
   sig: { inputs: { name: string; type: string }[]; outputs: { name: string; type: string }[]; exits: { name: string }[] } | undefined
   events?: string[]
   active: boolean
+  /** Why this row cannot be edited (an imported pack's function): no open, rename or delete, only `extra`. */
+  locked?: string
   onOpen(): void
   onRename(name: string): void
   onDelete(): void
@@ -99,13 +101,13 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, onOpen
           </>
         ) : (
           <>
-            <button type="button" className="layer-main" aria-pressed={active} onClick={onOpen} onDoubleClick={fn ? () => setEditing(name) : undefined} data-testid="graph-open">
-              <Workflow size={14} aria-hidden="true" className="type-icon" />
+            <button type="button" className="layer-main" aria-pressed={active} title={locked} onClick={locked ? undefined : onOpen} onDoubleClick={fn && !locked ? () => setEditing(name) : undefined} data-testid="graph-open">
+              {locked ? <Lock size={14} aria-hidden="true" className="type-icon" /> : <Workflow size={14} aria-hidden="true" className="type-icon" />}
               <span className="layer-name">{name}</span>
               {!fn && <span className="layer-type">{scope === 'menu' ? strings.nav.menuGraph : strings.nav.componentGraph}</span>}
             </button>
             {fn ? (
-              confirm ? confirmButtons : (
+              locked ? <span className="row-reveal">{extra}</span> : confirm ? confirmButtons : (
                 // a function row stays quiet until it is hovered or focused: its extra action, then "..." with rename and delete
                 <span className="row-reveal">
                   {extra}

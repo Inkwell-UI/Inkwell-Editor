@@ -1,5 +1,5 @@
 import { useState, type DragEvent } from 'react'
-import { ChevronDown, ChevronRight, Copy } from 'lucide-react'
+import { ChevronDown, ChevronRight, Copy, Lock } from 'lucide-react'
 import type { Graph } from '@inkwell-ui/spec'
 import { FUNCTION_DRAG, GraphRowView, GraphsList } from '../graph/GraphsList'
 import { inkwell } from '../hooks/api'
@@ -64,7 +64,8 @@ function PacksSection() {
 }
 
 function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: string } }) {
-  const own = pack.origin === 'library'
+  const own = pack.origin === 'library' // a local pack: editable. Imported and installed packs are immutable
+  const imported = pack.origin === 'imported'
   const [over, setOver] = useState(false)
   const [exporting, setExporting] = useState<string | undefined>()
   const [open, setOpen] = useState(true)
@@ -118,11 +119,16 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
       <div className="graph-row-main">
         <button type="button" className="layer-main" aria-expanded={has ? open : undefined} disabled={!has} onClick={() => setOpen(!open)} data-testid={`library-pack-toggle-${pack.id}`}>
           {has && open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
-          <span className="layer-name">{pack.id}</span><span className="layer-type">{pack.version} · {strings.lib.origin[pack.origin ?? 'installed']} · {strings.lib.packContents(pack.nodes, pack.functions.length)}</span>
+          <span className="layer-name">{pack.id}</span>{!own && pack.origin !== 'core' && <Lock size={12} aria-hidden="true" className="type-icon" />}<span className="layer-type">{pack.version} · {strings.lib.origin[pack.origin ?? 'installed']} · {strings.lib.packContents(pack.nodes, pack.functions.length)}</span>
         </button>
         {own && (
           <span className="row-reveal">
             <RowMenu label={strings.lib.more} testId="library-more" items={[{ label: strings.lib.exportOpen, onClick: () => setExporting(pack.version) }, { label: strings.lib.remove(pack.id), danger: true, onClick: () => void remove() }]} />
+          </span>
+        )}
+        {imported && (
+          <span className="row-reveal">
+            <RowMenu label={strings.lib.more} testId="library-more" items={[{ label: strings.lib.remove(pack.id), danger: true, onClick: () => void remove() }]} />
           </span>
         )}
       </div>
@@ -141,6 +147,7 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
             scope="function"
             sig={fn.signature}
             active={activeId === fn.id}
+            {...(own || pack.origin === 'core' ? {} : { locked: strings.lib.locked })}
             onOpen={() => openLibraryFunction(swf, fn)}
             onRename={(n) => renameLibraryFunction(swf, fn, n)}
             onDelete={() => void removeFn(fn)}

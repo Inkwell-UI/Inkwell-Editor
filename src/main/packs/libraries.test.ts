@@ -10,7 +10,7 @@ import { newFunctionGraph, callFields } from '../../shared/functions'
 import { validateGraph } from '../../shared/graphValidate'
 import { corePack } from '../codegen/codegen.testutil'
 import { loadPack } from './index'
-import { addFunctionToLibrary, createLibrary, exportPack, importLibrary, localLibraryDirs, removeLibrary } from './libraries'
+import { addFunctionToLibrary, createLibrary, exportPack, importLibrary, isImportedPack, localLibraryDirs, removeLibrary, removeLibraryFunction } from './libraries'
 
 const packs = await loadCore()
 const tmp = () => mkdtempSync(join(tmpdir(), 'inkwell-libtest-'))
@@ -137,5 +137,21 @@ describe('importLibrary and the loader', () => {
     expect(await localLibraryDirs(projectDir)).toEqual([])
     const bad = await importLibrary(projectDir, join(tmp(), 'nothing'))
     expect(bad.ok).toBe(false)
+  })
+})
+
+describe('imported packs are immutable', () => {
+  it('an imported pack is marked, and adding, deleting and exporting its functions is refused; a local pack is not marked', async () => {
+    const local = await packed()
+    expect(isImportedPack(join(local.projectDir, 'libraries/my-lib'))).toBe(false)
+    const e = await exp(local.projectDir)
+    if (!e.ok) throw new Error(e.error)
+    const dir = tmp()
+    expect((await importLibrary(dir, e.zip)).ok).toBe(true)
+    expect(isImportedPack(join(dir, 'libraries/my-lib'))).toBe(true)
+    expect(((await addFunctionToLibrary(dir, 'my-lib', project().inner)) as { error: string }).error).toContain('imported')
+    expect(((await removeLibraryFunction(dir, 'my-lib', 'inner')) as { error: string }).error).toContain('imported')
+    expect(((await exp(dir)) as { error: string }).error).toContain('imported')
+    expect((await removeLibraryFunction(local.projectDir, 'my-lib', 'inner')).ok).toBe(true)
   })
 })

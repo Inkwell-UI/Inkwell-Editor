@@ -17,7 +17,7 @@ const S = strings.assets.packs
 export function PacksSection({ title, empty }: { title: string; empty: string }) {
   const project = useProject()
   const loaded = usePackList()
-  const local = useLibraryPacks().filter((p) => p.origin === 'library')
+  const local = useLibraryPacks().filter((p) => p.origin === 'library' || p.origin === 'imported')
   const [state, setState] = useState<PacksState>({ locked: [] })
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState<{ tone: 'ok' | 'error'; text: string } | undefined>()
@@ -60,7 +60,7 @@ export function PacksSection({ title, empty }: { title: string; empty: string })
           </li>
         ))}
         {local.map((p) => (
-          <li key={p.id} data-state="local"><span className="mono">{p.id}</span> {p.version} <span className="dim">{strings.lib.origin['library']}, {strings.lib.packContents(p.nodes, p.functions.length)}</span></li>
+          <li key={p.id} data-state="local"><span className="mono">{p.id}</span> {p.version} <span className="dim">{strings.lib.origin[p.origin ?? 'library']}, {strings.lib.packContents(p.nodes, p.functions.length)}</span></li>
         ))}
       </ul>
       {!state.locked.length && !local.length && !state.lockError && <p className="empty">{empty}</p>}

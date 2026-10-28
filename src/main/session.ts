@@ -32,7 +32,7 @@ import { createTrust } from './sync/figmaTrust'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { corePackDir, loadPacks } from './packs'
-import { addFunctionToLibrary, createLibrary, exportPack, importLibrary, localLibraryDirs, removeLibrary, removeLibraryFunction, type ImportResult } from './packs/libraries'
+import { addFunctionToLibrary, createLibrary, exportPack, importLibrary, isImportedPack, localLibraryDirs, removeLibrary, removeLibraryFunction, type ImportResult } from './packs/libraries'
 import { createPackManager, lockedPacks, parseGitHubRef, readLock, type Fetch } from './packs/manager'
 import type { PackCandidate, PackResult, PacksState } from '../shared/packs'
 import { loadProject, type ProjectMeta } from './project'
@@ -90,7 +90,7 @@ export function createSession(deps: SessionDeps) {
   let packs: Promise<PackSet> | undefined
   /** The bundled core pack first (it wins an id clash), then the project's cached packs that match packs.lock (`refreshPacks`). */
   let packDirs = [corePackDir(deps.appPath)]
-  const originOf = (d: string): LoadedPack['origin'] => (d === corePackDir(deps.appPath) ? 'core' : /[\\/]libraries[\\/]/.test(d) ? 'library' : 'installed')
+  const originOf = (d: string): LoadedPack['origin'] => (d === corePackDir(deps.appPath) ? 'core' : /[\\/]libraries[\\/]/.test(d) ? (isImportedPack(d) ? 'imported' : 'library') : 'installed')
   const getPacks = (): Promise<PackSet> => (packs ??= loadPacks(packDirs, originOf))
   let codegenPacks: ReturnType<typeof loadCodegenPacks> | undefined
   const packManager = createPackManager({ fetch: deps.fetch ?? fetch, ...(process.env['INKWELL_PACKS_INDEX'] ? { indexUrl: process.env['INKWELL_PACKS_INDEX'] } : {}) })
@@ -799,7 +799,7 @@ export function createSession(deps: SessionDeps) {
       const pack = set.packs.find((p) => p.manifest.id === packId)
       const dir = pack?.dir
       const fnId = g.id.startsWith(`${packId}/`) ? g.id.slice(packId.length + 1) : g.id
-      if (!pack || !dir || pack.origin === 'core' || !isGraphId(fnId) || g.scope !== 'function') return { ok: false, error: `The library "${packId}" cannot be edited.` }
+      if (!pack || !dir || pack.origin !== 'library' || !isGraphId(fnId) || g.scope !== 'function') return { ok: false, error: `The library "${packId}" cannot be edited.` }
       try {
         await writeFile(join(dir, 'functions', `${fnId}.json`), JSON.stringify({ ...g, id: fnId }, null, 2) + '\n')
       } catch (e) {
