@@ -162,7 +162,7 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
       <div className="graph-row-main">
         <button type="button" className="layer-main" aria-expanded={has ? open : undefined} disabled={!has} onClick={() => setOpen(!open)} data-testid={`library-pack-toggle-${pack.id}`}>
           {has && open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
-          <span className="layer-name">{pack.id}</span>{!own && pack.origin !== 'core' && <Lock size={12} aria-hidden="true" className="type-icon" />}<span className="layer-type">{pack.version} · {strings.lib.origin[pack.origin ?? 'installed']} · {strings.lib.packContents(pack.nodes, pack.functions.length)}</span>
+          <span className="layer-name">{pack.id}</span>{!own && <Lock size={12} role="img" aria-label={strings.lib.lockedPack} className="type-icon" />}<span className="layer-type">{pack.version} · {strings.lib.origin[pack.origin ?? 'installed']} · {strings.lib.packContents(pack.nodes, pack.functions.length)}</span>
         </button>
         {own && (
           <span className="row-reveal">

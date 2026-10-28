@@ -232,6 +232,7 @@ export const strings = {
     editedInPlace: 'A local pack: edits are saved into its folder',
     editedInstalled: 'An imported pack cannot be edited. Copy a function to the project to change it.',
     locked: 'Imported: copy it to the project to edit it',
+    lockedPack: 'Read-only: core and imported packs cannot be edited',
     copyTip: (name: string) => `Make an editable copy of ${name} in this project`,
     exportOpen: 'Export…',
     exportTip: 'Write this pack as a folder and a zip you can share',
