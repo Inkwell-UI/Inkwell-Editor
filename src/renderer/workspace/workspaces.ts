@@ -60,7 +60,7 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
           size: 6.7,
           children: [
             { kind: 'split', direction: 'row', size: 5, children: [{ kind: 'panel', panel: 'graph', size: 5 }, { kind: 'split', direction: 'column', size: 1.7, children: [{ ...preview, fixed: BEHAVIOUR_PREVIEW_HEIGHT }, { ...inspector, size: 1 }] }] },
-            { ...tabs(['play', 'trace', 'mockData', 'dataBinding', 'lintBudget'], 'trace'), size: 1.4 }
+            { ...tabs(['trace', 'mockData', 'dataBinding', 'lintBudget'], 'trace'), size: 1.4 }
           ]
         }
       ]
