@@ -98,5 +98,11 @@
 .gn-pin-val { margin-right: 6px; padding: 0 5px; border-radius: 8px; font-size: 10px; line-height: 15px; color: var(--fg); background: var(--accent-bg); border: 1px solid var(--line-strong); max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-form { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 8px; }
 .graph-row[draggable="true"] { cursor: grab; }
+.row-reveal { display: inline-flex; gap: 2px; opacity: 0; }
+.graph-row-main:hover .row-reveal, .graph-row-main:focus-within .row-reveal, .row-reveal:has([aria-expanded='true']) { opacity: 1; }
+.row-menu { list-style: none; margin: 0; padding: 0; min-width: 130px; }
+.row-menu-item { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 4px; padding: 6px 10px; color: var(--fg); font: inherit; cursor: pointer; }
+.row-menu-item:hover, .row-menu-item:focus-visible { background: var(--hover); }
+.row-menu-item.is-danger { color: var(--err); }
 .pack-row.is-drop { outline: 1px dashed var(--accent); outline-offset: -1px; background: var(--accent-bg); }
 .lib-fns { margin: 2px 0 0 14px; display: flex; flex-direction: column; gap: 2px; }

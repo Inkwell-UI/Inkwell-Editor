@@ -1,5 +1,5 @@
 import { useState, type DragEvent } from 'react'
-import { ChevronDown, ChevronRight, Copy, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, Copy } from 'lucide-react'
 import type { Graph } from '@inkwell-ui/spec'
 import { FUNCTION_DRAG, GraphRowView, GraphsList } from '../graph/GraphsList'
 import { inkwell } from '../hooks/api'
@@ -10,6 +10,7 @@ import { findGraphStore } from '../state/graphStore'
 import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { RowMenu } from '../ui/RowMenu'
 import { Panel } from './Panel'
 
 const toast = (t: Parameters<ReturnType<typeof useToastStore.getState>['push']>[0], ms?: number): void => useToastStore.getState().push(t, ms)
@@ -119,8 +120,12 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
           {has && open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
           <span className="layer-name">{pack.id}</span><span className="layer-type">{pack.version} · {strings.lib.origin[pack.origin ?? 'installed']} · {strings.lib.packContents(pack.nodes, pack.functions.length)}</span>
         </button>
-        {own && <Btn label={strings.lib.exportTip} onClick={() => setExporting(exporting === undefined ? pack.version : undefined)} pressed={exporting !== undefined} testId="library-export-open">{strings.lib.exportOpen}</Btn>}
-        {own && <Btn icon={Trash2} label={strings.lib.remove(pack.id)} onClick={() => void remove()} testId="library-remove" />}
+        {own && (
+          <span className="row-reveal">
+            <Btn label={strings.lib.exportTip} onClick={() => setExporting(exporting === undefined ? pack.version : undefined)} pressed={exporting !== undefined} testId="library-export-open">{strings.lib.exportOpen}</Btn>
+            <RowMenu label={strings.lib.more} testId="library-more" items={[{ label: strings.lib.remove(pack.id), danger: true, onClick: () => void remove() }]} />
+          </span>
+        )}
       </div>
       {exporting !== undefined && (
         <div className="lib-form">

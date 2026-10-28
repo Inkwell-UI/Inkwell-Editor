@@ -9,6 +9,7 @@ import { setActiveGraph } from '../state/graphDocs'
 import { findGraphStore } from '../state/graphStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { RowMenu } from '../ui/RowMenu'
 import { useGraphActions } from './useGraphActions'
 
 /**
@@ -76,6 +77,13 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, onOpen
 }) {
   const [editing, setEditing] = useState<string>()
   const [confirm, setConfirm] = useState(false)
+  const fn = scope === 'function'
+  const confirmButtons = (
+    <>
+      <Btn variant="danger" onClick={() => (setConfirm(false), onDelete())} testId="graph-delete-confirm">{strings.nav.deleteConfirm}</Btn>
+      <Btn icon={X} label={strings.nav.deleteCancel} onClick={() => setConfirm(false)} />
+    </>
+  )
   const sigText = sig ? strings.lib.signature(sig.inputs.map((p) => `${p.name}: ${p.type}`).join(', '), sig.outputs.map((p) => `${p.name}: ${p.type}`).join(', '), sig.exits.map((x) => x.name).join(', ')) : undefined
   const commit = (): void => {
     if (editing !== undefined) onRename(editing)
@@ -91,21 +99,26 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, onOpen
           </>
         ) : (
           <>
-            <button type="button" className="layer-main" aria-pressed={active} onClick={onOpen} data-testid="graph-open">
+            <button type="button" className="layer-main" aria-pressed={active} onClick={onOpen} onDoubleClick={fn ? () => setEditing(name) : undefined} data-testid="graph-open">
               <Workflow size={14} aria-hidden="true" className="type-icon" />
               <span className="layer-name">{name}</span>
-              <span className="layer-type">{scope === 'menu' ? strings.nav.menuGraph : scope === 'function' ? strings.nav.functionGraph : strings.nav.componentGraph}</span>
+              {!fn && <span className="layer-type">{scope === 'menu' ? strings.nav.menuGraph : strings.nav.componentGraph}</span>}
             </button>
-            <Btn icon={Pencil} label={strings.nav.renameGraph} onClick={() => setEditing(name)} testId="graph-rename" />
-            {confirm ? (
-              <>
-                <Btn variant="danger" onClick={() => (setConfirm(false), onDelete())} testId="graph-delete-confirm">{strings.nav.deleteConfirm}</Btn>
-                <Btn icon={X} label={strings.nav.deleteCancel} onClick={() => setConfirm(false)} />
-              </>
+            {fn ? (
+              confirm ? confirmButtons : (
+                // a function row stays quiet until it is hovered or focused: its extra action, then "..." with rename and delete
+                <span className="row-reveal">
+                  {extra}
+                  <RowMenu label={strings.lib.more} testId="graph-more" items={[{ label: strings.lib.rename, onClick: () => setEditing(name) }, { label: strings.lib.delete, danger: true, onClick: () => setConfirm(true) }]} />
+                </span>
+              )
             ) : (
-              <Btn icon={Trash2} label={strings.nav.deleteGraph(name)} onClick={() => setConfirm(true)} testId="graph-delete" />
+              <>
+                <Btn icon={Pencil} label={strings.nav.renameGraph} onClick={() => setEditing(name)} testId="graph-rename" />
+                {confirm ? confirmButtons : <Btn icon={Trash2} label={strings.nav.deleteGraph(name)} onClick={() => setConfirm(true)} testId="graph-delete" />}
+                {extra}
+              </>
             )}
-            {extra}
           </>
         )}
       </div>
