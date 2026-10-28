@@ -122,8 +122,7 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
         </button>
         {own && (
           <span className="row-reveal">
-            <Btn variant="quiet" label={strings.lib.exportTip} onClick={() => setExporting(exporting === undefined ? pack.version : undefined)} pressed={exporting !== undefined} testId="library-export-open">{strings.lib.exportOpen}</Btn>
-            <RowMenu label={strings.lib.more} testId="library-more" items={[{ label: strings.lib.remove(pack.id), danger: true, onClick: () => void remove() }]} />
+            <RowMenu label={strings.lib.more} testId="library-more" items={[{ label: strings.lib.exportOpen, onClick: () => setExporting(pack.version) }, { label: strings.lib.remove(pack.id), danger: true, onClick: () => void remove() }]} />
           </span>
         )}
       </div>
