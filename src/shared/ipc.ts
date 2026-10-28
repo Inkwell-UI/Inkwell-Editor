@@ -40,6 +40,10 @@ export const IPC = {
   packsInstall: 'packs:install',
   packsRestore: 'packs:restore',
   packsUpdates: 'packs:updates',
+  libraryExport: 'library:export',
+  libraryImport: 'library:import',
+  libraryRemove: 'library:remove',
+  librarySaveFunction: 'library:saveFunction',
   strictSet: 'project:strict',
   modIdSet: 'project:modId',
   buildAll: 'build:all',
@@ -164,6 +168,13 @@ export interface InkwellApi {
   graphAs2(swfName: string, graph: Graph): Promise<GraphResult<{ as2: GraphAs2 }>>
   /** Node definitions of the loaded packs (the bundled core pack, then the project's cached packs that match packs.lock). Data only; `problems` lists files that failed their schema. */
   getPacks(): Promise<PackSet>
+  /** Library functions (docs/functions.md, Libraries): asks for a folder, writes the ticked functions of the SWF as a pack folder and zip there. `cancelled` when the folder dialog was closed. */
+  exportLibrary(swfName: string, selected: string[], pack: { id: string; version: string; description?: string; credits?: string; license?: string }): Promise<GraphResult<{ folder: string; zip: string; functions: string[]; dependencies: Record<string, string> }> | { ok: false; cancelled: true }>
+  /** Asks for a pack folder or zip and copies it into `<project>/libraries/<id>/`. `exists` = that id is already there (call again with `replace`). `cancelled` when the dialog was closed. */
+  importLibrary(replace?: { id: string; path: string }): Promise<GraphResult<{ id: string; version: string; functions: string[]; nodes: number }> | { ok: false; error: string; exists: true; id: string; path: string } | { ok: false; cancelled: true }>
+  removeLibrary(id: string): Promise<GraphResult>
+  /** Saves an edited library function back into its pack folder. */
+  saveLibraryFunction(packId: string, graph: Graph): Promise<GraphResult>
   /** Assets > Node packs (packs.lock and the cache), the Packs Index, a download for the install/update dialog (`owner/name` or a GitHub URL; nothing written), install it, re-download locked packs the cache lacks (hash checked), and newer releases with changelogs. Never reject; offline is an `error`. */
   getPacksState(): Promise<PacksState>
   getPacksIndex(): Promise<PackResult<{ index: PackIndexEntry[] }>>

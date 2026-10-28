@@ -53,12 +53,21 @@ export function nodeName(n: { fields: Record<string, unknown> }, def: NodeDef | 
 export interface LoadedPack {
   manifest: PackManifest
   nodes: NodeDef[]
+  /** Library functions (`functions/<id>.json`, function graphs); their ids are the file names, call them as `<packId>/<id>`. */
+  functions?: Graph[]
+  /** Where the pack came from, set by the session: the bundled `core` pack, the project's own `libraries/` folder (editable, kept with the project) or a downloaded pack (`packs-cache`, replaced by an update). */
+  origin?: 'core' | 'library' | 'installed'
+  /** The folder the pack was loaded from (an edited library function is written back there). */
+  dir?: string
 }
 /** `problems` are files that could not be read or failed the schema; the rest of the pack still loads. */
 export interface PackSet {
   packs: LoadedPack[]
   problems: string[]
 }
+
+/** The id a Call Function node uses for a function of a pack: `<packId>/<functionId>` (a local function is just its graph id). */
+export const libraryFunctionId = (packId: string, fnId: string): string => `${packId}/${fnId}`
 
 /** Node kind id as stored in graph files: `packId/kind@major`. */
 export const kindId = (packId: string, def: Pick<NodeDef, 'kind' | 'major'>): string => `${packId}/${def.kind}@${def.major}`

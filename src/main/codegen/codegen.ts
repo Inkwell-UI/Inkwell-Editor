@@ -764,14 +764,29 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
 export function generateGraphClasses(i: CodegenInput): { classes: GraphClass[]; issues: CodegenIssue[] } {
   const issues: CodegenIssue[] = []
   const used = new Set<string>()
-  const names = i.graphs.map((g) => {
+  // library functions the graphs call (transitively) are compiled into this SWF too: one class each, named from the qualified id
+  const lib = i.packs.functions
+  const pulled = new Map<string, Graph>()
+  const pull = (g: Graph): void => {
+    for (const n of g.nodes) {
+      const id = n.kind.split('/')[1]?.startsWith('CallFunction@') ? n.fields['function'] : undefined
+      const f = typeof id === 'string' ? lib?.get(id) : undefined
+      if (f && !pulled.has(f.id)) {
+        pulled.set(f.id, f)
+        pull(f)
+      }
+    }
+  }
+  i.graphs.forEach(pull)
+  const graphs = [...i.graphs, ...pulled.values()]
+  const names = graphs.map((g) => {
     let cls = `${i.swfCls}Graph_${ident(g.id)}`
     for (let k = 2; used.has(cls); k++) cls = `${i.swfCls}Graph_${ident(g.id)}_${k}`
     used.add(cls)
     return cls
   })
-  const fnCls = new Map(i.graphs.flatMap((g, k) => (g.scope === 'function' ? [[g.id, names[k]!] as const] : [])))
+  const fnCls = new Map(graphs.flatMap((g, k) => (g.scope === 'function' ? [[g.id, names[k]!] as const] : [])))
   const firstGraph = i.graphs.findIndex((g) => g.scope !== 'function') // the preview's mock hooks go to the first graph that is started by the frame code
-  const classes = i.graphs.map((g, k) => generateOne(g, names[k]!, i, issues, k === firstGraph, fnCls))
+  const classes = graphs.map((g, k) => generateOne(g, names[k]!, i, issues, k === firstGraph, fnCls))
   return { classes, issues }
 }

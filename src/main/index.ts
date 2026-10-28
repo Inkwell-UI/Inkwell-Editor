@@ -208,6 +208,22 @@ ipcMain.handle(IPC.graphsDelete, (_e, swf: string, id: string) => session.delete
 ipcMain.handle(IPC.swfDiscard, (_e, swfId: string) => session.discardSwf(swfId))
 ipcMain.handle(IPC.graphsAs2, (_e, swf: string, g: unknown) => session.graphAs2(swf, g))
 ipcMain.handle(IPC.packsGet, () => session.getPacks())
+ipcMain.handle(IPC.libraryExport, async (_e, swf: string, selected: string[], pack: { id: string; version: string; description?: string; credits?: string; license?: string }) => {
+  const out = await pickFolder('Export library to…')
+  return out ? session.libraryExport(swf, selected, pack, out) : { ok: false as const, cancelled: true as const }
+})
+ipcMain.handle(IPC.libraryImport, async (_e, replace?: { id: string; path: string }) => {
+  let path = replace?.path
+  if (!path) {
+    const r = await dialog.showOpenDialog(win!, { title: 'Import library (pack folder or zip)', properties: ['openFile', 'openDirectory'], filters: [{ name: 'Pack zip', extensions: ['zip'] }] })
+    if (r.canceled || !r.filePaths[0]) return { ok: false as const, cancelled: true as const }
+    path = r.filePaths[0]
+  }
+  const res = await session.libraryImport(path, replace !== undefined)
+  return 'exists' in res && res.exists ? { ...res, id: '', path } : res
+})
+ipcMain.handle(IPC.libraryRemove, (_e, id: string) => session.libraryRemove(String(id)))
+ipcMain.handle(IPC.librarySaveFunction, (_e, packId: string, g: unknown) => session.saveLibraryFunction(String(packId), g))
 ipcMain.handle(IPC.packsState, () => session.packsState())
 ipcMain.handle(IPC.packsIndex, () => session.packsIndex())
 ipcMain.handle(IPC.packsResolve, (_e, input: unknown) => session.packsResolve(String(input)))

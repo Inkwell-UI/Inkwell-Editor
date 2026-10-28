@@ -1,12 +1,13 @@
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, rename } from 'node:fs/promises'
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { Graph, Swf, type Localization, type MenuSettings } from '@inkwell-ui/spec'
 import { bindingsOf } from '../shared/graphBinding'
 import { newFunctionGraph } from '../shared/functions'
-import { defIndex, newGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type PackSet } from '../shared/graphs'
+import { defIndex, isGraphId, newGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type LoadedPack, type PackSet } from '../shared/graphs'
+import { TOOL_VERSION } from '../shared/product'
 import { validateGraph } from '../shared/graphValidate'
 import { IPC, type SaveOverlayResult } from '../shared/ipc'
 import { normalizeOverlay, type OverlayDoc } from '../shared/overlay'
@@ -31,6 +32,7 @@ import { createTrust } from './sync/figmaTrust'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { corePackDir, loadPacks } from './packs'
+import { exportLibrary, importLibrary, localLibraryDirs, removeLibrary, type ImportResult } from './packs/libraries'
 import { createPackManager, lockedPacks, parseGitHubRef, readLock, type Fetch } from './packs/manager'
 import type { PackCandidate, PackResult, PacksState } from '../shared/packs'
 import { loadProject, type ProjectMeta } from './project'
@@ -88,12 +90,13 @@ export function createSession(deps: SessionDeps) {
   let packs: Promise<PackSet> | undefined
   /** The bundled core pack first (it wins an id clash), then the project's cached packs that match packs.lock (`refreshPacks`). */
   let packDirs = [corePackDir(deps.appPath)]
-  const getPacks = (): Promise<PackSet> => (packs ??= loadPacks(packDirs))
+  const originOf = (d: string): LoadedPack['origin'] => (d === corePackDir(deps.appPath) ? 'core' : /[\\/]libraries[\\/]/.test(d) ? 'library' : 'installed')
+  const getPacks = (): Promise<PackSet> => (packs ??= loadPacks(packDirs, originOf))
   let codegenPacks: ReturnType<typeof loadCodegenPacks> | undefined
   const packManager = createPackManager({ fetch: deps.fetch ?? fetch, ...(process.env['INKWELL_PACKS_INDEX'] ? { indexUrl: process.env['INKWELL_PACKS_INDEX'] } : {}) })
   /** Re-reads packs.lock and the cache; every pack consumer (lint, preview builds, AS2 view, deploy) loads again on next use. */
   const refreshPacks = async (dir: string | undefined): Promise<void> => {
-    packDirs = [corePackDir(deps.appPath), ...(dir ? (await lockedPacks(dir, (await readLock(dir)).lock)).dirs : [])]
+    packDirs = [corePackDir(deps.appPath), ...(dir ? (await lockedPacks(dir, (await readLock(dir)).lock)).dirs : []), ...(dir ? await localLibraryDirs(dir) : [])]
     packs = undefined
     codegenPacks = undefined
     pipeline?.resetPacks()
@@ -199,13 +202,14 @@ export function createSession(deps: SessionDeps) {
   const lintTotal = (): number => [...lintBySwf.values()].reduce((a, b) => a + b, 0) + looseCount + [...graphIssues.values()].reduce((a, b) => a + b.length, 0)
   async function refreshGraphLint(): Promise<void> {
     const defs = defIndex(await getPacks())
+    const library = (await (codegenPacks ??= loadCodegenPacks(packDirs))).packs.functions ?? new Map<string, Graph>()
     graphIssues.clear()
     for (const i of server?.swfs() ?? []) {
       const ir = i.orphaned ? undefined : server?.ir(i.id)
       const all = [...(graphs.get(i.name)?.values() ?? [])]
       if (!ir || !all.length) continue
       const layers = new Set(Object.keys(ir.nodes))
-      graphIssues.set(i.name, all.flatMap((g) => validateGraph(g, { defs, layers, siblings: all, target: ir.target.kind, ...(ir.target.contract ? { contract: ir.target.contract } : {}) }).map((x) => {
+      graphIssues.set(i.name, all.flatMap((g) => validateGraph(g, { defs, layers, siblings: all, library, target: ir.target.kind, ...(ir.target.contract ? { contract: ir.target.contract } : {}) }).map((x) => {
         const layerName = x.targetId ? (ir.nodes[x.targetId]?.name ?? x.targetId) : ''
         const row: LintRow = { swfName: i.name, nodeId: x.targetId ?? '', layerName, severity: x.level, code: x.code, message: `${g.name}: ${x.message}`, graphId: g.id, graphNodeId: x.nodeId! }
         return { row, item: { severity: x.level, code: x.code, message: row.message, ...(x.targetId ? { nodeId: x.targetId, layerName } : {}) } }
@@ -753,6 +757,44 @@ export function createSession(deps: SessionDeps) {
       return { ok: true }
     },
     getPacks,
+    /**
+     * Library functions (docs/functions.md): export the SWF's functions you ticked as a pack folder + zip in `outDir`; import a pack folder or zip into `<project>/libraries/<id>/`
+     * (an existing id answers `exists` and is replaced with `replace`); remove one; save an edited library function back into its pack folder.
+     */
+    async libraryExport(swf: string, selected: string[], pack: { id: string; version: string; description?: string; credits?: string; license?: string }, outDir: string) {
+      const m = graphs.get(swf)
+      if (!projectDir || !m) return { ok: false as const, error: 'No such swf in the open project' }
+      const set = await getPacks()
+      const library = (await (codegenPacks ??= loadCodegenPacks(packDirs))).packs.functions
+      return exportLibrary({
+        functions: [...m.values()].filter((g) => g.scope === 'function'), selected, pack, defs: defIndex(set),
+        ...(library ? { library } : {}), packVersions: new Map(set.packs.map((p) => [p.manifest.id, p.manifest.version])), toolVersion: TOOL_VERSION, outDir
+      })
+    },
+    async libraryImport(src: string, replace?: boolean): Promise<Awaited<ReturnType<typeof importLibrary>>> {
+      if (!projectDir) return { ok: false, error: 'No project is open.' }
+      return afterPackChange(await importLibrary(projectDir, src, replace ? { replace: true } : {}))
+    },
+    async libraryRemove(id: string) {
+      if (!projectDir) return { ok: false as const, error: 'No project is open.' }
+      return afterPackChange(await removeLibrary(projectDir, id))
+    },
+    async saveLibraryFunction(packId: string, doc: unknown): Promise<GraphResult> {
+      const parsed = Graph.safeParse(doc)
+      if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid graph' }
+      const g = parsed.data
+      const set = await getPacks()
+      const pack = set.packs.find((p) => p.manifest.id === packId)
+      const dir = pack?.dir
+      const fnId = g.id.startsWith(`${packId}/`) ? g.id.slice(packId.length + 1) : g.id
+      if (!pack || !dir || pack.origin === 'core' || !isGraphId(fnId) || g.scope !== 'function') return { ok: false, error: `The library "${packId}" cannot be edited.` }
+      try {
+        await writeFile(join(dir, 'functions', `${fnId}.json`), JSON.stringify({ ...g, id: fnId }, null, 2) + '\n')
+      } catch (e) {
+        return { ok: false, error: e instanceof Error ? e.message : String(e) }
+      }
+      return afterPackChange({ ok: true as const })
+    },
     /** Assets > Node packs (docs/graphs.md, Downloaded packs): state, index search, add by GitHub ref, install after the dialog, restore from packs.lock, check updates. Never reject. */
     packsState: async (): Promise<PacksState> => (projectDir ? packManager.state(projectDir) : { locked: [] }),
     packsIndex: () => packManager.index(),

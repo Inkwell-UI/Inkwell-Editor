@@ -1,12 +1,12 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { NodeDef, PackManifest } from '@inkwell-ui/spec'
-import type { LoadedPack, PackSet } from '../../shared/graphs'
+import { Graph, NodeDef, PackManifest } from '@inkwell-ui/spec'
+import { isGraphId, type LoadedPack, type PackSet } from '../../shared/graphs'
 import { TOOL_VERSION } from '../../shared/product'
 import { satisfies } from '../../shared/semverRange'
 
 /**
- * Reads a pack folder: `manifest.json` plus `nodes/*.json` (one NodeDef each), validated with the Spec schemas. Packs are data only; nothing in a
+ * Reads a pack folder: `manifest.json`, `nodes/*.json` (one NodeDef each) and `functions/*.json` (one function graph each, id = file name), validated with the Spec schemas. Packs are data only; nothing in a
  * pack is ever executed. A node file that fails to read or validate is listed in `problems` and skipped, the rest of the pack still loads.
  * Downloaded packs come here too, from `<project>/packs-cache/` once their zip matches packs.lock (`manager.ts`).
  * A pack whose `compatible.tool` the editor's version (`TOOL_VERSION`) does not satisfy is refused with a plain message and loads no nodes (its graphs keep their nodes as unknown, never dropped).
@@ -33,14 +33,27 @@ export async function loadPack(dir: string): Promise<{ pack?: LoadedPack; proble
       problems.push(`${manifest.id}: nodes/${f}: ${e instanceof Error ? e.message : String(e)}`)
     }
   }
-  return { pack: { manifest, nodes }, problems }
+  const functions: Graph[] = []
+  for (const f of (await readdir(join(dir, 'functions')).catch(() => [])).filter((x) => x.endsWith('.json')).sort()) {
+    try {
+      const g = Graph.parse(JSON.parse(await readFile(join(dir, 'functions', f), 'utf8')))
+      const id = f.slice(0, -'.json'.length)
+      if (g.scope !== 'function' || !g.signature) problems.push(`${manifest.id}: functions/${f}: not a function graph`)
+      else if (!isGraphId(id) || g.id !== id) problems.push(`${manifest.id}: functions/${f}: the graph id "${g.id}" must equal the file name`)
+      else functions.push(g)
+    } catch (e) {
+      problems.push(`${manifest.id}: functions/${f}: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
+  return { pack: { manifest, nodes, ...(functions.length ? { functions } : {}) }, problems }
 }
 
 /** Loads several pack folders into one set (a pack id seen twice keeps the first). Never throws. */
-export async function loadPacks(dirs: readonly string[]): Promise<PackSet> {
+export async function loadPacks(dirs: readonly string[], originOf: (dir: string) => LoadedPack['origin'] = () => undefined): Promise<PackSet> {
   const set: PackSet = { packs: [], problems: [] }
   for (const d of dirs) {
     const r = await loadPack(d)
+    if (r.pack) Object.assign(r.pack, { origin: originOf(d), dir: d })
     set.problems.push(...r.problems)
     if (!r.pack) continue
     if (set.packs.some((p) => p.manifest.id === r.pack!.manifest.id)) set.problems.push(`${d}: pack "${r.pack.manifest.id}" is already loaded`)

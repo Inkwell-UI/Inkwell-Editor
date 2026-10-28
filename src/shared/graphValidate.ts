@@ -37,6 +37,8 @@ export interface ValidateCtx {
   siblings?: readonly Graph[]
   /** The SWF's target kind (S7, S9): a HUD widget runs without the Inkwell Runtime (lint `runtime-required`), `saved` variables belong to a custom menu. Absent = those checks are skipped. */
   target?: 'hudWidget' | 'customMenu' | 'menuReplacement'
+  /** Library functions of the installed packs by `<packId>/<functionId>` (Call Function nodes may call them). */
+  library?: ReadonlyMap<string, Graph>
   /** A menu replacement's `target.contract` (W5): contract nodes (`NodeDef.contract`) are only allowed in a replacement of that contract. */
   contract?: string
 }
@@ -224,7 +226,7 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
     }
   }
   widgetCalls(g, defOf, execOut, add)
-  functions(g, defOf, ctx.siblings ?? [], add)
+  functions(g, defOf, ctx.siblings ?? [], ctx.library ?? new Map(), add)
   // cycle in exec flow: iterative DFS, reports the node that closes each loop
   const state = new Map<string, 1 | 2>()
   for (const root of execOut.keys()) {
@@ -292,8 +294,8 @@ const sameList = (a: readonly object[], b: readonly object[], keys: string[]): b
  * and no other graph has Entry or Exit nodes. Call Function must name a function graph of the same SWF, hold an up-to-date copy of its signature (compared by id,
  * name and type) and must not lead back into its own function (a recursion would never finish).
  */
-function functions(g: Graph, defOf: ReadonlyMap<string, NodeDef>, siblings: readonly Graph[], add: (nodeId: string, code: GraphCode, level: 'error' | 'warning', message: string) => void): void {
-  const fns = new Map(siblings.filter((s) => s.scope === 'function' && s.signature).map((s) => [s.id, s]))
+function functions(g: Graph, defOf: ReadonlyMap<string, NodeDef>, siblings: readonly Graph[], library: ReadonlyMap<string, Graph>, add: (nodeId: string, code: GraphCode, level: 'error' | 'warning', message: string) => void): void {
+  const fns = new Map([...library, ...siblings.filter((s) => s.scope === 'function' && s.signature).map((s) => [s.id, s] as const)])
   if (g.scope === 'function' && g.signature) fns.set(g.id, g)
   const mine = g.nodes.flatMap((n) => (defOf.has(n.id) ? [{ n, d: defOf.get(n.id)! }] : []))
   const anchor = mine[0]?.n.id
@@ -333,7 +335,7 @@ function functions(g: Graph, defOf: ReadonlyMap<string, NodeDef>, siblings: read
     const target = String(n.fields[field] ?? '')
     const f = fns.get(target)
     if (!f?.signature) {
-      add(n.id, 'graph-function', 'error', target === '' ? 'Pick the function this node calls.' : `There is no function graph "${target}" in this SWF.`)
+      add(n.id, 'graph-function', 'error', target === '' ? 'Pick the function this node calls.' : target.includes('/') ? `The library function "${target}" is not installed. Install the library that has it.` : `There is no function graph "${target}" in this SWF.`)
       continue
     }
     const s = f.signature
