@@ -20,6 +20,14 @@ const inventoryIr = (l = ['engine', 'skyui52']) => swf([frame('r', ['m']), { ...
 const merged = (l: string[]) => contractFor(inventoryIr(l), layers)!
 
 describe('replacement glue from the InventoryMenu contract', () => {
+  it('the Ruffle preview fills the menu with mock engine data and answers the card request; the game glue has none of it', () => {
+    const c = merged(['engine'])
+    const prev = replacementGlue(c, 'M', 'Inv', true).source
+    for (const t of ['function mock()', 'SetCategoriesList', 'InvalidateListData', 'this.mockAnswer(name, id);', 'setInterval']) expect(prev).toContain(t)
+    const game = replacementGlue(c, 'M', 'Inv').source
+    for (const t of ['mock', 'Iron Sword', 'setInterval']) expect(game).not.toContain(t)
+  })
+
   it('listens to the keyboard and fires key:<Name> for Inventory: On Key', () => {
     const src = replacementGlue(merged(['engine']), 'M', 'Inv').source
     expect(src).toContain('Key.addListener(keys);')
