@@ -33,9 +33,10 @@ export function emptyGraph(id: string, name: string, scope: Graph['scope']): Gra
   return { specVersion: SPEC_VERSION, id, name, scope, nodes: [], edges: [], variables: [], comments: [], groups: [] }
 }
 
-/** The behaviour graph of a component (Figma id `componentId`): empty; its props are added in the Graph panel. */
+/** The behaviour graph of a component (Figma id `componentId`): one unconnected On Load, which runs when an instance is created (after its props are set); its props are added in the Inspector. */
 export function newComponentGraph(componentId: string, name: string): Graph {
-  return { ...emptyGraph(componentId.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'component', name, 'blueprint'), component: componentId, props: [] }
+  const id = componentId.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'component'
+  return { ...newGraph(id, name, 'blueprint'), component: componentId, props: [] }
 }
 
 /**
