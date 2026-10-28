@@ -1,7 +1,8 @@
 import { useState, type DragEvent } from 'react'
 import { ChevronDown, ChevronRight, Copy, Download, Lock, Plus } from 'lucide-react'
 import type { Graph } from '@inkwell-ui/spec'
-import { FUNCTION_DRAG, GraphRowView, GraphsList } from '../graph/GraphsList'
+import { FUNCTION_DRAG, FunctionRows, GraphRowView, useFunctionCount } from '../graph/GraphsList'
+import { useGraphActions } from '../graph/useGraphActions'
 import { inkwell } from '../hooks/api'
 import { reloadPacks, useLibraryPacks, type LibraryPack } from '../hooks/usePacks'
 import { AddPackDialog, UpdatePacksDialog, usePackLock } from '../packs/PacksSection'
@@ -17,24 +18,14 @@ import { Panel } from './Panel'
 const toast = (t: Parameters<ReturnType<typeof useToastStore.getState>['push']>[0], ms?: number): void => useToastStore.getState().push(t, ms)
 
 /**
- * Behaviour, left tab 2. FUNCTIONS: the project's own functions (not listed in the Navigator); PACKS: every pack the project has (core, installed, the project's own), where a pack holds pure
- * nodes and functions. `New pack…` makes an empty one, dragging a function onto a project pack moves it in, `Export…` writes a project pack as a folder and zip, `Import…` adds one.
+ * Behaviour, left tab 2: one list. "This project" (the SWF's own functions, not listed in the Navigator) is the first group, then every pack the project has (core, installed, imported, local),
+ * where a pack holds pure nodes and functions. Drag a function from "This project" onto a local pack to move it in. The "+" menu adds a function, a pack or an import; local packs export from their
+ * own menu.
  */
 export function LibraryPanel() {
-  return (
-    <Panel title={strings.lib.title}>
-      <div className="nav">
-        <GraphsList functions />
-        <p className="dim">{strings.lib.dragHint}</p>
-        <PacksSection />
-      </div>
-    </Panel>
-  )
-}
-
-function PacksSection() {
   const swf = useActiveSwf()
   const packs = useLibraryPacks()
+  const actions = useGraphActions()
   const [replace, setReplace] = useState<{ id: string; path: string } | undefined>()
   const [dialog, setDialog] = useState<'add' | 'update' | undefined>()
   const { project, state, busy, refresh, restore } = usePackLock()
@@ -54,40 +45,64 @@ function PacksSection() {
   const importNew = async (): Promise<void> => inkwell && done(await inkwell.importLibrary())
   const doReplace = async (): Promise<void> => inkwell && replace && done(await inkwell.importLibrary(replace))
   return (
-    <section aria-labelledby="lib-libs" data-testid="library-libraries">
-      <header className="section-title">
-        <h3 id="lib-libs">{strings.lib.libraries}</h3>
-        <Btn icon={Plus} haspopup="dialog" label={strings.lib.addTip} reason={project ? state.lockError : strings.assets.packs.noProject} onClick={() => setDialog('add')} testId="packs-add">{strings.assets.packs.add}</Btn>
-        <RowMenu
-          label={strings.lib.more}
-          testId="library-section-more"
-          items={[
-            { label: strings.lib.import, onClick: () => void importNew() },
-            ...(state.locked.length ? [{ label: strings.lib.checkUpdates, onClick: () => setDialog('update') }] : [])
-          ]}
-        />
-      </header>
-      {state.lockError && <p className="tone-error" role="alert">{state.lockError}</p>}
-      {replace && (
-        <p className="tone-warn" role="alert">
-          {strings.lib.importReplace(replace.id)} <Btn variant="danger" onClick={() => void doReplace()} testId="library-replace">{strings.lib.replace}</Btn> <Btn onClick={() => setReplace(undefined)}>{strings.lib.cancel}</Btn>
-        </p>
-      )}
-      <ul className="graph-list" role="list">
-        {swf && packs.map((p) => <PackRow key={p.id} pack={p} swf={swf} />)}
-        {unavailable.map((p) => (
-          <li key={p.id} className="graph-row" data-state={p.state}>
-            <div className="graph-row-main">
-              <span className="layer-main"><Lock size={14} aria-hidden="true" className="type-icon" /><span className="layer-name">{p.id}</span><span className="layer-type">{p.version}</span></span>
-              <Btn icon={Download} reason={busy ? strings.assets.packs.working : undefined} label={strings.assets.packs.downloadTip} onClick={() => void download()} testId="packs-restore">{strings.assets.packs.download}</Btn>
-            </div>
-            <div className="graph-row-events tone-warn">{p.state === 'missing' ? strings.assets.packs.missing : strings.assets.packs.mismatch}</div>
-          </li>
-        ))}
-      </ul>
-      {dialog === 'add' && <AddPackDialog onClose={() => setDialog(undefined)} onInstalled={installed} onCreated={installed} />}
-      {dialog === 'update' && <UpdatePacksDialog onClose={() => setDialog(undefined)} onInstalled={installed} />}
-    </section>
+    <Panel title={strings.lib.title}>
+      <div className="nav">
+        <section aria-labelledby="lib-list" data-testid="library-section">
+          <header className="section-title">
+            <h3 id="lib-list">{strings.lib.heading}</h3>
+            <RowMenu
+              icon={Plus}
+              label={strings.lib.addTip}
+              testId="library-add"
+              items={[
+                ...(actions.canAdd ? [] : [{ label: strings.lib.newFunction, onClick: () => void actions.addFn() }]),
+                ...(project && !state.lockError ? [{ label: strings.lib.addPack, onClick: () => setDialog('add') }] : []),
+                { label: strings.lib.import, onClick: () => void importNew() },
+                ...(state.locked.length ? [{ label: strings.lib.checkUpdates, onClick: () => setDialog('update') }] : [])
+              ]}
+            />
+          </header>
+          {state.lockError && <p className="tone-error" role="alert">{state.lockError}</p>}
+          {replace && (
+            <p className="tone-warn" role="alert">
+              {strings.lib.importReplace(replace.id)} <Btn variant="danger" onClick={() => void doReplace()} testId="library-replace">{strings.lib.replace}</Btn> <Btn onClick={() => setReplace(undefined)}>{strings.lib.cancel}</Btn>
+            </p>
+          )}
+          <ul className="graph-list" role="list">
+            <ProjectGroup actions={actions} />
+            {swf && packs.map((p) => <PackRow key={p.id} pack={p} swf={swf} />)}
+            {unavailable.map((p) => (
+              <li key={p.id} className="graph-row" data-state={p.state}>
+                <div className="graph-row-main">
+                  <span className="layer-main"><Lock size={14} aria-hidden="true" className="type-icon" /><span className="layer-name">{p.id}</span><span className="layer-type">{p.version}</span></span>
+                  <Btn icon={Download} reason={busy ? strings.assets.packs.working : undefined} label={strings.assets.packs.downloadTip} onClick={() => void download()} testId="packs-restore">{strings.assets.packs.download}</Btn>
+                </div>
+                <div className="graph-row-events tone-warn">{p.state === 'missing' ? strings.assets.packs.missing : strings.assets.packs.mismatch}</div>
+              </li>
+            ))}
+          </ul>
+        </section>
+        {dialog === 'add' && <AddPackDialog onClose={() => setDialog(undefined)} onInstalled={installed} onCreated={installed} />}
+        {dialog === 'update' && <UpdatePacksDialog onClose={() => setDialog(undefined)} onInstalled={installed} />}
+      </div>
+    </Panel>
+  )
+}
+
+/** "This project": the SWF's own functions as the first group, built like a pack row (but it is not a pack: no version, no export). */
+function ProjectGroup({ actions }: { actions: ReturnType<typeof useGraphActions> }) {
+  const [open, setOpen] = useState(true)
+  const count = useFunctionCount()
+  return (
+    <li className="graph-row" data-testid="library-project">
+      <div className="graph-row-main">
+        <button type="button" className="layer-main" aria-expanded={open} onClick={() => setOpen(!open)} data-testid="library-project-toggle">
+          {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
+          <span className="layer-name">{strings.lib.project}</span><span className="layer-type">{strings.lib.functionCount(count)}</span>
+        </button>
+      </div>
+      {open && <FunctionRows actions={actions} />}
+    </li>
   )
 }
 

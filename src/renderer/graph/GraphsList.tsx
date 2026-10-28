@@ -13,34 +13,53 @@ import { RowMenu } from '../ui/RowMenu'
 import { useGraphActions } from './useGraphActions'
 
 /**
- * The Navigator's GRAPHS section (UX 4.2): one row per graph of the active SWF (name, scope, its events), `[+ Graph]`, rename and delete. With `functions` it is the Library's list instead:
- * only the function graphs (name, signature), `[+ Function]`. Functions never show in the Navigator.
+ * The Navigator's GRAPHS section (UX 4.2): one row per graph of the active SWF (name, scope, its events), `[+ Graph]`, rename and delete. Functions never show in the Navigator: the Library
+ * tab lists them (`FunctionRows`).
  */
-/** The drag payload of a function row: its id. The Library's project packs accept it. */
+/** The drag payload of a function row: its id. The Library's local packs accept it and the graph canvas turns it into a Call Function node. */
 export const FUNCTION_DRAG = 'application/x-inkwell-function'
 
-export function GraphsList({ functions = false }: { functions?: boolean }) {
+export function GraphsList() {
   const swf = useActiveSwf()
   const { ids, activeId, loaded } = useSwfGraphs()
   const actions = useGraphActions()
-  const mine = swf ? ids.filter((id) => (findGraphStore(swf.id, id)?.getState().meta.scope === 'function') === functions) : []
+  const mine = swf ? ids.filter((id) => findGraphStore(swf.id, id)?.getState().meta.scope !== 'function') : []
   return (
-    <section aria-labelledby="nav-graphs" data-testid={functions ? 'library-section' : 'graphs-section'}>
+    <section aria-labelledby="nav-graphs" data-testid="graphs-section">
       <header className="section-title">
-        <h3 id="nav-graphs">{functions ? strings.lib.functions : strings.nav.graphs}</h3>
-        {functions ? (
-          <Btn label={strings.nav.addFunction} testId="function-add-nav" onClick={() => void actions.addFn()} reason={actions.canAdd}>{strings.nav.addFunctionShort}</Btn>
-        ) : (
-          <Btn label={strings.nav.addGraph} testId="graph-add-nav" onClick={() => void actions.add()} reason={actions.canAdd}>{strings.nav.addGraphShort}</Btn>
-        )}
+        <h3 id="nav-graphs">{strings.nav.graphs}</h3>
+        <Btn label={strings.nav.addGraph} testId="graph-add-nav" onClick={() => void actions.add()} reason={actions.canAdd}>{strings.nav.addGraphShort}</Btn>
       </header>
       {actions.error && <p className="tone-error">{actions.error}</p>}
-      {swf && loaded && mine.length === 0 && <p className="empty">{functions ? strings.lib.empty : strings.nav.graphsEmpty}</p>}
+      {swf && loaded && mine.length === 0 && <p className="empty">{strings.nav.graphsEmpty}</p>}
       <ul className="graph-list" role="list">
         {swf && mine.map((id) => <GraphRow key={id} swfId={swf.id} id={id} active={id === activeId} actions={actions} />)}
       </ul>
     </section>
   )
+}
+
+/** The SWF's own functions as rows (the Library tab's "This project" group); the empty state says how to make one. */
+export function FunctionRows({ actions }: { actions: ReturnType<typeof useGraphActions> }) {
+  const swf = useActiveSwf()
+  const { ids, activeId, loaded } = useSwfGraphs()
+  const mine = swf ? ids.filter((id) => findGraphStore(swf.id, id)?.getState().meta.scope === 'function') : []
+  return (
+    <>
+      {actions.error && <p className="tone-error">{actions.error}</p>}
+      {swf && loaded && mine.length === 0 && <p className="empty">{strings.lib.empty}</p>}
+      <ul className="graph-list" role="list">
+        {swf && mine.map((id) => <GraphRow key={id} swfId={swf.id} id={id} active={id === activeId} actions={actions} />)}
+      </ul>
+    </>
+  )
+}
+
+/** How many functions the SWF has (the group's summary). */
+export function useFunctionCount(): number {
+  const swf = useActiveSwf()
+  const { ids } = useSwfGraphs()
+  return swf ? ids.filter((id) => findGraphStore(swf.id, id)?.getState().meta.scope === 'function').length : 0
 }
 
 function GraphRow({ swfId, id, active, actions }: { swfId: string; id: string; active: boolean; actions: ReturnType<typeof useGraphActions> }) {
