@@ -15,6 +15,7 @@ The editor window is a **workspace**: a layout (plain data) places **panels** (s
 | id | Component | Zone | Data | Shows |
 | --- | --- | --- | --- | --- |
 | `navigator` | `NavigatorPanel` | 2 (tab) | project IR + overlay, `useDockRows()`, sync state, graph docs | GRAPHS (the SWF's graphs with their events, `[+ Graph]`, rename, delete: `graph/GraphsList.tsx`), LAYERS tree with badges and filter, orphaned overlays, unreachable Figma layers |
+| `components` | `ComponentsPanel` | 2 (tab, Behaviour only) | the project's SWFs, the plugin's `swfs` message | `No components yet...`. Lists every component: the ones inside a SWF (`componentRows`, variants of a set count once) and the ones kept on the Figma page away from the design (names only), with where it is, how often it is used and a Select in Figma button |
 | `contracts` | `ContractsPanel` | 2 (tab) | active SWF target | `Only for menu replacements` (tab disabled), else `Contract checks run on every build (contract and layers: the Target dialog); findings are in the Lint dock` |
 | `assets` | `AssetsPanel` | 2 (tab) | none | Imported AS2 empty state; loaded node packs list |
 | `preview` | `PreviewPanel` | 3 | `usePreviewBuilds()`, project, sync state, selection store | stage toolbar, aspect frame, safe zones, Inspect overlay, banners (the last-good-build indicator is in the status bar) |

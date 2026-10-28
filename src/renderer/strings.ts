@@ -198,6 +198,14 @@ export const strings = {
     issues: 'Export checks'
   },
 
+  comp: {
+    title: 'Components',
+    heading: 'COMPONENTS',
+    empty: 'No components yet. Make a component in Figma and it shows up here, in a frame or away from the design.',
+    where: (swf?: string) => swf ?? 'Not placed in a frame',
+    instances: (n: number) => (n === 0 ? 'Not used yet' : `Used ${n} time${n === 1 ? '' : 's'}`)
+  },
+
   lib: {
     title: 'Library',
     empty: 'No functions yet. Use + > New function, or select nodes in a graph and press G.',

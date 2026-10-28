@@ -33,6 +33,8 @@ export interface SyncUiState {
   timingSwf?: string
   /** Loose top-level Figma layers (belong to no SWF), from the plugin's `swfs` message. */
   looseLayers?: LayerRef[]
+  /** Components kept on the Figma page away from the design (from the plugin's `swfs` message). The Components tab adds the ones found inside the SWFs. */
+  pageComponents?: LayerRef[]
   /** Nodes inside a SWF that no root reaches (`unreachable-node` in the SWF's build status). */
   unreachableNodes?: (LayerRef & { swfName: string })[]
   /** A Figma plugin with an unknown secret is waiting for Allow / Deny (protocol 4). The window shows the prompt; the Figma dot reads "Waiting for approval". */

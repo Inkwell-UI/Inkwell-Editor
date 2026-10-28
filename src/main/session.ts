@@ -344,13 +344,13 @@ export function createSession(deps: SessionDeps) {
       void refreshGraphLint().catch(() => undefined) // a deleted layer can orphan a graph node
       pushProject()
     })
-    srv.events.on('swfs', (infos: SwfInfo[], loose: Layer[]) => {
+    srv.events.on('swfs', (infos: SwfInfo[], loose: Layer[], components: Layer[]) => {
       looseCount = loose.length
-      update({ swfCount: infos.length, orphanedCount: infos.filter((i) => i.orphaned).length, looseLayers: loose, lintCount: lintTotal() })
+      update({ swfCount: infos.length, orphanedCount: infos.filter((i) => i.orphaned).length, looseLayers: loose, pageComponents: components, lintCount: lintTotal() })
       void refreshGraphLint().catch(() => undefined)
       pushProject()
     })
-    update({ swfCount: srv.swfs().length, server: 'listening', error: undefined, port: srv.port, looseLayers: [] })
+    update({ swfCount: srv.swfs().length, server: 'listening', error: undefined, port: srv.port, looseLayers: [], pageComponents: [] })
     refreshFfdec()
     await refreshGraphLint().catch(() => undefined)
   }

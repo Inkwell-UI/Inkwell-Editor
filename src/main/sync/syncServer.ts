@@ -88,12 +88,13 @@ interface Entry {
 const emptySwf = (id: string, name: string): Swf =>
   ({ specVersion: SPEC_VERSION, id, name, target: { kind: 'hudWidget' }, stage: { width: 1280, height: 720 }, root: id, nodes: {} }) as Swf
 
-/** Events: 'hello' ({pluginVersion, fileKey?} of an accepted plugin), 'selection' (ids), 'connections' (count), 'status' (SyncStatus with swfId), 'swfs' (SwfInfo[], loose Layer[]). */
+/** Events: 'hello' ({pluginVersion, fileKey?} of an accepted plugin), 'selection' (ids), 'connections' (count), 'status' (SyncStatus with swfId), 'swfs' (SwfInfo[], loose Layer[], page components Layer[]). */
 export async function startSyncServer(opts: SyncServerOptions) {
   const events = new EventEmitter()
   const store = new Map<string, Entry>() // swf id -> state
   for (const [name, ir] of Object.entries(opts.initial ?? {})) store.set(ir.id, { ir, name, orphaned: false })
   let loose: Layer[] = []
+  let pageComponents: Layer[] = [] // components kept on the page away from the design (not synced yet)
   const ready = new Set<WebSocket>() // sockets that finished the hello handshake
   let selection: string[] = []
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -119,7 +120,7 @@ export async function startSyncServer(opts: SyncServerOptions) {
   }
   const infos = (): SwfInfo[] => [...store].map(([id, e]) => ({ id, name: e.name, orphaned: e.orphaned }))
   const swfsChanged = (): void => {
-    events.emit('swfs', infos(), loose)
+    events.emit('swfs', infos(), loose, pageComponents)
   }
   /** Project-level status (no swfId): loose layers and orphaned swfs. */
   const projectStatus = (): void => {
@@ -268,6 +269,7 @@ export async function startSyncServer(opts: SyncServerOptions) {
       const frames = new Set(m.frames.map((f) => f.id))
       for (const [id, e] of store) e.orphaned = !frames.has(id) // kept either way; never deleted
       loose = m.loose.map((l) => ({ id: l.id, name: l.name }))
+      pageComponents = (m.components ?? []).map((l) => ({ id: l.id, name: l.name }))
       swfsChanged()
       projectStatus()
     } else if (m.type === 'asset') {
