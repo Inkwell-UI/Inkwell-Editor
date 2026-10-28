@@ -137,6 +137,15 @@ export async function moveFunctionToPack(o: { swf: SwfRef; fnId: string; packId:
   return d.ok ? { ok: true, id: to } : d
 }
 
+/** Renames a library function without opening it (the change is saved into its pack like any edit of it). */
+export const renameLibraryFunction = (swf: SwfRef, fn: Graph, name: string): void => getGraphStore(swf.id, `@lib:${fn.id.split('/')[0]}`, fn).getState().rename(name)
+
+/** Forgets an open library function that was deleted from its pack (no late save may bring the file back). */
+export function forgetLibraryFunction(swf: SwfRef, fnId: string): void {
+  dropGraphStore(swf.id, fnId)
+  useGraphDocs.setState((s) => ({ active: s.active[swf.id] === fnId ? { ...s.active, [swf.id]: menuGraphId(swf.id) ?? s.ids[swf.id]?.[0] } : s.active }))
+}
+
 /** "Copy to project": an editable function of the SWF with the library function's content. Calls it makes to other library functions stay library calls. */
 export async function copyLibraryFunction(o: { swf: SwfRef; fn: Graph }, api: Api): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const created = await api.createGraph(o.swf.name, o.fn.name, 'function')

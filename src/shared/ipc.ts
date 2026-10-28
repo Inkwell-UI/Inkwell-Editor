@@ -45,6 +45,7 @@ export const IPC = {
   libraryExport: 'library:export',
   libraryImport: 'library:import',
   libraryRemove: 'library:remove',
+  libraryRemoveFunction: 'library:removeFunction',
   librarySaveFunction: 'library:saveFunction',
   strictSet: 'project:strict',
   modIdSet: 'project:modId',
@@ -179,6 +180,8 @@ export interface InkwellApi {
   /** Asks for a pack folder or zip and copies it into `<project>/libraries/<id>/`. `exists` = that id is already there (call again with `replace`). `cancelled` when the dialog was closed. */
   importLibrary(replace?: { id: string; path: string }): Promise<GraphResult<{ id: string; version: string; functions: string[]; nodes: number }> | { ok: false; error: string; exists: true; id: string; path: string } | { ok: false; cancelled: true }>
   removeLibrary(id: string): Promise<GraphResult>
+  /** Deletes one function (by its id inside the pack) of a project pack. */
+  removeLibraryFunction(packId: string, fnId: string): Promise<GraphResult>
   /** Saves an edited library function back into its pack folder. */
   saveLibraryFunction(packId: string, graph: Graph): Promise<GraphResult>
   /** Assets > Node packs (packs.lock and the cache), the Packs Index, a download for the install/update dialog (`owner/name` or a GitHub URL; nothing written), install it, re-download locked packs the cache lacks (hash checked), and newer releases with changelogs. Never reject; offline is an `error`. */

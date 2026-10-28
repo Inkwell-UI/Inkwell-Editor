@@ -1,11 +1,11 @@
 import { useState, type DragEvent } from 'react'
-import { Copy, Pencil, Trash2 } from 'lucide-react'
+import { Copy, Trash2 } from 'lucide-react'
 import type { Graph } from '@inkwell-ui/spec'
-import { FUNCTION_DRAG, GraphsList } from '../graph/GraphsList'
+import { FUNCTION_DRAG, GraphRowView, GraphsList } from '../graph/GraphsList'
 import { inkwell } from '../hooks/api'
 import { reloadPacks, useLibraryPacks, type LibraryPack } from '../hooks/usePacks'
 import { useActiveSwf } from '../hooks/useProject'
-import { copyLibraryFunction, moveFunctionToPack, openLibraryFunction } from '../state/graphDocs'
+import { copyLibraryFunction, forgetLibraryFunction, moveFunctionToPack, openLibraryFunction, renameLibraryFunction, useGraphDocs } from '../state/graphDocs'
 import { findGraphStore } from '../state/graphStore'
 import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
@@ -66,12 +66,13 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
   const own = pack.origin === 'library'
   const [over, setOver] = useState(false)
   const [exporting, setExporting] = useState<string | undefined>()
+  const activeId = useGraphDocs((s) => s.active[swf.id])
   const note = own ? strings.lib.editedInPlace : strings.lib.editedInstalled
   const accepts = (e: DragEvent): boolean => own && e.dataTransfer.types.includes(FUNCTION_DRAG)
   const drop = async (e: DragEvent): Promise<void> => {
     setOver(false)
     const fnId = e.dataTransfer.getData(FUNCTION_DRAG)
-    if (!own || !fnId || !inkwell) return
+    if (!own || !fnId || fnId.includes('/') || !inkwell) return // a pack's own function is not the project's to move
     e.preventDefault()
     const name = findGraphStore(swf.id, fnId)?.getState().name ?? fnId
     const r = await moveFunctionToPack({ swf, fnId, packId: pack.id }, inkwell)
@@ -82,6 +83,12 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
     if (!inkwell) return
     const r = await inkwell.removeLibrary(pack.id)
     if (r.ok) reloadPacks()
+    else toast({ tone: 'error', title: strings.lib.importFailed, text: r.error })
+  }
+  const removeFn = async (fn: Graph): Promise<void> => {
+    if (!inkwell) return
+    const r = await inkwell.removeLibraryFunction(pack.id, fn.id.slice(pack.id.length + 1))
+    if (r.ok) (forgetLibraryFunction(swf, fn.id), reloadPacks())
     else toast({ tone: 'error', title: strings.lib.importFailed, text: r.error })
   }
   const copy = async (fn: Graph): Promise<void> => {
@@ -116,12 +123,20 @@ function PackRow({ pack, swf }: { pack: LibraryPack; swf: { id: string; name: st
           <Btn variant="primary" onClick={() => void exportPack()} testId="library-export-run">{strings.lib.exportRun}</Btn>
         </div>
       )}
-      <ul className="plain lib-fns" title={note}>
+      <ul className="graph-list" role="list" title={note}>
         {pack.functions.map((fn) => (
-          <li key={fn.id} className="graph-row-main">
-            <Btn icon={Pencil} label={strings.lib.open(fn.name)} onClick={() => openLibraryFunction(swf, fn)} testId="library-open">{fn.name}</Btn>
-            <Btn icon={Copy} label={strings.lib.copyTip(fn.name)} onClick={() => void copy(fn)} testId="library-copy" />
-          </li>
+          <GraphRowView
+            key={fn.id}
+            id={fn.id}
+            name={fn.name}
+            scope="function"
+            sig={fn.signature}
+            active={activeId === fn.id}
+            onOpen={() => openLibraryFunction(swf, fn)}
+            onRename={(n) => renameLibraryFunction(swf, fn, n)}
+            onDelete={() => void removeFn(fn)}
+            extra={<Btn icon={Copy} label={strings.lib.copyTip(fn.name)} onClick={() => void copy(fn)} testId="library-copy" />}
+          />
         ))}
       </ul>
     </li>

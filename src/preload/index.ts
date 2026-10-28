@@ -46,6 +46,7 @@ const api: InkwellApi = {
   exportLibrary: (packId, version) => ipcRenderer.invoke(IPC.libraryExport, packId, version),
   importLibrary: (replace) => ipcRenderer.invoke(IPC.libraryImport, replace),
   removeLibrary: (id) => ipcRenderer.invoke(IPC.libraryRemove, id),
+  removeLibraryFunction: (packId, fnId) => ipcRenderer.invoke(IPC.libraryRemoveFunction, packId, fnId),
   saveLibraryFunction: (packId, graph) => ipcRenderer.invoke(IPC.librarySaveFunction, packId, graph),
   getPacksState: () => ipcRenderer.invoke(IPC.packsState),
   getPacksIndex: () => ipcRenderer.invoke(IPC.packsIndex),

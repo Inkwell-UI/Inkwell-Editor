@@ -224,6 +224,7 @@ ipcMain.handle(IPC.libraryImport, async (_e, replace?: { id: string; path: strin
   const res = await session.libraryImport(path, replace !== undefined)
   return 'exists' in res && res.exists ? { ...res, id: '', path } : res
 })
+ipcMain.handle(IPC.libraryRemoveFunction, (_e, packId: string, fnId: string) => session.libraryRemoveFunction(String(packId), String(fnId)))
 ipcMain.handle(IPC.libraryRemove, (_e, id: string) => session.libraryRemove(String(id)))
 ipcMain.handle(IPC.librarySaveFunction, (_e, packId: string, g: unknown) => session.saveLibraryFunction(String(packId), g))
 ipcMain.handle(IPC.packsState, () => session.packsState())

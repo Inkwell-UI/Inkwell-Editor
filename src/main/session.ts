@@ -32,7 +32,7 @@ import { createTrust } from './sync/figmaTrust'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
 import { corePackDir, loadPacks } from './packs'
-import { addFunctionToLibrary, createLibrary, exportPack, importLibrary, localLibraryDirs, removeLibrary, type ImportResult } from './packs/libraries'
+import { addFunctionToLibrary, createLibrary, exportPack, importLibrary, localLibraryDirs, removeLibrary, removeLibraryFunction, type ImportResult } from './packs/libraries'
 import { createPackManager, lockedPacks, parseGitHubRef, readLock, type Fetch } from './packs/manager'
 import type { PackCandidate, PackResult, PacksState } from '../shared/packs'
 import { loadProject, type ProjectMeta } from './project'
@@ -782,6 +782,10 @@ export function createSession(deps: SessionDeps) {
     async libraryImport(src: string, replace?: boolean): Promise<Awaited<ReturnType<typeof importLibrary>>> {
       if (!projectDir) return { ok: false, error: 'No project is open.' }
       return afterPackChange(await importLibrary(projectDir, src, replace ? { replace: true } : {}))
+    },
+    async libraryRemoveFunction(packId: string, fnId: string) {
+      if (!projectDir) return { ok: false as const, error: 'No project is open.' }
+      return afterPackChange(await removeLibraryFunction(projectDir, packId, fnId))
     },
     async libraryRemove(id: string) {
       if (!projectDir) return { ok: false as const, error: 'No project is open.' }

@@ -184,6 +184,15 @@ export async function importLibrary(projectDir: string, src: string, opts: { rep
   }
 }
 
+/** Deletes one function of a project pack. Calls to it then show the lint error "not installed". */
+export async function removeLibraryFunction(projectDir: string, packId: string, fnId: string): Promise<Fallible<Record<never, never>>> {
+  if (!PACK_ID.test(packId) || !/^[a-z0-9][a-z0-9._-]*$/.test(fnId)) return { ok: false, error: 'Not a function of a project pack.' }
+  const file = join(projectDir, LIBRARIES_DIR, packId, 'functions', `${fnId}.json`)
+  if (!(await stat(file).catch(() => undefined))) return { ok: false, error: `"${packId}" is not a project pack with a function "${fnId}".` }
+  await rm(file)
+  return { ok: true }
+}
+
 /** Removes a library from the project. Calls to its functions then show the lint error "not installed". */
 export async function removeLibrary(projectDir: string, id: string): Promise<Fallible<Record<never, never>>> {
   if (!PACK_ID.test(id)) return { ok: false, error: 'Not a library id.' }

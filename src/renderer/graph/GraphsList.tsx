@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Check, Pencil, Trash2, Workflow, X } from 'lucide-react'
 import { useStore } from 'zustand'
 import { useSwfGraphs } from '../hooks/useGraphs'
@@ -54,12 +54,31 @@ function Row({ swfId, id, active, actions, store }: { swfId: string; id: string;
   const nodes = useStore(store, (s) => s.nodes)
   const sig = useStore(store, (s) => s.signature)
   const defs = usePacks()
+  const events = scope === 'function' ? [] : eventNodes(defs, nodes)
+  return <GraphRowView id={id} name={name} scope={String(scope)} sig={sig} events={events.map((e) => (e.detail ? `${e.title}: ${e.detail}` : e.title))} active={active} onOpen={() => setActiveGraph(swfId, id)} onRename={(n) => actions.rename(id, n)} onDelete={() => void actions.remove(id)} />
+}
+
+/**
+ * One graph row (name, scope tag, rename, delete with confirm, signature line). The Library's pack rows use it for a pack's functions too, so a function looks the same in a pack as in the
+ * project's list; `extra` adds buttons after the delete one.
+ */
+export function GraphRowView({ id, name, scope, sig, events = [], active, onOpen, onRename, onDelete, extra }: {
+  id: string
+  name: string
+  scope: string
+  sig: { inputs: { name: string; type: string }[]; outputs: { name: string; type: string }[]; exits: { name: string }[] } | undefined
+  events?: string[]
+  active: boolean
+  onOpen(): void
+  onRename(name: string): void
+  onDelete(): void
+  extra?: ReactNode
+}) {
   const [editing, setEditing] = useState<string>()
   const [confirm, setConfirm] = useState(false)
-  const events = scope === 'function' ? [] : eventNodes(defs, nodes)
   const sigText = sig ? strings.lib.signature(sig.inputs.map((p) => `${p.name}: ${p.type}`).join(', '), sig.outputs.map((p) => `${p.name}: ${p.type}`).join(', '), sig.exits.map((x) => x.name).join(', ')) : undefined
   const commit = (): void => {
-    if (editing !== undefined) actions.rename(id, editing)
+    if (editing !== undefined) onRename(editing)
     setEditing(undefined)
   }
   return (
@@ -72,7 +91,7 @@ function Row({ swfId, id, active, actions, store }: { swfId: string; id: string;
           </>
         ) : (
           <>
-            <button type="button" className="layer-main" aria-pressed={active} onClick={() => setActiveGraph(swfId, id)} data-testid="graph-open">
+            <button type="button" className="layer-main" aria-pressed={active} onClick={onOpen} data-testid="graph-open">
               <Workflow size={14} aria-hidden="true" className="type-icon" />
               <span className="layer-name">{name}</span>
               <span className="layer-type">{scope === 'menu' ? strings.nav.menuGraph : scope === 'function' ? strings.nav.functionGraph : strings.nav.componentGraph}</span>
@@ -80,17 +99,18 @@ function Row({ swfId, id, active, actions, store }: { swfId: string; id: string;
             <Btn icon={Pencil} label={strings.nav.renameGraph} onClick={() => setEditing(name)} testId="graph-rename" />
             {confirm ? (
               <>
-                <Btn variant="danger" onClick={() => (setConfirm(false), void actions.remove(id))} testId="graph-delete-confirm">{strings.nav.deleteConfirm}</Btn>
+                <Btn variant="danger" onClick={() => (setConfirm(false), onDelete())} testId="graph-delete-confirm">{strings.nav.deleteConfirm}</Btn>
                 <Btn icon={X} label={strings.nav.deleteCancel} onClick={() => setConfirm(false)} />
               </>
             ) : (
               <Btn icon={Trash2} label={strings.nav.deleteGraph(name)} onClick={() => setConfirm(true)} testId="graph-delete" />
             )}
+            {extra}
           </>
         )}
       </div>
       {sigText && <div className="graph-row-events dim" data-testid="function-signature">{sigText}</div>}
-      {events.length > 0 && <div className="graph-row-events dim">{events.map((e) => (e.detail ? `${e.title}: ${e.detail}` : e.title)).join(' · ')}</div>}
+      {events.length > 0 && <div className="graph-row-events dim">{events.join(' · ')}</div>}
     </li>
   )
 }
