@@ -261,10 +261,10 @@ export interface LayerOption {
   type: string
 }
 
-/** The SWF's layers (root excluded) by instance name, sorted. */
-export function layerOptions(ir: Pick<Swf, 'nodes' | 'root'>, overlay: OverlayDoc | undefined): LayerOption[] {
+/** The SWF's layers (root excluded, unless `withRoot`: a component's own root is a layer its graph can pick) by instance name, sorted. */
+export function layerOptions(ir: Pick<Swf, 'nodes' | 'root'>, overlay: OverlayDoc | undefined, withRoot = false): LayerOption[] {
   return Object.values(ir.nodes)
-    .filter((n) => n.id !== ir.root)
+    .filter((n) => withRoot || n.id !== ir.root)
     .map((n) => ({ id: n.id, label: ((overlay?.nodes?.[n.id] as { instanceName?: string } | undefined)?.instanceName) || n.name, type: n.type }))
     .sort((a, b) => a.label.localeCompare(b.label))
 }

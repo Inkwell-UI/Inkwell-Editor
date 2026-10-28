@@ -136,6 +136,7 @@ describe('layers', () => {
     expect(layerChoices(all, 'Text').map((l) => l.id)).toEqual(['t'])
     expect(layerChoices(all, 'Image').map((l) => l.id)).toEqual(['i'])
     expect(layerChoices(all, 'Clip')).toHaveLength(3)
+    expect(layerOptions(ir, undefined, true)).toHaveLength(4) // a component's graph can pick the component's own root
   })
   it('a graph node refers to the layer of its first component pin', () => {
     const n = node('s', 'SetText', { target: 't' })

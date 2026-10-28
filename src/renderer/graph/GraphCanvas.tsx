@@ -73,7 +73,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   const [varDrop, setVarDrop] = useState<{ x: number; y: number; id: string; name: string } | null>(null)
   useEffect(() => void (inkwell && loadComponentGraphs(inkwell)), []) // Create Component lists the components that have a graph
   const comp = useComponentIr() // in a component's graph the layers to pick are the component's own
-  const layers = useMemo(() => (comp === 'unavailable' ? [] : comp ? layerOptions(comp.ir, comp.inSwf ? overlay : undefined) : layerOptions(swf.ir, overlay)), [comp, swf.ir, overlay])
+  const layers = useMemo(() => (comp === 'unavailable' ? [] : comp ? layerOptions(comp.ir, comp.inSwf ? overlay : undefined, true) : layerOptions(swf.ir, overlay)), [comp, swf.ir, overlay])
   const rule = useMemo(() => connectionRule(defs, () => store.getState().variables, () => store.getState().signature), [defs, store])
   const sdefs = useMemo(() => spawnDefs(defs), [defs])
   const categories = useMemo(() => categoriesOf(defs), [defs])

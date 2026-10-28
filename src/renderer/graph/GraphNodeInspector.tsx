@@ -24,7 +24,7 @@ export function GraphNodeInspector() {
   const nodeId = useSelectionStore((s) => s.graphNode)
   const rows = useDockRows()
   const comp = useComponentIr()
-  const layers = useMemo(() => (comp === 'unavailable' ? [] : comp ? layerOptions(comp.ir, comp.inSwf ? overlay : undefined) : swf ? layerOptions(swf.ir, overlay) : []), [comp, swf, overlay])
+  const layers = useMemo(() => (comp === 'unavailable' ? [] : comp ? layerOptions(comp.ir, comp.inSwf ? overlay : undefined, true) : swf ? layerOptions(swf.ir, overlay) : []), [comp, swf, overlay])
   const nodes = useStore(store ?? emptyStore, (s) => s.nodes)
   const variables = useStore(store ?? emptyStore, (s) => s.variables)
   const signature = useStore(store ?? emptyStore, (s) => s.signature)
