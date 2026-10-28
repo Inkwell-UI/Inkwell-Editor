@@ -9,7 +9,7 @@ const packs = await loadCore()
 const compGraph = () => ({
   ...newComponentGraph('5:1', 'ListItem'),
   props: [{ id: 'p1', name: 'label', type: 'String' as const, default: 'none' }, { id: 'p2', name: 'count', type: 'Number' as const }],
-  nodes: [node('ol', 'core/OnLoad@1'), node('log', 'core/Log@1', { level: 'info' }), node('gp', 'core/GetProp@1', { prop: 'p1', propType: 'String' })],
+  nodes: [node('ol', 'core/OnLoad@1'), node('log', 'core/Log@1', { level: 'info' }), node('gp', 'core/GetProp@1', { prop: 'p1', propType: 'String', propName: 'label' })],
   edges: [wire('ol', 'then', 'log', 'in'), wire('gp', 'value', 'log', 'message')]
 })
 const gen = (...graphs: ReturnType<typeof compGraph>[] | ReturnType<typeof graph>[]) =>
@@ -23,9 +23,9 @@ describe('component graph (blueprint)', () => {
     expect(c.component).toBe(true)
     expect(c.source).toContain('function TGraph__5_1(base, props, owner) {')
     expect(c.source).toContain('this.props = props == undefined ? {} : props;')
-    expect(c.source).toContain('if (this.props["p1"] == undefined) this.props["p1"] = "none";')
-    expect(c.source).toContain('if (this.props["p2"] == undefined) this.props["p2"] = 0;') // no default: the zero of the type
-    expect(c.source).toContain('__g.props["p1"]')
+    expect(c.source).toContain('if (this.props["label"] == undefined) this.props["label"] = "none";')
+    expect(c.source).toContain('if (this.props["count"] == undefined) this.props["count"] = 0;') // no default: the zero of the type
+    expect(c.source).toContain('__g.props["label"]')
   })
 
   it('a layer is found by its path inside the component; a layer of the menu is not', () => {

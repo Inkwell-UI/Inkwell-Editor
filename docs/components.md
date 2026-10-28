@@ -6,13 +6,13 @@ A component is a Figma component that has behaviour: a graph, and props (data th
 
 - **Visual:** the Figma component. Never edited here. A component kept on the Figma page away from the design is sent by the plugin (`swfs.componentTrees`) and kept in `figma/components/<id>.json`; a component inside a frame is part of that SWF's IR.
 - **Behaviour:** a **blueprint graph** (Spec `Graph.scope: "blueprint"`, `component` = the Figma id, `props`), stored in `components/<id>.json` of the project, not in a SWF. The Components tab (Behaviour, left) adds or opens it; the Graph panel shows it. It starts with an On Load, which runs when an instance is created, after its props are set.
-- **Props:** `{id, name, type, default}`, edited in the Inspector while nothing is selected. **Get Prop** (`core/GetProp@1`) reads one in the graph (`__g.props["<id>"]`); its output takes the prop's type from a copy the editor keeps current (`propType`).
+- **Props:** `{id, name, type, default}`, edited in the Inspector while nothing is selected. **Get Prop** (`core/GetProp@1`) reads one in the graph (`__g.props["<name>"]`); its output takes the prop's type, and the node its name, from copies the editor keeps current (`propType`, `propName`).
 - **Layers:** while a component's graph is open the Navigator lists what the component is made of, and node layer pickers list those layers (`hooks/useComponentIr.ts`).
 
 ## At runtime
 
 - Each component that has a graph and sits on the Figma page is compiled into the SWF as a library symbol exported as `inkwell_component_<figma id>` (`generate()` option `components`, `project/componentSources.ts`; custom menus and the preview, built by `sync/buildPipeline.ts`). Its graph is compiled to a class `mods.<modId>.<SwfCls>Graph_<id>` taking `(clip, props, owner)`; missing props get their default, or the zero of their type.
-- **Create Component** (`core/CreateComponent@1`): `parent` layer, optional `name`, `props` (an Object keyed by prop id, built with Make Object), output `instance` (the new clip). It does `attachMovie(<symbol>, name, getNextHighestDepth())` on the parent, then `new <class>(clip, props, __g).init()`. **Remove Component** removes an instance (`removeMovieClip`).
+- **Create Component** (`core/CreateComponent@1`): `parent` layer, optional `name`, `props` (an Object keyed by prop **name**, built with Make Object; renaming a prop does not rename the key you typed in Make Object), output `instance` (the new clip). It does `attachMovie(<symbol>, name, getNextHighestDepth())` on the parent, then `new <class>(clip, props, __g).init()`. **Remove Component** removes an instance (`removeMovieClip`).
 - A graph inside a component addresses layers by their path inside the symbol (`__g.base.<path>`); a menu graph cannot use a component's layers, and a component's graph cannot use the menu's.
 - **Depth:** a runtime instance is drawn above everything Figma placed in the parent (Figma layers have negative depths; `getNextHighestDepth()` starts at 0).
 - Checked in Ruffle 0.7.1 with the real FFDec build: two instances, one with a given prop and one with its default, each ran its On Load. Not run in the game.

@@ -617,7 +617,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
                 { t: '        this.owner = owner;' },
                 { t: '        this.props = props == undefined ? {} : props;' },
                 // a prop the creator did not give has its default (a missing default is the zero of its type)
-                ...(g.props ?? []).map((p) => ({ t: `        if (this.props[${as2Literal(p.id)}] == undefined) this.props[${as2Literal(p.id)}] = ${as2Literal(p.default ?? defaultOf(p.type))};` })),
+                ...(g.props ?? []).map((p) => ({ t: `        if (this.props[${as2Literal(p.name)}] == undefined) this.props[${as2Literal(p.name)}] = ${as2Literal(p.default ?? defaultOf(p.type))};` })),
                 ...(i.menu ? [{ t: '        this.bridge = owner.bridge;' }] : [])
               ]
             : []),

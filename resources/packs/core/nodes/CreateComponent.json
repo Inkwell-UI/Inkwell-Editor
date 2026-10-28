@@ -25,7 +25,7 @@
       "name": "props",
       "type": "Object",
       "default": {},
-      "description": "The values of the component's props by prop id (a prop not given has its default); build it with Make Object"
+      "description": "The values of the component's props by prop name (a prop not given has its default); build it with Make Object"
     }
   ],
   "outputs": [

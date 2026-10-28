@@ -227,13 +227,13 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
             nodes: s.nodes.map((n) => {
               const f = n.data.fields
               const p = n.data.kind.startsWith('core/GetProp@') ? next.find((x) => x.id === f['prop']) : undefined
-              return p && f['propType'] !== p.type ? { ...n, data: { ...n.data, fields: { ...f, propType: p.type } } } : n
+              return p && (f['propType'] !== p.type || f['propName'] !== p.name) ? { ...n, data: { ...n.data, fields: { ...f, propType: p.type, propName: p.name } } } : n
             })
           })),
         setNodeProp: (nodeId, propId) =>
           set((s) => {
             const p = s.props?.find((x) => x.id === propId)
-            return { nodes: s.nodes.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, fields: { ...n.data.fields, prop: propId, ...(p ? { propType: p.type } : {}) } } } : n)) }
+            return { nodes: s.nodes.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, fields: { ...n.data.fields, prop: propId, ...(p ? { propType: p.type, propName: p.name } : {}) } } } : n)) }
           }),
         setCallTarget: (nodeId, fn) =>
           set((s) => {

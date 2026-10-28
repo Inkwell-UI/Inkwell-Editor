@@ -39,6 +39,18 @@ export function newComponentGraph(componentId: string, name: string): Graph {
   return { ...newGraph(id, name, 'blueprint'), component: componentId, props: [] }
 }
 
+/** A component graph with every Get Prop node's copy of its prop's name and type up to date (graphs saved before `propName` existed, or a prop renamed while the file was not open). */
+export function withPropCopies(g: Graph): Graph {
+  if (g.scope !== 'blueprint') return g
+  return {
+    ...g,
+    nodes: g.nodes.map((n) => {
+      const p = n.kind.startsWith('core/GetProp@') ? (g.props ?? []).find((x) => x.id === n.fields['prop']) : undefined
+      return p && (n.fields['propName'] !== p.name || n.fields['propType'] !== p.type) ? { ...n, fields: { ...n.fields, propName: p.name, propType: p.type } } : n
+    })
+  }
+}
+
 /**
  * What `+ Graph` creates: an empty graph with one unconnected On Load, so there is an event to wire from (like a new script's `Start`). On Load has no required pin and works
  * in every target, so a new graph is lint-clean; On Widget Call (it would replace a HUD widget's built-in Show/SetTexts/Hide) and On Click (needs a target) are never seeded.

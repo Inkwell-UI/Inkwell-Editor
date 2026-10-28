@@ -24,3 +24,12 @@ describe('loadComponentSources', () => {
   })
   it('an empty project: nothing', async () => expect(await loadComponentSources(dir)).toEqual({ sources: [], graphs: [] }))
 })
+
+describe('Get Prop copies', () => {
+  it('a graph saved before the node kept its prop name is read with the name filled in', async () => {
+    const g = { ...newComponentGraph('5:1', 'ListItem'), props: [{ id: 'p', name: 'label', type: 'String' as const }], nodes: [{ id: 'g', kind: 'core/GetProp@1', fields: { prop: 'p' }, pos: { x: 0, y: 0 } }] }
+    await writeComponentTrees(dir, [tree('5:1', 'ListItem')])
+    await writeComponentGraph(dir, g)
+    expect((await loadComponentSources(dir)).graphs[0]!.nodes[0]!.fields).toMatchObject({ prop: 'p', propName: 'label', propType: 'String' })
+  })
+})

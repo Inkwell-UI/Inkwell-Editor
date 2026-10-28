@@ -1,4 +1,5 @@
 import type { Graph, Node } from '@inkwell-ui/spec'
+import { withPropCopies } from '../../shared/graphs'
 import { readComponentGraphs } from './componentFiles'
 import { readComponentTrees } from './componentTrees'
 
@@ -14,7 +15,7 @@ export interface ComponentSource {
  * drawn where they are and not compiled a second time as symbols. shortcut: components without a graph are not compiled; add the ones a Create Component node names when that node exists.
  */
 export async function loadComponentSources(project: string): Promise<{ sources: ComponentSource[]; graphs: Graph[] }> {
-  const graphs = (await readComponentGraphs(project)).graphs
+  const graphs = (await readComponentGraphs(project)).graphs.map(withPropCopies)
   const withGraph = new Set(graphs.flatMap((g) => (g.component ? [g.component] : [])))
   const sources = (await readComponentTrees(project)).filter((t) => withGraph.has(t.id))
   return { sources, graphs }

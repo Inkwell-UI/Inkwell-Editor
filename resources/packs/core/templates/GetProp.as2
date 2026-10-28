@@ -1,2 +1,2 @@
 // [{{node.id}}] core/GetProp@1
-__g.props[{{field.prop}}]
+__g.props[{{field.propName}}]

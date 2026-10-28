@@ -23,6 +23,11 @@
       "type": "string",
       "default": "String",
       "description": "Copy of the prop's type; the editor keeps it up to date"
+    },
+    "propName": {
+      "type": "string",
+      "default": "",
+      "description": "Copy of the prop's name; the editor keeps it up to date"
     }
   },
   "as2Template": "templates/GetProp.as2",
@@ -30,7 +35,8 @@
     "volatile": true,
     "readsProp": "prop",
     "managedFields": [
-      "propType"
+      "propType",
+      "propName"
     ]
   }
 }
