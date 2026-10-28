@@ -101,8 +101,8 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
   const fn = scope === 'function'
   const confirmButtons = (
     <>
-      <Btn variant="danger" onClick={() => (setConfirm(false), onDelete())} testId="graph-delete-confirm">{strings.nav.deleteConfirm}</Btn>
-      <Btn icon={X} label={strings.nav.deleteCancel} onClick={() => setConfirm(false)} />
+      <Btn variant="quiet" className="row-confirm-delete" onClick={() => (setConfirm(false), onDelete())} testId="graph-delete-confirm">{strings.nav.deleteConfirm}</Btn>
+      <Btn icon={X} variant="quiet" label={strings.nav.deleteCancel} onClick={() => setConfirm(false)} />
     </>
   )
   const sigText = sig ? strings.lib.signature(sig.inputs.map((p) => p.type), sig.outputs.map((p) => p.type), sig.exits.map((x) => x.name)) : undefined
