@@ -58,7 +58,7 @@ describe('runDoctor', () => {
   it('never throws: with everything pointing nowhere every check still answers', async () => {
     const env = { INKWELL_FFDEC: 'Z:\\nope', INKWELL_JAVA: 'Z:\\nope\\java.exe', INKWELL_PAPYRUS: 'Z:\\nope\\p.exe', INKWELL_SKYRIM: 'Z:\\nope', INKWELL_FIGMA_MANIFEST: 'Z:\\nope\\m.json' }
     const r = await runDoctor(ctx({ exec: async () => Promise.reject(new Error('no')) }, env))
-    expect(r.map((c) => c.id)).toEqual(['java', 'ffdec', 'wrapper', 'papyrus', 'skyrim', 'vanilla', 'mo2', 'projectIgnore', 'figma'])
+    expect(r.map((c) => c.id)).toEqual(['java', 'ffdec', 'wrapper', 'papyrus', 'skyrim', 'vanilla', 'mo2', 'skse', 'addresslib', 'runtime', 'skyui', 'projectIgnore', 'figma'])
     expect(r.find((c) => c.id === 'java')?.status).toBe('fail')
     expect(r.find((c) => c.id === 'ffdec')?.status).toBe('fail')
     expect(r.find((c) => c.id === 'papyrus')?.status).toBe('fail')
@@ -72,7 +72,7 @@ describe('runDoctor', () => {
   it('real run on this machine', async () => {
     const r = await runDoctor(ctx({}, { ...process.env }))
     console.log(r.map((c) => `${c.status.toUpperCase().padEnd(7)} ${c.id.padEnd(13)} ${c.detail}`).join('\n'))
-    expect(r).toHaveLength(9)
+    expect(r).toHaveLength(13)
     for (const c of r) expect(['pass', 'warn', 'fail', 'skipped']).toContain(c.status)
   }, 60000)
 })

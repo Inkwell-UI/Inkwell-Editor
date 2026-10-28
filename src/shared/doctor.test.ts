@@ -13,10 +13,10 @@ describe('which checks a setting affects', () => {
     expect(checksForSetting('javaPath')).toEqual(['java'])
     expect(checksForSetting('papyrusExe')).toEqual(['papyrus'])
     expect(checksForSetting('creationKitSources')).toEqual(['papyrus'])
-    expect(checksForSetting('mo2ModName')).toEqual(['mo2'])
+    expect(checksForSetting('mo2ModName')).toEqual(['mo2', 'addresslib', 'runtime', 'skyui'])
   })
   it('a Skyrim change also re-runs what depends on it (vanilla cache, the Data guard of mo2)', () => {
-    expect(checksForSetting('skyrimPath')).toEqual(['skyrim', 'vanilla', 'mo2'])
+    expect(checksForSetting('skyrimPath')).toEqual(['skyrim', 'vanilla', 'mo2', 'skse', 'addresslib'])
   })
 })
 

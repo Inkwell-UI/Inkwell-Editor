@@ -1,5 +1,5 @@
 import { existsSync, statSync } from 'node:fs'
-import { readFile, stat, unlink, writeFile } from 'node:fs/promises'
+import { readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import type { CheckResult, Fix, ResolvedSettings } from '../../shared/doctor'
 import { FFDEC_PINNED } from '../../shared/ffdec'
@@ -37,7 +37,11 @@ const label = {
   vanilla: 'Vanilla SWF cache',
   projectIgnore: 'Project .gitignore',
   figma: 'Figma plugin',
-  mo2: 'MO2 deploy folders'
+  mo2: 'MO2 deploy folders',
+  skse: 'SKSE64',
+  addresslib: 'Address Library',
+  runtime: 'Inkwell Runtime',
+  skyui: 'SkyUI'
 } as const
 
 /** `openjdk version "1.8.0_504"` -> 8, `"17.0.2"` -> 17, `"21"` -> 21. */
@@ -184,13 +188,16 @@ export async function checkProjectIgnore(ctx: DoctorContext): Promise<CheckResul
 
 /** Plugin manifest: the setting, else the documented sibling checkout `../Inkwell-Figma/plugin/manifest.json` next to the editor. */
 export function figmaManifestPath(ctx: DoctorContext): string {
-  return ctx.settings.figmaManifest ?? resolve(ctx.appPath, '..', 'Inkwell-Figma', 'plugin', 'manifest.json')
+  if (ctx.settings.figmaManifest) return ctx.settings.figmaManifest
+  // the portable zip keeps the plugin next to Inkwell.exe (resources/app is the app path); a dev checkout has the sibling repo
+  const portable = resolve(ctx.appPath, '..', '..', 'Inkwell-Figma-Plugin', 'manifest.json')
+  return existsSync(portable) ? portable : resolve(ctx.appPath, '..', 'Inkwell-Figma', 'plugin', 'manifest.json')
 }
 
 export async function checkFigma(ctx: DoctorContext): Promise<CheckResult> {
   const p = figmaManifestPath(ctx)
   const ok = existsSync(p) && statSync(p).isFile()
-  const link = ctx.pluginConnections > 0 ? `A plugin is connected now (${ctx.pluginConnections}).` : 'No plugin is connected right now: in Figma Desktop run Plugins > Development > Inkwell and enter the session token.'
+  const link = ctx.pluginConnections > 0 ? `A plugin is connected now (${ctx.pluginConnections}).` : 'No plugin is connected right now: in Figma Desktop run Plugins > Development > Inkwell, then click Allow when the editor asks.'
   const copy = { label: 'Copy manifest path', action: { kind: 'copy', text: p } } as const
   const browse = { label: 'Browse for manifest.json', action: { kind: 'browse', setting: 'figmaManifest', folder: false } } as const
   const found = ctx.settings.figmaManifest ? {} : { found: { value: p, source: 'default' as const } }
@@ -254,4 +261,67 @@ export async function checkMo2(ctx: DoctorContext, gameDirs: string[]): Promise<
     lines.push(p ? `Overwrite folder: ${p}` : `Overwrite folder ${over} is writable.`)
   }
   return done(failed ? 'fail' : 'pass', lines.join(' '), fix)
+}
+
+
+// --- the game side, looked up in the MO2 mods directory and the game folder (0.5 Phase 7) ---
+
+/** Files of `sub` (a folder inside each mod, e.g. `SKSE/Plugins`; empty = the mod's root) whose name matches `match`: `{mod, file}` per hit. One level of mod folders only, never the game's Data folder. */
+export async function modFiles(mods: string, sub: string, match: RegExp): Promise<{ mod: string; file: string }[]> {
+  const out: { mod: string; file: string }[] = []
+  const entries = await readdir(mods, { withFileTypes: true }).catch(() => [])
+  for (const e of entries.filter((d) => d.isDirectory()).slice(0, 3000)) {
+    const dir = join(mods, e.name, ...sub.split('/').filter(Boolean))
+    const files = await readdir(dir).catch(() => [] as string[])
+    for (const f of files) if (match.test(f)) out.push({ mod: e.name, file: join(dir, f) })
+  }
+  return out
+}
+
+const noMods = (id: 'addresslib' | 'runtime' | 'skyui'): CheckResult => ({
+  id, label: label[id], status: 'skipped',
+  detail: 'Set the MO2 mods directory (the MO2 row) so Inkwell can look for it among your mods. Nothing is checked inside the game Data folder.'
+})
+const modList = (hits: { mod: string }[]): string => [...new Set(hits.map((h) => `"${h.mod}"`))].join(', ')
+
+export async function checkSkse(ctx: DoctorContext, skyrimPath: string | undefined): Promise<CheckResult> {
+  if (!skyrimPath) return { id: 'skse', label: label.skse, status: 'skipped', detail: 'Needs the Skyrim install first.' }
+  const loader = join(skyrimPath, 'skse64_loader.exe')
+  return existsSync(loader)
+    ? { id: 'skse', label: label.skse, status: 'pass', detail: `skse64_loader.exe is in ${skyrimPath}. Start the game through it (from MO2: the SKSE entry).` }
+    : { id: 'skse', label: label.skse, status: 'fail', detail: `skse64_loader.exe is not in ${skyrimPath}. Inkwell Runtime is an SKSE plugin, so custom menus never open without SKSE64 (HUD widgets need SKSE too, through SkyUI).`, fix: { label: 'Get SKSE64', action: { kind: 'open', url: 'https://skse.silverlock.org/' } } }
+}
+
+const VERSIONLIB = /^versionlib-.*\.bin$/i
+
+export async function checkAddressLibrary(ctx: DoctorContext, skyrimPath: string | undefined): Promise<CheckResult> {
+  const mods = ctx.settings.mo2ModsDir
+  if (!mods && !skyrimPath) return noMods('addresslib')
+  const hits = [
+    ...(mods ? await modFiles(mods, 'SKSE/Plugins', VERSIONLIB) : []),
+    ...(skyrimPath ? (await readdir(join(skyrimPath, 'Data', 'SKSE', 'Plugins')).catch(() => [] as string[])).filter((f) => VERSIONLIB.test(f)).map((f) => ({ mod: 'the game Data folder', file: f })) : [])
+  ]
+  return hits.length
+    ? { id: 'addresslib', label: label.addresslib, status: 'pass', detail: `Address Library data (${hits.length} file${hits.length === 1 ? '' : 's'}) found in ${modList(hits)}. It must match your game version; if the game logs address library errors, install the build for your version.` }
+    : { id: 'addresslib', label: label.addresslib, status: 'warn', detail: 'No Address Library for SKSE Plugins found (no versionlib-*.bin in any mod). Inkwell Runtime needs it; without it the plugin does not load and menus never open.', fix: { label: 'Get Address Library', action: { kind: 'open', url: 'https://www.nexusmods.com/skyrimspecialedition/mods/32444' } } }
+}
+
+export async function checkRuntime(ctx: DoctorContext): Promise<CheckResult> {
+  const mods = ctx.settings.mo2ModsDir
+  if (!mods) return noMods('runtime')
+  const hits = await modFiles(mods, 'SKSE/Plugins', /^Inkwell\.dll$/i)
+  if (!hits.length)
+    return { id: 'runtime', label: label.runtime, status: 'warn', detail: 'Inkwell.dll was not found in any MO2 mod (SKSE/Plugins/Inkwell.dll). Custom menus only open with the Inkwell Runtime; HUD widgets do not need it. The portable zip has it in Inkwell-Runtime (SKSE/Plugins): put it in an MO2 mod (Inkwell never writes it for you).' }
+  const v = await exeVersion(hits[0]!.file, ctx.exec)
+  const many = hits.length > 1 ? ` ${hits.length} copies exist (${modList(hits)}); the one in the mod with the higher MO2 priority loads.` : ''
+  return { id: 'runtime', label: label.runtime, status: 'pass', detail: `Inkwell.dll${v ? ` ${v}` : ''} found in ${modList(hits.slice(0, 1))}. A menu mod says which runtime it needs (the deploy dialog, and the in-game message when it is too old).${many}` }
+}
+
+export async function checkSkyUi(ctx: DoctorContext): Promise<CheckResult> {
+  const mods = ctx.settings.mo2ModsDir
+  if (!mods) return noMods('skyui')
+  const hits = await modFiles(mods, '', /^SkyUI_SE\.esp$/i)
+  return hits.length
+    ? { id: 'skyui', label: label.skyui, status: 'pass', detail: `SkyUI found in ${modList(hits)} (the version is not read: Inkwell was tested with SkyUI 5.2 and 6.11). Custom menus do not need it; HUD widgets do. A menu replacement of the Inventory should be built for SkyUI 5.2 if your players may use it (Target dialog, Built for).` }
+    : { id: 'skyui', label: label.skyui, status: 'skipped', detail: 'SkyUI was not found in your MO2 mods. That is fine for custom menus and menu replacements; HUD widgets need SkyUI.' }
 }

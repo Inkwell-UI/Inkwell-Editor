@@ -24,10 +24,10 @@ You do **not** need SkyUI for a custom menu. A HUD widget needs SkyUI.
 ## 2. First start and the Setup Doctor
 
 1. Unzip the editor into any folder you may write to and start it.
-2. The first time something is missing, the **Settings** view opens by itself (otherwise: **Edit > Settings**, Ctrl+,). It lists rows (Java, FFDec, FFDec wrapper, Papyrus compiler, Skyrim install, Vanilla SWF cache, Project .gitignore, Figma plugin, MO2 deploy folders) with a status each and a button to fix it (for example **Get Java**, **Get FFDec**, **Browse for the FFDec folder**). Read each row: it says plainly what is missing and what to do.
+2. The first time something is missing, the **Settings** view opens by itself (otherwise: **Edit > Settings**, Ctrl+,). It lists rows (Java, FFDec, FFDec wrapper, Papyrus compiler, Skyrim install, Vanilla SWF cache, MO2 deploy folders, SKSE64, Address Library, Inkwell Runtime, SkyUI, Project .gitignore, Figma plugin) with a status each and a button to fix it (for example **Get Java**, **Get FFDec**, **Browse for the FFDec folder**). Read each row: it says plainly what is missing and what to do.
 3. Fix at least **Java**, **FFDec**, **FFDec wrapper** (a small jar that ships in the beta zip; if the row says it is missing, the zip is incomplete), **Skyrim install** (it finds Steam and GOG installs; **Browse** if yours is elsewhere) and **MO2 deploy folders** (the **MO2 mods directory**, for example `C:\Modding\MO2\mods`, and the **Mod name**, the folder Inkwell writes inside it). Each field has **Browse**; the badge beside it says where the value came from.
 4. In the **Vanilla SWF cache** row use **Build the cache** once. It extracts the game's own SWFs from your install into the editor's data folder, only so Inkwell can refuse to export an unmodified game file. Nothing of it goes into your project.
-5. Click **Re-run**. Rows you do not need yet (Papyrus, Figma) may stay yellow.
+5. Click **Re-run**. The game-side rows (SKSE64, Address Library, Inkwell Runtime, SkyUI) look in your MO2 mods directory and the game folder: **Inkwell Runtime** stays yellow until you have put `Inkwell.dll` into a mod (step 7.3). Rows you do not need yet (Papyrus, Figma, SkyUI) may stay yellow or skipped.
 
 ## 3. Fonts for Figma (once, optional but recommended)
 

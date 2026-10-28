@@ -6,12 +6,12 @@ import { join } from 'node:path'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult } from '../../shared/doctor'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
 import { buildVanillaCache, vanillaCacheRoot } from '../vanilla/cache'
-import { checkFfdec, checkFigma, checkJava, checkMo2, checkPapyrus, checkProjectIgnore, checkSkyrim, checkVanilla, checkWrapper, wrapperJarPath, type DoctorContext, type SkyrimFacts } from './checks'
+import { checkAddressLibrary, checkFfdec, checkFigma, checkJava, checkMo2, checkPapyrus, checkRuntime, checkSkse, checkSkyUi, checkProjectIgnore, checkSkyrim, checkVanilla, checkWrapper, wrapperJarPath, type DoctorContext, type SkyrimFacts } from './checks'
 
 export type { DoctorContext } from './checks'
 
-const ORDER: CheckId[] = ['java', 'ffdec', 'wrapper', 'papyrus', 'skyrim', 'vanilla', 'mo2', 'projectIgnore', 'figma']
-const TITLES: Record<CheckId, string> = { java: 'Java', ffdec: 'FFDec', wrapper: 'FFDec wrapper', papyrus: 'Papyrus compiler', skyrim: 'Skyrim install', vanilla: 'Vanilla SWF cache', projectIgnore: 'Project .gitignore', figma: 'Figma plugin', mo2: 'MO2 deploy folders' }
+const ORDER: CheckId[] = ['java', 'ffdec', 'wrapper', 'papyrus', 'skyrim', 'vanilla', 'mo2', 'skse', 'addresslib', 'runtime', 'skyui', 'projectIgnore', 'figma']
+const TITLES: Record<CheckId, string> = { java: 'Java', ffdec: 'FFDec', wrapper: 'FFDec wrapper', papyrus: 'Papyrus compiler', skyrim: 'Skyrim install', vanilla: 'Vanilla SWF cache', projectIgnore: 'Project .gitignore', skse: 'SKSE64', addresslib: 'Address Library', runtime: 'Inkwell Runtime', skyui: 'SkyUI', figma: 'Figma plugin', mo2: 'MO2 deploy folders' }
 
 /** A check that throws is a failed check, never a failed doctor. */
 const safe = (id: CheckId, fn: () => Promise<CheckResult>): Promise<CheckResult> =>
@@ -23,7 +23,7 @@ const safe = (id: CheckId, fn: () => Promise<CheckResult>): Promise<CheckResult>
 export async function runDoctor(ctx: DoctorContext, only?: CheckId[]): Promise<CheckResult[]> {
   const want = (id: CheckId): boolean => !only || only.includes(id)
   const sky: SkyrimFacts = {}
-  const skyrim = want('skyrim') || want('vanilla') || want('mo2') ? safe('skyrim', () => checkSkyrim(ctx, sky)) : undefined
+  const skyrim = want('skyrim') || want('vanilla') || want('mo2') || want('skse') || want('addresslib') ? safe('skyrim', () => checkSkyrim(ctx, sky)) : undefined
   const after = (id: CheckId, fn: () => Promise<CheckResult>): Promise<CheckResult> | undefined => (want(id) ? skyrim!.then(() => safe(id, fn)) : undefined)
   const now = (id: CheckId, fn: () => Promise<CheckResult>): Promise<CheckResult> | undefined => (want(id) ? safe(id, fn) : undefined)
   const jobs = [
@@ -34,6 +34,10 @@ export async function runDoctor(ctx: DoctorContext, only?: CheckId[]): Promise<C
     want('skyrim') ? skyrim : undefined,
     after('vanilla', () => checkVanilla(ctx, sky.bsa)),
     after('mo2', () => checkMo2(ctx, sky.path ? [sky.path] : [])),
+    after('skse', () => checkSkse(ctx, sky.path)),
+    after('addresslib', () => checkAddressLibrary(ctx, sky.path)),
+    now('runtime', () => checkRuntime(ctx)),
+    now('skyui', () => checkSkyUi(ctx)),
     now('projectIgnore', () => checkProjectIgnore(ctx)),
     now('figma', () => checkFigma(ctx))
   ]

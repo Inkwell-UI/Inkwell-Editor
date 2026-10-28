@@ -1,7 +1,7 @@
 /** Setup Doctor and settings types shared by main, preload and renderer. */
 
 export type CheckStatus = 'pass' | 'warn' | 'fail' | 'skipped'
-export type CheckId = 'java' | 'ffdec' | 'wrapper' | 'papyrus' | 'skyrim' | 'vanilla' | 'projectIgnore' | 'figma' | 'mo2'
+export type CheckId = 'java' | 'ffdec' | 'wrapper' | 'papyrus' | 'skyrim' | 'vanilla' | 'projectIgnore' | 'figma' | 'mo2' | 'skse' | 'addresslib' | 'runtime' | 'skyui'
 
 /** Settings the user can point at a path. Environment variables (INKWELL_*) override them. */
 export type PathSettingKey = 'ffdecDir' | 'javaPath' | 'papyrusExe' | 'creationKitSources' | 'skyrimPath' | 'figmaManifest' | 'mo2ModsDir' | 'mo2OverwriteDir'
@@ -47,9 +47,9 @@ export function checksForSetting(key: SettingKey): CheckId[] {
     case 'javaPath': return ['java']
     case 'ffdecDir': return ['ffdec']
     case 'papyrusExe': case 'creationKitSources': return ['papyrus']
-    case 'skyrimPath': return ['skyrim', 'vanilla', 'mo2'] // the vanilla cache needs the archive; mo2 refuses targets inside Data
+    case 'skyrimPath': return ['skyrim', 'vanilla', 'mo2', 'skse', 'addresslib'] // the vanilla cache needs the archive; mo2 refuses targets inside Data; SKSE lives in the game folder
     case 'figmaManifest': return ['figma']
-    default: return ['mo2']
+    default: return ['mo2', 'addresslib', 'runtime', 'skyui'] // the mods directory is where the game-side mods are looked for
   }
 }
 

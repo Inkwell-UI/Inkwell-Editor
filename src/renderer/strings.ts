@@ -773,7 +773,11 @@ export const strings = {
       vanilla: 'Vanilla SWF cache',
       projectIgnore: 'Project .gitignore',
       figma: 'Figma plugin',
-      mo2: 'MO2 deploy folders'
+      mo2: 'MO2 deploy folders',
+      skse: 'SKSE64',
+      addresslib: 'Address Library',
+      runtime: 'Inkwell Runtime',
+      skyui: 'SkyUI'
     } as Record<string, string>,
     status: { pass: 'Passed', warn: 'Needs attention', fail: 'Failed', skipped: 'Skipped' } as Record<string, string>,
     rowLabel: (title: string, status: string) => `${title}: ${status}`,
