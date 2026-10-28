@@ -2625,10 +2625,18 @@ exports[`golden AS2 per node kind > core/Tween@1 1`] = `
                 var n1_from = 0;
                 var n1_to = 100;
                 var n1_ms = 0.3 * 1000;
+                // local*: from/to are offsets from the target's value when the tween starts
+                var n1_b = 0;
+                if (n1_pr == "localX") n1_b = n1_tg._x;
+                else if (n1_pr == "localY") n1_b = n1_tg._y;
+                else if (n1_pr == "localRotation") n1_b = n1_tg._rotation;
                 var n1_set = function(v) {
                     if (n1_pr == "alpha") n1_tg._alpha = v;
                     else if (n1_pr == "x") n1_tg._x = v;
                     else if (n1_pr == "y") n1_tg._y = v;
+                    else if (n1_pr == "localX") n1_tg._x = n1_b + v;
+                    else if (n1_pr == "localY") n1_tg._y = n1_b + v;
+                    else if (n1_pr == "localRotation") n1_tg._rotation = n1_b + v;
                     else if (n1_pr == "scale") {
                         n1_tg._xscale = v;
                         n1_tg._yscale = v;

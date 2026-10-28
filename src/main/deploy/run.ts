@@ -80,7 +80,7 @@ const menuFeatures = (s: DeploySwf): string[] => [
   ...(hasFocusGraph(s.overlay ?? {}) ? ['focusGraph'] : []),
   ...(keyedTexts([locSwf(s)]).length ? ['translation'] : [])
 ]
-const locSwf = (x: DeploySwf): LocSwf => ({ name: x.name, kind: x.kind, ir: x.ir, ...(x.overlay ? { overlay: x.overlay as Record<string, Record<string, unknown>> } : {}), ...(x.graphs ? { graphs: x.graphs } : {}), ...(x.menu?.triggers.systemMenu ? { systemMenu: x.menu.triggers.systemMenu } : {}) })
+const locSwf = (x: DeploySwf): LocSwf => ({ name: x.name, kind: x.kind, ir: x.ir, ...(x.overlay ? { overlay: x.overlay as Record<string, Record<string, unknown>> } : {}), ...(x.graphs ? { graphs: x.graphs } : {}), ...(x.menu?.triggers?.systemMenu ? { systemMenu: x.menu.triggers.systemMenu } : {}) })
 
 /** Why a menu mod has no runtime check and what to do (S3 rule 5). */
 const CHECK_MISSING = 'The runtime check (the in-game message when Inkwell Runtime is missing or too old) was not generated because no Papyrus compiler is set. Set the compiler path in Settings (or INKWELL_PAPYRUS), then deploy again.'
