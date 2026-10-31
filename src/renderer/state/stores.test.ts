@@ -72,9 +72,9 @@ describe('workspace store', () => {
   })
   it('showDockTab opens a folded dock', () => {
     useWorkspaceStore.getState().setActive('behaviour')
-    useWorkspaceStore.getState().setFold('trace|mockData|dataBinding|lintBudget', true)
+    useWorkspaceStore.getState().setFold('trace|mockData|dataBinding|library|lintBudget', true)
     useWorkspaceStore.getState().showDockTab('trace')
-    expect(useWorkspaceStore.getState().folds['trace|mockData|dataBinding|lintBudget']).toBe(false)
+    expect(useWorkspaceStore.getState().folds['trace|mockData|dataBinding|library|lintBudget']).toBe(false)
   })
   it('sanitizePersisted drops garbage', () => {
     const p = sanitizePersisted({ active: 'nope', sizes: { layout: { 'navigator|preview|inspector': [1, 2, 3], 'navigator|lintBudget': [0], 'navigator|inspector': 'x', stale: [1, 2] } }, tabs: { localization: { k: 'p', j: 3 } } })

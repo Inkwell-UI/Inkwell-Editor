@@ -98,7 +98,7 @@ export const strings = {
   },
 
   nav: {
-    title: 'Navigator',
+    title: 'Layers',
     search: 'Filter layers',
     graphs: 'Graphs',
     addGraph: 'Add graph',
@@ -212,28 +212,32 @@ export const strings = {
     issues: 'Export checks'
   },
 
+  logic: {
+    title: 'Logic',
+    functions: 'Functions'
+  },
+
   comp: {
     title: 'Components',
     heading: 'Components',
-    empty: 'No components yet. Make a component in Figma and it shows up here, in a frame or away from the design.',
     noSwf: 'Select a SWF first: the Graph panel shows the graph in it',
     graphFailed: 'Could not create the graph',
     props: (props: readonly { name: string; type: string }[]) => `(${props.map((p) => `${p.name}: ${p.type}`).join(', ')})`
   },
 
   lib: {
-    title: 'Library',
-    empty: 'No functions yet. Use + > New function, or select nodes in a graph and press G.',
+    title: 'Packs',
+    empty: 'No functions yet. Use +, or select nodes in a graph and press G.',
     deleteFunction: (name: string) => `Delete function ${name}`,
     more: 'More actions',
-    heading: 'Library',
+    heading: 'Node packs',
     project: 'This project',
     functionCount: (n: number) => `${n} function${n === 1 ? '' : 's'}`,
     newFunction: 'New function',
     addPack: 'Add pack…',
     rename: 'Rename',
     delete: 'Delete',
-    addTip: 'Add a function or a pack',
+    addTip: 'Add a pack',
     checkUpdates: 'Check for updates',
     downloadFailed: 'Could not download the packs',
     packVersion: 'Version',
@@ -422,7 +426,7 @@ export const strings = {
     nameFirst: 'Type a name first',
     pick: 'Pick variable...',
     none: 'No variables in this graph.',
-    noGraph: 'No graphs yet. Create the menu graph in the Navigator first.',
+    noGraph: 'No graphs yet. Add a graph first.',
     default: 'Default value',
     remove: (n: string) => `Remove ${n}`
   },

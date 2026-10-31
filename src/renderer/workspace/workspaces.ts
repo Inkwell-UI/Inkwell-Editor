@@ -6,7 +6,7 @@ import type { LayoutNode } from './layout'
  * the user's own sizes are stored per mode by `state/workspaceStore.ts` and applied on top.
  *
  *   Layout:       [ left tabs (Navigator, Assets, Menu) | preview | inspector ] / dock (folds to its tab strip, starts folded; so does Behaviour's, Localization's starts open)
- *   Behaviour:    [ column [ left tabs (Navigator) / variables ] | column [ [ graph | column [ preview (fixed size) / inspector ] ] / dock ] ]
+ *   Behaviour:    [ column [ left tabs (Navigator, Contracts) / logic ] | column [ [ graph | column [ preview (fixed size) / inspector ] ] / dock (Library = the packs) ] ]
  *   Localization: [ left tabs | preview | inspector ] / dock (Localization first and large)
  *   Zone 1 (top bar) and Zone 6B (status bar) are shell chrome around the layout, not layout panels.
  */
@@ -46,15 +46,15 @@ export const WORKSPACE_IDS: readonly WorkspaceId[] = ['layout', 'behaviour', 'lo
 export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
   // Layout: the stage is the whole centre; assets and the lint dock support it.
   layout: { id: 'layout', layout: frame(tabs(['navigator', 'assets']), preview, tabs(['lintBudget'], undefined, undefined, 'folded'), { main: 5, dock: 1.1 }) },
-  // Behaviour: the graph takes the whole centre; the preview is a small FIXED slot above the inspector (not resizable: its toolbar goes compact, the stage scales to fit); contracts and variables (left tabs), play, trace, mock data and data binding (dock tabs) are the supporting views.
+  // Behaviour: the graph takes the whole centre; the preview is a small FIXED slot above the inspector (not resizable: its toolbar goes compact, the stage scales to fit); contracts (left tab), logic (graphs, functions, components, variables), play, trace, mock data, data binding and the library of packs (dock tabs) are the supporting views.
   behaviour: {
     id: 'behaviour',
     layout: {
       kind: 'split',
       direction: 'row',
       children: [
-        // the left column runs the full height: navigator (with contracts as a tab), the library and the components (tabs of one group), then the variables
-        { kind: 'split', direction: 'column', size: 1.3, children: [{ ...tabs(['navigator', 'contracts']), size: 3 }, { ...tabs(['library', 'components']), size: 2 }, { kind: 'panel', panel: 'variables', size: 2 }] },
+        // the left column runs the full height: the layers (with contracts as a tab) over Logic (graphs, functions, components and the open graph's variables)
+        { kind: 'split', direction: 'column', size: 1.3, children: [{ ...tabs(['navigator', 'contracts']), size: 11 }, { kind: 'panel', panel: 'logic', size: 9 }] },
         {
           kind: 'split',
           direction: 'column',
@@ -62,7 +62,7 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
           children: [
             { kind: 'split', direction: 'row', size: 5, children: [{ kind: 'panel', panel: 'graph', size: 5 }, { kind: 'split', direction: 'column', size: 1.7, children: [{ ...preview, fixed: BEHAVIOUR_PREVIEW_HEIGHT }, { ...inspector, size: 1 }] }] },
             // folded to its tab strip until a tab is chosen: the trace is empty most of the time and the graph needs the height
-            tabs(['trace', 'mockData', 'dataBinding', 'lintBudget'], 'trace', 1.4, 'folded')
+            tabs(['trace', 'mockData', 'dataBinding', 'library', 'lintBudget'], 'trace', 1.4, 'folded')
           ]
         }
       ]

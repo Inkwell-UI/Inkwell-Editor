@@ -13,8 +13,8 @@ import { RowMenu } from '../ui/RowMenu'
 import { useGraphActions } from './useGraphActions'
 
 /**
- * The Navigator's GRAPHS section (UX 4.2): one row per graph of the active SWF (name, scope, its events), `[+ Graph]`, rename and delete. Functions never show in the Navigator: the Library
- * tab lists them (`FunctionRows`).
+ * The Navigator's GRAPHS section (UX 4.2): one row per graph of the active SWF (name, scope, its events), `[+ Graph]`, rename and delete. Functions never show in the Navigator: the Logic
+ * panel's Functions section lists them (`FunctionRows`).
  */
 /** The drag payload of a function row: its id. The Library's local packs accept it and the graph canvas turns it into a Call Function node. */
 export const FUNCTION_DRAG = 'application/x-inkwell-function'
@@ -39,7 +39,7 @@ export function GraphsList() {
   )
 }
 
-/** The SWF's own functions as rows (the Library tab's "This project" group); the empty state says how to make one. */
+/** The SWF's own functions as rows (the Logic panel's Functions section); the empty state says how to make one. */
 export function FunctionRows({ actions }: { actions: ReturnType<typeof useGraphActions> }) {
   const swf = useActiveSwf()
   const { ids, activeId, loaded } = useSwfGraphs()
@@ -47,8 +47,8 @@ export function FunctionRows({ actions }: { actions: ReturnType<typeof useGraphA
   return (
     <>
       {actions.error && <p className="tone-error">{actions.error}</p>}
-      {swf && loaded && mine.length === 0 && <p className="empty library-children">{strings.lib.empty}</p>}
-      <ul className="graph-list library-children" role="list">
+      {swf && loaded && mine.length === 0 && <p className="empty">{strings.lib.empty}</p>}
+      <ul className="graph-list" role="list">
         {swf && mine.map((id) => <GraphRow key={id} swfId={swf.id} id={id} active={id === activeId} actions={actions} />)}
       </ul>
     </>

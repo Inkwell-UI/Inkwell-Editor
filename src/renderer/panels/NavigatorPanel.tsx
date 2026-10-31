@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, CircleX, Component, Sparkles, DollarSign, FileCode, Frame, Gamepad2, Image as ImageIcon, Link2, Search, Shapes, TriangleAlert, Type, Workflow, type LucideIcon } from 'lucide-react'
-import { GraphsList } from '../graph/GraphsList'
 import { useComponentIr } from '../hooks/useComponentIr'
 import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
@@ -9,7 +8,6 @@ import { computeOrphans } from '../model/orphans'
 import { inkwell } from '../hooks/api'
 import { discardOrphanSwf, discardOverlayOrphan, relinkOverlayOrphan } from '../state/orphanActions'
 import { useSelectionStore } from '../state/selectionStore'
-import { useWorkspaceStore } from '../state/workspaceStore'
 import { useToastStore } from '../state/toastStore'
 import { useTraceStore } from '../state/traceStore'
 import { strings } from '../strings'
@@ -46,7 +44,7 @@ function Badges({ badges }: { badges: Badge[] }) {
 }
 
 /**
- * Zone 2, tab 1 (UX 4.2): GRAPHS (`graph/GraphsList.tsx`: the SWF's graphs, [+ Graph], rename, delete), LAYERS (the active SWF's IR tree with badges), ORPHANED OVERLAYS and
+ * Zone 2, tab 1 (UX 4.2): LAYERS (the active SWF's IR tree with badges), ORPHANED OVERLAYS and
  * UNREACHABLE FIGMA LAYERS. Data: the project (IR, overlay), the single lint source (`useDockRows`) and the sync state. Selecting a row
  * goes through the selection store (source `navigator`).
  */
@@ -58,7 +56,6 @@ export function NavigatorPanel() {
   const sync = useSyncState()
   const selected = useSelectionStore((s) => s.component)
   const select = useSelectionStore((s) => s.selectComponent)
-  const workspace = useWorkspaceStore((s) => s.active) // Layout mode is about the layers: the graphs belong to Behaviour
   const [query, setQuery] = useState('')
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
 
@@ -99,10 +96,8 @@ export function NavigatorPanel() {
           <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={strings.nav.search} aria-label={strings.nav.search} />
         </label>
 
-        {workspace !== 'layout' && <GraphsList />}
-
-        <section aria-labelledby="nav-layers">
-          <header className="section-title"><h3 id="nav-layers">{comp && comp !== 'unavailable' ? strings.nav.componentLayers(comp.name) : strings.nav.layers}</h3></header>
+        <section aria-label={strings.nav.layers}>
+          {comp && comp !== 'unavailable' && <header className="section-title"><h3>{strings.nav.componentLayers(comp.name)}</h3></header>}
           {comp === 'unavailable' ? (
             <p className="empty">{strings.nav.componentUnknown}</p>
           ) : !swf ? (

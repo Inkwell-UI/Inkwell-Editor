@@ -12,10 +12,9 @@ import { useSelectionStore } from '../state/selectionStore'
 import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
-import { Panel } from './Panel'
 
-/** Behaviour, left tab 3: every component the project has (designed in Figma, kept inside a frame or away from the design), with where it is and how many instances use it. */
-export function ComponentsPanel() {
+/** The Logic panel's Components section: every component the project has (designed in Figma, kept inside a frame or away from the design); a click opens its graph. Hidden while there are none. */
+export function ComponentsSection() {
   const project = useProject()
   const swf = useActiveSwf()
   const sync = useSyncState()
@@ -37,12 +36,10 @@ export function ComponentsPanel() {
     if (!have) return void useToastStore.getState().push({ tone: 'error', title: strings.comp.graphFailed })
     openComponentGraph({ id: swf.id, name: swf.name }, have)
   }
+  if (rows.length === 0) return null
   return (
-    <Panel title={strings.comp.title}>
-      <div className="nav">
         <section aria-labelledby="comp-list" data-testid="components-section">
           <header className="section-title"><h3 id="comp-list">{strings.comp.heading}</h3></header>
-          {rows.length === 0 && <p className="empty">{strings.comp.empty}</p>}
           <ul className="graph-list" role="list">
             {rows.map((r) => {
               const g = graphs[r.id]
@@ -64,7 +61,5 @@ export function ComponentsPanel() {
             })}
           </ul>
         </section>
-      </div>
-    </Panel>
   )
 }

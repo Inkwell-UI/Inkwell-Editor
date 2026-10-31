@@ -492,7 +492,6 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .vars, .bind, .mock { display: flex; flex-direction: column; gap: 6px; }
 .vars-add { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 4px; align-items: center; }
 .vars-add > :first-child { grid-column: 1 / -1; }
-.vars-graph h4 { margin: 8px 0 4px; }
 .var-row { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--line); }
 .var-name { display: flex; align-items: center; gap: 4px; flex: 1 1 80px; min-width: 0; }
 .var-name .gn-input { flex: 1; min-width: 0; }

@@ -102,6 +102,7 @@
 .lib-form { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 8px; }
 .graph-row[draggable="true"] { cursor: grab; }
 .section-title.library-heading { margin-top: 0; } /* the first thing in the panel: the panel's own padding is the gap above it */
+.logic-nav > section:first-child > .section-title { margin-top: 0; } /* Graphs is the first thing in the Logic panel: same as the Library heading */
 .graph-list.library-children, .empty.library-children { margin-left: 16px; } /* the functions of a group sit under its name */
 .btn.row-confirm-delete { color: var(--err); } /* the quiet button style, in the error colour, for "Delete ..." */
 .graph-row-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 2px; padding: 4px 6px 4px 2px; }
