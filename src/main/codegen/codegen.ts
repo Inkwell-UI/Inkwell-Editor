@@ -1,6 +1,7 @@
 import { stackMethods } from '../swf/flowAs2'
 import { LOC_KEY, pinCompat, SAVED_TYPES, type Graph, type GraphNode, type NodeDef, type PinType } from '@inkwell-ui/spec'
 import { isFunctionEntry, resolvePins, type ResolvedPin } from '../../shared/graphValidate'
+import { menuVariablesFor } from '../../shared/graphs'
 import { parseBindings, type BindProp } from '../../shared/graphBinding'
 import { FLOW_RUN_PIN, FLOW_TIMER_PIN } from '../../shared/devLink'
 import { ident } from '../../shared/overlay'
@@ -55,6 +56,8 @@ export interface CodegenInput {
   layerPath: (figmaId: string, graph: Graph) => string | undefined
   /** The linkage name of a component's library symbol (Create Component's `attachMovie`), undefined when the component is not compiled into this SWF. */
   componentLinkage?: (figmaId: string) => string | undefined
+  /** The design size `[width, height]` of each compiled component by Figma id: Create Component's layout spaces instances by it (the live size of a clip is 0 while an image loads). */
+  componentSizes?: Readonly<Record<string, readonly [number, number]>>
   /** Overlay `dataBinding` strings by Figma layer id (grammar: `shared/graphBinding.ts`). `var:` bindings are applied on init and after every Set Variable. */
   bindings?: Readonly<Record<string, string>>
   /**
@@ -176,9 +179,10 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   const nodes = new Map(g.nodes.map((n) => [n.id, n]))
   const defOf = (n: GraphNode): NodeDef | undefined => i.packs.defs.get(n.kind)
   const pinsOf = new Map<string, ReturnType<typeof resolvePins>>()
+  const foreign = menuVariablesFor(g, i.graphs) // a component graph also uses the menu's variables, on the menu graph's instance
   for (const n of g.nodes) {
     const d = defOf(n)
-    if (d) pinsOf.set(n.id, resolvePins(d, n, g.variables, g.signature))
+    if (d) pinsOf.set(n.id, resolvePins(d, n, [...g.variables, ...foreign], g.signature))
   }
   // unique identifier-safe node ids and variable names
   const uids = new Map<string, string>()
@@ -193,6 +197,11 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   const varNames = new Map<string, string>()
   const vtaken = new Set<string>()
   for (const v of g.variables) varNames.set(v.id, uniq(ident(v.name), vtaken))
+  const menuNames = new Map<string, string>() // the menu graph's variable ids -> member names (`v_<name>`), as its own class names them
+  if (foreign.length) {
+    const mtaken = new Set<string>()
+    for (const v of i.graphs.find((x) => x.scope === 'menu')?.variables ?? []) menuNames.set(v.id, uniq(ident(v.name), mtaken))
+  }
   const names = new Set<string>() // generated locals; node uids are prefixes, so keep the namespaces apart with `t_`
   const temp = (base: string): string => uniq(`t_${base}`, names)
   let usesTr = false // a Set Text went through __g.tr: the class gets tr()
@@ -295,8 +304,10 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         case 'var': {
           const v = fieldOf(n, d, nm)
           const vn = typeof v === 'string' ? varNames.get(v) : undefined
-          if (!vn) throw new Skip(`field "${nm}" names a variable that does not exist.`)
-          return `__g.v_${vn}`
+          if (vn) return `__g.v_${vn}`
+          const mn = typeof v === 'string' && foreign.some((x) => x.id === v) ? menuNames.get(v) : undefined
+          if (mn) return `__g.menuGraph().v_${mn}`
+          throw new Skip(`field "${nm}" names a variable that does not exist.`)
         }
         case 'params': {
           const dyn = (d.extra as { dynamicOutputs?: string } | undefined)?.dynamicOutputs
@@ -492,6 +503,8 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           if (bv && isSaved(bv)) out.push({ t: `${own[1]}__g.bridge.setSaved(${as2Literal(bv.name)}, __g.v_${varNames.get(bv.id)});`, n: n.id })
           if (bv && dev) out.push({ t: `${own[1]}__g.bridge.watch(${as2Literal(g.id)}, ${as2Literal(bv.name)}, "${bv.scope}", __g.v_${varNames.get(bv.id)});`, n: n.id })
           if (boundVar && binders.has(boundVar)) out.push({ t: `${own[1]}__g.b_${varNames.get(boundVar)}();`, n: n.id })
+          // a menu variable written from a component: the menu graph's bindings of it refresh
+          if (boundVar && menuNames.has(boundVar) && !varNames.has(boundVar)) out.push({ t: `${own[1]}__g.mb(${as2Literal(menuNames.get(boundVar))});`, n: n.id })
           if (own[2] === 'next') out.push(...ind(sub, own[1]!))
           else
             out.push(
@@ -631,7 +644,14 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           ...(i.menu ? [{ t: '        this.messageHandlers = [];' }, { t: '        this.modEventHandlers = [];' }] : []),
           { t: '    }' }
         ]),
-    ...(g.nodes.some((n) => /^[^/]+\/(CreateComponent|RemoveComponent)@/.test(n.kind)) ? stackMethods(i.preview === true).map((t) => ({ t })) : []),
+    ...(comp && foreign.length
+      ? [
+          { t: '    // the menu graph: the owner chain of a component ends at the graph that has no owner' },
+          { t: '    function menuGraph() {' }, { t: '        var o = this;' }, { t: '        while (o.owner != undefined) o = o.owner;' }, { t: '        return o;' }, { t: '    }' },
+          { t: '    function mb(name) {' }, { t: '        var m = this.menuGraph();' }, { t: '        if (m["b_" + name] != undefined) m["b_" + name]();' }, { t: '    }' }
+        ]
+      : []),
+    ...(g.nodes.some((n) => /^[^/]+\/(CreateComponent|RemoveComponent|ClearChildComponents)@/.test(n.kind)) ? stackMethods(i.preview === true, i.componentSizes).map((t) => ({ t })) : []),
     { t: '    // logs the failing node id; e is a string or a plain object {node, message} (GFx has no Error class)' },
     { t: '    function fail(nodeId, e) {' },
     { t: '        var msg = "";' },
@@ -722,8 +742,20 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     ...(i.preview
       ? [
           { t: '    // preview only: live pin values for the editor (traced as "[Inkwell] pin <node>.<pin> = <value>"); passes the value through' },
+          { t: '    // one line of JSON for strings, Arrays and plain Objects (4 levels); anything else as String()' },
+          { t: '    function js(v, d) {' },
+          { t: '        if (typeof (v) == "string") return "\\"" + v.split("\\n").join("\\\\n") + "\\"";' },
+          { t: '        if (typeof (v) != "object" || d < 1) return String(v);' },
+          { t: '        var a = [];' },
+          { t: '        if (v instanceof Array) {' },
+          { t: '            for (var i = 0; i < v.length; i++) a.push(this.js(v[i], d - 1));' },
+          { t: '            return "[" + a.join(",") + "]";' },
+          { t: '        }' },
+          { t: '        for (var k in v) a.push("\\"" + k + "\\":" + this.js(v[k], d - 1));' },
+          { t: '        return "{" + a.join(",") + "}";' },
+          { t: '    }' },
           { t: '    function pv(nodeId, pin, v) {' },
-          { t: '        var s = typeof (v) == "string" ? "\\"" + v.split("\\n").join("\\\\n") + "\\"" : String(v);' },
+          { t: '        var s = this.js(v, 4);' },
           { t: '        trace("[Inkwell] pin " + nodeId + "." + pin + " = " + s);' },
           { t: '        return v;' },
           { t: '    }' },

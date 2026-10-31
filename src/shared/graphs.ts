@@ -98,3 +98,13 @@ export const scriptsOf = (overlayEntry: unknown): string[] => {
   const s = (overlayEntry as { scripts?: unknown } | undefined)?.scripts
   return Array.isArray(s) ? s.filter((x): x is string => typeof x === 'string') : []
 }
+
+/**
+ * The menu variables a component graph can read and write: those of the SWF's menu graph (scope `menu`). They live on the menu graph's instance; a component reaches it through its owner chain
+ * (`__g.menuGraph()`, codegen). None for any other graph, and an own variable with the same id wins.
+ */
+export function menuVariablesFor(g: Pick<Graph, 'scope' | 'variables'>, graphs: readonly Pick<Graph, 'scope' | 'variables'>[]): Graph['variables'] {
+  if (g.scope !== 'blueprint') return []
+  const own = new Set(g.variables.map((v) => v.id))
+  return (graphs.find((x) => x.scope === 'menu')?.variables ?? []).filter((v) => v.scope === 'menu' && !own.has(v.id))
+}

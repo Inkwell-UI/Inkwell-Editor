@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, watch } from 'node:fs'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { basename, join, resolve } from 'node:path'
@@ -45,6 +45,7 @@ import type { AddFontOutcome, ProjectFontInfo, ProjectFontsState } from '../shar
 import { deleteGraph, readGraph, writeGraph } from './project/graphFiles'
 import { readComponentTrees, writeComponentTrees } from './project/componentTrees'
 import { componentGraphExists, deleteComponentGraph, readComponentGraphs, writeComponentGraph } from './project/componentFiles'
+import { loadComponentSources } from './project/componentSources'
 import { writeOverlay } from './project/overlayFile'
 import { addRecent, loadRecent, saveRecent } from './project/recent'
 import { writeProjectSetting } from './project/settings'
@@ -227,6 +228,15 @@ export function createSession(deps: SessionDeps) {
     await refreshGraphLint().catch(() => undefined)
     server?.rebuildAll()
     return r
+  }
+  // Dev only: with INKWELL_CORE_PACK pointing at the Core-Pack checkout, an edit there reloads the pack without a restart.
+  if (process.env['INKWELL_CORE_PACK']) {
+    let timer: NodeJS.Timeout | undefined
+    watch(corePackDir(deps.appPath), { recursive: true, persistent: false }, () => {
+      clearTimeout(timer)
+      // a save writes several files; with no project open there is nothing to re-lint
+      timer = setTimeout(() => void (projectDir ? afterPackChange({ ok: true }) : refreshPacks(undefined)).then(() => deps.broadcast(IPC.packsChanged, null)), 400)
+    }).on('error', () => undefined)
   }
   const rebuildSwf = (name: string): void => {
     const info = server?.swfs().find((i) => i.name === name)
@@ -876,7 +886,12 @@ export function createSession(deps: SessionDeps) {
         const cg = await (codegenPacks ??= loadCodegenPacks(packDirs))
         const nodes = overlays.get(info.id)?.nodes ?? {}
         const instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (typeof o.instanceName === 'string' && o.instanceName ? [[id, o.instanceName]] : [])))
-        const out = generate(ir, { modId: meta.modId, instanceNames, graphs: { graphs: all, packs: cg.packs }, bindings: bindingsOf(nodes) })
+        const loaded = projectDir ? await loadComponentSources(projectDir).catch(() => undefined) : undefined // as the build does: Create Component needs the symbols
+        const components = loaded?.sources ?? []
+        const ids = new Set(components.map((c) => c.id))
+        const open = new Set(all.map((g) => g.id)) // the editor's copy of an open graph wins over the saved one
+        const graphsOf = [...all, ...(loaded?.graphs ?? []).filter((g) => g.component && ids.has(g.component) && !open.has(g.id))]
+        const out = generate(ir, { modId: meta.modId, instanceNames, graphs: { graphs: graphsOf, packs: cg.packs }, bindings: bindingsOf(nodes), ...(components.length ? { components } : {}) })
         const c = out.graphClasses.find((x) => x.graphId === live.id)
         if (!c) return { ok: false, error: 'No code was generated for this graph' }
         return { ok: true, as2: { source: c.source, lines: c.map.lines } }
@@ -946,6 +961,7 @@ export function createSession(deps: SessionDeps) {
       for (const m of [overlays, lintBySwf, unreachableBySwf, reports, buildBySwf, previews] as Map<string, unknown>[]) m.delete(swfId)
       graphs.delete(info.name)
       menus.delete(info.name)
+      pipeline?.forgetSwf(info.name)
       server!.forget(swfId) // its 'swfs' event refreshes the counts, lint and the project push
       return { ok: true, trash }
     },

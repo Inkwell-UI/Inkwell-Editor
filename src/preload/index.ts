@@ -98,6 +98,7 @@ const api: InkwellApi = {
   onFontProgress: (cb) => on(IPC.fontsProgress, cb),
   getDevState: () => ipcRenderer.invoke(IPC.devGet),
   onDevState: (cb) => on(IPC.devState, cb),
+  onPacksChanged: (cb) => on(IPC.packsChanged, cb),
   onDevEvents: (cb) => on(IPC.devEvents, cb),
   devConnect: () => ipcRenderer.invoke(IPC.devConnect),
   devDisconnect: () => ipcRenderer.invoke(IPC.devDisconnect),

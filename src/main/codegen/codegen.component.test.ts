@@ -81,7 +81,40 @@ describe('Create Component in a SWF', () => {
     expect(frameCode).toMatch(/this\.frame_p\.inkwellStack = \{mode: 1, spacing: 10, pad: \[8, 8, 8, 8\], counter: 0, w: \d+, h: \d+, start: \d+\};/)
     expect(g.graphClasses.find((c) => c.graphId === 'main')!.source).toContain('function stackAdd(parent, clip, component)')
     expect(g.graphClasses.find((c) => c.graphId === 'main')!.source).toContain('__g.stackAdd(')
+    // instances are spaced by the component's design size (the live size of a clip is 0 while a Set Image loads)
+    const source = g.graphClasses.find((c) => c.graphId === 'main')!.source
+    expect(source).toMatch(/if \(component == "5:1"\) return \[\d+(\.\d+)?, \d+(\.\d+)?\];/)
+    expect(source).toContain('clip.inkwellH = sz[1];')
+    expect(source).toContain('var ch = c.inkwellH == undefined ? c._height : c.inkwellH;')
     // a graph with neither node gets no stack methods
     expect(generate(ir, { modId: 'M', graphs: { graphs: [graph('main', [node('ol', 'core/OnLoad@1')], [])], packs } }).graphClasses[0]!.source).not.toContain('stackAdd')
+  })
+})
+
+describe('menu variables in a component graph', () => {
+  const menuVar = { id: 'sel', name: 'selected', type: 'String' as const, scope: 'menu' as const, default: '' }
+  const menu = { ...graph('main', [node('ol', 'core/OnLoad@1')], []), variables: [menuVar] }
+  // On Load of the component sets the menu variable `selected` from the prop `label`
+  const comp = () => ({
+    ...newComponentGraph('5:1', 'ListItem'),
+    props: [{ id: 'p1', name: 'label', type: 'String' as const, default: '' }],
+    nodes: [node('ol', 'core/OnLoad@1'), node('sv', 'core/SetVariable@1', { variable: 'sel' }), node('gp', 'core/GetProp@1', { prop: 'p1', propType: 'String', propName: 'label' })],
+    edges: [wire('ol', 'then', 'sv', 'in'), wire('gp', 'value', 'sv', 'value')]
+  })
+  const make = () => generateGraphClasses({ modId: 'M', swfCls: 'T', graphs: [menu, comp()] as never, packs, layerPath: () => undefined })
+
+  it('writes the variable on the instance of the menu graph, reached through the owner chain', () => {
+    const r = make()
+    expect(r.issues).toEqual([])
+    const c = r.classes.find((x) => x.component)!
+    expect(c.source).toContain('__g.menuGraph().v_selected = ')
+    expect(c.source).toContain('function menuGraph() {')
+    expect(c.source).toContain('__g.mb("selected");') // the menu's bindings of it refresh
+    expect(c.source).not.toContain('this.v_selected') // no copy of its own
+  })
+
+  it('a menu graph and a component without menu variables get no menuGraph()', () => {
+    const r = generateGraphClasses({ modId: 'M', swfCls: 'T', graphs: [graph('main', [node('ol', 'core/OnLoad@1')], []), compGraph()] as never, packs, layerPath: () => undefined })
+    expect(r.classes.every((c) => !c.source.includes('function menuGraph'))).toBe(true)
   })
 })

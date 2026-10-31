@@ -163,7 +163,7 @@ export function stackAttachCode(n: Frame, nodes: Swf['nodes'], pathOf: (id: stri
  * (`restack` lays out the live instances of `parent.inkwellDyn`); `stackRemove` removes one. In a preview build they trace `[Inkwell] spawn <parent id> <component id> <clip path>` and
  * `[Inkwell] despawn <clip path>`, and `[Inkwell] bounds <clip path> <x> <y> <w> <h>` (the box on the stage, after every layout), so the editor can list the instances a graph made (`parent.inkwellId` is set by the frame code for a parent picked on the node).
  */
-export const stackMethods = (preview: boolean): string[] => [
+export const stackMethods = (preview: boolean, sizes: Readonly<Record<string, readonly [number, number]>> = {}): string[] => [
   ...(preview
     ? [
         '    function bnd(clip) {',
@@ -172,8 +172,19 @@ export const stackMethods = (preview: boolean): string[] => [
         '    }'
       ]
     : []),
+  // The design size of each component (Figma): the layout spaces instances by it, not by the live size, which is 0 while a Set Image is still loading.
+  '    function stackSize(component) {',
+  // `if` per component: the FFDec AS2 compiler does not parse an object literal with quoted keys
+  ...Object.entries(sizes).map(([id, [w, h]]) => `        if (component == ${q(id)}) return [${num(w)}, ${num(h)}];`),
+  '        return undefined;',
+  '    }',
   '    function stackAdd(parent, clip, component) {',
   ...(preview ? ['        trace("[Inkwell] spawn " + parent.inkwellId + " " + component + " " + clip);'] : []),
+  '        var sz = this.stackSize(component);',
+  '        if (sz != undefined) {',
+  '            clip.inkwellW = sz[0];',
+  '            clip.inkwellH = sz[1];',
+  '        }',
   '        if (parent.inkwellDyn == undefined) parent.inkwellDyn = [];',
   '        parent.inkwellDyn.push(clip);',
   '        if (parent.inkwellStack == undefined) {',
@@ -205,8 +216,10 @@ export const stackMethods = (preview: boolean): string[] => [
   '        var oy = parent.inkwellOffY == undefined ? 0 : parent.inkwellOffY;',
   '        for (var j = 0; j < live.length; j++) {',
   '            var c = live[j];',
-  '            var size = vert ? c._height : c._width;',
-  '            var cross = vert ? c._width : c._height;',
+  '            var cw = c.inkwellW == undefined ? c._width : c.inkwellW;', // the design size, the live one only for a clip that has none
+  '            var ch = c.inkwellH == undefined ? c._height : c.inkwellH;',
+  '            var size = vert ? ch : cw;',
+  '            var cross = vert ? cw : ch;',
   '            var cp = padC0;',
   '            if (s.counter == 1) cp += (innerC - cross) / 2;',
   '            else if (s.counter == 2) cp += innerC - cross;',

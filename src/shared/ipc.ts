@@ -101,6 +101,8 @@ export const IPC = {
   fontsProgress: 'fonts:progress',
   devGet: 'dev:get',
   devState: 'dev:state',
+  /** Dev only (INKWELL_CORE_PACK): the core pack folder changed and main reloaded it; the renderer asks for the pack set again. */
+  packsChanged: 'packs:changed',
   devEvents: 'dev:events',
   devConnect: 'dev:connect',
   devDisconnect: 'dev:disconnect',
@@ -276,6 +278,7 @@ export interface InkwellApi {
   /** The game dev connection (docs/dev-mode.md): state (never the token, only `tokenMasked`), the stream of trace/watch/pin events in batches, and the controls. */
   getDevState(): Promise<DevState>
   onDevState(cb: (s: DevState) => void): () => void
+  onPacksChanged(cb: () => void): () => void
   onDevEvents(cb: (e: DevEvent[]) => void): () => void
   /** Connect (also retries after a refusal) / Disconnect (stops the automatic retries for this session). */
   devConnect(): Promise<void>

@@ -6,7 +6,7 @@ import { Swf } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
 import { defIndex } from '../../shared/graphs'
 import { validateGraph } from '../../shared/graphValidate'
-import { corePack } from '../codegen/codegen.testutil'
+import { allPacks } from '../codegen/codegen.testutil'
 import { loadCodegenPacks } from '../codegen/packs'
 import { loadPacks } from '../packs'
 import { loadProject } from '../project'
@@ -21,7 +21,7 @@ const papyrusExe = process.env['INKWELL_PAPYRUS'] && existsSync(process.env['INK
 const load = async () => {
   const project = await loadProject(sample)
   const s = project.swfs['hud']!
-  const { packs } = await loadCodegenPacks([corePack])
+  const { packs } = await loadCodegenPacks(allPacks)
   const overlay = s.overlay as { nodes: Record<string, { instanceName?: string }> }
   const instanceNames = Object.fromEntries(Object.entries(overlay.nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : [])))
   const ir = Swf.parse(s.ir)
@@ -30,9 +30,9 @@ const load = async () => {
 }
 
 describe('samples/hud-graph-popup', () => {
-  it('all three graphs validate against the core pack', async () => {
+  it('all three graphs validate against core and the official packs', async () => {
     const { ir, graphs } = await load()
-    const defs = defIndex(await loadPacks([corePack]))
+    const defs = defIndex(await loadPacks(allPacks))
     expect(graphs.map((x) => x.id).sort()).toEqual(['extras', 'main', 'nodes'])
     for (const gr of graphs) expect(validateGraph(gr, { defs, layers: new Set(Object.keys(ir.nodes)), siblings: graphs }), gr.id).toEqual([])
   })

@@ -218,5 +218,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
   const setModId = (id: string): void => void project?.then((p) => void (p.meta.modId = id))
   // packs were installed or restored: `cfg.packDirs` is read again on the next build
   const resetPacks = (): void => void (codegenPacks = undefined)
-  return { onChange, getFfdec, setModId, resetPacks, stop: (): void => ffdec?.stop?.() }
+  /** Drops a discarded swf from the cached project, or the next build's `saveProject` would write its folder back. */
+  const forgetSwf = (name: string): void => void project?.then((p) => void delete p.swfs[name])
+  return { onChange, getFfdec, setModId, forgetSwf, resetPacks, stop: (): void => ffdec?.stop?.() }
 }

@@ -37,6 +37,7 @@ export function startBridge(): () => void {
   void api.getDevState().then((s) => useDevStore.getState().setState(s))
   offs.push(api.onDevState((s) => useDevStore.getState().setState(s)))
   offs.push(api.onDevEvents((e) => useDevStore.getState().apply(e)))
+  offs.push(api.onPacksChanged(reloadPacks))
   // the game starts connecting: show Behaviour with the Runtime Trace on the game source
   offs.push(
     useDevStore.subscribe((s, prev) => {

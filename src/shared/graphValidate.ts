@@ -1,6 +1,6 @@
 import { pinCompat, PinType, SAVED_LIMITS, SAVED_TYPES, type Graph, type GraphNode, type NodeDef } from '@inkwell-ui/spec'
 import type { Issue } from '@nicklaj/knotwork'
-import { nodeName } from './graphs'
+import { menuVariablesFor, nodeName } from './graphs'
 
 /** Codes of graph issues; the Lint dock, the export gate and Strict Mode show them like compiler lint. */
 export type GraphCode =
@@ -68,6 +68,8 @@ const component = (t: PinType): boolean => t === 'Text' || t === 'Button' || t =
 /**
  * Effective pins of a node. `typeFrom: "<field>"` takes the type from the field (a pin type name) or from the graph variable whose id is in the field
  * (`connection` stays at the declared type); `extra.dynamicOutputs` / `extra.dynamicInputs: "<field>"` append one data output / input per `{name, type}` entry of that array field (On Widget Call params / Call Widget args).
+ * `extra.repeatInputs: {count: "<field>", pins: [...]}` appends the listed input pins once per index, named `<pin><index>` (`key0`, `value0`, `key1`...): Make Object's pairs. The count is that integer field
+ * (the schema's default when the node has none, held between its `minimum` and `maximum`).
  * Functions: `extra.dynamicExits: "<field>"` appends one Exec output per `{name}` entry (Call Function); `extra.signatureOutputs` / `extra.signatureInputs: "inputs" | "outputs"`
  * append data pins from that list of the graph's own `signature` (Function Entry / Function Exit), so `sig` is the signature of the graph the node lives in.
  */
@@ -84,6 +86,13 @@ export function resolvePins(def: NodeDef, node: Pick<GraphNode, 'fields'>, vars:
     return list.flatMap((p) => (typeof p?.name === 'string' && isPinType(p.type) ? [{ name: p.name, type: p.type, hasDefault: true }] : []))
   }
   const extra = def.extra as Record<string, unknown> | undefined
+  const repeated = (): ResolvedPin[] => {
+    const r = extra?.['repeatInputs'] as { count?: unknown; pins?: unknown } | undefined
+    if (typeof r?.count !== 'string' || !Array.isArray(r.pins)) return []
+    const schema = def.fields[r.count] as { default?: number; minimum?: number; maximum?: number } | undefined
+    const n = Math.min(Math.max(Math.trunc(Number(node.fields[r.count] ?? schema?.default)) || 0, schema?.minimum ?? 0), schema?.maximum ?? 64)
+    return Array.from({ length: n }, (_, i) => (r.pins as NodeDef['inputs']).map((p) => ({ ...typed(p), name: `${p.name}${i}` }))).flat()
+  }
   const exits = (): ResolvedPin[] => {
     const f = extra?.['dynamicExits']
     const list = typeof f === 'string' && Array.isArray(node.fields[f]) ? (node.fields[f] as { name?: unknown }[]) : []
@@ -95,7 +104,7 @@ export function resolvePins(def: NodeDef, node: Pick<GraphNode, 'fields'>, vars:
     return (list ?? []).map((p) => ({ name: p.name, type: p.type, hasDefault: true }))
   }
   return {
-    inputs: [...def.inputs.map(typed), ...dynamic('dynamicInputs'), ...fromSig('signatureInputs')],
+    inputs: [...def.inputs.map(typed), ...dynamic('dynamicInputs'), ...repeated(), ...fromSig('signatureInputs')],
     outputs: [...def.outputs.map(typed), ...exits(), ...dynamic('dynamicOutputs'), ...fromSig('signatureOutputs')]
   }
 }
@@ -120,6 +129,7 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
     out.push({ level, message, nodeId, code, graphId: g.id, ...extra })
   }
   const nodes = new Map(g.nodes.map((n) => [n.id, n]))
+  const seen = [...g.variables, ...menuVariablesFor(g, ctx.siblings ?? [])] // a component graph also sees the menu's variables
   const pins = new Map<string, ReturnType<typeof resolvePins>>()
   const defOf = new Map<string, NodeDef>()
   for (const n of g.nodes) {
@@ -129,7 +139,7 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
       continue
     }
     defOf.set(n.id, d)
-    pins.set(n.id, resolvePins(d, n, g.variables, g.signature))
+    pins.set(n.id, resolvePins(d, n, seen, g.signature))
   }
   const wiredInputs = new Map<string, Set<string>>() // node id -> input pins with a wire
   const execOut = new Map<string, string[]>() // node id -> successors over Exec wires

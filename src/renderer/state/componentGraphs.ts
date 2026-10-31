@@ -32,6 +32,17 @@ export async function createComponentGraph(componentId: string, name: string, ap
   return r
 }
 
+const making = new Set<string>()
+/** Gives every listed component that has no graph its default one, so Create Component can offer all of them. Call after `loadComponentGraphs`. */
+export async function ensureComponentGraphs(rows: readonly { id: string; name: string }[], api: Api): Promise<void> {
+  await loadComponentGraphs(api)
+  const have = useComponentGraphs.getState().graphs
+  await Promise.all(rows.filter((r) => !have[r.id] && !making.has(r.id)).map(async (r) => {
+    making.add(r.id)
+    await createComponentGraph(r.id, r.name, api).finally(() => making.delete(r.id))
+  }))
+}
+
 export async function removeComponentGraph(componentId: string, api: Api): Promise<{ ok: true } | { ok: false; error: string }> {
   const r = await api.deleteComponentGraph(componentId)
   if (r.ok) useComponentGraphs.setState((s) => ({ graphs: Object.fromEntries(Object.entries(s.graphs).filter(([k]) => k !== componentId)) }))

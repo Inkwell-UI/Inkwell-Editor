@@ -78,7 +78,7 @@ export interface GenerateOptions {
 
 export interface Generated {
   /** The symbols compiled for `GenerateOptions.components`: Figma id, linkage name (what `attachMovie` takes) and character id. */
-  componentSymbols: { id: string; linkage: string; charId: number }[]
+  componentSymbols: { id: string; linkage: string; charId: number; /** Design size [width, height] of the drawn frame. */ size: [number, number] }[]
   /** Complete tag list, ready for `writeSwf` (ends with ShowFrame + End). */
   tags: Buffer[]
   /** SVG per shape, keyed by SWF character id (the file name FFDec -importShapes expects) and mapped to its node id. */
@@ -718,7 +718,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
     defs.push(T.sprite(id, place(drawn, path, ...background(drawn, path))))
     const linkage = componentLinkage(c.id)
     componentTags.push(T.exportAssets([{ id, name: linkage }]))
-    componentSymbols.push({ id: c.id, linkage, charId: id })
+    componentSymbols.push({ id: c.id, linkage, charId: id, size: [drawn.transform.width, drawn.transform.height] })
   }
 
   // a layer inside a component is addressed from the instance's clip (`__g.base`): its path inside the symbol, '' for the symbol itself
@@ -748,6 +748,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
     ? generateGraphClasses({
         modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}), ...(menu ? { menu: true } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}), ...(flowInfos.length ? { flow: flowClassName(mod) } : {}),
         componentLinkage: (id) => componentSymbols.find((c) => c.id === id)?.linkage,
+        componentSizes: Object.fromEntries(componentSymbols.map((c) => [c.id, c.size])),
         layerPath: (id, g) => (g.scope === 'blueprint' ? componentPath(id) : id === (widget && wf ? wf.frame.id : ir.root) ? '' : layerPaths.get(id)?.startsWith(basePrefix) ? layerPaths.get(id)!.slice(basePrefix.length) : undefined)
       })
     : undefined
