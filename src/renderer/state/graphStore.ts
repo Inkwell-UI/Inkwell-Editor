@@ -70,7 +70,7 @@ export interface GraphState extends Doc {
   setSelection(ids: string[]): void
   /** The scope of a variable is the graph's scope (menu graph: menu variables; component graph: component variables) unless given: `saved` (S5) goes to the menu graph. */
   addVariable(v: Pick<Variable, 'id' | 'name' | 'type'> & { default?: unknown; scope?: Variable['scope'] }): void
-  updateVariable(id: string, patch: Partial<Pick<Variable, 'name' | 'type' | 'default'>>): void
+  updateVariable(id: string, patch: Partial<Pick<Variable, 'name' | 'type' | 'default' | 'scope'>>): void
   removeVariable(id: string): void
   /** Function graphs: gives the function a new signature; the wires of its Function Entry / Exit nodes follow their pin by id. Callers follow through the store listener. */
   setSignature(next: NonNullable<Graph['signature']>): void

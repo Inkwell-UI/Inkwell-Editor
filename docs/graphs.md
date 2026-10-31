@@ -6,7 +6,16 @@ The data layer (storage, packs, store, validation) comes first, the graph UI (ca
 
 - A graph is `swfs/<swf>/graphs/<graphId>.json`. `src/main/project/graphFiles.ts` reads and writes it with `stableStringify` (sorted keys, 2-space indent, trailing newline; array order of nodes and edges is data and kept). Unknown keys at every level survive (the Spec schema is loose). A file that fails the schema or whose `id` differs from its file name is reported as a problem and left on disk, never deleted. Graph ids are checked (`isGraphId`) so an id cannot escape the folder. Writes use the same lock as `overlay.json`.
 - `loadProject` returns `swfs[name].graphs` and `saveProject` writes them (never deletes graph files).
-- One menu-scope graph per SWF (`createGraph` refuses a second); component graphs are created per component. The id is made from the name (`newGraphId`).
+- **Four kinds of graph** (Spec `Graph.scope`; the UI says it with the words in the right column):
+
+  | Spec scope | UI name | Belongs to | Made with |
+  | --- | --- | --- | --- |
+  | `menu` | menu graph | the SWF | Graphs `+` (the first one; `createGraph` refuses a second) |
+  | `component` | layer graph | a layer of the SWF | Graphs `+` (later ones, attached to the selected layer) |
+  | `blueprint` | component graph | a runtime component (a Figma component; the graph of every instance) | a click on the component in the Logic panel's Components section |
+  | `function` | function graph | the project (or a pack) | Functions `+` |
+
+  The Spec's word `component` is the layer graph; the UI never says "component graph" for it. Graph ids are made from the name (`newGraphId`).
 - IPC (`InkwellApi`, channels `graphs:*`, `packs:get`): `listGraphs(swf)`, `loadGraph(swf, id)`, `saveGraph(swf, graph)`, `createGraph(swf, name, scope)`, `deleteGraph(swf, id)`, `getPacks()`. All resolve `{ok:true,...}` or `{ok:false,error}`. Main keeps the last saved copy of every graph (like overlays) and validates it.
 - **Overlay `scripts`** holds the graph ids attached to a Figma node (`NodeOverlayPatch.scripts`). The renderer owns overlays, so attaching or detaching a graph is `editNode(swfId, nodeId, {scripts})` in the renderer, next to `createGraph` / `deleteGraph`; main never edits the overlay (a later renderer save would overwrite it).
 
@@ -31,7 +40,7 @@ Pin resolution (`resolvePins`): `typeFrom: "<field>"` takes the pin type from th
 
 ## Store (`src/renderer/state/graphStore.ts`)
 
-One zustand store per graph in React Flow shape (nodes, edges; handle ids `<pin>-in` / `<pin>-out`), with `data` holding the whole file node/edge so unknown keys round-trip (`toFlow` / `toGraph`). History is Knotwork's `createHistory`: typing in a field (`setField`, `rename`) coalesces per word, `beginDrag`/`endDrag` make a drag one entry, selection (`setSelection`) is not recorded. Saves are debounced (300 ms) through `setGraphSaver`; `flushGraphSaves()` before closing. Variables live in the graph file (a `saved` variable, S5, is added to the menu graph with `addVariable({scope: 'saved'})`; `savedTypeError` gives the Spec message for a type other than Bool, Number, String): a menu graph holds menu-scope variables, a component graph component-scope ones (`addVariable` sets the scope from the graph); `visibleVariables` gives a component graph the menu variables plus its own.
+One zustand store per graph in React Flow shape (nodes, edges; handle ids `<pin>-in` / `<pin>-out`), with `data` holding the whole file node/edge so unknown keys round-trip (`toFlow` / `toGraph`). History is Knotwork's `createHistory`: typing in a field (`setField`, `rename`) coalesces per word, `beginDrag`/`endDrag` make a drag one entry, selection (`setSelection`) is not recorded. Saves are debounced (300 ms) through `setGraphSaver`; `flushGraphSaves()` before closing. Variables live in the graph file (a `saved` variable, S5, is added to the menu graph with `addVariable({scope: 'saved'})`; `savedTypeError` gives the Spec message for a type other than Bool, Number, String): a menu graph holds menu-scope variables, a layer graph component-scope ones (`addVariable` sets the scope from the graph); `visibleVariables` gives a component graph the menu variables plus its own.
 
 **One history per SWF (UX 5.5).** Knotwork's history snapshots a single `nodes` array, so overlay and graphs cannot share one zundo store. `state/swfHistory.ts` keeps the order of edits across the SWF's stores (overlay + every graph): Undo reverts the latest edit of that SWF wherever it happened, Redo replays it, a new edit clears Redo, `useUndo` and the status bar read its counts. Limit: if a store trims its oldest entries (100 each) the ordering list can hold a stale key; it is skipped.
 
@@ -47,12 +56,12 @@ Main runs it (`session.ts` `refreshGraphLint`) on open, on every graph save/crea
 
 ## Graph UI (Phase 4)
 
-Debugging (AS2 split, Play, trace, pin values, Lint row opens the graph node): `docs/debugging.md`. Panels: `GraphPanel` (zone 4), the Navigator's GRAPHS section (`graph/GraphsList.tsx`), `VariablesPanel`, `DataBindingPanel`, `MockDataPanel`, and the graph-node branch of the Inspector (`graph/GraphNodeInspector.tsx`). Reference for the panels: `docs/ui-panels.md`.
+Debugging (AS2 split, Play, trace, pin values, Lint row opens the graph node): `docs/debugging.md`. Panels: `GraphPanel` (zone 4), the Logic panel's Graphs and Functions sections (`graph/GraphsList.tsx`), the variable strip (`graph/VariableStrip.tsx`), `DataBindingPanel`, `MockDataPanel`, and the graph-node branch of the Inspector (`graph/GraphNodeInspector.tsx`). Reference for the panels: `docs/ui-panels.md`.
 
 ### Which graph is open (`state/graphDocs.ts`)
 
 `useGraphDocs` keeps, per SWF, the graph ids (file order) and the open graph; `loadSwfGraphs` loads every graph of the SWF once (`listGraphs` + `loadGraph`) into `graphStore`s (`useSwfGraphs()` does it for the active SWF). `bridge.ts` wires `setGraphSaver` to `saveGraph`.
-- **[+ Graph]** (`addGraph`): the menu graph when the SWF has none, otherwise a component graph. `createGraph`, then the new id is appended to the overlay `scripts` of the SWF's root frame (menu graph) or of the selected layer (component graph; the root frame when nothing is selected) with `editNode`, so it joins the SWF's undo history. `removeGraph`: `deleteGraph`, then the id is removed from every layer's `scripts`, the store and its history entries are dropped (`dropGraphStore`, `unregisterHistory`: a late debounced save cannot bring the file back). Create and delete hit the disk at once and are not themselves undoable. `renameGraph` is a normal undoable edit of the graph name.
+- **[+ Graph]** (`addGraph`): the menu graph when the SWF has none, otherwise a component graph. `createGraph`, then the new id is appended to the overlay `scripts` of the SWF's root frame (menu graph) or of the selected layer (layer graph; the root frame when nothing is selected) with `editNode`, so it joins the SWF's undo history. `removeGraph`: `deleteGraph`, then the id is removed from every layer's `scripts`, the store and its history entries are dropped (`dropGraphStore`, `unregisterHistory`: a late debounced save cannot bring the file back). Create and delete hit the disk at once and are not themselves undoable. `renameGraph` is a normal undoable edit of the graph name.
 - **One selection model:** the selection also names the graph of the selected node (`SelectionState.graph`), so a Lint row or a trace line can open it. Selecting a component opens its graph (`model/graphNav.ts` `graphForComponent`, applied in `bridge.ts`: the first existing graph of the layer's `scripts`; the open one is kept when it already is one of them). Clicking a graph node calls `selectGraphNode(node, target)`, where `target` is the layer of the node's first component pin (`nodeTarget`), so the Navigator follows.
 
 ### Canvas (`graph/GraphCanvas.tsx`, `graph/NodeView.tsx`)
@@ -67,11 +76,11 @@ React Flow with Knotwork's `NAVIGATION_PROPS` (`onlyRenderVisibleElements`: off-
 - **Issues**: `createGraphValidation` (the shared `validateGraph`) feeds a badge (icon plus message tooltip, border colour) on each node and a wavy underline on the pin with the issue; the Lint dock shows the saved graph's issues from main. An unknown pack node shows a striped header "Unknown Pack Node (Data Preserved)", its kind, and handles for the pins its wires use; its fields stay untouched.
 - **Header**: breadcrumb `GRAPH: <swf> > <graph> > <layer it hangs on> > <selected node>` (the SWF and the layer are links) and the event jump list (every entry node; selects and centres it).
 - **AS2 split, live pin values**: Phase 6, `docs/debugging.md`. A selected node highlights its lines in the AS2 view; an output pin shows the last value the Ruffle preview traced (small badge).
-- **Tidy Layout** (`model/graphLayout.ts`, header button): layers by longest path along the wires, rows ordered by their sources' average row, anchored at the top-left of the old bounds; one undo entry, then the view fits. **Not built**: node collapse. Variables used by a component graph's Get/Set Variable nodes must be the graph's own (validation and codegen resolve `g.variables` only; `visibleVariables` also lists the menu graph's for the Variables panel).
+- **Tidy Layout** (`model/graphLayout.ts`, header button): layers by longest path along the wires, rows ordered by their sources' average row, anchored at the top-left of the old bounds; one undo entry, then the view fits. **Not built**: node collapse. Variables used by a layer graph's Get/Set Variable nodes must be the graph's own (validation and codegen resolve `g.variables` only; `visibleVariables` also lists the menu graph's for the Variables panel).
 
-### Variables (`VariablesPanel`)
+### Variables (`VariableStrip`)
 
-Add (name, type Bool/Number/String/Array/Object, scope menu | component), rename, retype, default, delete. A menu variable is added to the SWF's menu graph, a component variable to the open component graph (`model/variables.ts` `variableTarget`; the button says why when neither exists). The id is made from the name, unique across the SWF's graphs (`newVariableId`); nodes refer to the id, so renaming is safe. Edits are graph-store edits: SWF history, saved with the graph file.
+The open graph's variables are a row of chips under the Graph panel's breadcrumb (`graph/VariableStrip.tsx`), shown when the graph has variables or can get them (menu and layer graphs). A chip's dot has the colour of its type's pin; drag it onto the canvas to get or set it, click it to edit (name, type, default, "Keep in the save game" in a menu graph, delete). **Add** makes a variable in the open graph: a menu graph's is a menu variable, a layer graph's a layer-scope (`component`) one; a saved variable is a menu variable with that checkbox ticked (Bool, Number, String only). The id is made from the name, unique across the SWF's graphs (`newVariableId`); nodes refer to the id, so renaming is safe. Edits are graph-store edits: SWF history, saved with the graph file.
 
 ### Data binding and mock data
 

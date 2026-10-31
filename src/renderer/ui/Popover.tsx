@@ -19,12 +19,13 @@ export function Popover({ trigger, children, align = 'start', up, label, classNa
   const root = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [side, setSide] = useState(align)
-  // keep the panel inside the window: if it overflows on the requested side, open it towards the other
+  // keep the panel inside its own panel (a layout panel clips what sticks out) and the window: if it overflows on the requested side, open it towards the other
   useLayoutEffect(() => {
     if (!open || !panel.current) return
     const r = panel.current.getBoundingClientRect()
-    if (r.left < 0 && side === 'end') setSide('start')
-    else if (r.right > window.innerWidth && side === 'start') setSide('end')
+    const bounds = root.current?.closest('[data-panel]')?.getBoundingClientRect()
+    if (r.left < Math.max(0, bounds?.left ?? 0) && side === 'end') setSide('start')
+    else if (r.right > Math.min(window.innerWidth, bounds?.right ?? window.innerWidth) && side === 'start') setSide('end')
   }, [open, side])
   useEffect(() => {
     if (!open) return

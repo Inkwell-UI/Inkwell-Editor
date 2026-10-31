@@ -17,6 +17,7 @@ import { findGraphStore, isReadOnlyGraph, type GraphStore } from '../state/graph
 import { useSelectionStore } from '../state/selectionStore'
 import { useSettingsStore } from '../state/settingsStore'
 import { strings } from '../strings'
+import { VariableStrip } from '../graph/VariableStrip'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
 import { Panel } from './Panel'
@@ -142,6 +143,7 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
         </Popover>
         {nodeTitle && <><span aria-hidden="true">&gt;</span><span>{nodeTitle}</span></>}
       </nav>
+      <VariableStrip swfId={swf.id} store={store} />
       {isReadOnlyGraph(store) && <p className="dim settings-sub" role="status" data-testid="graph-readonly">{strings.graph.readOnly}</p>}
       <div className={`graph-body${split ? ' is-split' : ''}`}>
         <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} fitSignal={tidied} />

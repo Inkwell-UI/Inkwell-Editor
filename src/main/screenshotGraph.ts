@@ -177,12 +177,13 @@ export async function runGraphShots(o: { outDir: string; projectDir: string; win
   key('Escape')
   await wait(300)
 
-  // Variables panel (left tab)
-  await must('[data-testid="tab-variables"]')
+  // Variables strip (under the graph's breadcrumb): the Add chip opens a small form
+  await must('[data-testid="var-toggle"]')
   await wait(300)
   await setValue('[data-testid="var-name"]', 'score')
   await setValue('[data-testid="var-type"]', 'Number')
   await must('[data-testid="var-add"]')
+  await must('[data-testid="var-toggle"]')
   await setValue('[data-testid="var-name"]', 'visible flag')
   await setValue('[data-testid="var-type"]', 'Bool')
   await must('[data-testid="var-add"]')

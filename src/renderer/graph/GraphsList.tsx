@@ -123,7 +123,7 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
             <button type="button" className="layer-main" aria-pressed={active} title={locked} onClick={locked ? undefined : onOpen} onDoubleClick={fn && !locked ? () => setEditing(name) : undefined} data-testid="graph-open">
               {locked ? <Lock size={14} aria-hidden="true" className="type-icon" /> : <Workflow size={14} aria-hidden="true" className="type-icon" />}
               <span className="layer-name">{name}</span>
-              {!fn && <span className="layer-type">{scope === 'menu' ? strings.nav.menuGraph : strings.nav.componentGraph}</span>}
+              {!fn && <span className="layer-type">{scope === 'menu' ? strings.nav.menuGraph : scope === 'blueprint' ? strings.nav.componentGraph : strings.nav.layerGraph}</span>}
             </button>
             <span className="graph-row-actions">
               {fn ? (

@@ -489,18 +489,7 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .graph-row-main { display: flex; align-items: center; gap: 2px; }
 .graph-row-main .layer-main { flex: 1; min-width: 0; }
 .graph-row-events { padding: 0 8px 4px 26px; font-size: 11px; }
-.vars, .bind, .mock { display: flex; flex-direction: column; gap: 6px; }
-.vars-add { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 4px; align-items: center; }
-.vars-add > :first-child { grid-column: 1 / -1; }
-.var-row { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--line); }
-.var-name { display: flex; align-items: center; gap: 4px; flex: 1 1 80px; min-width: 0; }
-.var-name .gn-input { flex: 1; min-width: 0; }
-.var-meta { display: flex; align-items: center; gap: 6px; flex: 0 1 auto; min-width: 0; }
-.var-meta select.gn-input { flex: 0 0 auto; width: auto; }
-.var-meta input.gn-input { flex: 0 1 72px; width: 72px; min-width: 0; }
-.var-meta .chip { flex: none; }
-.var-grip { cursor: grab; color: var(--fg-faint); display: flex; padding: 2px; }
-.var-grip:hover { color: var(--fg); }
+.bind, .mock { display: flex; flex-direction: column; gap: 6px; }
 .var-drop { position: fixed; z-index: 30; display: flex; gap: 4px; padding: 6px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius); }
 .var-drop-backdrop { position: fixed; inset: 0; z-index: 29; }
 .bind-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 16px; }
@@ -509,7 +498,7 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .bind-warn { display: inline-flex; }
 .mock-row { max-width: 820px; display: grid; grid-template-columns: minmax(100px, 220px) auto minmax(100px, 300px) auto; gap: 6px; align-items: center; }
 .mock-row .btn { justify-self: start; }
-.mock-row .gn-input, .vars .gn-input, .bind .gn-input { max-width: none; }
+.mock-row .gn-input, .bind .gn-input { max-width: none; }
 
 /* AS2 split view */
 .as2-view { display: flex; flex-direction: column; gap: 4px; }

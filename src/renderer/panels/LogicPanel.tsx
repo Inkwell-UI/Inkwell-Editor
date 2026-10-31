@@ -5,11 +5,10 @@ import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { ComponentsSection } from './ComponentsSection'
 import { Panel } from './Panel'
-import { VariablesSection } from './VariablesSection'
 
 /**
- * Behaviour, left column under the layers: everything the author wrote, in one place. Graphs, Functions and Components each open a graph in the Graph panel; Variables are
- * those of the graph that is open. The node packs live in the Library tab of the bottom dock.
+ * Behaviour, left column under the layers: everything the author wrote, in one place. Graphs, Functions and Components each open a graph in the Graph panel. The open graph's
+ * variables are a strip of chips in the Graph panel (`graph/VariableStrip.tsx`); the node packs live in the Library tab of the bottom dock.
  */
 export function LogicPanel() {
   const actions = useGraphActions()
@@ -25,7 +24,6 @@ export function LogicPanel() {
           <FunctionRows actions={actions} />
         </section>
         <ComponentsSection />
-        <VariablesSection />
       </div>
     </Panel>
   )
