@@ -2,7 +2,7 @@ import type { NodeDef } from '@inkwell-ui/spec'
 import { useEffect, useState } from 'react'
 import type { Graph } from '@inkwell-ui/spec'
 import { defIndex, type LoadedPack, type PackSet } from '../../shared/graphs'
-import { setLibraryFunctions } from '../state/graphStore'
+import { setLibraryFunctions, setReadOnlyPacks } from '../state/graphStore'
 import { inkwell } from './api'
 import { useProject } from './useProject'
 
@@ -22,6 +22,7 @@ const packSet = (): Promise<PackSet> | undefined =>
   inkwell &&
   (cached ??= inkwell.getPacks().then((s) => {
     setLibraryFunctions(libraryMap(s))
+    setReadOnlyPacks(s.packs.filter((p) => p.origin !== 'library').map((p) => p.manifest.id)) // only the project's own packs can be edited
     return s
   }))
 let lastDir: string | undefined | null = null // null = not seen yet

@@ -3,7 +3,7 @@ import type { Graph } from '@inkwell-ui/spec'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { callFields, newFunctionGraph } from '../../shared/functions'
 import { graph, node, wire } from '../../main/codegen/codegen.testutil'
-import { functionChoices, functionGraphs, getGraphStore, resetGraphs, setGraphSaver, setLibraryFunctions, toGraph } from './graphStore'
+import { functionChoices, functionGraphs, getGraphStore, isReadOnlyGraph, resetGraphs, setGraphSaver, setLibraryFunctions, setReadOnlyPacks, toGraph } from './graphStore'
 
 let n = 0
 const ids = () => `l${++n}`
@@ -31,6 +31,23 @@ describe('library functions in the store', () => {
     expect(functionGraphs(main).map((g) => g.id)).toEqual(['mine', 'my-lib/greet'])
     expect(functionChoices(main)).toEqual([{ id: 'mine', name: 'Mine' }, { id: 'my-lib/greet', name: 'Greet (my-lib)' }])
     expect(own.getState().meta.scope).toBe('function')
+  })
+
+  it('a function of a read-only pack opens but refuses edits; a local pack\'s function can be edited', () => {
+    setReadOnlyPacks(['imp'])
+    const ro = getGraphStore('swf', '@lib:imp', { ...lib(), id: 'imp/greet' })
+    ro.getState().rename('Changed')
+    ro.getState().addNode({ id: 'x', kind: 'core/Log@1', pos: { x: 0, y: 0 } })
+    expect(isReadOnlyGraph(ro)).toBe(true)
+    expect(ro.getState().name).toBe('Greet')
+    expect(ro.getState().nodes.some((nd) => nd.id === 'x')).toBe(false)
+    ro.getState().setSelection([ro.getState().nodes[0]!.id]) // selection still works
+    expect(ro.getState().nodes[0]!.selected).toBe(true)
+    const local = getGraphStore('swf', '@lib:mine', { ...lib(), id: 'mine/greet' })
+    local.getState().rename('Changed')
+    expect(isReadOnlyGraph(local)).toBe(false)
+    expect(local.getState().name).toBe('Changed')
+    setReadOnlyPacks([])
   })
 
   it('a library function open for editing is not one of the SWF\'s own functions', () => {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Info, Search } from 'lucide-react'
-import type { PackCandidate, PackIndexEntry, PacksState } from '../../shared/packs'
+import type { LockedPack, PackCandidate, PackIndexEntry, PacksState } from '../../shared/packs'
+import { compareSemver } from '../../shared/semverRange'
 import { inkwell } from '../hooks/api'
 import { reloadPacks } from '../hooks/usePacks'
 import { useProject } from '../hooks/useProject'
@@ -96,7 +97,7 @@ function Candidate({ c, action, trust, onCancel, onInstalled }: { c: PackCandida
 }
 
 /** One field takes a pack name (filters the Packs Index) or a GitHub address (a row of its own that fetches the latest release). */
-export function AddPackDialog({ onClose, onInstalled, onCreated }: { onClose(): void; onInstalled(c: PackCandidate): void; onCreated(id: string): void }) {
+export function AddPackDialog({ locked, onClose, onInstalled, onCreated }: { locked: LockedPack[]; onClose(): void; onInstalled(c: PackCandidate): void; onCreated(id: string): void }) {
   const [tab, setTab] = useState<'github' | 'new'>('github')
   const [index, setIndex] = useState<{ list?: PackIndexEntry[]; error?: string }>({})
   const [query, setQuery] = useState('')
@@ -120,7 +121,7 @@ export function AddPackDialog({ onClose, onInstalled, onCreated }: { onClose(): 
   return (
     <Dialog title={candidate ? S.confirmTitle : S.addTitle} onClose={onClose}>
       {candidate ? (
-        <Candidate c={candidate} action={S.install} trust onCancel={() => setCandidate(undefined)} onInstalled={onInstalled} />
+        <Candidate c={candidate} action={locked.some((p) => p.id === candidate.id) ? S.update : S.install} trust onCancel={() => setCandidate(undefined)} onInstalled={onInstalled} />
       ) : (
         <div className="pack-add" data-testid="packs-add-dialog">
           <div className="pack-tabs" role="tablist">
@@ -148,13 +149,17 @@ export function AddPackDialog({ onClose, onInstalled, onCreated }: { onClose(): 
             <div className="pack-empty"><b>{input ? S.noMatch(input) : S.indexEmpty}</b>{S.noMatchHint}</div>
           ) : (
             <ul className="pack-list" data-testid="packs-index">
-              {hits.map((e) => (
+              {hits.map((e) => {
+                const have = locked.find((p) => p.id === e.id)
+                const current = have && compareSemver(e.latest, have.version) <= 0 // installed, and the index offers nothing newer
+                return (
                 <li key={e.id} className="pack-item">
                   <span className="pack-item-title"><b className="mono">{e.id}</b><span className="mono">{e.latest}</span>{e.deprecated && <span className="pack-tag">{S.deprecatedTag}</span>}</span>
                   <span className="pack-item-desc">{e.deprecated ?? e.description ?? e.repo}</span>
-                  <Btn reason={wait} onClick={() => void fetchPack(`https://github.com/${e.repo}/releases/tag/v${e.latest}`)}>{S.pick}</Btn>
+                  <Btn reason={current ? S.inLibraryReason(have.version) : wait} onClick={() => void fetchPack(`https://github.com/${e.repo}/releases/tag/v${e.latest}`)}>{current ? S.inLibrary : have ? S.update : S.pick}</Btn>
                 </li>
-              ))}
+                )
+              })}
             </ul>
           ))}
           {busy && <p className="dim">{S.working}</p>}

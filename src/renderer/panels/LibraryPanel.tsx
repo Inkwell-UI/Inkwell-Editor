@@ -82,7 +82,7 @@ export function LibraryPanel() {
             ))}
           </ul>
         </section>
-        {dialog === 'add' && <AddPackDialog onClose={() => setDialog(undefined)} onInstalled={installed} onCreated={installed} />}
+        {dialog === 'add' && <AddPackDialog locked={state.locked} onClose={() => setDialog(undefined)} onInstalled={installed} onCreated={installed} />}
         {dialog === 'update' && <UpdatePacksDialog onClose={() => setDialog(undefined)} onInstalled={installed} />}
       </div>
     </Panel>

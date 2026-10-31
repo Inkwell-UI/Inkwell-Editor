@@ -29,3 +29,11 @@ export function satisfies(version: string, range: string): boolean {
     }
   })
 }
+
+/** Orders two versions by major.minor.patch (a pre-release tag is ignored): negative when `a` is older. */
+export const compareSemver = (a: string, b: string): number => {
+  const n = (v: string): number[] => v.split(/[-+]/)[0]!.split('.').map(Number)
+  const [x, y] = [n(a), n(b)]
+  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i]! - y[i]!
+  return 0
+}

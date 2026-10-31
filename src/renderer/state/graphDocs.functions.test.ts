@@ -95,14 +95,14 @@ describe('drag a function onto a pack', () => {
   it('writes it to the pack, calls say <pack>/<id>, and the SWF copy is gone', async () => {
     const fn = newFunctionGraph('fade', 'Fade', () => 'f1')
     const main = graph('main', [node('ol', 'core/OnLoad@1'), node('c', 'core/CallFunction@1', { function: 'fade', inputs: fn.signature!.inputs, outputs: fn.signature!.outputs, exits: fn.signature!.exits })], [wire('ol', 'then', 'c', 'in')])
-    const api = { ...fakeApi([main, fn]), addFunctionToLibrary: vi.fn(async (_p: string, g: Graph) => ({ ok: true as const, id: g.id })) }
+    const api = { ...fakeApi([main, fn]), addFunctionToLibrary: vi.fn(async () => ({ ok: true as const, id: '0' })) }
     await loadSwfGraphs(swf, api)
-    const r = await moveFunctionToPack({ swf, fnId: 'fade', packId: 'my-pack' }, api)
-    expect(r).toEqual({ ok: true, id: 'my-pack/fade' })
+    const r = await moveFunctionToPack({ swf, fnId: 'fade', packId: 'my-pack' }, api) // the fake pack numbers it 0
+    expect(r).toEqual({ ok: true, id: 'my-pack/0' })
     expect(api.addFunctionToLibrary).toHaveBeenCalledWith('my-pack', expect.objectContaining({ id: 'fade', scope: 'function' }))
     expect(api.deleteGraph).toHaveBeenCalledWith('Hud', 'fade')
     expect(useGraphDocs.getState().ids['swf']).toEqual(['main'])
-    expect(toGraph(findGraphStore('swf', 'main')!.getState()).nodes.find((x) => x.id === 'c')!.fields['function']).toBe('my-pack/fade')
+    expect(toGraph(findGraphStore('swf', 'main')!.getState()).nodes.find((x) => x.id === 'c')!.fields['function']).toBe('my-pack/0')
   })
 
   it('changes nothing when the pack refuses', async () => {

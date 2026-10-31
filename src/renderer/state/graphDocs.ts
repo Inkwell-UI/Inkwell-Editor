@@ -136,7 +136,7 @@ export async function moveFunctionToPack(o: { swf: SwfRef; fnId: string; packId:
   if (!store || store.getState().meta.scope !== 'function') return { ok: false, error: 'Only a function can be moved into a pack.' }
   const r = await api.addFunctionToLibrary(o.packId, toGraph(store.getState()))
   if (!r.ok) return r
-  const to = `${o.packId}/${o.fnId}`
+  const to = `${o.packId}/${r.id}` // the pack numbers its functions: its id, not the project's
   retargetCalls(o.swf.id, o.fnId, to)
   dropGraphStore(o.swf.id, o.fnId)
   const d = await api.deleteGraph(o.swf.name, o.fnId)

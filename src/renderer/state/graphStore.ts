@@ -169,9 +169,21 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
     key: docKey,
     slices: (s) => [s.nodes, s.edges, s.variables, s.name, s.signature, s.props]
   })
+  const packId = swfName.startsWith('@lib:') ? swfName.slice('@lib:'.length) : undefined
   const store = create<GraphState>()(
     temporal(
-      (set, get) => ({
+      (set0, get) => {
+        // a function of an imported, installed or core pack is read-only: any change of the document is dropped, selection and measuring still pass
+        const set: typeof set0 = (partial, replace) => {
+          if (packId !== undefined && readOnlyPacks.has(packId)) {
+            const s = get()
+            const patch = typeof partial === 'function' ? partial(s) : partial
+            if (docKey({ ...s, ...patch }) !== docKey(s)) return
+            return (set0 as (p: unknown, r?: boolean) => void)(patch, replace)
+          }
+          return (set0 as (p: unknown, r?: boolean) => void)(partial, replace)
+        }
+        return {
         ...toFlow(initial),
         rename: (name) => history.edit('name', name, get, () => set({ name })),
         addNode: (n, wire) =>
@@ -259,7 +271,8 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
         applyGraph: (g) => set((s) => ({ ...toFlow(g), meta: s.meta, nodes: toFlow(g).nodes })),
         beginDrag: () => history.beginDrag(store),
         endDrag: () => history.endDrag(store)
-      }),
+        }
+      },
       { ...history.options, limit: 100 }
     )
   ) as unknown as GraphStore
@@ -305,6 +318,15 @@ export function retargetCalls(swfId: string, from: string, to: string): void {
       t.resume()
     }
   }
+}
+
+/** Packs whose functions cannot be edited (everything but the project's own packs). Set when the pack set arrives (`hooks/usePacks`). */
+let readOnlyPacks: ReadonlySet<string> = new Set()
+export const setReadOnlyPacks = (ids: Iterable<string>): void => void (readOnlyPacks = new Set(ids))
+/** Whether a store holds a function of a read-only pack. */
+export function isReadOnlyGraph(store: GraphStore): boolean {
+  const name = [...stores.values()].find((e) => e.store === store)?.swfName
+  return !!name?.startsWith('@lib:') && readOnlyPacks.has(name.slice('@lib:'.length))
 }
 
 /** Library functions of the loaded packs by `<packId>/<functionId>` (the graph's id is that qualified id). Set when the pack set arrives (`hooks/usePacks`). */

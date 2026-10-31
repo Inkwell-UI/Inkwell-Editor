@@ -32,12 +32,12 @@ function project() {
   outer.edges = [wire(oFe, 'then', 'c', 'in'), wire('c', 'Done', oFx, 'in')] as Graph['edges']
   return { inner, outer }
 }
-/** A project with the pack "my-lib" holding inner and outer (outer calls my-lib/inner), made the way the editor does: create, then add each function. */
+/** A project with the pack "my-lib" holding inner (id 0, the pack numbers its functions) and outer (id 1, calls my-lib/0), made the way the editor does: create, then add each function. */
 async function packed() {
   const { inner, outer } = project()
   const projectDir = tmp()
   expect((await createLibrary(projectDir, { id: 'my-lib', version: '1.0.0', description: 'Helpers' }, '0.5.0')).ok).toBe(true)
-  const q = { ...outer, nodes: outer.nodes.map((x) => (x.id === 'c' ? { ...x, fields: { ...x.fields, function: 'my-lib/inner' } } : x)) } as Graph
+  const q = { ...outer, nodes: outer.nodes.map((x) => (x.id === 'c' ? { ...x, fields: { ...x.fields, function: 'my-lib/0' } } : x)) } as Graph
   expect((await addFunctionToLibrary(projectDir, 'my-lib', inner)).ok).toBe(true)
   expect((await addFunctionToLibrary(projectDir, 'my-lib', q)).ok).toBe(true)
   return { projectDir, inner, outer }
@@ -59,14 +59,14 @@ describe('createLibrary and addFunctionToLibrary', () => {
     expect(((await createLibrary(dir, { id: 'x', version: '1.0' }, '0.5.0')) as { error: string }).error).toContain('1.0.0')
   })
 
-  it('refuses a function that calls a project function, naming it, or one the pack already has', async () => {
+  it('refuses a function that calls a project function, naming it, or the pack numbers its functions, so the same project id never clashes', async () => {
     const { outer } = project()
     const dir = tmp()
     await createLibrary(dir, { id: 'my-lib', version: '1.0.0' }, '0.5.0')
     expect(((await addFunctionToLibrary(dir, 'my-lib', outer)) as { error: string }).error).toContain('"inner"')
     const { inner } = project()
-    expect((await addFunctionToLibrary(dir, 'my-lib', inner)).ok).toBe(true)
-    expect(((await addFunctionToLibrary(dir, 'my-lib', inner)) as { error: string }).error).toContain('already has')
+    expect(await addFunctionToLibrary(dir, 'my-lib', inner)).toEqual({ ok: true, id: '0' })
+    expect(await addFunctionToLibrary(dir, 'my-lib', inner)).toEqual({ ok: true, id: '1' }) // same project id, the next free number of the pack
   })
 })
 
@@ -79,7 +79,7 @@ describe('exportPack', () => {
     const manifest = JSON.parse(readFileSync(join(r.folder, 'manifest.json'), 'utf8'))
     expect(manifest).toMatchObject({ id: 'my-lib', version: '1.1.0', compatible: { tool: '^0.5.0' }, extra: { description: 'Helpers' } })
     expect(JSON.parse(readFileSync(join(projectDir, 'libraries/my-lib/manifest.json'), 'utf8')).version).toBe('1.1.0')
-    expect(existsSync(join(r.folder, 'functions/outer.json'))).toBe(true)
+    expect(existsSync(join(r.folder, 'functions/1.json'))).toBe(true)
     expect(r.zip.endsWith('my-lib-1.1.0.zip')).toBe(true)
     expect(existsSync(r.zip)).toBe(true)
   })
@@ -92,7 +92,7 @@ describe('exportPack', () => {
     expect(((await exp(projectDir, { version: '1.0' })) as { error: string }).error).toContain('1.0.0')
     expect((await exp(projectDir, { packId: 'nope' })).ok).toBe(false)
     const broken = { ...inner, nodes: inner.nodes.filter((x) => !x.kind.includes('FunctionEntry')) }
-    writeFileSync(join(projectDir, 'libraries/my-lib/functions/inner.json'), JSON.stringify(broken))
+    writeFileSync(join(projectDir, 'libraries/my-lib/functions/0.json'), JSON.stringify({ ...broken, id: '0' }))
     expect(((await exp(projectDir)) as { error: string }).error).toContain('has errors')
   })
 })
@@ -103,22 +103,22 @@ describe('importLibrary and the loader', () => {
     if (!e.ok) throw new Error(e.error)
     const projectDir = tmp()
     const r = await importLibrary(projectDir, e.zip)
-    expect(r).toEqual({ ok: true, id: 'my-lib', version: '1.0.0', functions: ['inner', 'outer'], nodes: 0 })
+    expect(r).toEqual({ ok: true, id: 'my-lib', version: '1.0.0', functions: ['0', '1'], nodes: 0 })
     const dirs = await localLibraryDirs(projectDir)
     expect(dirs).toHaveLength(1)
     const { packs: cg, problems } = await loadCodegenPacks([corePack, ...dirs])
     expect(problems).toEqual([])
-    expect([...cg.functions!.keys()].sort()).toEqual(['my-lib/inner', 'my-lib/outer'])
+    expect([...cg.functions!.keys()].sort()).toEqual(['my-lib/0', 'my-lib/1'])
     // a menu graph calls the library function; only the functions it reaches are compiled in, with the library calls resolved
-    const lib = cg.functions!.get('my-lib/outer')!
-    const main = graph('main', [node('ol', 'core/OnLoad@1'), node('c', 'core/CallFunction@1', callFields({ ...lib, id: 'my-lib/outer' } as Graph))], [wire('ol', 'then', 'c', 'in')])
-    main.nodes[1]!.fields['function'] = 'my-lib/outer'
+    const lib = cg.functions!.get('my-lib/1')!
+    const main = graph('main', [node('ol', 'core/OnLoad@1'), node('c', 'core/CallFunction@1', callFields({ ...lib, id: 'my-lib/1' } as Graph))], [wire('ol', 'then', 'c', 'in')])
+    main.nodes[1]!.fields['function'] = 'my-lib/1'
     const out2 = generateGraphClasses({ modId: 'M', swfCls: 'T', graphs: [main], packs: cg, layerPath: () => undefined })
     expect(out2.issues).toEqual([])
-    expect(out2.classes.map((c) => c.graphId)).toEqual(['main', 'my-lib/outer', 'my-lib/inner'])
-    expect(out2.classes.filter((c) => c.fn).map((c) => c.cls)).toEqual(['TGraph_my_lib_outer', 'TGraph_my_lib_inner'])
+    expect(out2.classes.map((c) => c.graphId)).toEqual(['main', 'my-lib/1', 'my-lib/0'])
+    expect(out2.classes.filter((c) => c.fn).map((c) => c.cls)).toEqual(['TGraph_my_lib_1', 'TGraph_my_lib_0'])
     const outerSrc = out2.classes[1]!.source
-    expect(outerSrc).toContain('new mods.M.TGraph_my_lib_inner(__g.base, __g, {')
+    expect(outerSrc).toContain('new mods.M.TGraph_my_lib_0(__g.base, __g, {')
     // validation sees the library function
     const errs = validateGraph(main, { defs: packs.defs, library: cg.functions! }).filter((x) => x.code === 'graph-function')
     expect(errs).toEqual([])
@@ -150,8 +150,8 @@ describe('imported packs are immutable', () => {
     expect((await importLibrary(dir, e.zip)).ok).toBe(true)
     expect(isImportedPack(join(dir, 'libraries/my-lib'))).toBe(true)
     expect(((await addFunctionToLibrary(dir, 'my-lib', project().inner)) as { error: string }).error).toContain('imported')
-    expect(((await removeLibraryFunction(dir, 'my-lib', 'inner')) as { error: string }).error).toContain('imported')
+    expect(((await removeLibraryFunction(dir, 'my-lib', '0')) as { error: string }).error).toContain('imported')
     expect(((await exp(dir)) as { error: string }).error).toContain('imported')
-    expect((await removeLibraryFunction(local.projectDir, 'my-lib', 'inner')).ok).toBe(true)
+    expect((await removeLibraryFunction(local.projectDir, 'my-lib', '0')).ok).toBe(true)
   })
 })

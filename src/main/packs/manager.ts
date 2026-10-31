@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { NodeDef, PackIndex, PackManifest, packAssetUrl, parsePacksLock, SPEC_VERSION, writePacksLock, type PackIndexEntry, type PackLockEntry, type PacksLock } from '@inkwell-ui/spec'
 import { readZip } from '../deploy/zip'
+import { compareSemver as cmp } from '../../shared/semverRange'
 import type { LockedPack, PackCandidate, PackResult, PacksState } from '../../shared/packs'
 
 /**
@@ -54,13 +55,6 @@ export function parseGitHubRef(input: string): { repo: string; version?: string 
 
 /** The repo of a lock entry's source URL. */
 const repoOf = (source: string): string | undefined => parseGitHubRef(source)?.repo
-
-const cmp = (a: string, b: string): number => {
-  const n = (v: string): number[] => v.split(/[-+]/)[0]!.split('.').map(Number)
-  const [x, y] = [n(a), n(b)]
-  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i]! - y[i]!
-  return 0
-}
 
 async function download(fetch: Fetch, url: string): Promise<Buffer> {
   let res: Awaited<ReturnType<Fetch>>

@@ -72,15 +72,19 @@ export async function addFunctionToLibrary(projectDir: string, packId: string, f
   if (imported) return { ok: false, error: imported }
   const own = callsOf(fn).find((c) => !c.includes('/'))
   if (own) return { ok: false, error: `"${fn.name}" calls the project function "${own}". Move that one into a pack first: a pack cannot call functions of the project.` }
-  const file = join(projectDir, LIBRARIES_DIR, packId, 'functions', `${fn.id}.json`)
-  if (await stat(file).catch(() => undefined)) return { ok: false, error: `The pack "${packId}" already has a function "${fn.id}".` }
+  // the pack numbers its own functions (the lowest free 0, 1, 2...): the project's id means nothing here and would clash, both count from function-2
+  const dir = join(projectDir, LIBRARIES_DIR, packId, 'functions')
+  const taken = new Set((await readdir(dir).catch(() => [] as string[])).map((f) => f.replace(/\.json$/, '')))
+  let n = 0
+  while (taken.has(String(n))) n++
+  const id = String(n)
   try {
-    await mkdir(dirname(file), { recursive: true })
-    await writeFile(file, JSON.stringify(fn, null, 2) + '\n')
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, `${id}.json`), JSON.stringify({ ...fn, id }, null, 2) + '\n')
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
-  return { ok: true, id: fn.id }
+  return { ok: true, id }
 }
 
 export interface ExportInput {
