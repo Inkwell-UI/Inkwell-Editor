@@ -1,4 +1,5 @@
-import { Fragment, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { Fragment, useRef, type ComponentType, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { strings } from '../strings'
 import { nodeKey, validateLayout, type LayoutNode, type SplitNode, type TabsNode } from './layout'
 import { panelIds, panelRegistry, type PanelDef } from './panelRegistry'
@@ -13,12 +14,18 @@ export interface WorkspaceProps {
   onResize?(key: string, sizes: number[] | undefined): void
   /** A tab was chosen in the tab group with this key. */
   onTab?(key: string, panel: string): void
+  /** A foldable tab group was folded or opened (see `foldable` in layout.ts). */
+  onFold?(key: string, folded: boolean): void
+  /** Extra content at the right of a folded tab group's strip, found by any panel id in the group. */
+  stripExtras?: Record<string, ComponentType>
 }
 
 interface Ctx {
+  stripExtras: Record<string, ComponentType>
   registry: Record<string, PanelDef>
   onResize: (key: string, sizes: number[] | undefined) => void
   onTab: (key: string, panel: string) => void
+  onFold: (key: string, folded: boolean) => void
 }
 
 /**
@@ -26,7 +33,7 @@ interface Ctx {
  * tab strip, panels become registry components. A bad layout shows its problems instead of a half-built window. This is the one component
  * to replace if a docking library is adopted; layouts and panels stay as they are.
  */
-export function Workspace({ layout, registry = panelRegistry, onResize = () => undefined, onTab = () => undefined }: WorkspaceProps) {
+export function Workspace({ layout, registry = panelRegistry, onResize = () => undefined, onTab = () => undefined, onFold = () => undefined, stripExtras = {} }: WorkspaceProps) {
   const errors = validateLayout(layout, registry === panelRegistry ? panelIds : Object.keys(registry))
   if (errors.length)
     return (
@@ -37,13 +44,15 @@ export function Workspace({ layout, registry = panelRegistry, onResize = () => u
     )
   return (
     <div className="workspace">
-      <Node node={layout} ctx={{ registry, onResize, onTab }} axis="row" />
+      <Node node={layout} ctx={{ registry, onResize, onTab, onFold, stripExtras }} axis="row" />
     </div>
   )
 }
 
 const cellStyle = (node: LayoutNode, extra: CSSProperties = {}): CSSProperties => ({ flex: `${node.size ?? 1} 1 0`, ...extra })
-const isFixed = (n: LayoutNode): boolean => n.kind === 'panel' && !!n.fixed
+const isFolded = (n: LayoutNode): boolean => n.kind === 'tabs' && !!n.foldable && !!n.folded
+/** A slot with a fixed extent along its parent's axis: no share, no splitter beside it. */
+const isFixed = (n: LayoutNode): boolean => (n.kind === 'panel' && !!n.fixed) || isFolded(n)
 
 function Node({ node, ctx, axis }: { node: LayoutNode; ctx: Ctx; axis: 'row' | 'column' }) {
   if (node.kind === 'panel') {
@@ -145,6 +154,7 @@ function TabGroup({ node, ctx }: { node: TabsNode; ctx: Ctx }) {
   const def = ctx.registry[active]!
   const Body = def.component
   const min = node.tabs.reduce((m, t) => ({ w: Math.max(m.w, ctx.registry[t.panel]!.minSize.width), h: Math.max(m.h, ctx.registry[t.panel]!.minSize.height) }), { w: 0, h: 0 })
+  const folded = isFolded(node)
   const move = (e: ReactKeyboardEvent, i: number): void => {
     const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
     if (!d) return
@@ -153,16 +163,39 @@ function TabGroup({ node, ctx }: { node: TabsNode; ctx: Ctx }) {
     ctx.onTab(key, next)
     requestAnimationFrame(() => document.getElementById(`tab-${next}`)?.focus())
   }
+  const select = (panel: string): void => {
+    // the open tab of a foldable group folds it again
+    if (node.foldable && !folded && panel === active) return ctx.onFold(key, true)
+    ctx.onTab(key, panel)
+    if (folded) ctx.onFold(key, false)
+  }
+  const tablist = (
+    <div className="tablist" role="tablist" aria-label={node.tabs.map((t) => ctx.registry[t.panel]!.title).join(', ')}>
+      {node.tabs.map((t, i) => (
+        <TabButton key={t.panel} id={t.panel} def={ctx.registry[t.panel]!} selected={!folded && t.panel === active} onSelect={() => select(t.panel)} onKeyDown={(e) => move(e, i)} />
+      ))}
+    </div>
+  )
+  // A folded group is only its tab strip; it keeps that height and the neighbour takes the rest.
+  const style = folded ? { flex: '0 0 auto', minWidth: min.w } : cellStyle(node, { minWidth: min.w, minHeight: min.h + 28 })
+  const label = folded ? strings.dockShow : strings.dockHide
+  const Extra = folded ? node.tabs.map((t) => ctx.stripExtras[t.panel]).find(Boolean) : undefined
   return (
-    <div className="slot tabgroup" data-cell data-tabs={key} style={cellStyle(node, { minWidth: min.w, minHeight: min.h + 28 })}>
-      <div className="tablist" role="tablist" aria-label={node.tabs.map((t) => ctx.registry[t.panel]!.title).join(', ')}>
-        {node.tabs.map((t, i) => (
-          <TabButton key={t.panel} id={t.panel} def={ctx.registry[t.panel]!} selected={t.panel === active} onSelect={() => ctx.onTab(key, t.panel)} onKeyDown={(e) => move(e, i)} />
-        ))}
-      </div>
-      <div className="tabbody" role="tabpanel" aria-labelledby={`tab-${active}`} data-panel={active}>
-        <Body />
-      </div>
+    <div className="slot tabgroup" data-cell data-tabs={key} data-folded={folded || undefined} style={style}>
+      {node.foldable ? (
+        <div className="tabstrip">
+          {tablist}
+          {Extra && <Extra />}
+          <button type="button" className="tab-fold" title={label} aria-label={label} aria-expanded={!folded} onClick={() => ctx.onFold(key, !folded)} data-testid={`fold-${key}`}>
+            {folded ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+          </button>
+        </div>
+      ) : tablist}
+      {!folded && (
+        <div className="tabbody" role="tabpanel" aria-labelledby={`tab-${active}`} data-panel={active}>
+          <Body />
+        </div>
+      )}
     </div>
   )
 }

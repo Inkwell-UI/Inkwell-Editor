@@ -21,6 +21,8 @@ export const strings = {
   layoutInvalid: 'The workspace layout is invalid',
   splitterLabel: 'Resize',
   splitterTitle: 'Drag or use the arrow keys to resize. Double-click to reset.',
+  dockShow: 'Show the panel',
+  dockHide: 'Hide the panel',
 
   selectInFigma: 'Select in Figma',
   selectInFigmaReason: 'Figma is not connected: start the Inkwell plugin in Figma and allow it here',
@@ -98,7 +100,7 @@ export const strings = {
   nav: {
     title: 'Navigator',
     search: 'Filter layers',
-    graphs: 'GRAPHS',
+    graphs: 'Graphs',
     addGraph: 'Add graph',
     addGraphShort: '+ Graph',
     graphsEmpty: 'No graphs yet. + Graph creates the menu graph; later ones are component graphs.',
@@ -112,7 +114,7 @@ export const strings = {
     deleteGraph: (name: string) => `Delete graph ${name}`,
     deleteConfirm: 'Delete graph file',
     deleteCancel: 'Keep it',
-    layers: 'LAYERS',
+    layers: 'Layers',
     runtimeTag: 'Runtime',
     runtimeTip: 'Made by a graph while the preview runs (Create Component). Not a layer of your design: it is gone when the preview restarts.',
     componentLayers: (name: string) => `INSIDE ${name.toUpperCase()}`,
@@ -212,7 +214,7 @@ export const strings = {
 
   comp: {
     title: 'Components',
-    heading: 'COMPONENTS',
+    heading: 'Components',
     empty: 'No components yet. Make a component in Figma and it shows up here, in a frame or away from the design.',
     noSwf: 'Select a SWF first: the Graph panel shows the graph in it',
     graphFailed: 'Could not create the graph',
@@ -224,7 +226,7 @@ export const strings = {
     empty: 'No functions yet. Use + > New function, or select nodes in a graph and press G.',
     deleteFunction: (name: string) => `Delete function ${name}`,
     more: 'More actions',
-    heading: 'LIBRARY',
+    heading: 'Library',
     project: 'This project',
     functionCount: (n: number) => `${n} function${n === 1 ? '' : 's'}`,
     newFunction: 'New function',
@@ -273,7 +275,7 @@ export const strings = {
   assets: {
     title: 'Assets',
     sections: [
-      { id: 'as2', title: 'IMPORTED CLASSES', action: '+ Import', reason: 'Not available yet', empty: 'No imported classes.' }
+      { id: 'as2', title: 'Imported classes', action: '+ Import', reason: 'Not available yet', empty: 'No imported classes.' }
     ],
     packNodes: (n: number) => `${n} nodes`,
     packs: {
@@ -313,6 +315,8 @@ export const strings = {
       why: 'Why',
       fetch: 'Fetch',
       pick: 'Add',
+      inLibrary: 'In library',
+      inLibraryReason: (v: string) => `Version ${v} is already in this project and up to date`,
       confirmTitle: 'Install this pack?',
       updateTitle: 'Update packs',
       trust: 'Packs are data and AS2 templates; nothing in a pack runs in the editor. They generate code into your menu, so install packs from repositories you trust. There is no signing in 0.5: compare the hash with the one the author publishes.',
@@ -348,17 +352,18 @@ export const strings = {
     emptyCanvas: 'Empty graph. Press Space to add a node, or drag a wire out of a pin.',
     /** Contextual key hints above the minimap: what applies to nothing, one node or several selected nodes (only keys the canvas or shell handles). */
     keyGroups: (selected: number, wires: number): [string, string][][] => {
-      const nav: [string, string][] = [['Zoom to all', 'F'], ['Find nodes', 'Ctrl F']]
+      const nav: [string, string][] = [['Zoom to all', 'F'], ['Find nodes', 'Ctrl+F']]
       const groups: [string, string][][] = selected
-        ? [[['Copy', 'Ctrl C'], ['Duplicate', 'Ctrl D'], [selected > 1 ? `Delete ${selected} nodes` : 'Delete', 'Del']], [['Zoom to selection', 'F'], ['Find nodes', 'Ctrl F']]]
+        ? [[['Copy', 'Ctrl+C'], ['Duplicate', 'Ctrl+D'], [selected > 1 ? `Delete ${selected} nodes` : 'Delete', 'Del']], [['Zoom to selection', 'F'], ['Find nodes', 'Ctrl+F']]]
         : wires
           ? [[['Delete wire', 'Del']], nav]
-          : [[['Add a node', 'Space'], ['Paste', 'Ctrl V'], ['Select all', 'Ctrl A']], nav]
-      return [...groups, [['Undo', 'Ctrl Z'], ['Redo', 'Ctrl Y']]]
+          : [[['Add a node', 'Space'], ['Paste', 'Ctrl+V'], ['Select all', 'Ctrl+A']], nav]
+      return [...groups, [['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Y']]]
     },
     breadcrumbLabel: 'Graph location',
     pickGraph: 'Open another graph',
     eventsTitle: 'Events',
+    readOnly: 'Read-only: this function belongs to an imported or installed pack. Copy it to the project to change it.',
     eventsFilter: 'Filter',
     spawnTitle: 'Add node',
     spawnFromPin: 'Add node connected to this pin',
@@ -413,6 +418,7 @@ export const strings = {
     scopeSaved: 'saved',
     scopeTip: (scope: string) => (scope === 'menu' ? 'Visible to every graph of this SWF' : scope === 'saved' ? 'Kept in the save game by the Inkwell Runtime (Bool, Number, String); custom menus only' : 'Visible to this component graph only'),
     add: 'Add',
+    addVariable: 'Add variable',
     nameFirst: 'Type a name first',
     pick: 'Pick variable...',
     none: 'No variables in this graph.',
@@ -438,15 +444,16 @@ export const strings = {
     title: 'Inspector',
     none: 'Nothing selected. Select a layer in the Navigator, on the stage (Inspect mode) or in the Lint dock.',
     graphNode: (id?: string) => `Graph node ${id ?? ''}`,
+    gnDetails: 'Details',
     gnKind: 'Kind',
     gnId: (id: string) => `Graph node ID: ${id}`,
-    gnIssues: (n: number) => `ISSUES (${n})`,
-    gnFields: 'FIELDS',
+    gnIssues: (n: number) => `Issues (${n})`,
+    gnFields: 'Fields',
     gnNone: 'The graph node is not in the open graph.',
     nodeId: (id: string) => `Figma node ID: ${id}`,
-    issues: (n: number) => `ISSUES (${n})`,
+    issues: (n: number) => `Issues (${n})`,
     noIssues: 'No issues for this layer.',
-    gfx: 'IN GAME',
+    gfx: 'In game',
     gfxFrameRoot: 'The root frame is transparent in game, so its fills are not drawn. Use a rectangle for a background.',
     gfxFrameNone: 'No fill, and the content is not clipped.',
     gfxFrameClip: 'Clip content',
@@ -463,7 +470,7 @@ export const strings = {
     spacing: 'Letter spacing',
     truncate: 'Truncate',
     truncateNote: 'Not supported yet',
-    font: 'FONT RESOLUTION',
+    font: 'Font resolution',
     fontNone: 'No font report for this layer yet. Build the SWF first.',
     dataBinding: {
       label: 'Data binding',
@@ -506,7 +513,7 @@ export const strings = {
       4: 'Rule 4: no alias found (lint error font-unmapped)',
       5: 'An embedded font chosen in the overlay (wins over rules 1 to 4)'
     } as Record<number, string>,
-    overlay: 'BEHAVIOR',
+    overlay: 'Behavior',
     role: 'Role',
     roleNone: '(none)',
     listTemplate: 'List item template',
@@ -589,7 +596,7 @@ export const strings = {
     select: (layer: string) => `Select ${layer}`,
     noIssues: 'No issues.',
     noMatch: 'No issue matches the filter.',
-    budget: 'HUD PERFORMANCE BUDGET',
+    budget: 'HUD performance budget',
     shapes: 'Shapes',
     masks: 'Masks',
     alpha: 'Alpha layers',
@@ -639,10 +646,11 @@ export const strings = {
     title: 'Runtime Trace & Watch',
     game: 'Game: not connected',
     hotReload: 'Hot Reload',
+    lineCount: (n: number) => `${n} trace line${n === 1 ? '' : 's'}`,
     clear: 'Clear Trace',
     later: `${BY} Inkwell Runtime (0.3)`,
-    live: 'LIVE TRACE',
-    watch: 'LIVE VARIABLE WATCH',
+    live: 'Live trace',
+    watch: 'Live variable watch',
     watchCols: ['Scope', 'Name', 'Value'],
     start: 'Start Skyrim with Dev Mode enabled',
     source: 'Source: Preview',
@@ -716,6 +724,8 @@ export const strings = {
     approvalNote: 'Open Figma and run the Inkwell plugin: it connects by itself. The first time, this window asks you to allow it.',
     mirror: 'Mirror Figma selection',
     mirrorNote: 'Selecting a layer in Figma selects it here. Selecting here cannot select it in Figma yet.',
+    tidyHang: 'Tidy Layout: hang data nodes under the exec line',
+    tidyHangTip: 'On: the exec chain is one straight line and data nodes (Get Variable, Split, Array Push...) hang below it, next to the node they feed. Off: every node sits in a column by how far along the wires it is.',
     buildAll: 'Build All',
     building: 'Building...',
     buildNoFfdec: 'FFDec or Java was not found',
@@ -748,7 +758,11 @@ export const strings = {
     packs: (list: readonly { id: string; version: string }[]) => (list.length ? `Packs: ${list.map((p) => `${p.id} ${p.version}`).join(', ')}` : 'Packs: none'),
     deploy: 'Deploy',
     deployTip: 'Last deploy. Stages: compile, vanilla check, write.',
-    lint: (e: number, w: number) => `Lint: ${e} Err, ${w} Warn`,
+    environment: 'Environment',
+    lint: (e: number, w: number) => {
+      const n = (c: number, word: string): string => `${c} ${word}${c === 1 ? '' : 's'}`
+      return e + w === 0 ? 'No lint issues' : [e && n(e, 'error'), w && n(w, 'warning')].filter(Boolean).join(', ')
+    },
     lintTip: 'Lint errors block Deploy (warnings too in Strict Mode). Click to open the Lint dock.',
   },
 

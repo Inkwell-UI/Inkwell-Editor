@@ -29,7 +29,7 @@ export function Btn({ children, icon: Icon, label, reason, onClick, pressed, var
   return (
     <button
       type="button"
-      className={`btn btn-${variant}${reason ? ' is-disabled' : ''}${className ? ` ${className}` : ''}`}
+      className={`btn btn-${variant}${children == null || children === false ? ' btn-icon' : ''}${reason ? ' is-disabled' : ''}${className ? ` ${className}` : ''}`}
       aria-disabled={reason ? true : undefined}
       aria-pressed={pressed}
       aria-expanded={expanded}

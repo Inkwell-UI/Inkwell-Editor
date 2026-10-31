@@ -71,10 +71,10 @@ function WorkspaceSwitcher() {
     requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-workspace="${next}"]`)?.focus())
   }
   return (
-    <div className="seg" role="radiogroup" aria-label={strings.top.workspaces} onKeyDown={onKey}>
+    <div className="seg seg-tabs" role="radiogroup" aria-label={strings.top.workspaces} onKeyDown={onKey}>
       {WORKSPACE_IDS.map((id, i) => (
         <button key={id} type="button" role="radio" aria-checked={active === id} tabIndex={active === id ? 0 : -1} className="btn btn-seg" data-workspace={id} data-testid={`workspace-${id}`} onClick={() => setActive(id)} title={strings.top.workspaceTip(id, i + 1)}>
-          {strings.top.workspaceNames[id]} <kbd>{i + 1}</kbd>
+          {strings.top.workspaceNames[id]} <kbd>Ctrl+{i + 1}</kbd>
         </button>
       ))}
     </div>

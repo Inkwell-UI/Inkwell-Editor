@@ -1,0 +1,80 @@
+# UI style: the Filled style
+
+The one look of every control in the editor. Read this before changing any UI, and update it when a rule changes. It is written for the owner and for any AI working in this repo.
+
+Chosen 2026-10-31 from three directions (A Filled, B Outlined, C Soft). A was picked because it uses the tone steps the dark theme already has and draws the fewest lines, so a dense graph screen stays calm. Nothing here has been checked against a screenshot of every screen; see "Known gaps".
+
+## Where things live
+
+| What | File |
+| --- | --- |
+| Every colour and the control tokens | `src/renderer/theme.css` (the only place with colour values) |
+| Shared control rules, panels, dialogs | `src/renderer/styles.css` (one global sheet, no scoping) |
+| Graph canvas and node controls | `src/renderer/graph/graph.css` |
+| The button component | `src/renderer/ui/Btn.tsx` (also `Fold`, `Popover`, `Tip`, `Dialog` in `ui/`) |
+| All UI text | `src/renderer/strings.ts` |
+
+## Tokens (`theme.css`)
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--ctl-h` | 28px | Height of buttons, dropdowns and fields |
+| `--ctl-h-sm` | 24px | Rows inside a list, fields on canvas nodes, dropdown options |
+| `--radius` | 4px | Every corner |
+| `--radius-chip` | 3px | Chips, badges, keys inside segmented controls |
+| `--field-bg` | `--sunken` | Fields and dropdowns (one step darker than the pane) |
+| `--btn-bg` / `--btn-bg-hover` | `--surface-2` / `--surface-3` | Buttons (one step lighter than the pane) |
+
+Use the tokens, never a literal height, radius or colour. Rare exceptions that stay literal: round things (`50%` dots, the 18px focus badge), pill overlays on the preview stage (`.mode-chip`), the node run glow.
+
+## The rules
+
+1. **No borders on controls.** Separation is a tone step: fields are darker than the pane, buttons are lighter. Borders are `1px solid transparent` so sizes do not jump. Focus shows a 1px `--accent` border on fields and a 1px inset `--accent` ring on buttons and tabs (`:focus-visible`), a 2px `--focus` outline elsewhere.
+2. **Height.** 28px for buttons, dropdowns and fields. 24px for list rows, node fields and dropdown options. Icon-only buttons are 28px squares.
+3. **Radius.** 4px everywhere, 3px on chips. Do not add 5, 6, 8 or 10.
+4. **Buttons** (`Btn`, class `.btn`): secondary is filled one step up. `variant="primary"` is an ink fill, at most one per screen area (Build All). `quiet` has no fill, for toolbars. A disabled button (`reason` set) is dimmed, never dashed, and keeps its reason as tooltip. `Btn` adds `btn-icon` (a square) by itself when it has no visible text. Never test for an icon-only button in CSS with `:has(> svg:only-child)`: text nodes are ignored, so labelled buttons match too (this squeezed the preview toolbar labels once).
+5. **Dropdowns** are plain `<select>` elements. `select { appearance: base-select }` (Chromium 135+, Electron 45 has it) lets CSS style the open list too: `::picker(select)`, `option`, `::picker-icon`. The closed field is a filled field with a chevron at the right. The `select` rule centres its text with `display: inline-flex; align-items: center` (without it the text sits too high). If you need a dropdown, use a `<select>`. A custom popover list is only for rows that carry more than a label.
+6. **Fields** (`input`, `.input`, `.gn-input`): filled, no border, `padding: 0 8px`. Set `background-color`, never the `background` shorthand on a select (it wipes the chevron).
+7. **Tabs** are underline tabs everywhere: `.tab`, the dock tabs, `.pack-tabs`, and the mode switcher (`.seg.seg-tabs`). No boxed or italic tabs. A segmented choice (Preview / Game) is `.seg` with `.btn-seg` buttons on a sunken track.
+8. **Hotkeys** are plain dim text in the format `Ctrl+C`, with `kbd` or the label, at the right of what they trigger. No boxes. Strings use `Ctrl+Z`, never `Ctrl Z`. Single keys stay as they are (`F`, `Del`, `Space`).
+9. **Section titles** are sentence case, 12px, semibold, dim: `Graphs`, `Layers`, `Fields`, `Issues (3)`. No uppercase text in `strings.ts` and no `text-transform: uppercase` or letter-spacing in CSS for titles.
+10. **Chips** (`.chip`) are filled one step up, 11px text, 18px high.
+11. **Status bar** has no dividing lines. Rare facts (spec version, FFDec, packs) live in the Environment popover, not in the bar.
+12. **Type sizes**: 12px for controls and rows, 11px for chips and hints, 14px for the Inspector node name. Add another size only with a reason.
+
+## Docks fold
+
+The bottom dock of every workspace is one `TabGroup` in `workspace/Workspace.tsx` and can fold to its tab strip.
+
+- Layout data: a tabs node has `foldable` and `folded` (`workspace/layout.ts`); `tabs(panels, active, size, 'folded' | 'open')` in `workspaces.ts` sets them. Layout and Behaviour start folded, Localization starts open.
+- State: `folds` in `state/workspaceStore.ts` (session only, not persisted), applied by `applyOverrides`. `showDockTab(panel)` opens the tab and unfolds the dock.
+- User actions: the chevron at the right of the strip folds or opens it, clicking the selected tab folds it, clicking any tab while folded opens it.
+- Strip extras: `stripExtras` on `Workspace`, keyed by a panel id in the group (`AppShell.tsx`, `STRIP_EXTRAS`). The Behaviour dock shows `shell/DockStrip.tsx` (trace line count and Hot Reload, the shared `hooks/useHotReload.ts`).
+
+## Pack text for the Inspector
+
+A node definition can carry `extra.inspector` (no spec change, optional): `description` (one line under the node name), `labels` (field or unwired pin name to the label shown) and `options` (field name to option value to label). Only the Inspector reads them (`fieldRows(..., inspector = true)` in `model/graphModel.ts`); the canvas node keeps raw names. A field without a label shows its name as words (`valueType` becomes "Value type"). Only Compare has text so far (`Inkwell-Core-Pack/nodes/Compare.json`, `CHANGELOG.md`). After editing a pack run `yarn sync:core-pack`.
+
+## Adding or changing a control: checklist
+
+1. Reuse first: `Btn`, `Fold`, `Popover`, `Tip`, an existing class. A new look needs a reason in this file.
+2. Take height, radius and fills from the tokens. No literal colours.
+3. Strings go in `strings.ts`, sentence case, hotkeys as `Ctrl+X`.
+4. Name new classes with a component prefix (`deploy-scope`, `dock-strip`). Never a bare word (`row`, `item`, `seg`, `group`, `tip`, `dot`). The sheet is global.
+5. Before adding or removing a class, grep `styles.css` and `graph.css` for `\.name\b` and every `*.tsx` for the name in `className` strings, including ancestor selectors (`.menu li button`). An `!important` means something else was being overridden.
+6. Typecheck and tests do not see CSS. Look at the screen, and check the neighbours: top bar, the three docks, preview toolbar, Variables, Inspector, a dialog, the status bar.
+7. If markup changed that a screenshot driver (`screenshot*.ts`) uses, update the driver or say it was not run. The Variables add form is closed once there are variables, which `screenshotGraph.ts` does not expect.
+
+## Known gaps
+
+- Knotwork pieces (zoom buttons, minimap, the canvas shortcut list layout, the Events list) are only lightly restyled from here. Fully matching them needs a change in the Knotwork repo and a new pinned tag.
+- Dialogs, Settings and the Setup Doctor inherit the new rules but were not reviewed one by one.
+- Some literal `4px` radii remain in `styles.css`; they equal the token and can be swapped when touched.
+- The canvas shortcut list is still always on screen (an always-visible overlay). A "?" button to show it was proposed and not built.
+- Only Compare has Inspector text; the other core pack nodes show humanised field names.
+- None of this has been verified in Skyrim or against a full screenshot sweep; it was checked with `yarn typecheck` and `yarn test` and by the owner's screenshots of the top bar, preview toolbar and dropdowns.
+
+## History
+
+- Findings and the three directions, as shown to the owner: the artifact "Inkwell Style System" (claude.ai). The "before" counts: 4 dropdown looks, 5 button looks, 3 hotkey looks, 3 tab looks, 10 corner radii, 6 control heights, 2 section title styles.
+- Fixed after the first rollout: icon-button square rule matching labelled buttons (see rule 4); the native OS dropdown list (rule 5); select text sitting too high (rule 5).

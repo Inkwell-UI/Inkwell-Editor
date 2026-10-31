@@ -29,6 +29,9 @@ export interface TabsNode {
   /** Panel id of the tab shown first (default: the first tab). */
   active?: string
   size?: number
+  /** The group can fold down to its tab strip (the Behaviour dock); `folded` is its state, which `applyOverrides` takes from the user's `folds`. */
+  foldable?: boolean
+  folded?: boolean
 }
 export type LayoutNode = PanelNode | SplitNode | TabsNode
 
@@ -107,6 +110,8 @@ export function removePanel(n: LayoutNode, id: string): LayoutNode | undefined {
 export interface LayoutOverrides {
   sizes?: Record<string, number[]>
   tabs?: Record<string, string>
+  /** Tabs key -> folded, for foldable tab groups. */
+  folds?: Record<string, boolean>
 }
 
 /** Applies a user's resized splits and chosen tabs to a layout. Overrides that no longer fit (other child count, unknown tab) are ignored. */
@@ -115,7 +120,9 @@ export function applyOverrides(n: LayoutNode, o: LayoutOverrides): LayoutNode {
   const key = nodeKey(n)
   if (n.kind === 'tabs') {
     const a = o.tabs?.[key]
-    return a && n.tabs.some((t) => t.panel === a) ? { ...n, active: a } : n
+    const next = a && n.tabs.some((t) => t.panel === a) ? { ...n, active: a } : n
+    const fold = o.folds?.[key]
+    return n.foldable && fold !== undefined ? { ...next, folded: fold } : next
   }
   const sizes = o.sizes?.[key]
   const fits = sizes?.length === n.children.length && sizes.every((s) => s > 0 && Number.isFinite(s))

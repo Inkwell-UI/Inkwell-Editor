@@ -61,6 +61,11 @@ describe('layout helpers', () => {
     expect((o.children[1] as { active?: string }).active).toBe('c')
     expect(applyOverrides(l, { sizes: { 'a|b': [2] }, tabs: { 'b|c': 'zzz' } })).toEqual(l)
   })
+  it('applyOverrides folds only foldable tab groups', () => {
+    const t = (foldable: boolean): LayoutNode => ({ kind: 'tabs', tabs: [{ kind: 'panel', panel: 'a' }, { kind: 'panel', panel: 'b' }], ...(foldable ? { foldable, folded: true } : {}) })
+    expect(applyOverrides(t(true), { folds: { 'a|b': false } })).toMatchObject({ folded: false })
+    expect(applyOverrides(t(false), { folds: { 'a|b': true } })).not.toHaveProperty('folded')
+  })
   it('applyOverrides never gives a fixed panel a stored size', () => {
     const l = row(fx('a', 200), p('b'))
     const o = applyOverrides(l, { sizes: { 'a|b': [3, 4] } }) as Extract<LayoutNode, { kind: 'split' }>

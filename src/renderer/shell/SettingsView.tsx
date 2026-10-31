@@ -17,7 +17,7 @@ import { ProjectSettings } from './ProjectSettings'
 export type SettingsCategory = 'general' | 'tools' | 'game' | 'figma' | 'advanced' | 'project'
 
 const s = strings.settings
-const MIRROR_TEXT = `${strings.top.mirror} ${s.mirrorTip} ${s.categories.general.name}`.toLowerCase()
+const MIRROR_TEXT = `${strings.top.mirror} ${s.mirrorTip} ${strings.top.tidyHang} ${strings.top.tidyHangTip} ${s.categories.general.name}`.toLowerCase()
 const PROJECT_TEXT = `${s.project.title} ${s.project.modId} ${s.project.modIdHelp}`.toLowerCase()
 
 /** The page each environment check lives on, by what it affects; a check not listed (a newer one) goes to Advanced rather than disappearing. */
@@ -37,6 +37,8 @@ export function SettingsView({ initial = 'general' }: { initial?: SettingsCatego
   const project = useProject()
   const mirror = useSettingsStore((s) => s.mirrorFigma)
   const setMirror = useSettingsStore((s) => s.setMirrorFigma)
+  const tidyHang = useSettingsStore((s) => s.tidyHang)
+  const setTidyHang = useSettingsStore((s) => s.setTidyHang)
   const d = useSetupDoctor()
   const [query, setQuery] = useState('')
   const [chosen, setChosen] = useState<SettingsCategory>(initial)
@@ -126,6 +128,10 @@ export function SettingsView({ initial = 'general' }: { initial?: SettingsCatego
               <label className="settingline">
                 <span>{strings.top.mirror} <Tip text={s.mirrorTip} /></span>
                 <input type="checkbox" checked={mirror} onChange={(e) => setMirror(e.target.checked)} data-testid="mirror-setting-view" />
+              </label>
+              <label className="settingline">
+                <span>{strings.top.tidyHang} <Tip text={strings.top.tidyHangTip} /></span>
+                <input type="checkbox" checked={tidyHang} onChange={(e) => setTidyHang(e.target.checked)} data-testid="tidy-hang-setting" />
               </label>
             </section>
 

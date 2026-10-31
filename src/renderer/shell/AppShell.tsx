@@ -16,6 +16,7 @@ import { useDialogStore } from '../state/dialogStore'
 import { flushGraphSaves } from '../state/graphStore'
 import { Toasts } from '../ui/Toasts'
 import { Dialogs } from './Dialogs'
+import { DockStrip } from './DockStrip'
 import { SettingsView } from './SettingsView'
 import { StartScreen } from './StartScreen'
 import { StatusBar } from './StatusBar'
@@ -24,17 +25,21 @@ import { TopBar } from './TopBar'
 
 const isTyping = (t: EventTarget | null): boolean => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))
 
+/** What a folded dock shows at the right of its tab strip, by a panel id in the group. */
+const STRIP_EXTRAS = { trace: DockStrip }
+
 /** The active workspace's layout (data) with the user's sizes and tabs applied, and the preview removed while it is popped out (UX 2.3). */
 function WorkspaceView() {
   const active = useWorkspaceStore((s) => s.active)
   const sizes = useWorkspaceStore((s) => s.sizes[active])
   const tabs = useWorkspaceStore((s) => s.tabs[active])
+  const folds = useWorkspaceStore((s) => s.folds)
   const detached = usePopoutStore((s) => s.detached)
   const layout = useMemo(() => {
     const base = detached ? (removePanel(WORKSPACES[active].layout, 'preview') ?? WORKSPACES[active].layout) : WORKSPACES[active].layout
-    return applyOverrides(base, { sizes, tabs })
-  }, [active, sizes, tabs, detached])
-  return <Workspace layout={layout} onResize={(k, s) => useWorkspaceStore.getState().setSizes(k, s)} onTab={(k, p) => useWorkspaceStore.getState().setTab(k, p)} />
+    return applyOverrides(base, { sizes, tabs, folds })
+  }, [active, sizes, tabs, folds, detached])
+  return <Workspace layout={layout} onResize={(k, s) => useWorkspaceStore.getState().setSizes(k, s)} onTab={(k, p) => useWorkspaceStore.getState().setTab(k, p)} onFold={(k, f) => useWorkspaceStore.getState().setFold(k, f)} stripExtras={STRIP_EXTRAS} />
 }
 
 /**

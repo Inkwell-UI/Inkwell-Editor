@@ -16,7 +16,10 @@ export interface WorkspaceStore {
   active: WorkspaceId
   sizes: Record<WorkspaceId, Record<string, number[]>>
   tabs: Record<WorkspaceId, Record<string, string>>
+  /** Foldable tab groups the user folded or opened this session (tabs key -> folded); not persisted, a foldable group starts as its layout says. */
+  folds: Record<string, boolean>
   setActive(id: WorkspaceId): void
+  setFold(key: string, folded: boolean): void
   setSizes(key: string, sizes: number[] | undefined): void
   setTab(key: string, panel: string): void
   showDockTab(panel: string): void
@@ -53,7 +56,9 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
   persist(
     (set, get) => ({
       ...sanitizePersisted(undefined),
+      folds: {},
       setActive: (active) => set({ active }),
+      setFold: (key, folded) => set((s) => ({ folds: { ...s.folds, [key]: folded } })),
       setSizes: (key, sizes) =>
         set((s) => {
           const cur = { ...s.sizes[s.active] }
@@ -64,7 +69,9 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       setTab: (key, panel) => set((s) => ({ tabs: { ...s.tabs, [s.active]: { ...s.tabs[s.active], [key]: panel } } })),
       showDockTab: (panel) => {
         const key = tabsKeyOf(WORKSPACES[get().active].layout, panel)
-        if (key) get().setTab(key, panel)
+        if (!key) return
+        get().setTab(key, panel)
+        get().setFold(key, false)
       },
       reset: (ws) =>
         set((s) => (ws ? { sizes: { ...s.sizes, [ws]: {} }, tabs: { ...s.tabs, [ws]: {} } } : { sizes: empty(), tabs: empty() }))

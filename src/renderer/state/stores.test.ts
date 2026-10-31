@@ -70,6 +70,12 @@ describe('workspace store', () => {
     expect(Object.keys(useWorkspaceStore.getState().tabs.layout)).toHaveLength(1)
     expect(WORKSPACES.behaviour.layout.kind).toBe('split')
   })
+  it('showDockTab opens a folded dock', () => {
+    useWorkspaceStore.getState().setActive('behaviour')
+    useWorkspaceStore.getState().setFold('trace|mockData|dataBinding|lintBudget', true)
+    useWorkspaceStore.getState().showDockTab('trace')
+    expect(useWorkspaceStore.getState().folds['trace|mockData|dataBinding|lintBudget']).toBe(false)
+  })
   it('sanitizePersisted drops garbage', () => {
     const p = sanitizePersisted({ active: 'nope', sizes: { layout: { 'navigator|preview|inspector': [1, 2, 3], 'navigator|lintBudget': [0], 'navigator|inspector': 'x', stale: [1, 2] } }, tabs: { localization: { k: 'p', j: 3 } } })
     expect(p.active).toBe('layout')

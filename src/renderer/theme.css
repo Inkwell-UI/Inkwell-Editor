@@ -15,6 +15,15 @@
   --line: #3f3f46;
   --line-strong: #52525b;
 
+  /* controls: one height, one radius, tone steps instead of borders (the Filled style) */
+  --ctl-h: 28px;
+  --ctl-h-sm: 24px;
+  --radius: 4px;
+  --radius-chip: 3px;
+  --field-bg: var(--sunken);
+  --btn-bg: var(--surface-2);
+  --btn-bg-hover: var(--surface-3);
+
   /* text */
   --fg: #e4e4e7;
   --fg-dim: #a1a1aa;

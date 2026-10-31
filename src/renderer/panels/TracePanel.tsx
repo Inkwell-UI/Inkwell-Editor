@@ -2,14 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useProject } from '../hooks/useProject'
 import { usePacks } from '../hooks/usePacks'
-import { defaultMenuSettings, resolveMenuNames } from '../../shared/menu'
-import { reloadSummary, type DevReloadResult } from '../../shared/devLink'
+import { useHotReload } from '../hooks/useHotReload'
 import { clockTime, type TraceLevel } from '../model/traceParse'
 import { sortedWatch, useDevStore, type TraceSource } from '../state/devStore'
 import { findGraphStore } from '../state/graphStore'
 import { graphOfNode, openGraphNode } from '../state/graphReveal'
-import { hotReload, hotReloadDeploys } from '../state/hotReload'
-import { useDeployStore } from '../state/deployStore'
 import { useTraceStore } from '../state/traceStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
@@ -37,7 +34,7 @@ export function TracePanel() {
   const seen = useDevStore((s) => s.seen)
   const clearGame = useDevStore((s) => s.clear)
   const [errorsOnly, setErrorsOnly] = useState(false)
-  const [reload, setReload] = useState<{ busy: boolean; text?: string; bad?: boolean }>({ busy: false })
+  const reload = useHotReload()
   const end = useRef<HTMLDivElement>(null)
   const game = source === 'game'
   const connected = dev.phase === 'connected'
@@ -58,19 +55,6 @@ export function TracePanel() {
     const hit = locate(node)
     if (hit && swf) openGraphNode({ swfName: swf.name, graph: hit.graph, node })
   }
-  /** The menu of the active SWF as the game knows it (menu JSON `name`), when the SWF is a custom menu. */
-  const menuName = swf && project && swf.ir.target.kind === 'customMenu' ? resolveMenuNames(project.modId, { swf: swf.name, settings: swf.menu ?? defaultMenuSettings() }).name : undefined
-  // Dev deploy on: the button builds and deploys the active SWF like Deploy > MO2 mod folder (which reloads the game), else it only asks the game to re-read the disk
-  const deployAndReload = dev.devDeploy && !!menuName
-  const deploying = useDeployStore((s) => s.busy)
-  const triggerReload = async (): Promise<void> => {
-    if (reload.busy) return
-    if (hotReloadDeploys()) return void (await hotReload())
-    setReload({ busy: true, text: strings.dev.reloading })
-    const r = await hotReload()
-    setReload(r ? { busy: false, text: reloadSummary(r), bad: !r.ok } : { busy: false })
-  }
-  const reloadReason = deployAndReload ? (deploying ? strings.deploy.running : undefined) : !connected ? strings.dev.reloadNeedsGame : reload.busy ? strings.dev.reloading : undefined
   const clear = (): void => (game ? clearGame() : clearRuffle())
   const watchRows = sortedWatch(watch)
   const switchTo = (s: TraceSource): void => setSource(s)
@@ -89,7 +73,7 @@ export function TracePanel() {
         )}
         <label><input type="checkbox" checked={errorsOnly} onChange={(e) => setErrorsOnly(e.target.checked)} /> {strings.trace.errorsOnly}</label>
         <span className="push-right row-actions">
-          <Btn onClick={() => void triggerReload()} reason={reloadReason} testId="trace-reload">{strings.trace.hotReload}</Btn>
+          <Btn onClick={() => void reload.trigger()} reason={reload.reason} testId="trace-reload">{strings.trace.hotReload}</Btn>
           <Btn onClick={clear} testId="trace-clear" reason={lines.length ? undefined : strings.trace.nothingToClear}>{strings.trace.clear}</Btn>
         </span>
       </div>

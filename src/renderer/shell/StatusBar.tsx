@@ -111,7 +111,6 @@ export function StatusBar() {
   const tone: DotTone = failed ? 'error' : !line ? 'off' : line.amber ? 'warn' : 'ok'
   return (
     <footer className="statusbar" aria-label={strings.status.label}>
-      <span className="item" title={strings.status.specTip}><Check size={13} aria-hidden="true" /> {specLabel()}</span>
       <Popover
         up
         label={strings.status.build}
@@ -124,18 +123,30 @@ export function StatusBar() {
       >
         <BuildPopup history={history} lastGoodAt={lastGoodAt} failed={failed} />
       </Popover>
-      {ffdec?.status === 'notFound' ? (
+      {ffdec?.status === 'notFound' && (
         <button type="button" className="item item-button is-error" onClick={() => show('settings')} data-testid="ffdec" title={strings.status.openDoctor}>
           {strings.status.ffdecNotFound}
         </button>
-      ) : (
-        <span className="item" data-testid="ffdec">{strings.status.ffdec(ffdec?.status)}</span>
       )}
       <button type="button" className={`item item-button${lint.errors ? ' is-error' : ''}`} onClick={() => useWorkspaceStore.getState().showDockTab('lintBudget')} title={strings.status.lintTip} data-testid="lint-counts">
-        {strings.status.lint(lint.errors, lint.warnings)}
+        <Dot tone={lint.errors ? 'error' : lint.warnings ? 'warn' : 'ok'} /> {strings.status.lint(lint.errors, lint.warnings)}
       </button>
       {sync?.deploy && <DeployItem />}
-      <span className="item">{strings.status.packs(packs)}</span>
+      <Popover
+        up
+        label={strings.status.environment}
+        trigger={(p) => (
+          <button type="button" className="item item-button" {...p} data-testid="environment">
+            <Check size={13} aria-hidden="true" /> {strings.status.environment}
+          </button>
+        )}
+      >
+        <div className="details">
+          <p title={strings.status.specTip}>{specLabel()}</p>
+          <p>{strings.status.ffdec(ffdec?.status)}</p>
+          <p>{strings.status.packs(packs)}</p>
+        </div>
+      </Popover>
       <span className="spacer" />
       <FigmaDot />
       <GameDot />
