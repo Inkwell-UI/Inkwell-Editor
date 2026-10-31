@@ -1,0 +1,4 @@
+// [{{node.id}}] core/OnHoverEnd@1
+{{in.target}}.onRollOut = function() {
+    {{guarded.then}}
+};

@@ -1,2 +1,0 @@
-// [{{node.id}}] core/Asin@1
-(isFinite(Math.asin({{in.value}})) ? (Math.asin({{in.value}})) : 0)

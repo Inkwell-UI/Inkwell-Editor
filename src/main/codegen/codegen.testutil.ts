@@ -5,7 +5,11 @@ import { resolvePins } from '../../shared/graphValidate'
 import { loadCodegenPacks } from './packs'
 
 export const corePack = resolve(__dirname, '../../../resources/packs/core')
-export const loadCore = async () => (await loadCodegenPacks([corePack])).packs
+export const mathPack = resolve(__dirname, '../../../tests/fixtures/packs/mathutils')
+export const inventoryPack = resolve(__dirname, '../../../tests/fixtures/packs/inventory')
+/** Core plus the official packs the math and Inventory nodes moved to. */
+export const allPacks = [corePack, mathPack, inventoryPack]
+export const loadCore = async () => (await loadCodegenPacks(allPacks)).packs
 
 export const node = (id: string, kind: string, fields: Record<string, unknown> = {}): GraphNode => ({ id, kind, fields, pos: { x: 0, y: 0 } }) as GraphNode
 export const wire = (a: string, ap: string, b: string, bp: string) => ({ from: { node: a, pin: ap }, to: { node: b, pin: bp } })
@@ -34,15 +38,15 @@ export function kindGraph(packId: string, d: NodeDef): Graph | null {
   const n = node('n1', kind, fieldsFor(d))
   const nodes: GraphNode[] = [n]
   const edges: Graph['edges'] = []
-  const log = (id: string): void => void nodes.push(node(id, `${packId}/Log@1`, { level: 'info' }))
+  const log = (id: string): void => void nodes.push(node(id, 'core/Log@1', { level: 'info' }))
   const pins = resolvePins(d, n, [])
   if (d.pure) {
-    nodes.unshift(node('e', `${packId}/OnWidgetCall@1`, { name: 'Run', params: [] }))
+    nodes.unshift(node('e', 'core/OnWidgetCall@1', { name: 'Run', params: [] }))
     log('l')
     edges.push(wire('e', 'then', 'l', 'in'), wire('n1', 'value', 'l', 'message'))
   } else {
     if (!isEntry(d)) {
-      nodes.unshift(node('e', `${packId}/OnWidgetCall@1`, { name: 'Run', params: [{ name: 'title', type: 'String' }, { name: 'hold', type: 'Number' }] }))
+      nodes.unshift(node('e', 'core/OnWidgetCall@1', { name: 'Run', params: [{ name: 'title', type: 'String' }, { name: 'hold', type: 'Number' }] }))
       edges.push(wire('e', 'then', 'n1', 'in'))
     }
     for (const p of pins.outputs.filter((x) => x.type === 'Exec')) {
@@ -58,9 +62,9 @@ export const inventoryGraph = (): Graph => {
   const ev = ['OnSetCategories', 'OnInvalidateList', 'OnPlayerInfo', 'OnRestoreIndices', 'OnDropItem', 'OnItemCard']
   const acts = ['ItemSelect', 'ItemDrop', 'SaveIndices', 'PlaySound', 'RequestItemCard', 'CloseMenu']
   const nodes = [
-    ...ev.flatMap((k) => [node(k, `core/Inventory${k}@1`), node(`log_${k}`, 'core/Log@1', { level: 'info', message: k })]),
+    ...ev.flatMap((k) => [node(k, `inventory/Inventory${k}@1`), node(`log_${k}`, 'core/Log@1', { level: 'info', message: k })]),
     node('run', 'core/OnWidgetCall@1', { name: 'Run', params: [] }),
-    ...acts.map((k) => node(k, `core/Inventory${k}@1`, k === 'CloseMenu' ? { tween: true } : {}))
+    ...acts.map((k) => node(k, `inventory/Inventory${k}@1`, k === 'CloseMenu' ? { tween: true } : {}))
   ]
   const edges = [
     ...ev.map((k) => wire(k, 'then', `log_${k}`, 'in')),

@@ -37,7 +37,7 @@ class mods.MyMod.InvGraph_inv {
     }
     function init() {
         var __g = this;
-        // [OnSetCategories] core/InventoryOnSetCategories@1
+        // [OnSetCategories] inventory/InventoryOnSetCategories@1
         _root.inkwellContract.on("SetCategoriesList", function() {
             var OnSetCategories_categories = [];
             for (var k = 0; k + 2 < arguments.length; k += 3) OnSetCategories_categories.push({ text: String(arguments[k]), flag: Number(arguments[k + 1]) || 0, dontHide: arguments[k + 2] == true });
@@ -48,7 +48,7 @@ class mods.MyMod.InvGraph_inv {
                 __g.fail("OnSetCategories", e);
             }
         });
-        // [OnInvalidateList] core/InventoryOnInvalidateList@1
+        // [OnInvalidateList] inventory/InventoryOnInvalidateList@1
         _root.inkwellContract.on("InvalidateListData", function() {
             var OnInvalidateList_items = _root.inkwellContract.list.entryList;
             if (!(OnInvalidateList_items instanceof Array)) OnInvalidateList_items = [];
@@ -60,7 +60,7 @@ class mods.MyMod.InvGraph_inv {
                 __g.fail("OnInvalidateList", e);
             }
         });
-        // [OnPlayerInfo] core/InventoryOnPlayerInfo@1
+        // [OnPlayerInfo] inventory/InventoryOnPlayerInfo@1
         _root.inkwellContract.on("UpdatePlayerInfo", function() {
             var OnPlayerInfo_info = typeof (arguments[0]) == "object" ? arguments[0] : {};
             try {
@@ -70,7 +70,7 @@ class mods.MyMod.InvGraph_inv {
                 __g.fail("OnPlayerInfo", e);
             }
         });
-        // [OnRestoreIndices] core/InventoryOnRestoreIndices@1
+        // [OnRestoreIndices] inventory/InventoryOnRestoreIndices@1
         _root.inkwellContract.on("RestoreIndices", function() {
             var OnRestoreIndices_indices = [];
             for (var k = 0; k < arguments.length; k++) OnRestoreIndices_indices.push(arguments[k]);
@@ -81,7 +81,7 @@ class mods.MyMod.InvGraph_inv {
                 __g.fail("OnRestoreIndices", e);
             }
         });
-        // [OnDropItem] core/InventoryOnDropItem@1
+        // [OnDropItem] inventory/InventoryOnDropItem@1
         _root.inkwellContract.on("DropItem", function() {
             try {
                 // [log_OnDropItem] core/Log@1
@@ -90,7 +90,7 @@ class mods.MyMod.InvGraph_inv {
                 __g.fail("OnDropItem", e);
             }
         });
-        // [OnItemCard] core/InventoryOnItemCard@1
+        // [OnItemCard] inventory/InventoryOnItemCard@1
         _root.inkwellContract.on("UpdateItemCardInfo", function() {
             var OnItemCard_info = typeof (arguments[0]) == "object" ? arguments[0] : {};
             try {
@@ -103,20 +103,20 @@ class mods.MyMod.InvGraph_inv {
         // [run] core/OnWidgetCall@1
         __g.Run = function() {
             try {
-                // [ItemSelect] core/InventoryItemSelect@1
+                // [ItemSelect] inventory/InventoryItemSelect@1
                 _root.inkwellContract.select(-1);
                 _root.inkwellContract.send("ItemSelect", -1 >= 0 ? [-1] : []);
-                // [ItemDrop] core/InventoryItemDrop@1
+                // [ItemDrop] inventory/InventoryItemDrop@1
                 _root.inkwellContract.select(-1);
                 _root.inkwellContract.send("ItemDrop", [1]);
-                // [SaveIndices] core/InventorySaveIndices@1
+                // [SaveIndices] inventory/InventorySaveIndices@1
                 _root.inkwellContract.send("SaveIndices", [[] instanceof Array ? [] : []]);
-                // [PlaySound] core/InventoryPlaySound@1
+                // [PlaySound] inventory/InventoryPlaySound@1
                 _root.inkwellContract.send("PlaySound", [String("UIMenuFocus")]);
-                // [RequestItemCard] core/InventoryRequestItemCard@1
+                // [RequestItemCard] inventory/InventoryRequestItemCard@1
                 _root.inkwellContract.select(-1);
                 _root.inkwellContract.send("RequestItemCardInfo", [], "UpdateItemCardInfo");
-                // [CloseMenu] core/InventoryCloseMenu@1
+                // [CloseMenu] inventory/InventoryCloseMenu@1
                 if (true) _root.inkwellContract.send("CloseTweenMenu", []);
                 _root.inkwellContract.send("CloseMenu", []);
             } catch (e) {

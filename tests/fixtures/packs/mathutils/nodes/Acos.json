@@ -1,0 +1,24 @@
+{
+  "kind": "Acos",
+  "major": 1,
+  "title": "Acos",
+  "category": "Math",
+  "pure": true,
+  "description": "Arccosine, result in radians (0 outside -1..1).",
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Acos.as2"
+}

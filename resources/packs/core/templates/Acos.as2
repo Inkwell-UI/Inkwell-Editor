@@ -1,2 +1,0 @@
-// [{{node.id}}] core/Acos@1
-(isFinite(Math.acos({{in.value}})) ? (Math.acos({{in.value}})) : 0)

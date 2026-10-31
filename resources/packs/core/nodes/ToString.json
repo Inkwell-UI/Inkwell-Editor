@@ -9,7 +9,8 @@
     {
       "name": "value",
       "type": "Number",
-      "default": 0
+      "default": 0,
+      "typeFrom": "valueType"
     }
   ],
   "outputs": [
@@ -19,6 +20,19 @@
       "default": ""
     }
   ],
-  "fields": {},
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "String",
+        "Number",
+        "Bool",
+        "Array",
+        "Object"
+      ],
+      "default": "Number",
+      "description": "Pin type of the value to convert (Object for an item of For Each or Array Get). An object or array gives its contents, e.g. {name: \"Bob\", tags: [1, 2]}"
+    }
+  },
   "as2Template": "templates/ToString.as2"
 }

@@ -1,0 +1,45 @@
+{
+  "kind": "Ease",
+  "major": 1,
+  "title": "Ease",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "t",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "curve": {
+      "type": "string",
+      "enum": [
+        "quad",
+        "cubic",
+        "sine",
+        "expo"
+      ],
+      "default": "quad",
+      "description": "Shape of the curve"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "in",
+        "out",
+        "inOut"
+      ],
+      "default": "inOut",
+      "description": "Which end eases: in (slow start), out (slow end) or both"
+    }
+  },
+  "as2Template": "templates/Ease.as2"
+}

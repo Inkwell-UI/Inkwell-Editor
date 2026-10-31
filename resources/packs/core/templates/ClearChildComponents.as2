@@ -1,0 +1,10 @@
+// [{{node.id}}] core/ClearChildComponents@1
+var {{node.uid}}_p = {{in.parent}};
+if ({{node.uid}}_p.inkwellDyn != undefined) {
+    for (var {{node.uid}}_i = 0; {{node.uid}}_i < {{node.uid}}_p.inkwellDyn.length; {{node.uid}}_i++) {
+        {{node.uid}}_p.inkwellDyn[{{node.uid}}_i].removeMovieClip();
+    }
+    {{node.uid}}_p.inkwellDyn = [];
+    __g.restack({{node.uid}}_p);
+}
+{{next.then}}

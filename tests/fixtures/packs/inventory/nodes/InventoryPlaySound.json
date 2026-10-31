@@ -1,0 +1,28 @@
+{
+  "kind": "InventoryPlaySound",
+  "major": 1,
+  "title": "Inventory: Play Sound",
+  "category": "Inventory",
+  "description": "Play a UI sound through the engine call PlaySound (UIMenuFocus, UIMenuBladeOpenSD, UIMenuPrevNext, ...). Not the Inkwell Runtime Play Sound.",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "sound",
+      "type": "String",
+      "default": "UIMenuFocus"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "contract": "InventoryMenu",
+  "as2Template": "templates/InventoryPlaySound.as2"
+}

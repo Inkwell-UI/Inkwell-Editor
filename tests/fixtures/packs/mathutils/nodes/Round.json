@@ -1,0 +1,23 @@
+{
+  "kind": "Round",
+  "major": 1,
+  "title": "Round",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Round.as2"
+}

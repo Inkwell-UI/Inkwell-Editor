@@ -1,4 +1,0 @@
-// [{{node.id}}] core/InventoryOnDropItem@1
-_root.inkwellContract.on("DropItem", function() {
-    {{guarded.then}}
-});

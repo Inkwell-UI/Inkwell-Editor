@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/MoveTowards@1
+({ f: function(c, t, m) { var d = t - c; var r = Math.abs(d) <= Math.abs(m) ? t : c + (d < 0 ? -1 : 1) * Math.abs(m); return isFinite(r) ? r : 0; } }).f({{in.current}}, {{in.target}}, {{in.maxDelta}})

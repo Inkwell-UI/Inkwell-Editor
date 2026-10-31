@@ -1,4 +1,0 @@
-// [{{node.id}}] core/InventoryCloseMenu@1
-if ({{in.tween}}) _root.inkwellContract.send("CloseTweenMenu", []);
-_root.inkwellContract.send("CloseMenu", []);
-{{next.then}}

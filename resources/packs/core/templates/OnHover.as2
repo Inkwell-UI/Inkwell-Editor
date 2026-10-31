@@ -1,0 +1,4 @@
+// [{{node.id}}] core/OnHover@1
+{{in.target}}.onRollOver = function() {
+    {{guarded.then}}
+};

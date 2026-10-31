@@ -1,2 +1,0 @@
-// [{{node.id}}] core/Cos@1
-(isFinite(Math.cos({{in.value}})) ? (Math.cos({{in.value}})) : 0)

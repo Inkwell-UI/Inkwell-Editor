@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Wrap@1
+({ f: function(v, a, b) { var s = b - a; if (!(s > 0)) return a; var r = a + ((v - a) % s + s) % s; return isFinite(r) ? r : 0; } }).f({{in.value}}, {{in.min}}, {{in.max}})

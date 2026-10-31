@@ -963,7 +963,7 @@
     {
       "fields": {},
       "id": "req",
-      "kind": "core/InventoryRequestItemCard@1",
+      "kind": "inventory/InventoryRequestItemCard@1",
       "pos": {
         "x": 1240,
         "y": 60
@@ -974,7 +974,7 @@
         "show": true
       },
       "id": "u3d",
-      "kind": "core/InventoryUpdateItem3D@1",
+      "kind": "inventory/InventoryUpdateItem3D@1",
       "pos": {
         "x": 1480,
         "y": 60
@@ -983,7 +983,7 @@
     {
       "fields": {},
       "id": "invList",
-      "kind": "core/InventoryOnInvalidateList@1",
+      "kind": "inventory/InventoryOnInvalidateList@1",
       "pos": {
         "x": 0,
         "y": 500
@@ -1026,7 +1026,7 @@
     {
       "fields": {},
       "id": "cats",
-      "kind": "core/InventoryOnSetCategories@1",
+      "kind": "inventory/InventoryOnSetCategories@1",
       "pos": {
         "x": 0,
         "y": 680
@@ -1075,7 +1075,7 @@
     {
       "fields": {},
       "id": "restore",
-      "kind": "core/InventoryOnRestoreIndices@1",
+      "kind": "inventory/InventoryOnRestoreIndices@1",
       "pos": {
         "x": 0,
         "y": 900
@@ -1119,7 +1119,7 @@
     {
       "fields": {},
       "id": "card",
-      "kind": "core/InventoryOnItemCard@1",
+      "kind": "inventory/InventoryOnItemCard@1",
       "pos": {
         "x": 0,
         "y": 1100
@@ -1200,7 +1200,7 @@
         "name": "Up"
       },
       "id": "kUp",
-      "kind": "core/InventoryOnKey@1",
+      "kind": "inventory/InventoryOnKey@1",
       "pos": {
         "x": 0,
         "y": 1700
@@ -1255,7 +1255,7 @@
         "min": 0
       },
       "id": "upClamp",
-      "kind": "core/Clamp@1",
+      "kind": "mathutils/Clamp@1",
       "pos": {
         "x": 740,
         "y": 1800
@@ -1289,7 +1289,7 @@
         "sound": "UIMenuFocus"
       },
       "id": "upSnd",
-      "kind": "core/InventoryPlaySound@1",
+      "kind": "inventory/InventoryPlaySound@1",
       "pos": {
         "x": 1440,
         "y": 1700
@@ -1300,7 +1300,7 @@
         "name": "Down"
       },
       "id": "kDn",
-      "kind": "core/InventoryOnKey@1",
+      "kind": "inventory/InventoryOnKey@1",
       "pos": {
         "x": 0,
         "y": 2100
@@ -1355,7 +1355,7 @@
         "min": 0
       },
       "id": "dnClamp",
-      "kind": "core/Clamp@1",
+      "kind": "mathutils/Clamp@1",
       "pos": {
         "x": 740,
         "y": 2200
@@ -1389,7 +1389,7 @@
         "sound": "UIMenuFocus"
       },
       "id": "dnSnd",
-      "kind": "core/InventoryPlaySound@1",
+      "kind": "inventory/InventoryPlaySound@1",
       "pos": {
         "x": 1440,
         "y": 2100
@@ -1400,7 +1400,7 @@
         "name": "Enter"
       },
       "id": "kEnter",
-      "kind": "core/InventoryOnKey@1",
+      "kind": "inventory/InventoryOnKey@1",
       "pos": {
         "x": 0,
         "y": 2500
@@ -1420,7 +1420,7 @@
     {
       "fields": {},
       "id": "doSelect",
-      "kind": "core/InventoryItemSelect@1",
+      "kind": "inventory/InventoryItemSelect@1",
       "pos": {
         "x": 420,
         "y": 2500
@@ -1429,7 +1429,7 @@
     {
       "fields": {},
       "id": "dropEv",
-      "kind": "core/InventoryOnDropItem@1",
+      "kind": "inventory/InventoryOnDropItem@1",
       "pos": {
         "x": 0,
         "y": 2800
@@ -1451,7 +1451,7 @@
         "amount": 1
       },
       "id": "doDrop",
-      "kind": "core/InventoryItemDrop@1",
+      "kind": "inventory/InventoryItemDrop@1",
       "pos": {
         "x": 420,
         "y": 2800
@@ -1460,7 +1460,7 @@
     {
       "fields": {},
       "id": "equipEv",
-      "kind": "core/InventoryOnAttemptEquip@1",
+      "kind": "inventory/InventoryOnAttemptEquip@1",
       "pos": {
         "x": 0,
         "y": 3100
@@ -1469,7 +1469,7 @@
     {
       "fields": {},
       "id": "doEquip",
-      "kind": "core/InventoryItemSelect@1",
+      "kind": "inventory/InventoryItemSelect@1",
       "pos": {
         "x": 420,
         "y": 3100
@@ -1525,7 +1525,7 @@
         "name": "Tab"
       },
       "id": "kTab",
-      "kind": "core/InventoryOnKey@1",
+      "kind": "inventory/InventoryOnKey@1",
       "pos": {
         "x": 0,
         "y": 3700
@@ -1534,7 +1534,7 @@
     {
       "fields": {},
       "id": "saveTab",
-      "kind": "core/InventorySaveIndices@1",
+      "kind": "inventory/InventorySaveIndices@1",
       "pos": {
         "x": 240,
         "y": 3700
@@ -1545,7 +1545,7 @@
         "tween": true
       },
       "id": "closeTab",
-      "kind": "core/InventoryCloseMenu@1",
+      "kind": "inventory/InventoryCloseMenu@1",
       "pos": {
         "x": 480,
         "y": 3700
@@ -1556,7 +1556,7 @@
         "name": "Escape"
       },
       "id": "kEsc",
-      "kind": "core/InventoryOnKey@1",
+      "kind": "inventory/InventoryOnKey@1",
       "pos": {
         "x": 0,
         "y": 3900
@@ -1565,7 +1565,7 @@
     {
       "fields": {},
       "id": "saveEsc",
-      "kind": "core/InventorySaveIndices@1",
+      "kind": "inventory/InventorySaveIndices@1",
       "pos": {
         "x": 240,
         "y": 3900
@@ -1576,7 +1576,7 @@
         "tween": false
       },
       "id": "closeEsc",
-      "kind": "core/InventoryCloseMenu@1",
+      "kind": "inventory/InventoryCloseMenu@1",
       "pos": {
         "x": 480,
         "y": 3900

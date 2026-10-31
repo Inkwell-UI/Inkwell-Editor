@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Distance@1
+({ f: function(a, b, c, d) { var r = Math.sqrt((c - a) * (c - a) + (d - b) * (d - b)); return isFinite(r) ? r : 0; } }).f({{in.x1}}, {{in.y1}}, {{in.x2}}, {{in.y2}})

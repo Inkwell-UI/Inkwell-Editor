@@ -1,2 +1,0 @@
-// [{{node.id}}] core/Min@1
-Math.min({{in.a}}, {{in.b}})

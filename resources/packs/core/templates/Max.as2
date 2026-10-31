@@ -1,2 +1,0 @@
-// [{{node.id}}] core/Max@1
-Math.max({{in.a}}, {{in.b}})

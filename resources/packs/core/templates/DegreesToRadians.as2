@@ -1,2 +1,0 @@
-// [{{node.id}}] core/DegreesToRadians@1
-(isFinite(({{in.value}} * Math.PI / 180)) ? (({{in.value}} * Math.PI / 180)) : 0)

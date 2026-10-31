@@ -1,0 +1,28 @@
+{
+  "kind": "RoundTo",
+  "major": 1,
+  "title": "Round To",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "step",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/RoundTo.as2"
+}

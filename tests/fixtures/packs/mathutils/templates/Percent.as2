@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Percent@1
+({ f: function(v, t) { var r = t == 0 ? 0 : v / t * 100; return isFinite(r) ? r : 0; } }).f({{in.value}}, {{in.total}})

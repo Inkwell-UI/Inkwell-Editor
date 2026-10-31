@@ -49,5 +49,27 @@
       "default": "=="
     }
   },
-  "as2Template": "templates/Compare.as2"
+  "as2Template": "templates/Compare.as2",
+  "extra": {
+    "inspector": {
+      "description": "Compares two values and gives true or false.",
+      "labels": {
+        "valueType": "Compare as",
+        "op": "Operator",
+        "a": "First value",
+        "b": "Second value"
+      },
+      "options": {
+        "valueType": { "Number": "Numbers", "String": "Text", "Bool": "Yes / no" },
+        "op": {
+          "==": "is equal to (==)",
+          "!=": "is not equal to (!=)",
+          "<": "is less than (<)",
+          "<=": "is at most (<=)",
+          ">": "is greater than (>)",
+          ">=": "is at least (>=)"
+        }
+      }
+    }
+  }
 }

@@ -33,8 +33,8 @@ describe.skipIf(!can)('every core template compiles with FFDec', () => {
     const failures: string[] = []
     let compiled = 0
     try {
-      for (const d of packs.defs.values()) {
-        const g = kindGraph('core', d)
+      for (const [id, d] of packs.defs) {
+        const g = kindGraph(id.split('/')[0]!, d)
         if (!g) continue
         try {
           const r = await compileSwf(ir, { modId: 'Tpl', buildDir: join(dir, d.kind), ffdec, graphs: { graphs: [g], packs } })
@@ -51,6 +51,6 @@ describe.skipIf(!can)('every core template compiles with FFDec', () => {
       ffdec.stop()
     }
     expect(failures).toEqual([])
-    expect(compiled).toBe(137) // the nodes of core pack 0.5.5+ that have a template, minus the editor-only ones
+    expect(compiled).toBe(153) // core 108 + mathutils 37 + inventory 15 nodes, minus the 7 skipped by kindGraph (editor-only, function nodes, Create Component)
   }, 300_000)
 })

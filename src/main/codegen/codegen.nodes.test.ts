@@ -13,7 +13,7 @@ const setText = (id: string) => node(id, 'core/SetText@1', { target: 'L' })
 
 describe('Random is volatile', () => {
   it('two consumers each draw their own number: never cached into a temp', () => {
-    const g = graph('r', [entry, node('r', 'core/Random@1', { }), setText('a'), setText('b')], [
+    const g = graph('r', [entry, node('r', 'mathutils/Random@1', { }), setText('a'), setText('b')], [
       wire('e', 'then', 'a', 'in'), wire('a', 'then', 'b', 'in'), wire('r', 'value', 'a', 'text'), wire('r', 'value', 'b', 'text')
     ])
     const r = gen(g)
@@ -23,7 +23,7 @@ describe('Random is volatile', () => {
     expect(count(out, '({ f: function(a, b, i)')).toBe(2)
   })
   it('a node fed by Random is volatile too', () => {
-    const g = graph('r', [entry, node('r', 'core/Random@1'), node('p', 'core/Round@1'), setText('a'), setText('b')], [
+    const g = graph('r', [entry, node('r', 'mathutils/Random@1'), node('p', 'mathutils/Round@1'), setText('a'), setText('b')], [
       wire('e', 'then', 'a', 'in'), wire('a', 'then', 'b', 'in'), wire('r', 'value', 'p', 'value'), wire('p', 'value', 'a', 'text'), wire('p', 'value', 'b', 'text')
     ])
     const out = body(gen(g).classes[0]!.source)

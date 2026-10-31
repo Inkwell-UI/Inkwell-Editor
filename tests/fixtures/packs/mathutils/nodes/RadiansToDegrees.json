@@ -1,0 +1,24 @@
+{
+  "kind": "RadiansToDegrees",
+  "major": 1,
+  "title": "Radians To Degrees",
+  "category": "Math",
+  "pure": true,
+  "description": "Converts radians to degrees.",
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/RadiansToDegrees.as2"
+}

@@ -1,2 +1,2 @@
 // [{{node.id}}] core/ToString@1
-String({{in.value}})
+({ s: function(v, d) { if (v instanceof Array) { if (d > 6) return "[...]"; var a = []; for (var i = 0; i < v.length; i++) a.push(this.s(v[i], d + 1)); return "[" + a.join(", ") + "]"; } if (typeof(v) == "object") { if (d > 6) return "{...}"; var a = []; for (var k in v) a.push(k + ": " + this.s(v[k], d + 1)); return "{" + a.join(", ") + "}"; } if (typeof(v) == "string" && d > 0) return '"' + v + '"'; return String(v); } }).s({{in.value}}, 0)

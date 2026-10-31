@@ -1,0 +1,39 @@
+{
+  "kind": "IsBetween",
+  "major": 1,
+  "title": "Is Between",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "min",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "max",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {
+    "inclusive": {
+      "type": "boolean",
+      "default": true,
+      "description": "Count min and max themselves as inside"
+    }
+  },
+  "as2Template": "templates/IsBetween.as2"
+}

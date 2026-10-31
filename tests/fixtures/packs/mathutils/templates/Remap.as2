@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Remap@1
+({ f: function(v, a, b, c, d, k) { if (a == b) return c; var t = (v - a) / (b - a); if (k) t = Math.min(Math.max(t, 0), 1); var r = c + (d - c) * t; return isFinite(r) ? r : 0; } }).f({{in.value}}, {{in.inMin}}, {{in.inMax}}, {{in.outMin}}, {{in.outMax}}, {{field.clamp}})

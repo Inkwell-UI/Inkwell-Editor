@@ -1,0 +1,28 @@
+{
+  "kind": "Percent",
+  "major": 1,
+  "title": "Percent",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "total",
+      "type": "Number",
+      "default": 100
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Percent.as2"
+}

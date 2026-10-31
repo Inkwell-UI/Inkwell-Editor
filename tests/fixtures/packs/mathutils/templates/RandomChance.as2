@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/RandomChance@1
+(Math.random() * 100 < {{in.percent}})

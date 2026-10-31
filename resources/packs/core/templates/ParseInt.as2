@@ -1,0 +1,2 @@
+// [{{node.id}}] core/ParseInt@1
+(parseInt(String({{in.text}}), {{in.radix}}) || 0)

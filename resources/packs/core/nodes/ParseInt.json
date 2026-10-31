@@ -1,0 +1,29 @@
+{
+  "kind": "ParseInt",
+  "major": 1,
+  "title": "Parse Int",
+  "category": "Logic",
+  "milestone": "0.5",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "radix",
+      "type": "Number",
+      "default": 10
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/ParseInt.as2"
+}

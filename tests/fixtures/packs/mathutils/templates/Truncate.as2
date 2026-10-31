@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Truncate@1
+({ f: function(v) { var r = v < 0 ? Math.ceil(v) : Math.floor(v); return isFinite(r) ? r : 0; } }).f({{in.value}})

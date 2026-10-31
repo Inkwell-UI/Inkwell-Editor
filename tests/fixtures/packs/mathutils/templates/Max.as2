@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Max@1
+Math.max({{in.a}}, {{in.b}})

@@ -1,4 +1,17 @@
 {
-  "packs": [],
+  "packs": [
+    {
+      "id": "inventory",
+      "version": "0.1.0",
+      "source": "https://github.com/Inkwell-UI/Inkwell-Inventory-Pack/releases/download/v0.1.0/pack.zip",
+      "sha256": "8e59dd16e944c4d1f641fb2e961f4d10d12ec20786d7d687f0d1da6e63b9b866"
+    },
+    {
+      "id": "mathutils",
+      "version": "0.1.1",
+      "source": "https://github.com/Inkwell-UI/Inkwell-MathUtils-Pack/releases/download/v0.1.1/pack.zip",
+      "sha256": "163cda4239229ad35a9acfb155e5d0dc0ed39d73edf82a6464597477f424725a"
+    }
+  ],
   "specVersion": 8
 }

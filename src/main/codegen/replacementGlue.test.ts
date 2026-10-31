@@ -9,7 +9,7 @@ import { contractFor, contractsDir, loadContracts } from '../lint/contract'
 import { loadPacks } from '../packs'
 import { frame, swf, textNode } from '../swf/ir.testutil'
 import { generate } from '../swf/generate'
-import { corePack, graph, inventoryGraph, loadCore, node } from './codegen.testutil'
+import { allPacks, graph, inventoryGraph, loadCore, node } from './codegen.testutil'
 import { replacementGlue } from './replacementGlue'
 
 let layers: ContractLayer[]
@@ -80,7 +80,7 @@ describe('a replacement SWF with Inventory contract nodes', () => {
   })
 
   it('contract nodes are errors outside a replacement of their contract; runtime nodes warn in a replacement', async () => {
-    const defs = defIndex(await loadPacks([corePack]))
+    const defs = defIndex(await loadPacks(allPacks))
     const g = inventoryGraph()
     const codes = (ctx: Parameters<typeof validateGraph>[1]) => [...new Set(validateGraph(g, ctx).map((i) => `${i.level}:${i.code}`))]
     expect(codes({ defs, target: 'menuReplacement', contract: 'InventoryMenu' })).toEqual([])

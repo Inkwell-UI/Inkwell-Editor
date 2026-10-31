@@ -1,0 +1,49 @@
+{
+  "kind": "Remap",
+  "major": 1,
+  "title": "Remap",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "inMin",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "inMax",
+      "type": "Number",
+      "default": 1
+    },
+    {
+      "name": "outMin",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "outMax",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "clamp": {
+      "type": "boolean",
+      "default": true,
+      "description": "Keep the result between outMin and outMax"
+    }
+  },
+  "as2Template": "templates/Remap.as2"
+}

@@ -1,2 +1,0 @@
-// [{{node.id}}] core/Ceil@1
-(Math.ceil({{in.value}}) || 0)

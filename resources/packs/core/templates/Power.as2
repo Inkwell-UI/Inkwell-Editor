@@ -1,2 +1,0 @@
-// [{{node.id}}] core/Power@1
-(isFinite(Math.pow({{in.base}}, {{in.exponent}})) ? (Math.pow({{in.base}}, {{in.exponent}})) : 0)

@@ -1,0 +1,33 @@
+{
+  "kind": "MoveTowards",
+  "major": 1,
+  "title": "Move Towards",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "current",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "target",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "maxDelta",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/MoveTowards.as2"
+}

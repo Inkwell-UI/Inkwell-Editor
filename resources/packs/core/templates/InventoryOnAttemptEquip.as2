@@ -1,5 +1,0 @@
-// [{{node.id}}] core/InventoryOnAttemptEquip@1
-_root.inkwellContract.on("AttemptEquip", function() {
-    var {{out.slot}} = typeof (arguments[0]) == "number" ? arguments[0] : 0;
-    {{guarded.then}}
-});

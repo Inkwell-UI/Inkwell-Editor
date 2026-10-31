@@ -1,0 +1,38 @@
+{
+  "kind": "Distance",
+  "major": 1,
+  "title": "Distance",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "x1",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "y1",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "x2",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "y2",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Distance.as2"
+}

@@ -1,0 +1,26 @@
+{
+  "kind": "RandomChance",
+  "major": 1,
+  "title": "Random Chance",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "percent",
+      "type": "Number",
+      "default": 50
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/RandomChance.as2",
+  "extra": {
+    "volatile": true
+  }
+}

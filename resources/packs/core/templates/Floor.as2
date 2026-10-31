@@ -1,2 +1,0 @@
-// [{{node.id}}] core/Floor@1
-(Math.floor({{in.value}}) || 0)

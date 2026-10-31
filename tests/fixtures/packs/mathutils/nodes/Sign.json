@@ -1,0 +1,24 @@
+{
+  "kind": "Sign",
+  "major": 1,
+  "title": "Sign",
+  "category": "Math",
+  "pure": true,
+  "description": "-1, 0 or 1 by the sign of the value.",
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Sign.as2"
+}

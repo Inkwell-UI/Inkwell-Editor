@@ -1,3 +1,0 @@
-// [{{node.id}}] core/InventorySaveIndices@1
-_root.inkwellContract.send("SaveIndices", [{{in.indices}} instanceof Array ? {{in.indices}} : []]);
-{{next.then}}

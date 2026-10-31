@@ -1,0 +1,33 @@
+{
+  "kind": "Clamp",
+  "major": 1,
+  "title": "Clamp",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "min",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "max",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Clamp.as2"
+}

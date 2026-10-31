@@ -12,7 +12,7 @@ const numVar = [{ id: 'v1', name: 'n', type: 'Number', scope: 'menu', default: 0
 
 describe('golden AS2 per node kind', () => {
   for (const [id, d] of packs.defs) {
-    const g = kindGraph('core', d)
+    const g = kindGraph(id.split('/')[0]!, d)
     if (!g) continue
     it(id, () => {
       const r = gen(g)

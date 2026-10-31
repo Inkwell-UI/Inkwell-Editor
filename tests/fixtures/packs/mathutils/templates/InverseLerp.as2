@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/InverseLerp@1
+({ f: function(a, b, v) { var r = a == b ? 0 : (v - a) / (b - a); return isFinite(r) ? r : 0; } }).f({{in.a}}, {{in.b}}, {{in.value}})
