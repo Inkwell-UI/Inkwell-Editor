@@ -24,6 +24,20 @@ describe('tidyPositions', () => {
     expect(p['get']!.x).toBe(180) // one column left of s2, not the first column
   })
 
+  it('hang: keeps the exec line straight, spreads it out and flows the data nodes left to right on a line below, just before the node they feed', () => {
+    const exec = (a: string, b: string) => ({ ...wire(a, b), id: `x-${a}-${b}` })
+    const nodes = [node('e', 0, 0), node('s1', 300, 300), node('s2', 600, 600), node('push', 0, 700), node('get', 0, 900), node('split', 0, 800)]
+    const edges = [exec('e', 's1'), exec('s1', 's2'), wire('push', 's2'), wire('get', 'push'), wire('e', 'split'), wire('split', 's1')]
+    const p = tidyPositions(nodes, edges, (e) => e.id.startsWith('x-'), { hang: true })
+    expect(['e', 's1', 's2'].map((id) => p[id]!.y)).toEqual([p['e']!.y, p['e']!.y, p['e']!.y])
+    expect(p['s1']!.x).toBe(360) // room for split (100 wide) between e and s1
+    expect(p['s2']!.x).toBe(900) // room for get -> push (280 wide) between s1 and s2
+    expect(p['split']!.x).toBe(180)
+    expect([p['get']!.x, p['push']!.x]).toEqual([540, 720]) // data flows left to right, ending right before s2
+    expect(p['get']!.y).toBe(p['push']!.y) // one line
+    for (const id of ['get', 'push', 'split']) expect(p[id]!.y).toBeGreaterThan(p['s2']!.y + 50) // below the exec line
+  })
+
   it('lays unconnected parts out one below the other and wireless nodes last in one column', () => {
     const p = tidyPositions([node('a', 0, 0), node('b', 0, 10), node('c', 400, 400), node('d', 900, 20), node('lone', 50, 5)], [wire('a', 'b'), wire('c', 'd')])
     expect(p['a']!.y).toBe(p['b']!.y)

@@ -8,13 +8,14 @@ import { useGraphActions } from '../graph/useGraphActions'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { useLibraryPacks, usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
-import { eventNodes } from '../model/graphModel'
+import { eventNodes, nodePins } from '../model/graphModel'
 import { tidyPositions } from '../model/graphLayout'
 import { ownersOfGraph } from '../model/graphNav'
 import { menuGraphId, openComponentGraph, openGraphs, openLibraryFunction, setActiveGraph, useGraphDocs } from '../state/graphDocs'
 import { useComponentGraphs } from '../state/componentGraphs'
-import { findGraphStore, type GraphStore } from '../state/graphStore'
+import { findGraphStore, isReadOnlyGraph, type GraphStore } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
+import { useSettingsStore } from '../state/settingsStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
@@ -35,13 +36,20 @@ export function GraphPanel() {
   const tidy = (): void => {
     if (!store) return
     const s = store.getState()
-    // an exec wire leaves an Exec output pin of its source node's definition (a pin of a node from a missing pack, or a dynamic one, counts as data)
+    // an exec wire leaves an Exec output pin of its source node, dynamic ones included (a Call Function exit); a pin of a node from a missing pack counts as data
+    const byId = new Map(s.nodes.map((n) => [n.id, n]))
     const isExec = (e: (typeof s.edges)[number]): boolean => {
-      const src = s.nodes.find((n) => n.id === e.source)
-      return defs.get(src?.data.kind ?? '')?.outputs.find((p) => p.name === e.data?.from.pin)?.type === 'Exec'
+      const src = byId.get(e.source)
+      return (src && nodePins(defs, src, s.variables, s.signature)?.outputs.find((p) => p.name === e.data?.from.pin)?.type) === 'Exec'
     }
-    s.moveNodes(tidyPositions(s.nodes, s.edges, isExec)) // one update = one undo entry
-    setTidied((n) => n + 1)
+    // two or more selected nodes: tidy only those (they keep their top-left corner and only the wires between them count); otherwise the whole graph
+    const picked = s.nodes.filter((n) => n.selected)
+    const subset = picked.length > 1
+    const ids = new Set(picked.map((n) => n.id))
+    const nodes = subset ? picked : s.nodes
+    const edges = subset ? s.edges.filter((e) => ids.has(e.source) && ids.has(e.target)) : s.edges
+    s.moveNodes(tidyPositions(nodes, edges, isExec, { hang: useSettingsStore.getState().tidyHang })) // one update = one undo entry
+    if (!subset) setTidied((n) => n + 1) // fit the view only after a whole-graph tidy
   }
   return (
     <Panel
@@ -134,6 +142,7 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
         </Popover>
         {nodeTitle && <><span aria-hidden="true">&gt;</span><span>{nodeTitle}</span></>}
       </nav>
+      {isReadOnlyGraph(store) && <p className="dim settings-sub" role="status" data-testid="graph-readonly">{strings.graph.readOnly}</p>}
       <div className={`graph-body${split ? ' is-split' : ''}`}>
         <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} fitSignal={tidied} />
         <EventList events={events} selected={selectedNode} onPick={(id) => setFocus({ id, n: (focus?.n ?? 0) + 1 })} />

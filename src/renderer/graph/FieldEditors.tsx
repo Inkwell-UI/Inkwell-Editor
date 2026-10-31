@@ -28,7 +28,7 @@ export function FieldEditor({ row, ctx, bare }: { row: FieldRow; ctx: FieldCtx; 
     case 'enum':
       editor = (
         <select {...common} value={String(row.value ?? row.options?.[0] ?? '')} onChange={(e) => set(e.target.value)}>
-          {row.options?.map((o) => <option key={o} value={o}>{o}</option>)}
+          {row.options?.map((o) => <option key={o} value={o}>{row.optionLabels?.[o] ?? o}</option>)}
         </select>
       )
       break

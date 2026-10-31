@@ -28,9 +28,11 @@ function isotonic(r: readonly number[]): number[] {
  *   consumer instead of in the first column; `isExec` says which wires are exec, an event with an exec output stays in the first column;
  * - inside a column the nodes an exec wire touches (the spine) are ordered and placed by the height of their neighbours (sweeps left to right on the sources, right to
  *   left on the targets), so a chain runs straight and a node sits between its children; data-only nodes then take the nearest free spot beside their consumer.
+ * - `hang` (a graph with exec wires): only the spine makes columns, so the exec chain stays one straight line. The data-only nodes that feed a spine node form their own
+ *   left-to-right flow (columns by data depth) on a line below the exec line, between that node and the one before it, and the spine is spread apart to make room.
  * Pure: returns new positions for every node, anchored at the top-left of the current bounding box so the graph stays where the user was looking.
  */
-export function tidyPositions(nodes: readonly FlowNode[], edges: readonly FlowEdge[], isExec: (e: FlowEdge) => boolean = () => false): Record<string, { x: number; y: number }> {
+export function tidyPositions(nodes: readonly FlowNode[], edges: readonly FlowEdge[], isExec: (e: FlowEdge) => boolean = () => false, { hang = false }: { hang?: boolean } = {}): Record<string, { x: number; y: number }> {
   if (!nodes.length) return {}
   const byId = new Map(nodes.map((n) => [n.id, n]))
   const into = new Map<string, Set<string>>()
@@ -74,6 +76,11 @@ export function tidyPositions(nodes: readonly FlowNode[], edges: readonly FlowEd
 
   /** Lays one connected part out with its top-left at (x, top); returns its bottom. */
   const layoutPart = (part: FlowNode[], x: number, top: number): number => {
+    // the spine is what an exec wire touches: it sets the rows. Data-only nodes hang beside it afterwards (a graph without exec wires is all spine).
+    const touched = part.filter((n) => execNode.has(n.id))
+    const spine = new Set((touched.length ? touched : part).map((n) => n.id))
+    const hanging = hang && touched.length > 0 // data-only nodes are placed apart from the columns
+
     const layer = new Map<string, number>()
     const walking = new Set<string>()
     const depth = (id: string): number => {
@@ -81,24 +88,23 @@ export function tidyPositions(nodes: readonly FlowNode[], edges: readonly FlowEd
       if (known !== undefined) return known
       if (walking.has(id)) return 0 // cycle: stop here
       walking.add(id)
-      const d = Math.max(-1, ...[...(into.get(id) ?? [])].map(depth)) + 1
+      const d = Math.max(-1, ...[...(into.get(id) ?? [])].filter((m) => !hanging || spine.has(m)).map(depth)) + 1
       walking.delete(id)
       layer.set(id, d)
       return d
     }
-    part.forEach((n) => depth(n.id))
+    const columned = hanging ? part.filter((n) => spine.has(n.id)) : part
+    columned.forEach((n) => depth(n.id))
     // a data source goes right before its first consumer (its targets have a source, so they are in layer 1 or later)
-    for (const n of part) {
-      const to = [...(outOf.get(n.id) ?? [])]
-      if (!into.get(n.id)?.size && to.length && !execSource.has(n.id)) layer.set(n.id, Math.min(...to.map((t) => layer.get(t)!)) - 1)
+    if (!hanging) {
+      for (const n of part) {
+        const to = [...(outOf.get(n.id) ?? [])]
+        if (!into.get(n.id)?.size && to.length && !execSource.has(n.id)) layer.set(n.id, Math.min(...to.map((t) => layer.get(t)!)) - 1)
+      }
     }
     const columns: FlowNode[][] = []
-    for (const n of part) (columns[layer.get(n.id)!] ??= []).push(n)
+    for (const n of columned) (columns[layer.get(n.id)!] ??= []).push(n)
     const cols = columns.filter((c): c is FlowNode[] => !!c)
-
-    // the spine is what an exec wire touches: it sets the rows. Data-only nodes hang beside it afterwards (a graph without exec wires is all spine).
-    const touched = part.filter((n) => execNode.has(n.id))
-    const spine = new Set((touched.length ? touched : part).map((n) => n.id))
 
     const cy = new Map<string, number>() // vertical centre
     for (const col of cols) {
@@ -135,7 +141,7 @@ export function tidyPositions(nodes: readonly FlowNode[], edges: readonly FlowEd
     for (let c = 1; c < cols.length; c++) place(cols[c]!, into)
 
     // data-only nodes, right to left: next to their consumer, on the nearest free spot of their column
-    for (let c = cols.length - 1; c >= 0; c--) {
+    for (let c = hanging ? -1 : cols.length - 1; c >= 0; c--) {
       const col = cols[c]!
       const taken = col.filter((n) => cy.has(n.id)).map((n) => ({ a: cy.get(n.id)! - size(n).h / 2, b: cy.get(n.id)! + size(n).h / 2 }))
       const free = col.filter((n) => !cy.has(n.id)).map((n) => {
@@ -155,13 +161,83 @@ export function tidyPositions(nodes: readonly FlowNode[], edges: readonly FlowEd
       }
     }
 
-    const shift = top - Math.min(...part.map((n) => cy.get(n.id)! - size(n).h / 2))
+    // hang: the data-only nodes belong to the spine node they feed first (following data wires through other data nodes) and flow left to right between that node
+    // and the one before it; the spine is spread apart to leave room for them
+    const owner = new Map<string, string | null>()
+    const ownerOf = (id: string): string | null => {
+      if (owner.has(id)) return owner.get(id)!
+      owner.set(id, null) // cycle: no owner on the way round
+      const found = [...(outOf.get(id) ?? [])].flatMap((t) => (spine.has(t) ? [t] : [ownerOf(t)])).filter((t): t is string => !!t)
+      const first = found.sort((a, b) => layer.get(a)! - layer.get(b)!)[0] ?? null
+      owner.set(id, first)
+      return first
+    }
+    const groups = new Map<string, FlowNode[][]>() // owner -> its data nodes by level (0 = fed by nothing in the group)
+    const groupW = new Map<string, number>()
+    const loose: FlowNode[] = [] // data nodes that feed no spine node
+    if (hanging) {
+      const members = new Map<string, FlowNode[]>()
+      for (const n of part) {
+        if (spine.has(n.id)) continue
+        const o = ownerOf(n.id)
+        if (o) members.set(o, [...(members.get(o) ?? []), n])
+        else loose.push(n)
+      }
+      for (const [o, list] of members) {
+        const ids = new Set(list.map((n) => n.id))
+        const level = new Map<string, number>()
+        const walk = new Set<string>()
+        const lv = (id: string): number => {
+          const known = level.get(id)
+          if (known !== undefined) return known
+          if (walk.has(id)) return 0
+          walk.add(id)
+          const d = Math.max(-1, ...[...(into.get(id) ?? [])].filter((m) => ids.has(m)).map(lv)) + 1
+          walk.delete(id)
+          level.set(id, d)
+          return d
+        }
+        const levels: FlowNode[][] = []
+        for (const n of list.sort((a, b) => rank.get(a.id)! - rank.get(b.id)!)) (levels[lv(n.id)] ??= []).push(n)
+        groups.set(o, levels)
+        groupW.set(o, levels.reduce((w, l, i) => w + Math.max(...l.map((n) => size(n).w)) + (i ? GAP_X : 0), 0))
+      }
+    }
+
+    const shift = top - Math.min(...columned.map((n) => cy.get(n.id)! - size(n).h / 2))
     let cx = x
     for (const col of cols) {
+      cx += Math.max(0, ...col.map((n) => (groupW.has(n.id) ? groupW.get(n.id)! + GAP_X : 0))) // room left of the column for the data flowing into it
       for (const n of col) out[n.id] = { x: cx, y: cy.get(n.id)! - size(n).h / 2 + shift }
       cx += Math.max(...col.map((n) => size(n).w)) + GAP_X
     }
-    return Math.max(...part.map((n) => cy.get(n.id)! + size(n).h / 2)) + shift
+
+    const rects = columned.map((n) => ({ ...out[n.id]!, ...size(n) }))
+    /** Puts `n` at x `px`, as high as `from` allows and below everything it would overlap. */
+    const drop = (n: FlowNode, px: number, from: number): void => {
+      const { w, h } = size(n)
+      const clash = (t: number) => rects.find((r) => px < r.x + r.w + GAP_X && px + w + GAP_X > r.x && t < r.y + r.h + GAP_Y && t + h + GAP_Y > r.y)
+      let py = from
+      for (let k = clash(py); k; k = clash(py)) py = k.y + k.h + GAP_Y
+      out[n.id] = { x: px, y: py }
+      rects.push({ x: px, y: py, w, h })
+    }
+    cols.forEach((col, c) => {
+      for (const s of col) {
+        const levels = groups.get(s.id)
+        if (!levels) continue
+        // below the exec line: under the lowest spine node of this column and the one before it
+        const from = Math.max(...[...(cols[c - 1] ?? []), ...col].map((n) => out[n.id]!.y + size(n).h)) + GAP_Y
+        let lx = out[s.id]!.x - GAP_X - groupW.get(s.id)!
+        for (const level of levels) {
+          for (const n of level) drop(n, lx, from)
+          lx += Math.max(...level.map((n) => size(n).w)) + GAP_X
+        }
+      }
+    })
+    const below = Math.max(...rects.map((r) => r.y + r.h)) + GAP_Y
+    for (const n of loose) drop(n, x, below)
+    return Math.max(...part.map((n) => out[n.id]!.y + size(n).h))
   }
 
   let top = y0

@@ -11,6 +11,7 @@ import { debugHotkeyOf, ident, instanceNameError, ROLES, widgetAnchorOf, type Wi
 import type { FontRow } from '../../shared/syncState'
 import { GraphNodeInspector } from '../graph/GraphNodeInspector'
 import { OpenComponentProps } from '../graph/PropsEditor'
+import { useComponentIr } from '../hooks/useComponentIr'
 import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import type { DockRow } from '../model/lintRows'
@@ -41,7 +42,9 @@ export function InspectorPanel() {
   const graphNode = useSelectionStore((s) => s.graphNode)
   const issue = useSelectionStore((s) => s.issue)
   const swf = useActiveSwf()
-  const node = component ? swf?.ir.nodes[component] : undefined
+  const comp = useComponentIr()
+  const root = comp && comp !== 'unavailable' ? comp.ir : swf?.ir // the tree the Navigator shows: the open component's layers, else the menu's
+  const node = component ? root?.nodes[component] : undefined
 
   if (inspects === 'graphNode')
     return (

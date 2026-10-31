@@ -1,4 +1,4 @@
-import { pinCompat, type Graph, type NodeDef, type PinType, type Swf } from '@inkwell-ui/spec'
+import { pinCompat, PinType, type Graph, type NodeDef, type Swf } from '@inkwell-ui/spec'
 import { composeRules, incoming, noSelfLink, outgoing, pinField, spawnOptions, SPAWN_NEW, type NodeDef as SpawnDef, type Rule, type SpawnOption } from '@nicklaj/knotwork'
 import { nodeName } from '../../shared/graphs'
 import { resolvePins, type ResolvedPin } from '../../shared/graphValidate'
@@ -111,15 +111,38 @@ export function categoriesOf(defs: Defs): { id: string; label: string }[] {
   return all.sort((x, y) => rank(x) - rank(y) || x.localeCompare(y)).map((id) => ({ id, label: id }))
 }
 
-/** Spawn definitions: Knotwork's `kind` is the full kind id; a pin id is `<PinType>:<pin name>` so `spawnOptions` can match the dragged pin's type. */
+/** The pin types a pin can take through `typeFrom` when that field is an enum of pin types (To String's `valueType`); undefined for any other pin. */
+function retypes(d: NodeDef, p: NodeDef['inputs'][number]): { field: string; types: PinType[] } | undefined {
+  const field = (p as { typeFrom?: unknown }).typeFrom
+  const list = typeof field === 'string' ? (d.fields[field] as { enum?: unknown } | undefined)?.enum : undefined
+  const types = Array.isArray(list) ? list.filter((t): t is PinType => PinType.safeParse(t).success) : []
+  return typeof field === 'string' && types.length ? { field, types } : undefined
+}
+
+/**
+ * Spawn definitions: Knotwork's `kind` is the full kind id; a pin id is `<PinType>:<pin name>` so `spawnOptions` can match the dragged pin's type.
+ * A pin whose type follows a field (`typeFrom`) is listed once per type that field allows, so To String is found from an Object pin.
+ */
 export function spawnDefs(defs: Defs): SpawnDef[] {
+  const pins = (d: NodeDef, list: NodeDef['inputs'], side: 'in' | 'out') =>
+    list.flatMap((p) => (retypes(d, p)?.types ?? [p.type]).map((t) => ({ id: `${t}:${p.name}`, side })))
   return [...defs].map(([kind, d]) => ({
     kind,
     category: d.category,
     title: d.title,
     keywords: [d.kind, d.category],
-    pins: [...d.inputs.map((p) => ({ id: `${p.type}:${p.name}`, side: 'in' as const })), ...d.outputs.map((p) => ({ id: `${p.type}:${p.name}`, side: 'out' as const }))]
+    pins: [...pins(d, d.inputs, 'in'), ...pins(d, d.outputs, 'out')]
   }))
+}
+
+/** The fields a node spawned from `option` needs so the picked pin has the option's type (To String from an Object pin: `valueType: 'Object'`). */
+export function spawnFields(defs: Defs, kind: string, pin: string | undefined): Record<string, unknown> | undefined {
+  const d = defs.get(kind)
+  const name = pinField(pin)
+  const type = pin?.split(':')[0]
+  if (!d || !name || !type) return undefined
+  const r = [...d.inputs, ...d.outputs].filter((p) => p.name === name).map((p) => retypes(d, p)).find((x) => x?.types.includes(type as PinType))
+  return r ? { [r.field]: type } : undefined
 }
 
 export interface SpawnFromPin {
@@ -141,14 +164,16 @@ export function spawnFor(o: { defs: Defs; spawn: SpawnDef[]; nodes: FlowNode[]; 
   if (o.from && !fromPin) return []
   const options = spawnOptions({
     defs: o.spawn,
-    order: CATEGORY_ORDER,
+    order: categoriesOf(o.defs).map((c) => c.id), // pack categories included, else they all rank -1 and interleave by title
     from: o.from && fromPin ? { nodeId: o.from.nodeId, handleId: `${fromPin.type}-${o.from.type === 'source' ? 'out' : 'in'}`, handleType: o.from.type } : null,
     refuse: (l, def) => {
       const fresh = (handle: string | null | undefined, side: 'in' | 'out') => `${pinField(handle) ?? ''}-${side}`
       const link = o.from!.type === 'source'
         ? { source: o.from!.nodeId, sourceHandle: o.from!.handle, target: SPAWN_NEW, targetHandle: fresh(l.targetHandle, 'in') }
         : { source: SPAWN_NEW, sourceHandle: fresh(l.sourceHandle, 'out'), target: o.from!.nodeId, targetHandle: o.from!.handle }
-      const extra = { id: SPAWN_NEW, type: 'inkwell', position: { x: 0, y: 0 }, data: { id: SPAWN_NEW, kind: def.kind, fields: {}, pos: { x: 0, y: 0 } } } as FlowNode
+      const picked = o.from!.type === 'source' ? l.targetHandle : l.sourceHandle // the option's own pin id, `<PinType>:<name>`
+      const fields = spawnFields(o.defs, def.kind, picked ?? undefined) ?? {}
+      const extra = { id: SPAWN_NEW, type: 'inkwell', position: { x: 0, y: 0 }, data: { id: SPAWN_NEW, kind: def.kind, fields, pos: { x: 0, y: 0 } } } as FlowNode
       return rule(o.nodes, o.edges, link, extra)
     }
   })
@@ -180,6 +205,8 @@ export interface FieldRow {
   kind: FieldKind
   value: unknown
   options?: string[]
+  /** `enum` rows in the Inspector: what to show for an option value (the pack's `extra.inspector.options`). */
+  optionLabels?: Record<string, string>
   /** `layer` rows: the pin type, for the layer filter. */
   pinType?: PinType
   /** A schema `pattern` the value should match (identifiers). */
@@ -205,7 +232,28 @@ interface Schema { type?: string; enum?: unknown[]; default?: unknown; pattern?:
  * parameter list) and one row per UNWIRED data input pin (a component-typed pin shows the layer picker and stores the layer id in `fields[<pin>]`;
  * other pins store a literal in `fields[<pin>]`, which codegen uses before the pack default). `wired` = input pins with a wire.
  */
-export function fieldRows(def: NodeDef, node: Pick<FlowNode, 'data'>, pins: Pins, wired: ReadonlySet<string>, fn: FunctionCtx = {}): FieldRow[] {
+export function fieldRows(def: NodeDef, node: Pick<FlowNode, 'data'>, pins: Pins, wired: ReadonlySet<string>, fn: FunctionCtx = {}, inspector = false): FieldRow[] {
+  const rows = rawFieldRows(def, node, pins, wired, fn)
+  if (!inspector) return rows
+  const tx = inspectorText(def)
+  return rows.map((r) => ({ ...r, label: tx.labels?.[r.key] ?? (r.label === r.key ? humanize(r.key) : r.label), ...(tx.options?.[r.key] ? { optionLabels: tx.options[r.key] } : {}) }))
+}
+
+/** Text a pack gives the Inspector for a node (`extra.inspector` of the node definition): a one-line description, field and pin labels, option labels. All optional. */
+export interface InspectorText {
+  description?: string
+  labels?: Record<string, string>
+  options?: Record<string, Record<string, string>>
+}
+export const inspectorText = (def: NodeDef): InspectorText => ((def.extra ?? {}) as { inspector?: InspectorText }).inspector ?? {}
+
+/** A field or pin name as words: `valueType` becomes "Value type". */
+export const humanize = (name: string): string => {
+  const s = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').toLowerCase()
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+function rawFieldRows(def: NodeDef, node: Pick<FlowNode, 'data'>, pins: Pins, wired: ReadonlySet<string>, fn: FunctionCtx): FieldRow[] {
   const f = node.data.fields
   const rows: FieldRow[] = []
   const inputNames = new Set(def.inputs.map((p) => p.name))
@@ -259,19 +307,27 @@ export interface LayerOption {
   /** The instance name the codegen uses: the overlay's, else the layer name. */
   label: string
   type: string
+  /** The overlay role of the layer (`image`, `button`...), when it has one. */
+  role?: string
 }
 
 /** The SWF's layers (root excluded, unless `withRoot`: a component's own root is a layer its graph can pick) by instance name, sorted. */
 export function layerOptions(ir: Pick<Swf, 'nodes' | 'root'>, overlay: OverlayDoc | undefined, withRoot = false): LayerOption[] {
   return Object.values(ir.nodes)
     .filter((n) => withRoot || n.id !== ir.root)
-    .map((n) => ({ id: n.id, label: ((overlay?.nodes?.[n.id] as { instanceName?: string } | undefined)?.instanceName) || n.name, type: n.type }))
+    .map((n) => {
+      const o = overlay?.nodes?.[n.id] as { instanceName?: string; role?: unknown } | undefined
+      return { id: n.id, label: o?.instanceName || n.name, type: n.type, ...(typeof o?.role === 'string' ? { role: o.role } : {}) }
+    })
     .sort((a, b) => a.label.localeCompare(b.label))
 }
 
-/** What a pin lists in the layer picker: a Text pin text layers, an Image pin image layers, the other component pins every layer. */
+/**
+ * What a pin lists in the layer picker: a Text pin text layers, an Image pin image layers and any layer given the Image role (an empty frame that loads a picture at run
+ * time: Set Image calls `loadMovie` on it), the other component pins every layer.
+ */
 export const layerChoices = (layers: readonly LayerOption[], pinType?: PinType): LayerOption[] =>
-  layers.filter((l) => (pinType === 'Text' ? l.type === 'text' : pinType === 'Image' ? l.type === 'image' : true))
+  layers.filter((l) => (pinType === 'Text' ? l.type === 'text' : pinType === 'Image' ? l.type === 'image' || l.role === 'image' : true))
 
 /** The first component-typed pin's layer id of a node: the component a graph node refers to (for the one selection model). */
 export function nodeTarget(def: NodeDef | undefined, node: Pick<FlowNode, 'data'>): string | undefined {

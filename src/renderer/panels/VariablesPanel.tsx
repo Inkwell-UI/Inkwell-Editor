@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GripVertical, Plus, Trash2 } from 'lucide-react'
+import { GripVertical, Minus, Plus, Trash2 } from 'lucide-react'
 import { useStore } from 'zustand'
 import type { Graph } from '@inkwell-ui/spec'
 import { useSwfGraphs } from '../hooks/useGraphs'
@@ -22,6 +22,7 @@ export function VariablesPanel() {
   const [name, setName] = useState('')
   const [type, setType] = useState<(typeof VARIABLE_TYPES)[number]>('Number')
   const [scope, setScope] = useState<'menu' | 'component' | 'saved'>('menu')
+  const [adding, setAdding] = useState<boolean>()
   if (!swf) return <Panel title={strings.vars.title}><p className="empty">{strings.nav.noSwf}</p></Panel>
   const activeScope = activeId ? (findGraphStore(swf.id, activeId)?.getState().meta.scope as Graph['scope'] | undefined) : undefined
   const target = variableTarget(scope, { menuGraphId: menuGraphId(swf.id), activeId, activeScope })
@@ -33,10 +34,14 @@ export function VariablesPanel() {
   }
   const reason = 'reason' in target ? target.reason : !name.trim() ? strings.vars.nameFirst : scope === 'saved' ? savedTypeError(type) : undefined
   const ordered = [...ids].sort((a, b) => Number(findGraphStore(swf.id, a)?.getState().meta.scope !== 'menu') - Number(findGraphStore(swf.id, b)?.getState().meta.scope !== 'menu'))
+  // the add form is closed once there are variables to read; with none it is open, so the first one is one step away
+  const count = ids.reduce((n, id) => n + (findGraphStore(swf.id, id)?.getState().variables.length ?? 0), 0)
+  const formOpen = adding ?? count === 0
   return (
     <Panel title={strings.vars.title}>
       <div className="vars" data-testid="variables-panel">
-        <form className="vars-add" onSubmit={(e) => (e.preventDefault(), add())}>
+        <Btn icon={formOpen ? Minus : Plus} onClick={() => setAdding(!formOpen)} testId="var-toggle">{strings.vars.addVariable}</Btn>
+        {formOpen && <form className="vars-add" onSubmit={(e) => (e.preventDefault(), add())}>
           <input className="gn-input" placeholder={strings.vars.name} aria-label={strings.vars.name} value={name} onChange={(e) => setName(e.target.value)} data-testid="var-name" />
           <select className="gn-input" aria-label={strings.vars.type} value={type} onChange={(e) => setType(e.target.value as typeof type)} data-testid="var-type">
             {VARIABLE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -47,7 +52,7 @@ export function VariablesPanel() {
             <option value="saved">{strings.vars.scopeSaved}</option>
           </select>
           <Btn icon={Plus} variant="primary" onClick={add} reason={reason} testId="var-add">{strings.vars.add}</Btn>
-        </form>
+        </form>}
         {loaded && ids.length === 0 && <p className="empty">{strings.vars.noGraph}</p>}
         {ordered.map((id) => {
           const store = findGraphStore(swf.id, id)
@@ -82,7 +87,6 @@ function GraphVariables({ store, swfId }: { store: GraphStore; swfId: string }) 
               <GripVertical size={14} aria-hidden="true" />
             </span>
             <input className="gn-input" aria-label={strings.vars.name} value={v.name} onChange={(e) => a.updateVariable(v.id, { name: e.target.value })} />
-            <Btn icon={Trash2} label={strings.vars.remove(v.name)} onClick={() => a.removeVariable(v.id)} />
           </div>
           <div className="var-meta">
             <select className="gn-input" aria-label={strings.vars.type} value={v.type} onChange={(e) => a.updateVariable(v.id, { type: e.target.value as typeof v.type, default: defaultFor(e.target.value as typeof v.type) })}>
@@ -90,6 +94,7 @@ function GraphVariables({ store, swfId }: { store: GraphStore; swfId: string }) 
             </select>
             <DefaultEditor type={v.type} value={v.default} onChange={(d) => a.updateVariable(v.id, { default: d })} />
             <span className="chip" title={strings.vars.scopeTip(v.scope)}>{v.scope}</span>
+            <Btn icon={Trash2} label={strings.vars.remove(v.name)} onClick={() => a.removeVariable(v.id)} />
           </div>
         </div>
       ))}

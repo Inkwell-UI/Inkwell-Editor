@@ -3,14 +3,16 @@ import { useMemo } from 'react'
 import { useStore } from 'zustand'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { useComponentIr } from '../hooks/useComponentIr'
+import { useVisibleVariables } from './useVisibleVariables'
 import { usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf, useDockRows } from '../hooks/useProject'
-import { fieldRows, layerOptions, nodePins } from '../model/graphModel'
+import { fieldRows, inspectorText, layerOptions, nodePins } from '../model/graphModel'
 import { useComponentGraphs } from '../state/componentGraphs'
 import { functionChoices, pinName, pointCall } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { isFunctionEntry, isFunctionExit } from '../../shared/graphValidate'
+import { Fold } from '../ui/Fold'
 import { FieldEditor } from './FieldEditors'
 import { OpenComponentProps } from './PropsEditor'
 import { SignatureEditor } from './SignatureEditor'
@@ -26,7 +28,7 @@ export function GraphNodeInspector() {
   const comp = useComponentIr()
   const layers = useMemo(() => (comp === 'unavailable' ? [] : comp ? layerOptions(comp.ir, comp.inSwf ? overlay : undefined, true) : swf ? layerOptions(swf.ir, overlay) : []), [comp, swf, overlay])
   const nodes = useStore(store ?? emptyStore, (s) => s.nodes)
-  const variables = useStore(store ?? emptyStore, (s) => s.variables)
+  const variables = useVisibleVariables(store, swf?.id)
   const signature = useStore(store ?? emptyStore, (s) => s.signature)
   const props = useStore(store ?? emptyStore, (s) => s.props)
   const componentGraphs = useComponentGraphs((s) => s.graphs)
@@ -37,23 +39,22 @@ export function GraphNodeInspector() {
   const pins = def ? nodePins(defs, node, variables, signature) : undefined
   const wired = new Set(incoming(store.getState().edges, node.id).map((e) => pinName(e.targetHandle)))
   const { callsFunction: callKey, readsProp: propKey } = (def?.extra ?? {}) as { callsFunction?: string; readsProp?: string }
-  const list = def && pins ? fieldRows(def, node, pins, wired, { sig: signature, props, components: Object.values(componentGraphs).map((g) => ({ id: g.component!, name: g.name })), functions: callKey ? functionChoices(store) : [] }) : []
+  const list = def && pins ? fieldRows(def, node, pins, wired, { sig: signature, props, components: Object.values(componentGraphs).map((g) => ({ id: g.component!, name: g.name })), functions: callKey ? functionChoices(store) : [] }, true) : []
+  const description = def ? inspectorText(def).description : undefined
   const ctx = { setField: (k: string, v: unknown) => (k === callKey && typeof v === 'string' ? pointCall(store, node.id, v) : k === propKey && typeof v === 'string' ? store.getState().setNodeProp(node.id, v) : store.getState().setField(node.id, k, v)), layers, variables }
   return (
     <div className="insp" data-testid="graph-node-inspector">
       <header className="insp-head">
-        <div>
-          <h3 className="insp-name">{def?.title ?? strings.graph.unknownNode}</h3>
-          <span className="dim mono">{strings.insp.gnId(node.id)}</span>
-        </div>
+        <h3 className="insp-name">{def?.title ?? strings.graph.unknownNode}</h3>
         <span className="chip">{def?.category ?? '?'}</span>
       </header>
-      <p className="dim mono">{strings.insp.gnKind}: {node.data.kind}</p>
-      <section aria-labelledby="gn-issues">
-        <h4 id="gn-issues">{strings.insp.gnIssues(mine.length)}</h4>
-        {mine.length === 0 && <p className="empty">{strings.insp.noIssues}</p>}
-        <ul className="plain">{mine.map((r, i) => <li key={i} className="issue"><span className="issue-text"><span className="mono">{r.code}</span><span>{r.message}</span></span></li>)}</ul>
-      </section>
+      {description && <p className="dim">{description}</p>}
+      {mine.length > 0 && (
+        <section aria-labelledby="gn-issues">
+          <h4 id="gn-issues">{strings.insp.gnIssues(mine.length)}</h4>
+          <ul className="plain">{mine.map((r, i) => <li key={i} className="issue"><span className="issue-text"><span className="mono">{r.code}</span><span>{r.message}</span></span></li>)}</ul>
+        </section>
+      )}
       {def && isFunctionEntry(def) && <SignatureEditor store={store} sections={['inputs']} />}
       {def && isFunctionExit(def) && <SignatureEditor store={store} sections={['outputs', 'exits']} />}
       {list.length > 0 && (
@@ -62,6 +63,10 @@ export function GraphNodeInspector() {
           {list.map((r) => <FieldEditor key={r.key} row={r} ctx={ctx} />)}
         </section>
       )}
+      <Fold id="gn-details" title={strings.insp.gnDetails} summary="">
+        <p className="dim mono">{strings.insp.gnId(node.id)}</p>
+        <p className="dim mono">{strings.insp.gnKind}: {node.data.kind}</p>
+      </Fold>
     </div>
   )
 }

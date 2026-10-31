@@ -5,7 +5,7 @@ import { loadPacks } from '../../main/packs'
 import { defIndex, emptyGraph } from '../../shared/graphs'
 import { toFlow } from '../state/graphStore'
 import {
-  categoriesOf, connectionRule, eventNodes, fieldRows, layerChoices, layerOptions, nodePins, nodeTarget, spawnDefs, spawnFor, spawnWire, type Defs
+  categoriesOf, connectionRule, eventNodes, fieldRows, humanize, layerChoices, layerOptions, nodePins, nodeTarget, spawnDefs, spawnFields, spawnFor, spawnWire, type Defs
 } from './graphModel'
 
 const defs: Defs = defIndex(await loadPacks([resolve(__dirname, '../../../resources/packs/core')]))
@@ -68,6 +68,14 @@ describe('spawn menu', () => {
     expect(all[0]!.def.category).toBe('Events')
     expect(categoriesOf(defs).map((c) => c.id).slice(0, 3)).toEqual(['Events', 'Flow', 'Variables'])
   })
+  it('keeps each category contiguous, including pack categories outside the built-in order', () => {
+    const extra = new Map(defs)
+    for (const [kind, category, title] of [['p/A@1', 'Text', 'Alpha'], ['p/B@1', 'Array', 'Beta'], ['p/C@1', 'Text', 'Gamma']] as const) {
+      extra.set(kind, { ...defs.get('core/Log@1')!, kind, category, title })
+    }
+    const cats = spawnFor({ defs: extra, spawn: spawnDefs(extra), nodes: g.nodes, edges: g.edges, vars: [], from: null }).map((o) => o.def.category)
+    expect(cats.filter((c, i) => c !== cats[i - 1]).length).toBe(new Set(cats).size)
+  })
   it('from a free Exec output: only nodes with an Exec input', () => {
     const o = run({ nodeId: 'set', handle: 'then-out', type: 'source' })
     expect(o.length).toBeGreaterThan(0)
@@ -86,6 +94,14 @@ describe('spawn menu', () => {
     expect(i.some((x) => x.def.kind === 'core/Concat@1' && x.pin === 'String:value')).toBe(true)
     expect(i.every((x) => x.pin?.startsWith('String:'))).toBe(true)
   })
+  it('finds a node whose pin type follows a field (To String from an Object pin) and sets that field', () => {
+    const h = build([node('mk', 'MakeObject')])
+    const o = spawnFor({ defs, spawn: sdefs, nodes: h.nodes, edges: h.edges, vars: [], from: { nodeId: 'mk', handle: 'value-out', type: 'source' } })
+    const ts = o.find((x) => x.def.kind === 'core/ToString@1')
+    expect(ts?.pin).toBe('Object:value')
+    expect(spawnFields(defs, 'core/ToString@1', ts?.pin)).toEqual({ valueType: 'Object' })
+    expect(spawnFields(defs, 'core/Log@1', 'String:message')).toBeUndefined()
+  })
   it('a picked option wires the new node the right way round', () => {
     expect(spawnWire({ nodeId: 'a', handle: 'then-out', type: 'source' }, 'n', { pin: 'Exec:in' })).toEqual({ from: { node: 'a', pin: 'then' }, to: { node: 'n', pin: 'in' } })
     expect(spawnWire({ nodeId: 'a', handle: 'text-in', type: 'target' }, 'n', { pin: 'String:value' })).toEqual({ from: { node: 'n', pin: 'value' }, to: { node: 'a', pin: 'text' } })
@@ -101,6 +117,15 @@ describe('inline fields', () => {
     expect(rows.map((r) => [r.key, r.kind])).toEqual([['target', 'layer'], ['text', 'string']])
     expect(rows[0]).toMatchObject({ value: '2:4', pinType: 'Text' })
     expect(fieldRows(defs.get(n.kind)!, { data: n as never }, pinsFor(n), new Set(['text', 'target'])).length).toBe(0)
+  })
+  it('the Inspector shows the pack\'s labels, else the name as words; the canvas keeps the raw names', () => {
+    const cmp = node('c', 'Compare', { op: '!=' })
+    const def = defs.get(cmp.kind)!
+    const insp = fieldRows(def, { data: cmp as never }, pinsFor(cmp), new Set(), {}, true)
+    expect(insp.map((r) => r.label)).toEqual(['Compare as', 'Operator', 'First value', 'Second value'])
+    expect(insp[1]!.optionLabels).toMatchObject({ '==': 'is equal to (==)' })
+    expect(fieldRows(def, { data: cmp as never }, pinsFor(cmp), new Set()).map((r) => r.label)).toEqual(['valueType', 'op', 'a', 'b'])
+    expect(humanize('valueType')).toBe('Value type')
   })
   it('pack fields: enums, params list, variable picker', () => {
     const cmp = node('c', 'Compare', { op: '!=' })
@@ -137,6 +162,10 @@ describe('layers', () => {
     expect(layerChoices(all, 'Image').map((l) => l.id)).toEqual(['i'])
     expect(layerChoices(all, 'Clip')).toHaveLength(3)
     expect(layerOptions(ir, undefined, true)).toHaveLength(4) // a component's graph can pick the component's own root
+  })
+  it('an Image pin also lists a layer that has the Image role (a frame that loads a picture at run time)', () => {
+    const all = layerOptions(ir, { nodes: { p: { role: 'image' } } })
+    expect(layerChoices(all, 'Image').map((l) => l.id).sort()).toEqual(['i', 'p'])
   })
   it('a graph node refers to the layer of its first component pin', () => {
     const n = node('s', 'SetText', { target: 't' })

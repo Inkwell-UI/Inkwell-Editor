@@ -13,14 +13,18 @@ import { useStore } from 'zustand'
 import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import type { SwfDoc } from '../../shared/projectState'
 import { useComponentIr } from '../hooks/useComponentIr'
-import { loadComponentGraphs } from '../state/componentGraphs'
-import { categoriesOf, categoryVar, connectionRule, layerOptions, nodePins, nodeTarget, PIN_STYLE, spawnDefs, spawnFor, spawnWire, type SpawnFromPin } from '../model/graphModel'
+import { useVisibleVariables } from './useVisibleVariables'
+import { useProject } from '../hooks/useProject'
+import { useSyncState } from '../hooks/useSyncState'
+import { componentRows } from '../model/componentList'
+import { ensureComponentGraphs } from '../state/componentGraphs'
+import { categoriesOf, categoryVar, connectionRule, layerOptions, nodePins, nodeTarget, PIN_STYLE, spawnDefs, spawnFields, spawnFor, spawnWire, type SpawnFromPin } from '../model/graphModel'
 import { callFields } from '../../shared/functions'
-import { findGraphStore, functionGraphs, getLibraryFunctions, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
+import { findGraphStore, functionGraphs, getLibraryFunctions, isReadOnlyGraph, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
 import { createGraphValidation } from '../state/graphValidation'
 import { droppedVariable, VARIABLE_DRAG } from '../model/variables'
 import { inkwell } from '../hooks/api'
-import { makeFunction, menuGraphId, openGraphs, useGraphDocs } from '../state/graphDocs'
+import { makeFunction, menuGraphId, openGraphs, openLibraryFunction, setActiveGraph, useGraphDocs } from '../state/graphDocs'
 import { useToastStore } from '../state/toastStore'
 import { graphEditorBlurred } from '../state/hotReload'
 import { useSelectionStore } from '../state/selectionStore'
@@ -58,7 +62,9 @@ export function GraphCanvas(props: { swf: SwfDoc; overlay: SwfDoc['overlay'] | u
 function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<typeof GraphCanvas>[0]) {
   const nodes = useStore(store, (s) => s.nodes)
   const edges = useStore(store, (s) => s.edges)
-  const variables = useStore(store, (s) => s.variables)
+  const variables = useVisibleVariables(store, swf.id)
+  const variablesRef = useRef(variables) // read by the callbacks below at the time of the call
+  variablesRef.current = variables
   const signature = useStore(store, (s) => s.signature)
   const picked = useStore(store, (s) => s.nodes.filter((n) => n.selected).length)
   const wires = useStore(store, (s) => s.edges.filter((e) => e.selected).length)
@@ -71,10 +77,14 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   const [menu, setMenu] = useState<MenuState | null>(null)
   const [find, setFind] = useState(false)
   const [varDrop, setVarDrop] = useState<{ x: number; y: number; id: string; name: string } | null>(null)
-  useEffect(() => void (inkwell && loadComponentGraphs(inkwell)), []) // Create Component lists the components that have a graph
+  const project = useProject()
+  const sync = useSyncState()
+  useEffect(() => { // Create Component lists the components that have a graph: every component gets its default one
+    if (inkwell) void ensureComponentGraphs(componentRows((project?.swfs ?? []).map((s) => s.ir), sync?.pageComponents), inkwell)
+  }, [project?.swfs, sync?.pageComponents])
   const comp = useComponentIr() // in a component's graph the layers to pick are the component's own
   const layers = useMemo(() => (comp === 'unavailable' ? [] : comp ? layerOptions(comp.ir, comp.inSwf ? overlay : undefined, true) : layerOptions(swf.ir, overlay)), [comp, swf.ir, overlay])
-  const rule = useMemo(() => connectionRule(defs, () => store.getState().variables, () => store.getState().signature), [defs, store])
+  const rule = useMemo(() => connectionRule(defs, () => variablesRef.current, () => store.getState().signature), [defs, store])
   const sdefs = useMemo(() => spawnDefs(defs), [defs])
   const categories = useMemo(() => categoriesOf(defs), [defs])
 
@@ -151,7 +161,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   useEffect(() => void (menu || setSpawnQuery('')), [menu])
   const functionMode = !menu?.from && /^f\s/i.test(spawnQuery)
   const functionOptions = useMemo(() => (functionMode ? functionGraphs(store).map(functionOption) : []), [functionMode, store, menu])
-  const nodeOptions = useMemo(() => (menu ? spawnFor({ defs, spawn: sdefs, nodes: store.getState().nodes, edges: store.getState().edges, vars: store.getState().variables, sig: store.getState().signature, from: menu.from }) : []), [menu, defs, sdefs, store])
+  const nodeOptions = useMemo(() => (menu ? spawnFor({ defs, spawn: sdefs, nodes: store.getState().nodes, edges: store.getState().edges, vars: variablesRef.current, sig: store.getState().signature, from: menu.from }) : []), [menu, defs, sdefs, store])
   const options = functionMode ? functionOptions : nodeOptions
   const pick = (o: SpawnOption<KwDef>): void => {
     if (!menu) return
@@ -168,7 +178,8 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
       return setMenu(null)
     }
     const wire = spawnWire(menu.from, id, o)
-    store.getState().addNode({ id, kind: o.def.kind, pos }, wire)
+    const fields = spawnFields(defs, o.def.kind, o.pin)
+    store.getState().addNode({ id, kind: o.def.kind, pos, ...(fields ? { fields } : {}) }, wire)
     store.getState().setSelection([id])
     setMenu(null)
   }
@@ -295,13 +306,16 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
 
   useWheelNavigation(wrap)
   const hasNodes = nodes.length > 0
+  const readOnly = isReadOnlyGraph(store)
 
   return (
     <GraphContext.Provider value={ctx}>
       <div className="graph-flow" ref={wrap} tabIndex={0} onKeyDown={onKeyDown} onPointerDownCapture={focusCanvas} onDragOver={onVarDragOver} onDrop={onVarDrop} onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && graphEditorBlurred()} data-testid="graph-canvas">
         <ReactFlow<FlowNode, FlowEdge>
           {...NAVIGATION_PROPS}
-          deleteKeyCode="Delete"
+          deleteKeyCode={readOnly ? null : 'Delete'}
+          nodesDraggable={!readOnly}
+          nodesConnectable={!readOnly}
           nodes={nodes}
           edges={styledEdges}
           nodeTypes={nodeTypes}
@@ -311,6 +325,14 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
           onConnect={onConnect}
           onConnectEnd={onConnectEnd}
           isValidConnection={isValidConnection}
+          onNodeDoubleClick={(_, n) => {
+            const s = store.getState().nodes.find((x) => x.id === n.id)
+            const fn = s?.data.fields?.['function']
+            if (typeof fn !== 'string') return
+            if ((useGraphDocs.getState().ids[swf.id] ?? []).includes(fn)) return setActiveGraph(swf.id, fn)
+            const lib = functionGraphs(store).find((g) => g.id === fn) // a pack's function (`<pack>/<id>`)
+            if (lib) openLibraryFunction({ id: swf.id, name: swf.name }, lib)
+          }}
           onNodeDragStart={() => store.getState().beginDrag()}
           onNodeDragStop={() => store.getState().endDrag()}
           onDelete={({ nodes: n, edges: ed }) => store.getState().deleteSelection(n.map((x) => x.id), ed.map((x) => x.id))}

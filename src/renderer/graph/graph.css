@@ -9,9 +9,9 @@
   --kw-text-dim: var(--fg-dim);
 }
 
-.graph-flow { position: relative; flex: 1; min-height: 0; min-width: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--sunken); outline: none; }
+.graph-flow { position: relative; flex: 1; min-height: 0; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--sunken); outline: none; }
 .graph-flow .react-flow { --xy-background-color: var(--sunken); --xy-edge-stroke-default: var(--fg-faint); font-family: inherit; }
-.graph-flow .react-flow__controls-button { background: var(--surface-2); color: var(--fg); border-color: var(--line); }
+.graph-flow .react-flow__controls-button { background: var(--surface-2); color: var(--fg); border: 0; border-radius: var(--radius); }
 .graph-flow .react-flow__controls-button svg { fill: currentColor; }
 .graph-minimap.react-flow__minimap { background: var(--bg); border: 1px solid var(--line); border-radius: 0; } /* the view is the dark window, the rest of the map is veiled */
 .graph-minimap .react-flow__minimap-mask { fill-rule: evenodd; stroke: none; }
@@ -20,8 +20,8 @@
 .graph-keys-group { display: flex; flex-direction: column; gap: 4px; }
 .graph-key { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .graph-keys > * { text-shadow: 0 1px 2px #000; }
-.graph-keys.is-backed { background: rgba(0, 0, 0, 0.6); border-radius: 6px; padding: 6px 8px; margin: -6px -8px; box-sizing: content-box; }
-.graph-key kbd { font: inherit; font-size: 11px; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 6px; white-space: nowrap; }
+.graph-keys.is-backed { background: rgba(0, 0, 0, 0.6); border-radius: var(--radius); padding: 6px 8px; margin: -6px -8px; box-sizing: content-box; }
+.graph-key kbd { font: inherit; font-size: 12px; color: var(--fg-dim); white-space: nowrap; }
 
 /* wires: Exec thick and white, data thin and in the colour of the type it carries */
 .react-flow__edge.gw-exec .react-flow__edge-path { stroke-linecap: round; }
@@ -30,7 +30,7 @@
 .gn-timer { height: 3px; background: var(--sunken); overflow: hidden; }
 .gn-timer-fill { display: block; height: 100%; width: 0; background: var(--ok); animation: gn-timer linear forwards; }
 @keyframes gn-timer { to { width: 100%; } }
-.gn-run { position: absolute; inset: -3px; border-radius: 8px; pointer-events: none; box-shadow: 0 0 0 2px var(--ok), 0 0 16px var(--ok); animation: gn-run 0.9s ease-out forwards; }
+.gn-run { position: absolute; inset: -3px; border-radius: var(--radius); pointer-events: none; box-shadow: 0 0 0 2px var(--ok), 0 0 16px var(--ok); animation: gn-run 0.9s ease-out forwards; }
 @keyframes gn-run { from { opacity: 1; } to { opacity: 0; } }
 .react-flow__edge.gw-run-0 .react-flow__edge-path { animation: gw-run-a 0.9s ease-out; }
 .react-flow__edge.gw-run-1 .react-flow__edge-path { animation: gw-run-b 0.9s ease-out; }
@@ -40,13 +40,13 @@
 .react-flow__edge.gw-data .react-flow__edge-path { stroke-dasharray: none; }
 
 /* nodes */
-.gn { position: relative; min-width: 220px; max-width: 288px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 6px; font-size: 12px; color: var(--fg); box-shadow: 0 4px 10px var(--shadow); }
+.gn { position: relative; min-width: 220px; max-width: 288px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius); font-size: 12px; color: var(--fg); box-shadow: 0 4px 10px var(--shadow); }
 .gn.is-selected { border-color: var(--fg); box-shadow: 0 0 0 3px var(--kw-select-soft), 0 0 16px var(--kw-select-soft); } /* soft white glow = selection; the border is status only */
 .gn[data-status="error"] { border: 2px solid var(--err); }
 .gn[data-status="warning"] { border: 2px solid var(--warn); }
 .gn-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: color-mix(in srgb, var(--gn-accent, var(--line-strong)) 65%, #000); color: #fff; border-radius: 5px 5px 0 0; font-weight: 600; }
 .gn-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gn-tag { font-size: 10px; font-weight: 500; color: #fff; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; padding: 0 6px; white-space: nowrap; }
+.gn-tag { font-size: 10px; font-weight: 500; color: #fff; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--radius); padding: 0 6px; white-space: nowrap; }
 .gn-badge { display: inline-flex; }
 .gn-badge.is-error { color: var(--err); }
 .gn-badge.is-warning { color: var(--warn); }
@@ -62,9 +62,9 @@
 .gn-fields { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px 8px; border-top: 1px solid var(--line); }
 .gn-field { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; }
 .gn-field-label { color: var(--fg-dim); font-size: 11px; }
-.gn-input { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; background: var(--bg); color: var(--fg); border: 1px solid var(--line-strong); border-radius: 4px; padding: 2px 6px; font: inherit; font-size: 12px; }
+.gn-input { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; background-color: var(--field-bg); color: var(--fg); border: 1px solid transparent; border-radius: var(--radius); padding: 0 6px; min-height: var(--ctl-h-sm); font: inherit; font-size: 12px; }
 .gn-input[type="checkbox"] { width: auto; }
-.gn-input:focus { outline: 2px solid var(--focus); outline-offset: 0; }
+.gn-input:focus { outline: none; border-color: var(--accent); }
 .gn-input.is-bad, .gn-input[aria-invalid="true"] { border-color: var(--err); }
 .gn-params { display: flex; flex-direction: column; gap: 4px; }
 .gn-param { display: grid; grid-template-columns: minmax(0, 1fr) 62px auto; gap: 4px; align-items: center; }
@@ -72,11 +72,11 @@
 .props-editor { display: flex; flex-direction: column; gap: 4px; padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
 .props-editor .gn-param { grid-template-columns: minmax(0, 1fr) 70px; }
 .props-editor .gn-param > .gn-icon { justify-self: end; }
-.sig-title { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--fg-dim); }
+.sig-title { margin: 0 0 4px; font-size: 12px; font-weight: 600; color: var(--fg-dim); }
 .sig-body { display: flex; flex-direction: column; gap: 10px; }
 .sig-group { display: flex; flex-direction: column; gap: 4px; }
 .sig-exit { grid-template-columns: minmax(0, 1fr) auto; }
-.gn-icon, .gn-add { display: inline-flex; align-items: center; gap: 4px; background: transparent; color: var(--fg-dim); border: 1px solid var(--line-strong); border-radius: 4px; padding: 1px 6px; font: inherit; font-size: 11px; cursor: pointer; }
+.gn-icon, .gn-add { display: inline-flex; align-items: center; gap: 4px; background: transparent; color: var(--fg-dim); border: 1px solid transparent; border-radius: var(--radius); background: var(--btn-bg); padding: 1px 6px; font: inherit; font-size: 11px; cursor: pointer; }
 .gn-icon:hover, .gn-add:hover { color: var(--fg); background: var(--hover); }
 .gn-unknown .gn-head-unknown { background: repeating-linear-gradient(135deg, var(--warn-bg) 0 8px, var(--surface-3) 8px 16px); border-top-color: var(--warn); }
 .gn-comment { background: var(--info-bg); border-color: var(--info); min-width: 200px; }
@@ -85,7 +85,7 @@
 .gn-fields .gn-input, .gn-inline .gn-input { max-width: 100%; }
 .gn-group { min-width: 0; background: rgba(255, 255, 255, 0.03); border-style: dashed; padding: 6px; box-shadow: none; }
 .react-flow__node-inkwell:has(.gn-group) { z-index: -1 !important; }
-.gn-reroute { min-width: 0; width: 44px; height: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 10px; padding: 0; }
+.gn-reroute { min-width: 0; width: 44px; height: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: var(--radius); padding: 0; }
 .gn-reroute .gn-pin-head { padding: 0; min-height: 0; }
 
 /* pins: shape + colour (the colour is set inline from theme.css; the shape here) */
@@ -98,7 +98,7 @@
 
 /* live pin value badge (Ruffle preview) */
 .gn-pin-val.is-game { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
-.gn-pin-val { margin-right: 6px; padding: 0 5px; border-radius: 8px; font-size: 10px; line-height: 15px; color: var(--fg); background: var(--accent-bg); border: 1px solid var(--line-strong); max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gn-pin-val { margin-right: 6px; padding: 0 5px; border-radius: var(--radius); font-size: 10px; line-height: 15px; color: var(--fg); background: var(--accent-bg); border: 1px solid var(--line-strong); max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-form { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 8px; }
 .graph-row[draggable="true"] { cursor: grab; }
 .section-title.library-heading { margin-top: 0; } /* the first thing in the panel: the panel's own padding is the gap above it */
