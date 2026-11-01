@@ -1,68 +1,102 @@
-import { TriangleAlert } from 'lucide-react'
+import { TriangleAlert, X } from 'lucide-react'
 import { scriptsOf } from '../../shared/graphs'
-import { BINDABLE, mockDataOf, parseBindings, withBinding, type BindProp } from '../../shared/graphBinding'
+import { mockDataOf, parseBindings, withBinding, type Binding } from '../../shared/graphBinding'
+import type { OverlayDoc } from '../../shared/overlay'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
+import { PIN_STYLE } from '../model/graphModel'
 import { bindableVariables, bindingTypeOk, mockType } from '../model/variables'
 import { openGraphs } from '../state/graphDocs'
 import { editNode } from '../state/overlayStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
+import { Btn } from '../ui/Btn'
 import { Panel } from './Panel'
 
+type Entry = { dataBinding?: unknown }
+const boundLayers = (overlay: OverlayDoc | undefined) =>
+  Object.entries((overlay?.nodes ?? {}) as Record<string, Entry>).flatMap(([id, entry]) => {
+    const bindings = parseBindings(entry.dataBinding).bindings
+    return bindings.length ? [{ id, entry, bindings }] : []
+  })
+
+/** Tab label with the number of bound properties. */
+export function useBindingTab(): { label: string } {
+  const n = boundLayers(useActiveOverlay()).reduce((sum, l) => sum + l.bindings.length, 0)
+  return { label: n ? strings.bind.tab(n) : strings.bind.title }
+}
+
+interface Use { layerId: string; layer: string | undefined; entry: Entry; binding: Binding; note: string | undefined }
+interface Group { key: string; label: string; type: string | undefined; mock: boolean; missing: boolean; uses: Use[] }
+
 /**
- * Data binding (design spec, Overlay `dataBinding`): binds a property of the selected component (text, visible, alpha, tint) to a graph variable or a
- * mock data field. The choice is written to the layer's overlay entry through `editNode` (one history entry of the SWF); the string format is in
- * `shared/graphBinding.ts`. Mock data feeds Ruffle Play mode only (Mock Data tab).
+ * Data binding overview: every variable (or mock field) that drives a property, with the layers and properties it drives (design spec, Overlay `dataBinding`;
+ * string format in `shared/graphBinding.ts`). Bindings are made in the Inspector's Data section (`graph/BindingRows.tsx`); here a layer name selects the
+ * layer and a binding can be removed. A binding whose variable is gone, whose type no longer fits or whose layer was deleted carries a warning.
  */
 export function DataBindingPanel() {
   const swf = useActiveSwf()
   const overlay = useActiveOverlay()
-  const component = useSelectionStore((s) => s.component)
+  const selected = useSelectionStore((s) => s.component)
+  const selectComponent = useSelectionStore((s) => s.selectComponent)
   const { ids } = useSwfGraphs() // loads the graphs; their variables are read below
-  const node = component && swf ? swf.ir.nodes[component] : undefined
-  if (!swf || !node) return <Panel title={strings.bind.title}><p className="empty">{strings.bind.none}</p></Panel>
+  if (!swf) return <Panel title={strings.bind.title}><p className="empty">{strings.bind.empty}</p></Panel>
 
-  const entry = overlay?.nodes?.[node.id] as { dataBinding?: unknown } | undefined
-  const { bindings } = parseBindings(entry?.dataBinding)
-  const vars = bindableVariables(openGraphs(swf.id), scriptsOf(entry))
+  const graphs = openGraphs(swf.id)
   const mockData = mockDataOf(overlay)
-  const set = (prop: BindProp, value: string): void => {
-    const next = value === '' ? null : { source: value.startsWith('var:') ? ('var' as const) : ('mock' as const), name: value.slice(value.indexOf(':') + 1) }
-    editNode(swf.id, node.id, { dataBinding: withBinding(entry?.dataBinding, prop, next) ?? null })
+  const groups = new Map<string, Group>()
+  for (const l of boundLayers(overlay)) {
+    const vars = bindableVariables(graphs, scriptsOf(l.entry))
+    for (const b of l.bindings) {
+      const v = b.source === 'var' ? vars.find((x) => x.id === b.name) : undefined
+      const mocked = b.source === 'mock' ? mockData[b.name] : undefined
+      const type = v?.type ?? (mocked === undefined ? undefined : mockType(mocked))
+      const layer = swf.ir.nodes[l.id]?.name
+      const note = type === undefined ? strings.bind.missing(b.name) : !bindingTypeOk(b.prop, type) ? strings.bind.typeNote(strings.bind.props[b.prop]!, type) : layer === undefined ? strings.bind.layerGone : undefined
+      const key = `${b.source}:${b.name}`
+      const g = groups.get(key) ?? { key, label: v?.name ?? b.name, type, mock: b.source === 'mock', missing: type === undefined, uses: [] }
+      if (type !== undefined) Object.assign(g, { label: v?.name ?? b.name, type, missing: false })
+      g.uses.push({ layerId: l.id, layer, entry: l.entry, binding: b, note })
+      groups.set(key, g)
+    }
   }
+  const sorted = [...groups.values()].sort((a, b) => Number(b.missing) - Number(a.missing) || a.label.localeCompare(b.label))
+
   return (
     <Panel title={strings.bind.title}>
-      <div className="bind" data-testid="binding-panel" data-graphs={ids.length}>
-        <p className="bind-head"><strong>{node.name}</strong> <span className="dim">{strings.nav.typeNames[node.type] ?? node.type}</span></p>
-        <p className="dim">{strings.bind.help}</p>
-        <div className="bind-rows">
-        {BINDABLE.map((prop) => {
-          const b = bindings.find((x) => x.prop === prop)
-          const value = b ? `${b.source}:${b.name}` : ''
-          const reason = prop === 'text' && node.type !== 'text' ? strings.bind.textOnly : undefined
-          const mocked = b?.source === 'mock' ? mockData[b.name] : undefined
-          const type = b ? (b.source === 'var' ? vars.find((v) => v.id === b.name)?.type : mocked === undefined ? undefined : mockType(mocked)) : undefined
-          const missing = b !== undefined && type === undefined
-          const note = missing ? strings.bind.missing(b.name) : type && !bindingTypeOk(prop, type) ? strings.bind.typeNote(prop, type) : undefined
-          return (
-            <div className="bind-row" key={prop}>
-              <label htmlFor={`bind-${prop}`}>{strings.bind.props[prop]}</label>
-              <select id={`bind-${prop}`} className="gn-input" value={value} disabled={reason !== undefined} title={reason} onChange={(e) => set(prop, e.target.value)} data-testid={`bind-${prop}`}>
-                <option value="">{strings.bind.unbound}</option>
-                {b && missing && <option value={value}>{strings.bind.missing(b.name)}</option>}
-                <optgroup label={strings.bind.variables}>
-                  {vars.map((v) => <option key={v.id} value={`var:${v.id}`}>{v.name} ({v.type})</option>)}
-                </optgroup>
-                <optgroup label={strings.bind.mockData}>
-                  {Object.entries(mockData).map(([k, v]) => <option key={k} value={`mock:${k}`}>{k} ({mockType(v)})</option>)}
-                </optgroup>
-              </select>
-              {note && <span className="tone-warn bind-warn" role="img" aria-label={note} title={note}><TriangleAlert size={13} aria-hidden="true" /></span>}
-            </div>
-          )
-        })}
-        </div>
+      <div className="bindov" data-testid="binding-panel" data-graphs={ids.length}>
+        {sorted.length === 0 ? (
+          <p className="empty">{strings.bind.empty}</p>
+        ) : (
+          <div className="bindov-vars">
+            {sorted.map((g) => (
+              <div className="bindov-var" key={g.key} data-testid={`bindov-${g.key}`}>
+                <div className="bindov-head">
+                  <span className="var-chip-dot" style={{ background: g.type ? PIN_STYLE[g.type as keyof typeof PIN_STYLE]?.color : undefined }} aria-hidden="true" />
+                  <b>{g.label}</b>
+                  {g.type && <span className="dim">{g.type}</span>}
+                  {g.mock && <span className="chip chip-warn" title={strings.bind.previewOnlyHelp}>{strings.bind.previewOnly}</span>}
+                  {g.missing && <span className="tone-warn bind-warn" role="img" aria-label={strings.bind.missing(g.label)} title={strings.bind.missing(g.label)}><TriangleAlert size={13} aria-hidden="true" /></span>}
+                  <span className="bindov-n dim">{strings.bind.uses(g.uses.length)}</span>
+                </div>
+                {g.uses.map((u) => {
+                  const prop = strings.bind.props[u.binding.prop]!
+                  return (
+                    <div className="bindov-use" key={`${u.layerId}/${u.binding.prop}`}>
+                      {u.layer !== undefined
+                        ? <button type="button" className={`row-link bindov-layer${u.layerId === selected ? ' is-current' : ''}`} onClick={() => selectComponent(u.layerId, 'navigator')}>{u.layer}</button>
+                        : <span className="dim">{strings.bind.layerGone}</span>}
+                      <span className="dim">{prop}</span>
+                      {u.note && !g.missing && <span className="tone-warn bind-warn" role="img" aria-label={u.note} title={u.note}><TriangleAlert size={13} aria-hidden="true" /></span>}
+                      <Btn icon={X} label={strings.bind.unlink(prop)} variant="quiet" className="bindov-unlink btn-hover-err" testId={`bindov-${u.layerId}-${u.binding.prop}-unlink`}
+                        onClick={() => editNode(swf.id, u.layerId, { dataBinding: withBinding(u.entry.dataBinding, u.binding.prop, null) ?? null })} />
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </Panel>
   )

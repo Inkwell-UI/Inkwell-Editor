@@ -137,7 +137,7 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
               ) : (
                 <>
                   <Btn icon={Pencil} variant="quiet" label={strings.nav.renameGraph} onClick={() => setEditing(name)} testId="graph-rename" />
-                  {confirm ? confirmButtons : <Btn icon={Trash2} variant="quiet" label={strings.nav.deleteGraph(name)} onClick={() => setConfirm(true)} testId="graph-delete" />}
+                  {confirm ? confirmButtons : <Btn icon={Trash2} variant="quiet" className="btn-hover-err" label={strings.nav.deleteGraph(name)} onClick={() => setConfirm(true)} testId="graph-delete" />}
                   {extra}
                 </>
               )}

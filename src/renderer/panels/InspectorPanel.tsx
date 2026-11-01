@@ -1,14 +1,16 @@
 import { Fragment, useEffect, useState } from 'react'
-import { CircleX, Lock, TriangleAlert, Info } from 'lucide-react'
-import { FOCUS_DIRS, focusGraph, isThemeBindingKey, KEY_LABEL, LOC_KEY, PROMPT_ACTIONS, PROMPT_DEFAULTS, PS_GLYPHS, suggestKey, uniqueKey, XBOX_GLYPHS, type Node } from '@inkwell-ui/spec'
+import { CircleX, Focus, Lock, TriangleAlert, Info } from 'lucide-react'
+import { FOCUS_DIRS, focusGraph, type Localization, isThemeBindingKey, KEY_LABEL, LOC_KEY, PROMPT_ACTIONS, PROMPT_DEFAULTS, PS_GLYPHS, suggestKey, uniqueKey, XBOX_GLYPHS, type Node } from '@inkwell-ui/spec'
 import { bindingMode, themeVariable } from '../../shared/theme'
 import { describeTextMapping } from '../../main/swf/text'
 import { CHARSETS, EMBEDDED_FONTS_UI } from '../../shared/fonts'
 import { keyedTexts } from '../../main/lint/localization'
 import { widgetFrame } from '../../main/widget/frame'
-import { ensureKey, renameKey } from '../../shared/localizationOps'
+import { ensureKey, removeKey, renameKey, setCell } from '../../shared/localizationOps'
 import { debugHotkeyOf, ident, instanceNameError, ROLES, widgetAnchorOf, type WidgetAnchor } from '../../shared/overlay'
 import type { FontRow } from '../../shared/syncState'
+import { parseBindings } from '../../shared/graphBinding'
+import { BindingRows } from '../graph/BindingRows'
 import { GraphNodeInspector } from '../graph/GraphNodeInspector'
 import { OpenComponentProps } from '../graph/PropsEditor'
 import { useComponentIr } from '../hooks/useComponentIr'
@@ -19,6 +21,9 @@ import { useFontStore } from '../state/fontStore'
 import { defaultTable, useLocalizationStore } from '../state/localizationStore'
 import { editNode, getOverlayDoc } from '../state/overlayStore'
 import { useSelectionStore } from '../state/selectionStore'
+import { useWorkspaceStore } from '../state/workspaceStore'
+import { languageCode } from '../preview/locale'
+import { TextCell } from '../ui/TextCell'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Fold } from '../ui/Fold'
@@ -28,13 +33,28 @@ import { Panel } from './Panel'
 
 const RULE: Record<FontRow['via'], 1 | 2 | 3 | 4 | 5> = { 'text style': 1, 'family/style': 2, fallback: 3, unmapped: 4, embedded: 5 }
 
-const SeverityIcon = ({ s }: { s: DockRow['severity'] }) =>
+const INSP_TABS = ['behavior', 'translations', 'game', 'figma'] as const
+
+/** The text of `key` in `lang` (the key matches ignoring case, like the engine). */
+const cellOf = (loc: Localization, key: string | undefined, lang: string): string =>
+  key ? Object.entries(loc.entries).find(([k]) => k.toLowerCase() === key.toLowerCase())?.[1][lang] ?? '' : ''
+
+/** How many languages other than the source have no text for `key`; loads localization.json for the open project. */
+function useMissingTranslations(key: string | undefined): number {
+  const project = useProject()
+  const loc = useLocalizationStore((s) => s.localization)
+  const load = useLocalizationStore((s) => s.load)
+  useEffect(() => void (project?.dir && load()), [project?.dir, load])
+  return loc && key ? loc.languages.filter((l) => l !== loc.source && cellOf(loc, key, l) === '').length : 0
+}
+
+const SeverityIcon =({ s }: { s: DockRow['severity'] }) =>
   s === 'error' ? <CircleX size={14} className="tone-error" aria-hidden="true" /> : s === 'warning' ? <TriangleAlert size={14} className="tone-warn" aria-hidden="true" /> : <Info size={14} className="tone-info" aria-hidden="true" />
 
 /**
- * Zone 5 (UX 4.5): shows the selected component, or the selected graph node. For a component, in this order: issues for this node,
- * Inkwell-derived facts (GFx mapping, font resolution), the editable behavior overlay (role, instance name; the rest disabled with reasons),
- * and last the collapsed read-only Figma Source card. There are no transform or colour inputs anywhere: Figma owns the visuals.
+ * Zone 5 (UX 4.5): shows the selected component, or the selected graph node. For a component, three tabs: Behavior (the editable overlay: role,
+ * script name, focus, data, layout), In game (issues for this node, GFx mapping, font match) and Figma (read-only source values).
+ * There are no transform or colour inputs anywhere: Figma owns the visuals.
  */
 export function InspectorPanel() {
   const inspects = useSelectionStore((s) => s.inspects)
@@ -75,45 +95,50 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
   const font = sync?.fonts?.find((f) => f.swfName === swfName && f.nodeId === node.id)
   const swf = useActiveSwf()
   const isWidgetFrame = swf?.ir.target.kind === 'hudWidget' && widgetFrame(swf.ir)?.frame.id === node.id
+  const [tab, setTab] = useState<(typeof INSP_TABS)[number]>(highlight ? 'game' : 'behavior') // a click on an issue in the Lint dock lands on the tab that lists it
+  const boundCount = parseBindings((entry as { dataBinding?: string }).dataBinding).bindings.length
+
+  const showGame = rows.length > 0 || node.type === 'text' || node.type === 'frame'
+  const locKey = (entry as { locKey?: string }).locKey
+  const missingTr = useMissingTranslations(locKey)
+  const tabs = INSP_TABS.filter((t) => t !== 'translations' || node.type === 'text') // only a text layer has something to translate
 
   return (
     <div className="insp">
       <header className="insp-head">
         <div>
           <h3 className="insp-name">{node.name}</h3>
-          <span className="dim mono">{strings.insp.nodeId(node.id)}</span>
+          <span className="dim" title={strings.insp.nodeId(node.id)}>{strings.nav.typeNames[node.type] ?? node.type} · {node.id}</span>
         </div>
-        <span className="chip">{strings.nav.typeNames[node.type] ?? node.type}</span>
+        <FigmaSelectBtn nodeId={node.id} />
       </header>
-      <div className="row-actions"><FigmaSelectBtn nodeId={node.id} /></div>
-
-      <section aria-labelledby="insp-issues">
-        <h4 id="insp-issues">{strings.insp.issues(rows.length)}</h4>
-        {rows.length === 0 && <p className="empty">{strings.insp.noIssues}</p>}
-        <ul className="plain">
-          {rows.map((r) => (
-            <li key={r.key} className={`issue${highlight === r.key ? ' is-highlighted' : ''}`}>
-              <SeverityIcon s={r.severity} />
-              <span className="issue-text">
-                <span className="mono">{r.code}</span>
-                <span>{r.message}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {(node.type === 'text' || node.type === 'frame') && (
-        <section aria-labelledby="insp-gfx">
-          <h4 id="insp-gfx">{strings.insp.gfx}</h4>
-          {node.type === 'text' ? <TextMapping node={node} /> : <FrameMapping node={node} isRoot={swf?.ir.root === node.id} />}
-        </section>
-      )}
-
-      {node.type === 'text' && (
-        <section aria-labelledby="insp-font">
-          <h4 id="insp-font">{strings.insp.font}</h4>
-          {font ? (
+      <div className="insp-tabs" role="tablist" aria-label={strings.insp.title}>
+        {tabs.map((t) => (
+          <button key={t} type="button" id={`insp-tab-${t}`} className="tab" role="tab" aria-selected={tab === t} tabIndex={tab === t ? 0 : -1} onClick={() => setTab(t)} data-testid={`insp-tab-${t}`}>
+            {strings.insp.tabs[t]}
+            {t === 'game' && rows.length > 0 && <span className="tab-badge">{rows.length}</span>}
+            {t === 'translations' && missingTr > 0 && <span className="tab-badge" title={strings.loc.missingCount(missingTr)}>{missingTr}</span>}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" aria-labelledby={`insp-tab-${tab}`}>
+      {tab === 'game' && (
+        <>
+          {rows.length > 0 && (
+            <ul className="plain">
+              {rows.map((r) => (
+                <li key={r.key} className={`issue${highlight === r.key ? ' is-highlighted' : ''}`}>
+                  <SeverityIcon s={r.severity} />
+                  <span className="issue-text">
+                    <span className="mono">{r.code}</span>
+                    <span>{r.message}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {node.type === 'text' ? <TextMapping node={node} /> : node.type === 'frame' ? <FrameMapping node={node} isRoot={swf?.ir.root === node.id} /> : null}
+          {node.type === 'text' && (font ? (
             <dl className="facts">
               <dt>{strings.insp.fontStyle}</dt><dd>{font.styleName ?? strings.insp.fontNoStyle}</dd>
               <dt>{strings.insp.fontFamily}</dt><dd>{font.figmaFont}</dd>
@@ -121,12 +146,13 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
               <dt>{strings.insp.fontRule}</dt>
               <dd className={RULE[font.via] === 4 ? 'tone-error' : RULE[font.via] === 3 ? 'tone-warn' : undefined}>{strings.insp.fontRules[RULE[font.via]]}</dd>
             </dl>
-          ) : <p className="empty">{strings.insp.fontNone}</p>}
-        </section>
+          ) : <p className="empty">{strings.insp.fontNone}</p>)}
+          {!showGame && <p className="empty">{strings.insp.gameNone}</p>}
+        </>
       )}
 
-      <section aria-labelledby="insp-overlay" className="overlay-section">
-        <h4 id="insp-overlay">{strings.insp.overlay}</h4>
+      {tab === 'behavior' && (
+        <>
         <Fold id="identity" title={strings.insp.groupIdentity} summary={entry.role ? strings.insp.roleNames[entry.role] ?? entry.role : strings.insp.noRole} defaultOpen>
           <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
           {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
@@ -138,10 +164,9 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
             <FocusField swfId={swfId} nodeId={node.id} value={(entry as { focus?: FocusValue }).focus} />
           </Fold>
         )}
-        <Fold id="data" title={strings.insp.groupData} summary={[(entry as { dataBinding?: string }).dataBinding, (entry as { locKey?: string }).locKey].filter(Boolean).join(' \u00b7 ') || strings.insp.dataNone}>
-          <DataBindingNote value={(entry as { dataBinding?: string }).dataBinding} />
+        <Fold id="data" title={strings.insp.groupData} summary={boundCount ? strings.bind.count(boundCount) : strings.insp.dataNone}>
+          <BindingRows swfId={swfId} node={node} />
           <ThemeBindingsField node={node} />
-          {node.type === 'text' && <LocKeyField swfId={swfId} node={node} value={(entry as { locKey?: string }).locKey} />}
           {EMBEDDED_FONTS_UI && node.type === 'text' && <EmbeddedFontField swfId={swfId} nodeId={node.id} value={(entry as { font?: string }).font} />}
         </Fold>
         <Fold id="layout" title={strings.insp.groupLayout} summary={isWidgetFrame ? strings.insp.widgetAnchorSummary : strings.insp.layoutDefault}>
@@ -154,22 +179,26 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
             </div>
           ))}
         </Fold>
-      </section>
+        </>
+      )}
 
-      <details className="source" data-testid="figma-source">
-        <summary><Lock size={13} aria-hidden="true" /> {strings.insp.source}</summary>
-        <p className="dim">{strings.insp.sourceNote}</p>
-        <dl className="facts">
-          <dt>{strings.insp.srcType}</dt><dd>{node.type}</dd>
-          <dt>{strings.insp.srcPosition}</dt><dd className="mono">{node.transform.x}, {node.transform.y}</dd>
-          <dt>{strings.insp.srcSize}</dt><dd className="mono">{node.transform.width} x {node.transform.height}</dd>
-          <dt>{strings.insp.srcRotation}</dt><dd className="mono">{node.transform.rotation}</dd>
-          <dt>{strings.insp.srcConstraints}</dt><dd>{node.anchor.h} / {node.anchor.v}</dd>
-          <dt>{strings.insp.srcVisible}</dt><dd>{node.visible ? strings.yes : strings.no}</dd>
-          <dt>{strings.insp.srcOpacity}</dt><dd className="mono">{node.opacity}</dd>
-        </dl>
-        <FigmaSelectBtn nodeId={node.id} focus icon={Lock} />
-      </details>
+      {tab === 'translations' && node.type === 'text' && <TranslationsTab swfId={swfId} node={node} value={locKey} />}
+
+      {tab === 'figma' && (
+        <div data-testid="figma-source">
+          <dl className="facts">
+            <dt>{strings.insp.srcPosition}</dt><dd className="mono">{node.transform.x}, {node.transform.y}</dd>
+            <dt>{strings.insp.srcSize}</dt><dd className="mono">{node.transform.width} x {node.transform.height}</dd>
+            <dt>{strings.insp.srcRotation}</dt><dd className="mono">{node.transform.rotation}</dd>
+            <dt>{strings.insp.srcConstraints}</dt><dd>{node.anchor.h} / {node.anchor.v}</dd>
+            <dt>{strings.insp.srcVisible}</dt><dd>{node.visible ? strings.yes : strings.no}</dd>
+            <dt>{strings.insp.srcOpacity}</dt><dd className="mono">{node.opacity}</dd>
+          </dl>
+          <p className="dim">{strings.insp.sourceNote}</p>
+          <div className="row-actions"><FigmaSelectBtn nodeId={node.id} focus icon={Focus} /></div>
+        </div>
+      )}
+      </div>
     </div>
   )
 }
@@ -243,23 +272,32 @@ function RoleField({ swfId, nodeId, role }: { swfId: string; nodeId: string; rol
   )
 }
 
-/** Overlay `locKey` of a text layer (V2.1): the translation key. Setting one also creates its row in localization.json (the source text is the layer's text). */
-function LocKeyField({ swfId, node, value }: { swfId: string; node: Extract<Node, { type: 'text' }>; value: string | undefined }) {
+/**
+ * Overlay `locKey` of a text layer (V2.1) and this layer's row of localization.json: the key, the text in every language (the source text comes from the layer),
+ * adding a language, and a way into the full table. Setting a key also creates its row (the source text is the layer's text). The tab shows how many languages are missing.
+ */
+function TranslationsTab({ swfId, node, value }: { swfId: string; node: Extract<Node, { type: 'text' }>; value: string | undefined }) {
   const project = useProject()
   const loc = useLocalizationStore((s) => s.localization)
+  const locError = useLocalizationStore((s) => s.error)
   const modId = useLocalizationStore((s) => s.modId)
   const setTable = useLocalizationStore((s) => s.set)
-  const load = useLocalizationStore((s) => s.load)
+  const t = strings.insp.translations
+  const langs = loc ? [loc.source, ...loc.languages.filter((l) => l !== loc.source)] : []
+  const cell = (lang: string): string => (loc ? cellOf(loc, value, lang) : '')
+  const missing = loc && value ? langs.filter((l) => l !== loc.source && cell(l) === '') : []
   const [draft, setDraft] = useState<string | undefined>()
-  useEffect(() => void (project?.dir && load()), [project?.dir, load])
   const text = draft ?? value ?? ''
   const others = keyedTexts((project?.swfs ?? []).map((s) => ({ name: s.name, kind: s.ir.target.kind, orphaned: s.orphaned, ir: s.ir, overlay: (getOverlayDoc(s.id)?.nodes ?? s.overlay.nodes ?? {}) as Record<string, Record<string, unknown>> }))).filter((t) => !(t.swf === (project?.swfs.find((s) => s.id === swfId)?.name) && t.nodeId === node.id))
   const err = draft === undefined || draft === '' ? undefined : !LOC_KEY.test(draft) ? strings.loc.keyInvalid : others.some((t) => t.key.toLowerCase() === draft.toLowerCase() && t.text !== node.content) ? strings.loc.keyTaken : undefined
   const apply = (key: string | null): void => {
     editNode(swfId, node.id, { locKey: key })
-    if (!key) return
-    let table = loc ?? defaultTable(modId || 'Mod')
     const stillUsed = value !== undefined && others.some((t) => t.key.toLowerCase() === value.toLowerCase())
+    if (!key) {
+      if (value && loc && !stillUsed) setTable(removeKey(loc, value)) // removing the key removes its row, unless another layer shares it
+      return
+    }
+    let table = loc ?? defaultTable(modId || 'Mod')
     if (value && value.toLowerCase() !== key.toLowerCase() && !stillUsed) table = renameKey(table, value, key)
     setTable(ensureKey(table, key, node.content))
   }
@@ -274,30 +312,52 @@ function LocKeyField({ swfId, node, value }: { swfId: string; node: Extract<Node
     apply(uniqueKey(suggestKey(ns, node.name), [...others.map((t) => t.key), ...Object.keys(loc?.entries ?? {})]))
   }
   return (
-    <div className="field">
-      <label className="field-label" htmlFor="loc-key">{strings.loc.keyField}</label>
-      <input
-        id="loc-key"
-        className={err ? 'is-invalid' : undefined}
-        value={text}
-        placeholder="$"
-        spellCheck={false}
-        aria-invalid={!!err}
-        aria-describedby="loc-key-help"
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') commit()
-          if (e.key === 'Escape') setDraft(undefined)
-        }}
-        data-testid="loc-key"
-      />
-      <span className="row-actions">
-        <Btn onClick={suggest} testId="loc-key-suggest">{strings.loc.keySuggest}</Btn>
-        <Btn onClick={() => apply(null)} reason={value ? undefined : strings.loc.keyClear} testId="loc-key-clear">{strings.loc.keyClear}</Btn>
-      </span>
-      <p id="loc-key-help" className={err ? 'tone-error' : 'dim'}>{err ?? strings.loc.keyHelp}</p>
-    </div>
+    <>
+      {locError && <p className="tone-error">{strings.loc.unreadable(locError)}</p>}
+      <div className="field">
+        <label className="field-label" htmlFor="loc-key">{strings.loc.keyField}<Tip text={t.keyHelp} /></label>
+        <div className="insp-loc-key">
+          <input
+            id="loc-key"
+            className={err ? 'is-invalid' : undefined}
+            value={text}
+            placeholder="$"
+            spellCheck={false}
+            aria-invalid={!!err}
+            {...(err ? { 'aria-describedby': 'loc-key-help' } : {})}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commit()
+              if (e.key === 'Escape') setDraft(undefined)
+            }}
+            data-testid="loc-key"
+          />
+          {value
+            ? <Btn onClick={() => apply(null)} testId="loc-key-clear">{strings.loc.keyClear}</Btn>
+            : <Btn onClick={suggest} testId="loc-key-suggest">{strings.loc.keySuggest}</Btn>}
+        </div>
+        {err && <p id="loc-key-help" className="tone-error">{err}</p>}
+      </div>
+      {!value && !locError && <p className="dim">{t.noKeyHelp}</p>}
+      {value && !loc && !locError && <Btn onClick={() => useLocalizationStore.getState().create()} testId="loc-create-inline">{strings.loc.create}</Btn>}
+      {value && loc && (
+        <>
+          <div className="insp-loc-list" data-testid="loc-languages">
+            {langs.map((l) => (
+              <div key={l} className="insp-loc-row">
+                <span className="dim mono" title={l}>{languageCode(l)}</span>
+                {l === loc.source
+                  ? <span className="insp-loc-source" title={t.sourceTip}>{node.content}</span>
+                  : <TextCell value={cell(l)} title={strings.loc.cellTitle(value, l)} onCommit={(v) => setTable(setCell(loc, value, l, v))} />}              </div>
+            ))}
+          </div>
+          <div className="row-actions">
+            <Btn variant="quiet" onClick={() => useWorkspaceStore.getState().setActive('localization')} testId="loc-open-table">{t.openTable}</Btn>
+          </div>
+        </>
+      )}
+    </>
   )
 }
 
@@ -352,17 +412,6 @@ function EmbeddedFontField({ swfId, nodeId, value }: { swfId: string; nodeId: st
           <p className="dim">{t.facts(chosen.glyphCount, Math.round(chosen.bytes / 1024))}</p>
         </>
       ) : <p className="dim">{t.help}</p>}
-    </div>
-  )
-}
-
-/** The layer's data binding (overlay `dataBinding`, e.g. `text=var:score`): read-only here, the Data Binding panel edits it. */
-function DataBindingNote({ value }: { value: string | undefined }) {
-  const t = strings.insp.dataBinding
-  return (
-    <div className="field" data-testid="data-binding-note">
-      <span className="field-label">{t.label}<Tip text={t.help} /></span>
-      <code className="mono">{value ?? t.none}</code>
     </div>
   )
 }

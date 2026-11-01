@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LintRow } from '../../shared/syncState'
-import { buildDockRows, countSeverities, filterDockRows, firstError } from './lintRows'
+import { buildDockRows, countSeverities, filterDockRows, firstError, groupDockRows } from './lintRows'
 
 const l = (over: Partial<LintRow>): LintRow => ({ swfName: 'A', nodeId: '1:1', layerName: 'L', severity: 'warning', code: 'c', message: 'm', ...over })
 
@@ -39,5 +39,17 @@ describe('dock rows', () => {
     expect(filterDockRows(rows, { severity: 'error', currentSwf: 'A' }).map((r) => r.code)).toEqual(['build-failed'])
     expect(filterDockRows(rows, { severity: 'all', currentSwf: 'A' })).toHaveLength(2)
     expect(countSeverities(rows)).toEqual({ errors: 2, warnings: 1 })
+  })
+})
+
+describe('groupDockRows', () => {
+  it('merges rows with the same severity, code and message; a different message or severity stays apart', () => {
+    const rows = buildDockRows({
+      lint: [l({ nodeId: '4:8' }), l({ nodeId: '4:9' }), l({ nodeId: '4:9', message: 'other' }), l({ nodeId: '4:8', severity: 'info' })],
+      strict: false
+    })
+    const g = groupDockRows(rows)
+    expect(g.map((x) => [x.severity, x.message, x.rows.length])).toEqual([['warning', 'm', 2], ['warning', 'other', 1], ['info', 'm', 1]])
+    expect(g[0]!.key).toBe(g[0]!.rows[0]!.key)
   })
 })

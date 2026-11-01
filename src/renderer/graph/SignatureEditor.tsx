@@ -63,7 +63,7 @@ export function SignatureEditor({ store, sections }: { store: GraphStore; sectio
           <select className="gn-input" aria-label={strings.graph.sigType} value={p.type} onChange={(e) => set({ ...sig, [kind]: sig[kind].map((x, j) => (j === i ? { ...x, type: e.target.value as typeof p.type } : x)) })}>
             {FUNCTION_PIN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
-          <button type="button" className="gn-icon" title={strings.graph.sigRemove(p.name)} aria-label={strings.graph.sigRemove(p.name)} onClick={() => set({ ...sig, [kind]: sig[kind].filter((_, j) => j !== i) })}><X size={12} aria-hidden="true" /></button>
+          <button type="button" className="gn-icon btn-hover-err" title={strings.graph.sigRemove(p.name)} aria-label={strings.graph.sigRemove(p.name)} onClick={() => set({ ...sig, [kind]: sig[kind].filter((_, j) => j !== i) })}><X size={12} aria-hidden="true" /></button>
         </div>
       ))}
       <button type="button" className="gn-add" onClick={() => set({ ...sig, [kind]: [...sig[kind], { id: crypto.randomUUID(), name: fresh(kind, kind === 'inputs' ? 'input' : 'output'), type: 'String' }] })}>
@@ -82,7 +82,7 @@ export function SignatureEditor({ store, sections }: { store: GraphStore; sectio
           {sig.exits.map((x, i) => (
             <div className="gn-param sig-exit" key={x.id}>
               <NameBox value={x.name} label={strings.graph.sigName} problem={(n) => nameProblem(sig, 'exits', i, n)} onCommit={(name) => set({ ...sig, exits: sig.exits.map((e, j) => (j === i ? { ...e, name } : e)) })} />
-              <button type="button" className="gn-icon" disabled={sig.exits.length === 1} title={sig.exits.length === 1 ? strings.graph.sigLastExit : strings.graph.sigRemove(x.name)} aria-label={strings.graph.sigRemove(x.name)} onClick={() => set({ ...sig, exits: sig.exits.filter((_, j) => j !== i) })}><X size={12} aria-hidden="true" /></button>
+              <button type="button" className="gn-icon btn-hover-err" disabled={sig.exits.length === 1} title={sig.exits.length === 1 ? strings.graph.sigLastExit : strings.graph.sigRemove(x.name)} aria-label={strings.graph.sigRemove(x.name)} onClick={() => set({ ...sig, exits: sig.exits.filter((_, j) => j !== i) })}><X size={12} aria-hidden="true" /></button>
             </div>
           ))}
           <button type="button" className="gn-add" onClick={() => set({ ...sig, exits: [...sig.exits, { id: crypto.randomUUID(), name: fresh('exits', 'exit') }] })}>

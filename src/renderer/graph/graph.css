@@ -11,6 +11,9 @@
 
 .graph-flow { position: relative; flex: 1; min-height: 0; min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--sunken); outline: none; }
 .graph-flow .react-flow { --xy-background-color: var(--sunken); --xy-edge-stroke-default: var(--fg-faint); font-family: inherit; }
+/* The box around several selected nodes sits 14px outside them (xyflow draws it flush); the pseudo element is part of the rect, so dragging from the padding still moves the selection. */
+.graph-flow .react-flow__nodesselection-rect { background: none; border: 0; }
+.graph-flow .react-flow__nodesselection-rect::before { content: ''; position: absolute; inset: -14px; background: var(--xy-selection-background-color-default); border: var(--xy-selection-border-default); border-radius: var(--radius); }
 .graph-flow .react-flow__controls-button { background: var(--surface-2); color: var(--fg); border: 0; border-radius: var(--radius); }
 .graph-flow .react-flow__controls-button svg { fill: currentColor; }
 .graph-minimap.react-flow__minimap { background: var(--bg); border: 1px solid var(--line); border-radius: 0; } /* the view is the dark window, the rest of the map is veiled */
@@ -63,7 +66,6 @@
 .gn-field { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; }
 .gn-field-label { color: var(--fg-dim); font-size: 11px; }
 .gn-input { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; background-color: var(--field-bg); color: var(--fg); border: 1px solid transparent; border-radius: var(--radius); padding: 0 6px; min-height: var(--ctl-h-sm); font: inherit; font-size: 12px; }
-.gn-input[type="checkbox"] { width: auto; }
 .gn-input:focus { outline: none; border-color: var(--accent); }
 .gn-input.is-bad, .gn-input[aria-invalid="true"] { border-color: var(--err); }
 .gn-params { display: flex; flex-direction: column; gap: 4px; }
@@ -105,6 +107,7 @@
 .logic-nav > section:first-child > .section-title { margin-top: 0; } /* Graphs is the first thing in the Logic panel: same as the Library heading */
 .graph-list.library-children, .empty.library-children { margin-left: 16px; } /* the functions of a group sit under its name */
 .btn.row-confirm-delete { color: var(--err); } /* the quiet button style, in the error colour, for "Delete ..." */
+.btn.row-confirm-delete:hover { background: var(--err-bg); }
 .graph-row-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 2px; padding: 4px 6px 4px 2px; }
 .graph-row-grid > .graph-row-main { display: contents; } /* the name and the buttons become grid items, so the buttons centre on the whole row (name and signature) */
 .graph-row-grid .graph-row-actions { grid-column: 2; grid-row: 1 / span 2; display: inline-flex; align-items: center; gap: 2px; }
@@ -130,4 +133,4 @@
 .var-chip-type { font-size: 11px; color: var(--fg-dim); }
 .var-pop { display: flex; flex-direction: column; gap: 6px; width: 240px; }
 .var-pop .gn-input { max-width: none; }
-.var-pop-check { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.var-pop .check { margin: 0; font-size: 12px; }

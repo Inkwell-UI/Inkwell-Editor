@@ -56,7 +56,7 @@ function MockRow({ k, value, onKey, onValue, onRemove }: { k: string; value: Moc
       ) : (
         <input className="gn-input" aria-label={strings.mock.value} value={text} onChange={(e) => setText(e.target.value)} onBlur={() => onValue(mockValue(type, text))} onKeyDown={enter} />
       )}
-      <Btn icon={Trash2} label={strings.mock.remove(k)} onClick={onRemove} />
+      <Btn icon={Trash2} className="btn-hover-err" label={strings.mock.remove(k)} onClick={onRemove} />
     </div>
   )
 }

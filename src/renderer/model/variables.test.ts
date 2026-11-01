@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Graph } from '@inkwell-ui/spec'
 import { emptyGraph } from '../../shared/graphs'
 import { graphForComponent, ownersOfGraph } from './graphNav'
-import { bindableVariables, bindingTypeOk, defaultFor, droppedVariable, mockValue, newVariableId, variableDragData, variableTarget } from './variables'
+import { bindableVariables, bindingTypeOk, defaultFor, droppedVariable, mockValue, newVariableId, parseJsonDefault, variableDragData, variableTarget } from './variables'
 
 const g = (id: string, scope: Graph['scope'], variables: Graph['variables'] = []): Graph => ({ ...emptyGraph(id, id, scope), variables })
 const v = (id: string, scope: 'menu' | 'component', type: 'Bool' | 'Number' | 'String' = 'Number') => ({ id, name: id, type, scope }) as Graph['variables'][number]
@@ -22,6 +22,11 @@ describe('variables', () => {
   it('defaults follow the type', () => {
     expect([defaultFor('Bool'), defaultFor('Number'), defaultFor('String'), defaultFor('Array')]).toEqual([false, 0, '', []])
   })
+  it('an Array or Object default is JSON of the right shape', () => {
+    expect(parseJsonDefault('Array', '[1, "a", {"b": null}]')).toEqual([1, 'a', { b: null }])
+    expect(parseJsonDefault('Object', '{"a": [1]}')).toEqual({ a: [1] })
+    for (const [t, s] of [['Array', '{}'], ['Object', '[]'], ['Array', '[1,'], ['Object', 'null'], ['Array', '5'], ['Object', '']] as const) expect(parseJsonDefault(t, s)).toBeUndefined()
+  })
   it('a layer can bind menu variables and those of its own graphs', () => {
     const graphs = [g('m', 'menu', [v('a', 'menu'), v('b', 'component')]), g('c1', 'component', [v('c', 'component')]), g('c2', 'component', [v('d', 'component')])]
     expect(bindableVariables(graphs, ['c1']).map((x) => x.id)).toEqual(['a', 'c'])
@@ -32,6 +37,10 @@ describe('variables', () => {
     expect(bindingTypeOk('visible', 'String')).toBe(false)
     expect(bindingTypeOk('text', 'Number')).toBe(true)
     expect(bindingTypeOk('alpha', 'Bool')).toBe(false)
+    expect(bindingTypeOk('visible', 'Number')).toBe(true) // > 0 is true
+    expect(bindingTypeOk('text', 'Bool')).toBe(false)
+    expect(bindingTypeOk('tint', 'String')).toBe(false)
+    for (const p of ['text', 'visible', 'alpha', 'tint'] as const) expect(['Array', 'Object'].some((t) => bindingTypeOk(p, t))).toBe(false)
   })
   it('mock values keep their type', () => {
     expect([mockValue('Number', '4.5'), mockValue('Number', 'x'), mockValue('Bool', 'true'), mockValue('String', '7')]).toEqual([4.5, 0, true, '7'])

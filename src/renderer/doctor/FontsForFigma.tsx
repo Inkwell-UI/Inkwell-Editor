@@ -102,7 +102,7 @@ export function FontsForFigma() {
       )}
       <div className="row-actions">
         <Btn icon={Download} variant="primary" haspopup="dialog" onClick={() => setConfirm(true)} reason={busy ? s.working : notWin ?? (complete ? s.alreadyInstalled : undefined)} testId="fonts-install">{installed ? s.installMissing : s.install}</Btn>
-        <Btn icon={Trash2} onClick={() => run('remove')} reason={busy ? s.working : !installed ? s.nothingInstalled : undefined} testId="fonts-remove">{s.remove}</Btn>
+        <Btn icon={Trash2} variant="danger" onClick={() => run('remove')} reason={busy ? s.working : !installed ? s.nothingInstalled : undefined} testId="fonts-remove">{s.remove}</Btn>
       </div>
       {confirm && (
         <Dialog title={installed ? s.confirmTitleMissing : s.confirmTitle} onClose={() => setConfirm(false)}>

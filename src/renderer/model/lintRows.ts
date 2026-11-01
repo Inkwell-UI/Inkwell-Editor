@@ -62,6 +62,26 @@ export function filterDockRows(rows: readonly DockRow[], f: DockFilter): DockRow
   return rows.filter((r) => (f.severity === 'all' || r.severity === f.severity) && (f.currentSwf === undefined || r.swfName === '' || r.swfName === f.currentSwf))
 }
 
+/** Rows with the same severity, code and message are one issue that names several layers. The list stays in the input order (errors first), by the first row of each group. */
+export interface DockGroup {
+  /** The key of the first row. */
+  key: string
+  severity: Severity
+  code: string
+  message: string
+  rows: DockRow[]
+}
+export function groupDockRows(rows: readonly DockRow[]): DockGroup[] {
+  const groups = new Map<string, DockGroup>()
+  for (const r of rows) {
+    const id = `${r.severity}|${r.code}|${r.message}`
+    const g = groups.get(id)
+    if (g) g.rows.push(r)
+    else groups.set(id, { key: r.key, severity: r.severity, code: r.code, message: r.message, rows: [r] })
+  }
+  return [...groups.values()]
+}
+
 export const countSeverities = (rows: readonly DockRow[]): { errors: number; warnings: number } => ({
   errors: rows.filter((r) => r.severity === 'error').length,
   warnings: rows.filter((r) => r.severity === 'warning').length

@@ -106,7 +106,7 @@ export function ParamsEditor({ value, onChange }: { value: unknown; onChange(v: 
           <select className="gn-input nodrag nowheel" aria-label={strings.graph.paramType} value={p.type} onChange={(e) => edit(i, { type: e.target.value as Param['type'] })}>
             {PARAM_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
-          <button type="button" className="gn-icon nodrag" title={strings.graph.removeParam} aria-label={strings.graph.removeParam} onClick={() => onChange(params.filter((_, j) => j !== i))}><X size={12} aria-hidden="true" /></button>
+          <button type="button" className="gn-icon nodrag btn-hover-err" title={strings.graph.removeParam} aria-label={strings.graph.removeParam} onClick={() => onChange(params.filter((_, j) => j !== i))}><X size={12} aria-hidden="true" /></button>
         </div>
       ))}
       <button type="button" className="gn-add nodrag" onClick={() => onChange([...params, { name: next, type: 'String' }])}><Plus size={12} aria-hidden="true" />{strings.graph.addParam}</button>

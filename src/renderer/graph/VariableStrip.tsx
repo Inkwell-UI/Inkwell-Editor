@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { useStore } from 'zustand'
 import { PIN_STYLE } from '../model/graphModel'
-import { defaultFor, newVariableId, savedTypeError, SAVED_VARIABLE_TYPES, VARIABLE_DRAG, variableDragData, VARIABLE_TYPES } from '../model/variables'
+import { defaultFor, newVariableId, parseJsonDefault, savedTypeError, SAVED_VARIABLE_TYPES, VARIABLE_DRAG, variableDragData, VARIABLE_TYPES } from '../model/variables'
 import { openGraphs } from '../state/graphDocs'
 import { isReadOnlyGraph, type GraphStore } from '../state/graphStore'
 import { strings } from '../strings'
@@ -97,21 +97,38 @@ function VariableEditor({ store, v, canSave, close }: { store: GraphStore; v: Va
         {(saved ? SAVED_VARIABLE_TYPES : VARIABLE_TYPES).map((t) => <option key={t} value={t}>{t}</option>)}
       </select>
       <DefaultEditor type={v.type} value={v.default} onChange={(d) => a.updateVariable(v.id, { default: d })} />
-      {canSave && (
-        <label className="var-pop-check" title={savedReason ?? strings.vars.scopeTip('saved')}>
-          <input type="checkbox" checked={saved} disabled={!!savedReason} onChange={(e) => a.updateVariable(v.id, { scope: e.target.checked ? 'saved' : 'menu' })} />
+      {canSave && !savedReason && (
+        <label className="check" title={strings.vars.scopeTip('saved')}>
+          <input type="checkbox" checked={saved} onChange={(e) => a.updateVariable(v.id, { scope: e.target.checked ? 'saved' : 'menu' })} />
           {strings.vars.keepSaved}
         </label>
       )}
-      <Btn icon={Trash2} label={strings.vars.remove(v.name)} onClick={() => (a.removeVariable(v.id), close())}>{strings.lib.delete}</Btn>
+      <Btn icon={Trash2} variant="danger" label={strings.vars.remove(v.name)} onClick={() => (a.removeVariable(v.id), close())}>{strings.lib.delete}</Btn>
     </div>
   )
 }
 
 function DefaultEditor({ type, value, onChange }: { type: string; value: unknown; onChange(v: unknown): void }) {
   const label = strings.vars.default
-  if (type === 'Bool') return <label className="var-pop-check"><input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />{label}</label>
+  if (type === 'Bool') return <label className="check"><input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />{label}</label>
   if (type === 'Number') return <input className="gn-input" type="number" placeholder={label} aria-label={label} value={typeof value === 'number' ? value : 0} onChange={(e) => onChange(Number(e.target.value))} />
   if (type === 'String') return <input className="gn-input" placeholder={label} aria-label={label} value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value)} />
+  if (type === 'Array' || type === 'Object') return <JsonDefault key={type} type={type} value={value} onChange={onChange} />
   return null
+}
+
+/** Keeps the typed text so half-written JSON is not lost; the default changes only while the text parses to the right shape. */
+function JsonDefault({ type, value, onChange }: { type: 'Array' | 'Object'; value: unknown; onChange(v: unknown): void }) {
+  const [text, setText] = useState(() => JSON.stringify(value ?? defaultFor(type)))
+  const bad = parseJsonDefault(type, text) === undefined
+  return (
+    <input
+      className={bad ? 'gn-input is-invalid' : 'gn-input'} spellCheck={false} placeholder={strings.vars.default} title={strings.vars.defaultJson(type)} aria-label={strings.vars.defaultJson(type)} aria-invalid={bad} value={text}
+      onChange={(e) => {
+        setText(e.target.value)
+        const d = parseJsonDefault(type, e.target.value)
+        if (d !== undefined) onChange(d)
+      }}
+    />
+  )
 }

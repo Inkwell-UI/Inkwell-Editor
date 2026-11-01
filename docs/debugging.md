@@ -46,7 +46,7 @@ Mock data is never part of the game SWF, never shipped. Removing a key re-delive
 
 The overlay `dataBinding` string (`shared/graphBinding.ts`: `text=var:score;alpha=mock:hp`) is compiled by the **graph class** (so a layer needs a graph; `generateGraphClasses({bindings})`, filled from the overlay by `buildPipeline` and `compileWidget`):
 - `var:<id>` (a variable of that graph): `__g.b_<name> = function() { try { <layer>.<prop> = ... } catch (e) { __g.fail("binding:<name>", e); } }`, called **once on init** (after the variables are set) and **after every Set Variable** of that variable (the `emit` of a `core/SetVariable@` node adds `__g.b_<name>();` before its continuation, so the template in the Core-Pack is untouched). Several properties on one variable share one function.
-- Property code: `text` = `String(x)`; `visible` = `(x == true || x == "true")`; `alpha` = `Number(x)` (0..100, Flash native); `tint` = `new Color(clip).setRGB(Number(x))`.
+- Property code: `text` = `String(x)`; `visible` = `(x == true || x == "true" || Number(x) > 0)`; `alpha` = `Number(x)` (0..100, Flash native); `tint` = `new Color(clip).setRGB(Number(x))`.
 - `mock:<key>`: preview build only, in the first graph class of the SWF (see Mock data). Keys that are not identifiers (`hp.max`) go through brackets.
 - A binding whose layer is not compiled, or whose variable is not in this graph, generates nothing (the Data Binding panel already warns).
 

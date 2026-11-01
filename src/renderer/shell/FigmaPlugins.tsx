@@ -28,7 +28,7 @@ export function FigmaPlugins() {
       {count !== undefined && <p className="dim" data-testid="figma-plugins-count">{count ? s.count(count) : s.none}</p>}
       {msg && <p className={msg.ok ? 'tone-ok' : 'tone-error'} role="status" data-testid="figma-plugins-msg">{msg.text}</p>}
       <div className="row-actions">
-        <Btn icon={Trash2} haspopup="dialog" onClick={() => setConfirm(true)} reason={count === 0 ? s.none : undefined} testId="figma-forget">{s.forget}</Btn>
+        <Btn icon={Trash2} variant="danger" haspopup="dialog" onClick={() => setConfirm(true)} reason={count === 0 ? s.none : undefined} testId="figma-forget">{s.forget}</Btn>
       </div>
       {confirm && (
         <Dialog title={s.confirmTitle} onClose={() => setConfirm(false)}>

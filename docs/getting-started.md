@@ -50,7 +50,7 @@ Settings > **Fonts for Figma** > **Install Skyrim fonts**. This installs the gam
 
 1. Top bar: click the **Target** pill (it reads `hudWidget` for a new frame). In the dialog set **Target of this SWF** to **Custom menu (Inkwell Runtime opens it)**.
 2. On the left open the **Menu** tab. Set the open trigger: **Default Open Key**, and tick **Papyrus API** or a **mod event** if other mods should open it. Leave the flags (pauses the game, shows the cursor, Esc closes) as they are for a first menu.
-3. Select the button frame in the Navigator. In the **Inspector** set **Role** to **button** and check **Instance Name** (`btn`).
+3. Select the button frame in the Navigator. In the **Inspector** set **Role** to **button** and check **Script name** (`btn`).
 4. Switch to **Behaviour** mode (top bar, or Ctrl+2). Add **On Click** (press Space on the graph canvas to search), pick the button as its target, then add **Set Text**, wire the `then` pin of On Click to the `in` pin of Set Text, pick the title as its target and type the text. Details: `docs/graphs.md`.
 5. Check the **Preview** (Play tab: click the button; the text changes). **Lint** must show no error.
 

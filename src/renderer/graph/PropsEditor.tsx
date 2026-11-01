@@ -51,7 +51,7 @@ export function PropsEditor({ store }: { store: GraphStore }) {
           ) : p.type === 'String' ? (
             <input className="gn-input" aria-label={strings.graph.propDefault} value={typeof p.default === 'string' ? p.default : ''} onChange={(e) => patch(i, { default: e.target.value })} />
           ) : <span />}
-          <button type="button" className="gn-icon" title={strings.graph.sigRemove(p.name)} aria-label={strings.graph.sigRemove(p.name)} onClick={() => set(props.filter((_, j) => j !== i))}><X size={12} aria-hidden="true" /></button>
+          <button type="button" className="gn-icon btn-hover-err" title={strings.graph.sigRemove(p.name)} aria-label={strings.graph.sigRemove(p.name)} onClick={() => set(props.filter((_, j) => j !== i))}><X size={12} aria-hidden="true" /></button>
         </div>
       ))}
       <button type="button" className="gn-add" onClick={() => set([...props, { id: crypto.randomUUID(), name: fresh(), type: 'String', default: '' }])}>

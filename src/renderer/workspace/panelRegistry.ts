@@ -11,7 +11,7 @@ import { MockDataPanel } from '../panels/MockDataPanel'
 import { NavigatorPanel } from '../panels/NavigatorPanel'
 import { PreviewPanel } from '../panels/PreviewPanel'
 import { TracePanel } from '../panels/TracePanel'
-import { DataBindingPanel } from '../panels/DataBindingPanel'
+import { DataBindingPanel, useBindingTab } from '../panels/DataBindingPanel'
 import { strings } from '../strings'
 
 /** What a panel adds to its tab when it sits in a tab group (a hook, so it can read stores). */
@@ -50,7 +50,7 @@ export const panelRegistry = {
   localization: { title: strings.loc.title, component: LocalizationPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } },
   trace: { title: strings.trace.title, component: TracePanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } },
   mockData: { title: strings.mock.title, component: MockDataPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } },
-  dataBinding: { title: strings.bind.title, component: DataBindingPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 } }
+  dataBinding: { title: strings.bind.title, component: DataBindingPanel, defaultSize: { width: 800, height: 200 }, minSize: { width: 320, height: 70 }, useTabInfo: useBindingTab }
 } satisfies Record<string, PanelDef>
 
 export type PanelId = keyof typeof panelRegistry

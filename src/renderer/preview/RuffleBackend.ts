@@ -28,7 +28,7 @@ const loadFonts = (): Promise<string[]> =>
 async function openFrame(host: HTMLElement): Promise<{ frame: HTMLIFrameElement; ruffle: { createPlayer(): RufflePlayerElement } }> {
   const fonts = await loadFonts()
   const frame = document.createElement('iframe')
-  frame.style.cssText = 'width:100%;height:100%;border:0;display:block'
+  frame.style.cssText = 'width:100%;height:100%;border:0;display:block;outline:none' // no focus ring around the stage (the global :focus-visible one drew a white frame after keyboard use)
   frame.srcdoc = '<!doctype html><html style="height:100%"><body style="margin:0;height:100%;overflow:hidden;background:#000"></body></html>' // the player takes the whole frame: it needs a body with a height
   host.appendChild(frame)
   await new Promise<void>((resolve) => (frame.onload = () => resolve()))
@@ -102,6 +102,7 @@ export class RuffleBackend implements PreviewBackend {
     const player = (this.player = ruffle.createPlayer())
     player.style.width = '100%'
     player.style.height = '100%'
+    player.style.outline = 'none' // the player is focusable; the browser's own ring would draw a white frame around the stage
     frame.contentDocument!.body.appendChild(player)
     player.addEventListener('loadedmetadata', () => this.emit('loaded', undefined), { once: true })
     player.addEventListener(

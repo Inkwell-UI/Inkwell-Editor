@@ -8,6 +8,17 @@ export const VARIABLE_TYPES = ['Bool', 'Number', 'String', 'Array', 'Object'] as
 
 export const defaultFor = (type: Variable['type']): unknown => (type === 'Bool' ? false : type === 'Number' ? 0 : type === 'String' ? '' : type === 'Array' ? [] : type === 'Object' ? {} : undefined)
 
+/** The default an Array or Object variable gets from the editor's JSON text, or undefined when the text is not JSON of that shape. */
+export function parseJsonDefault(type: 'Array' | 'Object', text: string): unknown[] | Record<string, unknown> | undefined {
+  try {
+    const v: unknown = JSON.parse(text)
+    const isArray = Array.isArray(v)
+    return v && typeof v === 'object' && isArray === (type === 'Array') ? (v as unknown[] | Record<string, unknown>) : undefined
+  } catch {
+    return undefined
+  }
+}
+
 /** A variable id from its name, unique among the ids of every graph of the SWF (a Get Variable node refers to the id, so renaming never breaks it). */
 export function newVariableId(name: string, graphs: readonly Pick<Graph, 'variables'>[]): string {
   return newGraphId(name, new Set(graphs.flatMap((g) => g.variables.map((v) => v.id))))
@@ -34,7 +45,7 @@ export function bindableVariables(graphs: readonly Graph[], attached: readonly s
 }
 
 /** The type a bound property wants; a differing source type is flagged in the panel (not blocked: codegen coerces at run time). */
-const WANTS: Record<BindProp, readonly string[]> = { text: ['String', 'Number', 'Bool'], visible: ['Bool'], alpha: ['Number'], tint: ['Number'] }
+const WANTS: Record<BindProp, readonly string[]> = { text: ['String', 'Number'], visible: ['Bool', 'Number'], alpha: ['Number'], tint: ['Number'] }
 export const bindingTypeOk = (prop: BindProp, type: string): boolean => WANTS[prop].includes(type)
 export const mockType = (v: string | number | boolean): 'String' | 'Number' | 'Bool' => (typeof v === 'number' ? 'Number' : typeof v === 'boolean' ? 'Bool' : 'String')
 /** A mock value from the editor's text and chosen type (a Number that does not parse stays a String-less 0 so the stored value always has its type). */

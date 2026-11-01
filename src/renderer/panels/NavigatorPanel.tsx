@@ -169,6 +169,7 @@ export function NavigatorPanel() {
                     {strings.nav.relink}
                   </Btn>
                   <Btn
+                    variant="danger"
                     reason={notActive}
                     onClick={() => {
                       if (o.kind === 'overlay') return void (window.confirm(strings.nav.discardConfirm(o.nodeId)) && discardOverlayOrphan(o.swfId, o.nodeId))
