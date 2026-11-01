@@ -228,7 +228,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     return p === undefined ? undefined : p === '' ? '__g.base' : `__g.base.${p}`
   }
   const apply = (prop: BindProp, clip: string, x: string): string =>
-    prop === 'text' ? `${clip}.text = String(${x});` : prop === 'visible' ? `${clip}._visible = (${x} == true || ${x} == "true");` : prop === 'alpha' ? `${clip}._alpha = Number(${x});` : `new Color(${clip}).setRGB(Number(${x}));`
+    prop === 'text' ? `${clip}.text = String(${x});` : prop === 'visible' ? `${clip}._visible = (${x} == true || ${x} == "true" || Number(${x}) > 0);` : prop === 'alpha' ? `${clip}._alpha = Number(${x});` : `new Color(${clip}).setRGB(Number(${x}));`
   const binders = new Map<string, string[]>() // variable id -> statements that copy it to its bound properties
   const mockBound: string[] = []
   for (const [layer, str] of Object.entries(fn ? {} : (i.bindings ?? {})).sort(([a], [b]) => (a < b ? -1 : 1))) {

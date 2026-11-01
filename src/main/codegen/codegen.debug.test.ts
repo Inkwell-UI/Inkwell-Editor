@@ -24,7 +24,7 @@ describe('data binding codegen', () => {
     const s = src(setScore, { bindings })
     expect(s).toContain('__g.b_score = function() {')
     expect(s).toContain('__g.base.title._alpha = Number(__g.v_score);')
-    expect(s).toContain('__g.base.bar._visible = (__g.v_score == true || __g.v_score == "true");')
+    expect(s).toContain('__g.base.bar._visible = (__g.v_score == true || __g.v_score == "true" || Number(__g.v_score) > 0);')
     expect(s).toContain('new Color(__g.base.bar).setRGB(Number(__g.v_score));')
     expect(s).toContain('__g.base._alpha = Number(__g.v_score);') // the base clip itself
     expect(s).toContain('__g.base.title.text = String(__g.v_label);')

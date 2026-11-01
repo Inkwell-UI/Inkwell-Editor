@@ -189,6 +189,15 @@ describe('generate', () => {
       expect(g.shapes[0]!.svg).toContain('stroke-width="4"')
     })
 
+    it('a frame border is drawn as side bars inside the frame; individual strokes keep only their sides', () => {
+      const white = { type: 'solid', color: { r: 1, g: 1, b: 1 } }
+      const ir = (st: object) => swf([frame('r', ['f']), frame('f', [], { parent: 'r', transform: { x: 0, y: 0, width: 100, height: 50, rotation: 0 }, strokes: [{ fill: white, weight: 2, alignment: 'inside', ...st }] })])
+      const bottom = generate(ir({ sides: { top: 0, right: 0, bottom: 2, left: 0 } }), { modId: 'MyMod' })
+      expect(bottom.lint).toEqual([])
+      expect(bottom.shapes.find((s) => s.nodeId === 'f')!.svg).toMatch(/^<svg[^>]*>(<rect x="0" y="48" width="100" height="2" [^>]*\/>)<\/svg>/)
+      expect((generate(ir({}), { modId: 'MyMod' }).shapes.find((s) => s.nodeId === 'f')!.svg!.match(/<rect /g) ?? []).length).toBe(4)
+    })
+
     it('a component kept away from the design becomes a symbol with a linkage name, its layers compiled and placed inside it', () => {
       const comp = { ...frame('c1', ['cs']), type: 'component', variants: [{ name: 'Default', node: 'c1' }] }
       const g = generate(swf([frame('f', ['s']), rectShape('s')]), { modId: 'MyMod', components: [{ id: 'c1', name: 'ListItem', nodes: { c1: comp as never, cs: { ...rectShape('cs'), parent: 'c1' } } }] })
@@ -199,6 +208,14 @@ describe('generate', () => {
       expect(t.some((x) => x.code === TAG.ExportAssets && x.body.includes('inkwell_component_c1'))).toBe(true)
       expect(g.layerPaths['cs']).toMatch(/^component\.c1\./)
       expect(generate(swf([frame('f', ['s']), rectShape('s')]), { modId: 'MyMod' }).componentSymbols).toEqual([]) // nothing asked, nothing added
+    })
+
+    it('a finding inside a component carries the layer name, not its Figma id', () => {
+      const comp = { ...frame('c1', ['cs']), type: 'component', variants: [{ name: 'Default', node: 'c1' }] }
+      const paths = [[{ op: 'M', x: 0, y: 0 }, { op: 'C', x1: 0, y1: 10, x2: 10, y2: 10, x: 20, y: 0 }, { op: 'Z' }]]
+      const curved = { ...rectShape('cs'), parent: 'c1', name: 'Check mark', paths }
+      const g = generate(swf([frame('f', ['s']), rectShape('s')]), { modId: 'MyMod', components: [{ id: 'c1', name: 'ListItem', nodes: { c1: comp as never, cs: curved as never } }] })
+      expect(g.lint.map((l) => [l.code, l.nodeId, l.nodeName])).toEqual([['curve-approximated', 'cs', 'Check mark']])
     })
 
     it('a component tree wins over a stale copy of the component in the SWF IR (its fill is drawn)', () => {

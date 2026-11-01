@@ -89,6 +89,6 @@ export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<Compile
   } else {
     await copyFile(base, swfPath) // nothing for FFDec to fill in
   }
-  const lint = g.lint.map((l) => ({ ...l, nodeName: ir.nodes[l.nodeId]?.name }))
+  const lint = g.lint.map((l) => ({ ...l, nodeName: l.nodeName ?? ir.nodes[l.nodeId]?.name }))
   return { swfPath, lint, fonts: g.fonts.map((f) => ({ ...f, swfId: ir.id })), gfxTextExtensions: g.gfxTextExtensions, ddsImages: g.ddsImages, settableTexts: g.settableTexts, graphClasses: g.graphClasses, graphCalls: g.graphCalls, layerPaths: g.layerPaths, contractProvided: g.contractProvided, timings: timer.finishBuild() }
 }

@@ -4,7 +4,7 @@ import { ddsRel, isAssetHash, type ImageMode } from '../images/assets'
 import type { Rgba } from '../images/png'
 import { ident } from '../../shared/overlay'
 import { issue, type LintIssue } from './lint'
-import { maskSvg, rectSvg, shapeToSvg } from './svg'
+import { frameStrokeSvg, maskSvg, rectSvg, shapeToSvg } from './svg'
 import * as T from './tags'
 import { mapText, previewDeviceFont, type FontInfo, type GlyphLookup, type TextScript } from './text'
 import { HUD_SCALE, widgetFrame } from '../widget/frame'
@@ -515,6 +515,17 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       names.push(name)
       bg.push(T.placeObject2({ depth, charId: id, name, x: 0, y: 0, ...(f.opacity !== undefined && f.opacity < 1 ? { alpha: f.opacity } : {}) }))
     }
+    // the border: one clip named `stroke`, above the fills and below the children
+    if (n.strokes?.length) {
+      const svg = n.id === ir.root ? undefined : frameStrokeSvg(n.transform.width, n.transform.height, n.strokes, n.id, lint)
+      if (svg) {
+        const id = alloc()
+        shapes.push({ charId: id, nodeId: n.id, svg })
+        defs.push(T.defineShapePlaceholder(id, n.transform.width, n.transform.height))
+        names.push('stroke')
+        bg.push(T.placeObject2({ depth: skip + bg.length + 1, charId: id, name: 'stroke', x: 0, y: 0 }))
+      }
+    }
     return [bg, names]
   }
 
@@ -844,7 +855,9 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   ]
   // synthetic glyph layers: their findings belong to the prompt, their font rows are not the author's text
   const lintOut = withGlyphs ? lint.map((l) => (isGlyphNode(l.nodeId) ? { ...l, nodeId: glyphOwner(l.nodeId), ...(l.nodeName !== undefined ? { nodeName: ir.nodes[glyphOwner(l.nodeId)]?.name ?? l.nodeName } : {}) } : l)) : lint
-  return { componentSymbols, tags, shapes, as2, lint: lintOut, fonts: withGlyphs ? fontRows.filter((f) => !isGlyphNode(f.nodeId)) : fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls, layerPaths: Object.fromEntries(layerPaths), contractProvided: glue?.provided ?? {} }
+  // a layer inside a component is only in this build's merged copy of the IR: name its findings here, so the dock shows the layer name, not its Figma id
+  const lintNamed = lintOut.map((l) => (l.nodeName === undefined && ir.nodes[l.nodeId] ? { ...l, nodeName: ir.nodes[l.nodeId]!.name } : l))
+  return { componentSymbols, tags, shapes, as2, lint: lintNamed, fonts: withGlyphs ? fontRows.filter((f) => !isGlyphNode(f.nodeId)) : fontRows, stage, embeddedFonts, gfxTextExtensions: scripts.length, ddsImages: loads.length, settableTexts: settable, translatedTexts, graphClasses: gen?.classes ?? [], graphCalls, layerPaths: Object.fromEntries(layerPaths), contractProvided: glue?.provided ?? {} }
 }
 
 /** `node-off-stage`: a visible layer whose box lies entirely outside the frame (the stage), so it never shows. One warning per subtree. */
