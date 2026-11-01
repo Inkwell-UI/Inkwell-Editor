@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Box, Plus, X } from 'lucide-react'
 import { FUNCTION_PIN_TYPES } from '@inkwell-ui/spec'
 import { useStore } from 'zustand'
 import { strings } from '../strings'
 import type { GraphStore } from '../state/graphStore'
 import { useSwfGraphs } from '../hooks/useGraphs'
+import { InspCard, InspFoot, InspHeader } from '../ui/InspParts'
 import { NameBox } from './SignatureEditor'
 
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/
@@ -28,6 +29,9 @@ export function OpenComponentProps({ children }: { children?: ReactNode }) {
 /** The data a component takes (its props), in the Inspector while a component's graph is open: name, type, default. Every change is one `setProps` (undoable). */
 export function PropsEditor({ store }: { store: GraphStore }) {
   const props = useStore(store, (s) => s.props)
+  const name = useStore(store, (s) => s.name)
+  const meta: { component?: unknown } = store.getState().meta
+  const component = typeof meta.component === 'string' ? meta.component : undefined
   if (!props) return null
   const set = (next: Prop[]): void => store.getState().setProps(next)
   const patch = (i: number, p: Partial<Prop>): void => set(props.map((x, j) => (j === i ? { ...x, ...p } : x)))
@@ -35,28 +39,33 @@ export function PropsEditor({ store }: { store: GraphStore }) {
     for (let k = props.length + 1; ; k++) if (!propNameProblem(props, -1, `prop${k}`)) return `prop${k}`
   }
   return (
-    <section className="props-editor" aria-label={strings.graph.propsTitle} data-testid="props-editor">
-      <h4 className="sig-title">{strings.graph.propsTitle}</h4>
-      {props.length === 0 && <p className="empty">{strings.graph.propsEmpty}</p>}
-      {props.map((p, i) => (
-        <div className="gn-param" key={p.id}>
-          <NameBox value={p.name} label={strings.graph.sigName} problem={(n) => propNameProblem(props, i, n)} onCommit={(name) => patch(i, { name })} />
-          <select className="gn-input" aria-label={strings.graph.sigType} value={p.type} onChange={(e) => { const type = e.target.value as Prop['type']; patch(i, { type, default: zero(type) }) }}>
-            {FUNCTION_PIN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-          {p.type === 'Bool' ? (
-            <input type="checkbox" aria-label={strings.graph.propDefault} checked={p.default === true} onChange={(e) => patch(i, { default: e.target.checked })} />
-          ) : p.type === 'Number' ? (
-            <input className="gn-input" type="number" aria-label={strings.graph.propDefault} value={typeof p.default === 'number' ? p.default : 0} onChange={(e) => patch(i, { default: Number(e.target.value) })} />
-          ) : p.type === 'String' ? (
-            <input className="gn-input" aria-label={strings.graph.propDefault} value={typeof p.default === 'string' ? p.default : ''} onChange={(e) => patch(i, { default: e.target.value })} />
-          ) : <span />}
-          <button type="button" className="gn-icon btn-hover-err" title={strings.graph.sigRemove(p.name)} aria-label={strings.graph.sigRemove(p.name)} onClick={() => set(props.filter((_, j) => j !== i))}><X size={12} aria-hidden="true" /></button>
+    <div className="insp insp-fill" data-testid="props-editor">
+      <InspHeader title={name} sub={strings.insp.componentKind} />
+      <InspCard title={strings.graph.propsTitle} icon={Box}>
+        <div className="props-editor">
+        {props.length === 0 && <p className="empty">{strings.graph.propsEmpty}</p>}
+        {props.map((p, i) => (
+          <div className="gn-param" key={p.id}>
+            <NameBox value={p.name} label={strings.graph.sigName} problem={(n) => propNameProblem(props, i, n)} onCommit={(name) => patch(i, { name })} />
+            <select className="gn-input" aria-label={strings.graph.sigType} value={p.type} onChange={(e) => { const type = e.target.value as Prop['type']; patch(i, { type, default: zero(type) }) }}>
+              {FUNCTION_PIN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+            {p.type === 'Bool' ? (
+              <input type="checkbox" aria-label={strings.graph.propDefault} checked={p.default === true} onChange={(e) => patch(i, { default: e.target.checked })} />
+            ) : p.type === 'Number' ? (
+              <input className="gn-input" type="number" aria-label={strings.graph.propDefault} value={typeof p.default === 'number' ? p.default : 0} onChange={(e) => patch(i, { default: Number(e.target.value) })} />
+            ) : p.type === 'String' ? (
+              <input className="gn-input" aria-label={strings.graph.propDefault} value={typeof p.default === 'string' ? p.default : ''} onChange={(e) => patch(i, { default: e.target.value })} />
+            ) : <span />}
+            <button type="button" className="gn-icon btn-hover-err" title={strings.graph.sigRemove(p.name)} aria-label={strings.graph.sigRemove(p.name)} onClick={() => set(props.filter((_, j) => j !== i))}><X size={12} aria-hidden="true" /></button>
+          </div>
+        ))}
+        <button type="button" className="gn-add" onClick={() => set([...props, { id: crypto.randomUUID(), name: fresh(), type: 'String', default: '' }])}>
+          <Plus size={12} aria-hidden="true" />{strings.graph.propAdd}
+        </button>
         </div>
-      ))}
-      <button type="button" className="gn-add" onClick={() => set([...props, { id: crypto.randomUUID(), name: fresh(), type: 'String', default: '' }])}>
-        <Plus size={12} aria-hidden="true" />{strings.graph.propAdd}
-      </button>
-    </section>
+      </InspCard>
+      {component && <InspFoot text={`${strings.insp.componentKind} · ${component.slice(0, 8)}`} title={component} copy={component} />}
+    </div>
   )
 }

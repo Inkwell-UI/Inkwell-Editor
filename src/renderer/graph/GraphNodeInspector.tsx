@@ -12,8 +12,8 @@ import { functionChoices, pinName, pointCall } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { strings } from '../strings'
 import { isFunctionEntry, isFunctionExit } from '../../shared/graphValidate'
-import { Copy, LogIn, LogOut } from 'lucide-react'
-import { Btn } from '../ui/Btn'
+import { LogIn, LogOut } from 'lucide-react'
+import { InspCard, InspFoot, InspHeader } from '../ui/InspParts'
 import { OpenComponentProps } from './PropsEditor'
 import { PinInputs, PinOutputs, type PinRowsProps } from './PinRows'
 import { SignatureEditor } from './SignatureEditor'
@@ -46,40 +46,30 @@ export function GraphNodeInspector() {
   const ctx = { setField: (k: string, v: unknown) => (k === callKey && typeof v === 'string' ? pointCall(store, node.id, v) : k === propKey && typeof v === 'string' ? store.getState().setNodeProp(node.id, v) : store.getState().setField(node.id, k, v)), layers, variables }
   const pinProps: PinRowsProps | undefined = def && pins ? { swfId: swf.id, graphId: activeId, store, node, def, defs, nodes, edges, inputs: pins.inputs, outputs: pins.outputs, rows: list, ctx } : undefined
   return (
-    <div className="insp insp-node" data-testid="graph-node-inspector">
-      <header className="insp-head">
-        <h3 className="insp-name">{def?.title ?? strings.graph.unknownNode}</h3>
-        <span className="chip">{def?.category ?? '?'}</span>
-      </header>
-      {description && <p className="dim insp-desc">{description}</p>}
+    <div className="insp insp-fill" data-testid="graph-node-inspector">
+      <InspHeader title={def?.title ?? strings.graph.unknownNode} sub={def?.category ?? '?'} description={description} />
       {mine.length > 0 && (
-        <section className="pinrow-section" aria-labelledby="gn-issues">
-          <h4 id="gn-issues" className="pinrow-title">{strings.insp.gnIssues(mine.length)}</h4>
+        <InspCard title={strings.insp.gnIssues(mine.length)}>
           <ul className="plain">{mine.map((r, i) => <li key={i} className="issue"><span className="issue-text"><span className="mono">{r.code}</span><span>{r.message}</span></span></li>)}</ul>
-        </section>
+        </InspCard>
       )}
       {def && isFunctionEntry(def) && <SignatureEditor store={store} sections={['inputs']} />}
       {def && isFunctionExit(def) && <SignatureEditor store={store} sections={['outputs', 'exits']} />}
       {def && pins && pinProps && (
         <>
           {(pins.inputs.length > 0 || list.length > 0) && (
-            <section className="pinrow-section" aria-labelledby="gn-inputs">
-              <h4 id="gn-inputs" className="pinrow-title"><LogIn size={14} aria-hidden="true" />{strings.insp.gnInputs}</h4>
+            <InspCard title={strings.insp.gnInputs} icon={LogIn}>
               <PinInputs {...pinProps} />
-            </section>
+            </InspCard>
           )}
           {pins.outputs.length > 0 && (
-            <section className="pinrow-section" aria-labelledby="gn-outputs">
-              <h4 id="gn-outputs" className="pinrow-title"><LogOut size={14} aria-hidden="true" />{strings.insp.gnOutputs}</h4>
+            <InspCard title={strings.insp.gnOutputs} icon={LogOut}>
               <PinOutputs {...pinProps} />
-            </section>
+            </InspCard>
           )}
         </>
       )}
-      <footer className="insp-foot" data-testid="graph-node-ids">
-        <span className="mono" title={strings.insp.gnId(node.id)}>{node.data.kind} · {node.id.slice(0, 8)}</span>
-        <Btn icon={Copy} label={strings.insp.gnCopyId} variant="quiet" onClick={() => void navigator.clipboard?.writeText(node.id).catch(() => undefined)} />
-      </footer>
+      <InspFoot text={`${node.data.kind} · ${node.id.slice(0, 8)}`} title={strings.insp.gnId(node.id)} copy={node.id} testId="graph-node-ids" />
     </div>
   )
 }

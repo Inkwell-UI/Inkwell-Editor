@@ -26,7 +26,7 @@ import { languageCode } from '../preview/locale'
 import { TextCell } from '../ui/TextCell'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
-import { Fold } from '../ui/Fold'
+import { InspFold, InspFoot, InspHeader } from '../ui/InspParts'
 import { Tip } from '../ui/Tip'
 import { FigmaSelectBtn } from '../ui/FigmaSelectBtn'
 import { Panel } from './Panel'
@@ -104,14 +104,8 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
   const tabs = INSP_TABS.filter((t) => t !== 'translations' || node.type === 'text') // only a text layer has something to translate
 
   return (
-    <div className="insp">
-      <header className="insp-head">
-        <div>
-          <h3 className="insp-name">{node.name}</h3>
-          <span className="dim" title={strings.insp.nodeId(node.id)}>{strings.nav.typeNames[node.type] ?? node.type} · {node.id}</span>
-        </div>
-        <FigmaSelectBtn nodeId={node.id} />
-      </header>
+    <div className="insp insp-fill">
+      <InspHeader title={node.name} sub={strings.nav.typeNames[node.type] ?? node.type} action={<FigmaSelectBtn nodeId={node.id} />} />
       <div className="insp-tabs" role="tablist" aria-label={strings.insp.title}>
         {tabs.map((t) => (
           <button key={t} type="button" id={`insp-tab-${t}`} className="tab" role="tab" aria-selected={tab === t} tabIndex={tab === t ? 0 : -1} onClick={() => setTab(t)} data-testid={`insp-tab-${t}`}>
@@ -153,23 +147,23 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
 
       {tab === 'behavior' && (
         <>
-        <Fold id="identity" title={strings.insp.groupIdentity} summary={entry.role ? strings.insp.roleNames[entry.role] ?? entry.role : strings.insp.noRole} defaultOpen>
+        <InspFold id="identity" title={strings.insp.groupIdentity} summary={entry.role ? strings.insp.roleNames[entry.role] ?? entry.role : strings.insp.noRole} defaultOpen>
           <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
           {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
           {entry.role === 'prompt' && <PromptField swfId={swfId} nodeId={node.id} value={(entry as { prompt?: Record<string, string> }).prompt} />}
           <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
-        </Fold>
+        </InspFold>
         {swf?.ir.target.kind === 'customMenu' && (
-          <Fold id="focus" title={strings.insp.focus.label} summary={typeof (entry as { focus?: FocusValue }).focus?.order === 'number' ? strings.insp.focus.orderSummary((entry as { focus?: FocusValue }).focus!.order!) : strings.insp.focus.none} defaultOpen>
+          <InspFold id="focus" title={strings.insp.focus.label} summary={typeof (entry as { focus?: FocusValue }).focus?.order === 'number' ? strings.insp.focus.orderSummary((entry as { focus?: FocusValue }).focus!.order!) : strings.insp.focus.none} defaultOpen>
             <FocusField swfId={swfId} nodeId={node.id} value={(entry as { focus?: FocusValue }).focus} />
-          </Fold>
+          </InspFold>
         )}
-        <Fold id="data" title={strings.insp.groupData} summary={boundCount ? strings.bind.count(boundCount) : strings.insp.dataNone}>
+        <InspFold id="data" title={strings.insp.groupData} summary={boundCount ? strings.bind.count(boundCount) : strings.insp.dataNone}>
           <BindingRows swfId={swfId} node={node} />
           <ThemeBindingsField node={node} />
           {EMBEDDED_FONTS_UI && node.type === 'text' && <EmbeddedFontField swfId={swfId} nodeId={node.id} value={(entry as { font?: string }).font} />}
-        </Fold>
-        <Fold id="layout" title={strings.insp.groupLayout} summary={isWidgetFrame ? strings.insp.widgetAnchorSummary : strings.insp.layoutDefault}>
+        </InspFold>
+        <InspFold id="layout" title={strings.insp.groupLayout} summary={isWidgetFrame ? strings.insp.widgetAnchorSummary : strings.insp.layoutDefault}>
           {isWidgetFrame && <WidgetAnchorField swfId={swfId} nodeId={node.id} value={widgetAnchorOf(entry)} />}
           {isWidgetFrame && <DebugHotkeyField swfId={swfId} nodeId={node.id} value={debugHotkeyOf(entry)} />}
           {strings.insp.disabledControls.filter((c, i) => !(isWidgetFrame && i === 0)).map((c) => (
@@ -178,7 +172,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
               <Btn label={c.label} reason={c.reason}>{c.value}</Btn>
             </div>
           ))}
-        </Fold>
+        </InspFold>
         </>
       )}
 
@@ -199,6 +193,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         </div>
       )}
       </div>
+      <InspFoot text={node.id} title={strings.insp.nodeId(node.id)} copy={node.id} />
     </div>
   )
 }

@@ -574,15 +574,26 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 /* Inspector pin rows of a graph node (graph/PinRows.tsx); the mock data control reuses the .bindfld-* look above */
 /* Rhythm: 4px label to control, 10px between rows, 20px between sections (twice a row gap, so a title groups with its own rows); controls are 28px like the rest of the editor. */
 .insp-desc { margin: 0; }
-.pinrow-section { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding: 10px; border-radius: var(--radius); background: var(--bg); } /* a card a step darker than the pane (Inputs, Outputs, Issues): fields inside are darker still, wire rows lighter */
-.pinrow-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--fg); }
-.pinrow-title svg { color: var(--fg-dim); flex: none; }
-.panel-body:has(> .insp-node) { display: flex; flex-direction: column; } /* the node Inspector fills the panel so its footer can sit at the very bottom; a taller one scrolls as before */
-.insp-node { flex: 1 0 auto; display: flex; flex-direction: column; }
+.insp-card { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding: 10px; border-radius: var(--radius); background: var(--bg); } /* a card a step darker than the pane (every Inspector section): fields inside are darker still, wire rows lighter */
+.insp-card-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--fg); }
+.insp-card-title svg { color: var(--fg-dim); flex: none; }
+.insp-card-actions { margin-left: auto; display: inline-flex; gap: 4px; }
+.insp-sub { font-size: 11px; }
+/* a card that folds (ui/InspParts.tsx InspFold): the title row is the summary, the summary text shows while closed */
+.insp-fold { margin-top: 12px; border-radius: var(--radius); background: var(--bg); }
+.insp-fold > summary { display: flex; align-items: center; gap: 6px; padding: 8px 10px; cursor: pointer; list-style: none; }
+.insp-fold > summary::-webkit-details-marker { display: none; }
+.insp-fold > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.insp-fold[open] > summary .fold-chev { transform: rotate(90deg); }
+.insp-fold[open] > summary .fold-sum { display: none; }
+.insp-fold-body { display: flex; flex-direction: column; gap: 10px; padding: 0 10px 10px; }
+.insp-fold-body .field, .insp-fold-body .bindfld { margin: 0; }
+.panel-body:has(> .insp-fill) { display: flex; flex-direction: column; } /* an Inspector fills the panel so its footer can sit at the very bottom; a taller one scrolls as before */
+.insp-fill { flex: 1 0 auto; display: flex; flex-direction: column; }
 .insp-foot { display: flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 24px; color: var(--fg-dim); user-select: text; } /* kind and the start of the node ID, small, pushed to the bottom (24px at least above it); the body is user-select: none */
 .insp-foot .mono { font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pinrow-section .gn-input:not([type="checkbox"]) { min-height: var(--ctl-h); }
-.pinrow-section .gn-field { gap: 4px; align-items: stretch; }
+.insp-card .gn-input:not([type="checkbox"]) { min-height: var(--ctl-h); }
+.insp-card .gn-field { gap: 4px; align-items: stretch; }
 .pinrow { display: flex; flex-direction: column; gap: 4px; }
 .pinrow-label { color: var(--fg-dim); font-size: 11px; }
 .pinrow-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: center; }
