@@ -41,5 +41,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/SetRotation.as2"
+  "as2Template": "templates/SetRotation.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a layer to an angle in degrees."
+    }
+  }
 }

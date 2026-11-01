@@ -52,6 +52,9 @@
   },
   "as2Template": "templates/CallWidget.as2",
   "extra": {
-    "dynamicInputs": "params"
+    "dynamicInputs": "params",
+    "inspector": {
+      "description": "Runs an On Widget Call handler of this graph with the values you give it."
+    }
   }
 }

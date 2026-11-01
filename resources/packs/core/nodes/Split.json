@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Split.as2"
+  "as2Template": "templates/Split.as2",
+  "extra": {
+    "inspector": {
+      "description": "Cuts a text into a list at every separator."
+    }
+  }
 }

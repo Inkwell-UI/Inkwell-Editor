@@ -30,5 +30,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Replace.as2"
+  "as2Template": "templates/Replace.as2",
+  "extra": {
+    "inspector": {
+      "description": "Replaces a piece of text inside another text."
+    }
+  }
 }

@@ -29,5 +29,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/CloseMenu.as2"
+  "as2Template": "templates/CloseMenu.as2",
+  "extra": {
+    "inspector": {
+      "description": "Closes another menu by its name."
+    }
+  }
 }

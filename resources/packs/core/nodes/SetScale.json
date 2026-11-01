@@ -46,5 +46,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/SetScale.as2"
+  "as2Template": "templates/SetScale.as2",
+  "extra": {
+    "inspector": {
+      "description": "Scales a layer horizontally and vertically."
+    }
+  }
 }

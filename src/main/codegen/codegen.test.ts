@@ -33,6 +33,20 @@ describe('Call Widget', () => {
   })
 })
 
+describe('mock data on a node input (extra.pinMock)', () => {
+  const g = graph('main', [call(), { ...node('t', 'core/SetText@1', { target: 'L', text: 'real' }), extra: { pinMock: { text: 'caption' } } }], [wire('e', 'then', 't', 'in')])
+  const run = (preview: boolean) => generateGraphClasses({ modId: 'M', swfCls: 'T', graphs: [g], packs, layerPath: (id) => (id === 'L' ? 'title' : undefined), ...(preview ? { preview: true } : {}) })
+  it('the preview reads the mock field while it has a value and falls back to the literal', () => {
+    const src = run(true).classes[0]!.source
+    expect(src).toContain('_global.Inkwell.mock["caption"] != undefined ? String(_global.Inkwell.mock["caption"]) : "real"')
+  })
+  it('the game build never reads it', () => {
+    const src = run(false).classes[0]!.source
+    expect(src).not.toContain('caption')
+    expect(src).toContain('"real"')
+  })
+})
+
 describe('class scaffolding', () => {
   const r = gen(graph('main', [call('Show', [{ name: 'title', type: 'String' }, { name: 'hold', type: 'Number' }, { name: 'on', type: 'Bool' }])], []))
   it('is a class (dynamic in practice: members are added freely) under mods.<modId> with fail and addInputHandler, and never uses Error', () => {

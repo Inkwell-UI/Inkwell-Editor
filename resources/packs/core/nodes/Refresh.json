@@ -23,5 +23,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Refresh.as2"
+  "as2Template": "templates/Refresh.as2",
+  "extra": {
+    "inspector": {
+      "description": "Redraws a list."
+    }
+  }
 }

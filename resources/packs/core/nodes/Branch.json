@@ -27,5 +27,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Branch.as2"
+  "as2Template": "templates/Branch.as2",
+  "extra": {
+    "inspector": {
+      "description": "Runs one of two paths depending on a condition."
+    }
+  }
 }

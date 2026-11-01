@@ -37,6 +37,9 @@
     "managedFields": [
       "propType",
       "propName"
-    ]
+    ],
+    "inspector": {
+      "description": "Reads one of the component's props."
+    }
   }
 }

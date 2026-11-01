@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/ToNumber.as2"
+  "as2Template": "templates/ToNumber.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns text into a number."
+    }
+  }
 }

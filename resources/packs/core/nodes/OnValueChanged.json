@@ -40,7 +40,10 @@
   "as2Template": "templates/OnValueChanged.as2",
   "extra": {
     "entry": true,
-    "unverifiedInGame": "CLIK addEventListener"
+    "unverifiedInGame": "CLIK addEventListener",
+    "inspector": {
+      "description": "Runs when the value of a slider or similar control changes."
+    }
   },
   "requiresRuntime": true
 }

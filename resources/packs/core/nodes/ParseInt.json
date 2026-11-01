@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/ParseInt.as2"
+  "as2Template": "templates/ParseInt.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns text into a whole number in the given base. Gives 0 when it is not a number."
+    }
+  }
 }

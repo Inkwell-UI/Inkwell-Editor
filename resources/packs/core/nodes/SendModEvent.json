@@ -34,5 +34,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/SendModEvent.as2"
+  "as2Template": "templates/SendModEvent.as2",
+  "extra": {
+    "inspector": {
+      "description": "Sends a named event that other mods can listen for."
+    }
+  }
 }

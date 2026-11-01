@@ -34,5 +34,10 @@
       "description": "Frames of the meter clip; value 0..1 maps onto 1..frames"
     }
   },
-  "as2Template": "templates/ProgressSetValue.as2"
+  "as2Template": "templates/ProgressSetValue.as2",
+  "extra": {
+    "inspector": {
+      "description": "Sets a progress bar to a value from 0 to 1."
+    }
+  }
 }

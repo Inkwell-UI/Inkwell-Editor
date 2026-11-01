@@ -31,6 +31,9 @@
   },
   "as2Template": "templates/SetVariable.as2",
   "extra": {
-    "writesVariable": "variable"
+    "writesVariable": "variable",
+    "inspector": {
+      "description": "Stores a value in a variable."
+    }
   }
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Graph } from '@inkwell-ui/spec'
 import { emptyGraph } from '../../shared/graphs'
 import { graphForComponent, ownersOfGraph } from './graphNav'
-import { bindableVariables, bindingTypeOk, defaultFor, droppedVariable, mockValue, newVariableId, parseJsonDefault, variableDragData, variableTarget } from './variables'
+import { bindableVariables, bindingTypeOk, defaultFor, droppedVariable, inferMock, mockUses, mockValue, newVariableId, parseJsonDefault, variableDragData, variableTarget } from './variables'
 
 const g = (id: string, scope: Graph['scope'], variables: Graph['variables'] = []): Graph => ({ ...emptyGraph(id, id, scope), variables })
 const v = (id: string, scope: 'menu' | 'component', type: 'Bool' | 'Number' | 'String' = 'Number') => ({ id, name: id, type, scope }) as Graph['variables'][number]
@@ -44,6 +44,13 @@ describe('variables', () => {
   })
   it('mock values keep their type', () => {
     expect([mockValue('Number', '4.5'), mockValue('Number', 'x'), mockValue('Bool', 'true'), mockValue('String', '7')]).toEqual([4.5, 0, true, '7'])
+    expect(['3', ' 4.5 ', 'true', 'false', '', 'Combat', '1e'].map(inferMock)).toEqual([3, 4.5, true, false, '', 'Combat', '1e'])
+  })
+  it('finds who reads a mock key: layer bindings and node inputs, once each, skipping deleted layers', () => {
+    const overlay = { nodes: { a: { dataBinding: 'text=mock:hp;alpha=mock:hp;visible=var:x' }, b: { dataBinding: 'text=mock:name' }, gone: { dataBinding: 'text=mock:hp' } } } as never
+    const graph = { ...g('menu', 'menu'), nodes: [{ id: 'n', kind: 'core/Add@1', fields: {}, pos: { x: 0, y: 0 }, extra: { pinMock: { a: 'hp', b: 'extra' } } }] } as Graph
+    const uses = mockUses(overlay, [graph], (id) => (id === 'gone' ? undefined : id.toUpperCase()))
+    expect([...uses]).toEqual([['hp', ['A', 'menu']], ['name', ['B']], ['extra', ['menu']]])
   })
 })
 

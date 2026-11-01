@@ -31,5 +31,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/GetSetting.as2"
+  "as2Template": "templates/GetSetting.as2",
+  "extra": {
+    "inspector": {
+      "description": "Reads a setting from the mod's INI file, with a default for when it is missing."
+    }
+  }
 }

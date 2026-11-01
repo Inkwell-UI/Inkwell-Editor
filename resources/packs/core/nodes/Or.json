@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Or.as2"
+  "as2Template": "templates/Or.as2",
+  "extra": {
+    "inspector": {
+      "description": "True when at least one of the values is true."
+    }
+  }
 }

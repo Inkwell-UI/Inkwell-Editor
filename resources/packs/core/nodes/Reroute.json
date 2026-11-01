@@ -23,6 +23,9 @@
   ],
   "fields": {},
   "extra": {
-    "editorOnly": true
+    "editorOnly": true,
+    "inspector": {
+      "description": "A bend point for a wire. It does nothing when the mod runs."
+    }
   }
 }

@@ -33,6 +33,9 @@
     "entry": true,
     "timer": "seconds",
     "timerKey": "name",
-    "timerRepeat": "repeat"
+    "timerRepeat": "repeat",
+    "inspector": {
+      "description": "Runs again and again, or once, after a number of seconds."
+    }
   }
 }

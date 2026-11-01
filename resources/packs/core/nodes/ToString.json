@@ -34,5 +34,10 @@
       "description": "Pin type of the value to convert (Object for an item of For Each or Array Get). An object or array gives its contents, e.g. {name: \"Bob\", tags: [1, 2]}"
     }
   },
-  "as2Template": "templates/ToString.as2"
+  "as2Template": "templates/ToString.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a value into text."
+    }
+  }
 }

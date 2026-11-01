@@ -36,5 +36,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/StopTweens.as2"
+  "as2Template": "templates/StopTweens.as2",
+  "extra": {
+    "inspector": {
+      "description": "Stops every Tween running on a layer."
+    }
+  }
 }

@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/ToLower.as2"
+  "as2Template": "templates/ToLower.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a text into lower case."
+    }
+  }
 }

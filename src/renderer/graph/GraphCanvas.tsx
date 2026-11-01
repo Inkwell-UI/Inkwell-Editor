@@ -17,14 +17,15 @@ import { useVisibleVariables } from './useVisibleVariables'
 import { useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import { componentRows } from '../model/componentList'
-import { ensureComponentGraphs } from '../state/componentGraphs'
+import { ensureComponentGraphs, useComponentGraphs } from '../state/componentGraphs'
 import { categoriesOf, categoryVar, connectionRule, layerOptions, nodePins, nodeTarget, PIN_STYLE, spawnDefs, spawnFields, spawnFor, spawnWire, type SpawnFromPin } from '../model/graphModel'
 import { callFields } from '../../shared/functions'
+import { pinMocksOf } from '../../shared/pinMock'
 import { findGraphStore, functionGraphs, getLibraryFunctions, isReadOnlyGraph, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
 import { createGraphValidation } from '../state/graphValidation'
 import { droppedVariable, VARIABLE_DRAG } from '../model/variables'
 import { inkwell } from '../hooks/api'
-import { makeFunction, menuGraphId, openGraphs, openLibraryFunction, setActiveGraph, useGraphDocs } from '../state/graphDocs'
+import { makeFunction, menuGraphId, openComponentGraph, openGraphs, openLibraryFunction, setActiveGraph, useGraphDocs } from '../state/graphDocs'
 import { useToastStore } from '../state/toastStore'
 import { graphEditorBlurred } from '../state/hotReload'
 import { useSelectionStore } from '../state/selectionStore'
@@ -261,7 +262,9 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
       const color = pin ? PIN_STYLE[pin.type].color : 'var(--fg-faint)'
       // an exec wire lights up (restarting its animation: the two classes alternate) each time the node it leads to ran in the preview
       const ran = exec ? runs[e.target] ?? 0 : 0
-      return { ...e, className: `${exec ? 'gw-exec' : 'gw-data'}${ran ? ` gw-run-${ran % 2}` : ''}`, style: { stroke: color, strokeWidth: exec ? 3 : 1.5 } }
+      // a data wire into an input bound to mock data is not used in the preview (Inspector, shared/pinMock.ts): drawn dashed and dim
+      const skipped = !exec && pinMocksOf(index.get(e.target)?.data.extra)[pinName(e.targetHandle)] !== undefined
+      return { ...e, className: `${exec ? 'gw-exec' : 'gw-data'}${skipped ? ' gw-skipped' : ''}${ran ? ` gw-run-${ran % 2}` : ''}`, style: { stroke: color, strokeWidth: exec ? 3 : 1.5 } }
     })
   }, [nodes, edges, defs, variables, signature, runs])
 
@@ -327,6 +330,11 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
           isValidConnection={isValidConnection}
           onNodeDoubleClick={(_, n) => {
             const s = store.getState().nodes.find((x) => x.id === n.id)
+            // Create Component: opens the graph of the component it creates (its field is named by the definition's `createsComponent`)
+            const compField = s && (defs.get(s.data.kind)?.extra as { createsComponent?: string } | undefined)?.createsComponent
+            const comp = compField ? s?.data.fields?.[compField] : undefined
+            const compGraph = typeof comp === 'string' ? useComponentGraphs.getState().graphs[comp] : undefined
+            if (compGraph) return openComponentGraph({ id: swf.id, name: swf.name }, compGraph)
             const fn = s?.data.fields?.['function']
             if (typeof fn !== 'string') return
             if ((useGraphDocs.getState().ids[swf.id] ?? []).includes(fn)) return setActiveGraph(swf.id, fn)

@@ -22,6 +22,9 @@
   },
   "as2Template": "templates/GetVariable.as2",
   "extra": {
-    "volatile": true
+    "volatile": true,
+    "inspector": {
+      "description": "Reads the value of a variable."
+    }
   }
 }

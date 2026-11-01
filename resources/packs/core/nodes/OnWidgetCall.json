@@ -48,6 +48,9 @@
   "as2Template": "templates/OnWidgetCall.as2",
   "extra": {
     "entry": true,
-    "dynamicOutputs": "params"
+    "dynamicOutputs": "params",
+    "inspector": {
+      "description": "Runs when the game or a Papyrus script calls this widget function."
+    }
   }
 }

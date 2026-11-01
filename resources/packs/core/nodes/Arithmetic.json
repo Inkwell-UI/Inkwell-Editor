@@ -37,5 +37,10 @@
       "default": "+"
     }
   },
-  "as2Template": "templates/Arithmetic.as2"
+  "as2Template": "templates/Arithmetic.as2",
+  "extra": {
+    "inspector": {
+      "description": "Does arithmetic on two numbers: add, subtract, multiply, divide or remainder."
+    }
+  }
 }

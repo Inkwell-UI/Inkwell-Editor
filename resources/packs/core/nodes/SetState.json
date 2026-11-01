@@ -41,5 +41,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/SetState.as2"
+  "as2Template": "templates/SetState.as2",
+  "extra": {
+    "inspector": {
+      "description": "Jumps a layer to one of its named states."
+    }
+  }
 }

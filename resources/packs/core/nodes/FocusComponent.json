@@ -36,5 +36,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/FocusComponent.as2"
+  "as2Template": "templates/FocusComponent.as2",
+  "extra": {
+    "inspector": {
+      "description": "Moves keyboard and gamepad focus to a button."
+    }
+  }
 }

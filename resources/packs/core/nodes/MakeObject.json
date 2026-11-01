@@ -51,6 +51,9 @@
           "typeFrom": "valueType"
         }
       ]
+    },
+    "inspector": {
+      "description": "Builds an object from pairs of a name and a value."
     }
   }
 }

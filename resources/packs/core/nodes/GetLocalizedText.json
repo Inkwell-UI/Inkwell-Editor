@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/GetLocalizedText.as2"
+  "as2Template": "templates/GetLocalizedText.as2",
+  "extra": {
+    "inspector": {
+      "description": "Looks up the translation of a key in the current language."
+    }
+  }
 }

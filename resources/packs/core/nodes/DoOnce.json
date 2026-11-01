@@ -18,5 +18,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/DoOnce.as2"
+  "as2Template": "templates/DoOnce.as2",
+  "extra": {
+    "inspector": {
+      "description": "Lets the flow through the first time only. Later runs stop here."
+    }
+  }
 }

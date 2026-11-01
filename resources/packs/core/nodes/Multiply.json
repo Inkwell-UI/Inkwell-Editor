@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Multiply.as2"
+  "as2Template": "templates/Multiply.as2",
+  "extra": {
+    "inspector": {
+      "description": "Multiplies two numbers."
+    }
+  }
 }

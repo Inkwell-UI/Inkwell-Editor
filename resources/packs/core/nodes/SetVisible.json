@@ -41,5 +41,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/SetVisible.as2"
+  "as2Template": "templates/SetVisible.as2",
+  "extra": {
+    "inspector": {
+      "description": "Shows or hides a layer."
+    }
+  }
 }

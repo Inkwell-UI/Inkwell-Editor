@@ -40,5 +40,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Format.as2"
+  "as2Template": "templates/Format.as2",
+  "extra": {
+    "inspector": {
+      "description": "Fills {0}, {1}, {2} and {3} in a text with the values you give."
+    }
+  }
 }

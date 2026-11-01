@@ -35,6 +35,9 @@
   },
   "as2Template": "templates/GetAlpha.as2",
   "extra": {
-    "volatile": true
+    "volatile": true,
+    "inspector": {
+      "description": "Reads how opaque a layer is."
+    }
   }
 }

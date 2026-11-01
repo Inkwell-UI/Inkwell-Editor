@@ -15,7 +15,10 @@
   "fields": {},
   "as2Template": "templates/OnClose.as2",
   "extra": {
-    "entry": true
+    "entry": true,
+    "inspector": {
+      "description": "Runs when the menu closes."
+    }
   },
   "requiresRuntime": true
 }

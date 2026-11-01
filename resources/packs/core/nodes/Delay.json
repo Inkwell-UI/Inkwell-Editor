@@ -32,6 +32,9 @@
   "as2Template": "templates/Delay.as2",
   "extra": {
     "timer": "seconds",
-    "timerKey": "name"
+    "timerKey": "name",
+    "inspector": {
+      "description": "Waits some seconds, then continues. Starting it again restarts the wait."
+    }
   }
 }

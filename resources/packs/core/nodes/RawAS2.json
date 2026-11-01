@@ -25,5 +25,10 @@
       "default": ""
     }
   },
-  "as2Template": "templates/RawAS2.as2"
+  "as2Template": "templates/RawAS2.as2",
+  "extra": {
+    "inspector": {
+      "description": "Runs ActionScript you write yourself. Use it only when no node does the job."
+    }
+  }
 }

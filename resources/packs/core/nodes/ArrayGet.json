@@ -39,5 +39,10 @@
       "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
     }
   },
-  "as2Template": "templates/ArrayGet.as2"
+  "as2Template": "templates/ArrayGet.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gets one item of a list by its position, starting at 0."
+    }
+  }
 }

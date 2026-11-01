@@ -21,6 +21,9 @@
   "fields": {},
   "as2Template": "templates/GetText.as2",
   "extra": {
-    "volatile": true
+    "volatile": true,
+    "inspector": {
+      "description": "Reads the text a text layer shows."
+    }
   }
 }

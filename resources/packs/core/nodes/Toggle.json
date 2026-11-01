@@ -30,6 +30,9 @@
   },
   "as2Template": "templates/Toggle.as2",
   "extra": {
-    "writesVariable": "variable"
+    "writesVariable": "variable",
+    "inspector": {
+      "description": "Flips a true or false variable and gives the new value."
+    }
   }
 }

@@ -41,6 +41,7 @@
 @keyframes gw-run-b { from { stroke: var(--ok); stroke-width: 5px; } }
 @media (prefers-reduced-motion: reduce) { .gn-run { animation: none; opacity: 0; } .react-flow__edge.gw-run-0 .react-flow__edge-path, .react-flow__edge.gw-run-1 .react-flow__edge-path { animation: none; } }
 .react-flow__edge.gw-data .react-flow__edge-path { stroke-dasharray: none; }
+.react-flow__edge.gw-data.gw-skipped .react-flow__edge-path { stroke-dasharray: 4 5; stroke-opacity: 0.45; } /* the target input reads mock data in the preview */
 
 /* nodes */
 .gn { position: relative; min-width: 220px; max-width: 288px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius); font-size: 12px; color: var(--fg); box-shadow: 0 4px 10px var(--shadow); }
@@ -62,6 +63,9 @@
 .gn-pin-head.is-bad .gn-pin-label { color: var(--err); text-decoration: underline wavy; }
 .gn-pin-type { color: var(--fg-dim); font-size: 10px; }
 .gn-inline { padding: 0 14px 4px; }
+/* an input bound to mock data: the field's value the preview reads (NodeView.tsx, MockInputValue) */
+.gn-mock { display: flex; align-items: center; gap: 6px; min-height: var(--ctl-h-sm); padding: 0 6px; border-radius: var(--radius); background: var(--btn-bg); color: var(--fg-dim); }
+.gn-mock-value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-style: italic; }
 .gn-fields { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px 8px; border-top: 1px solid var(--line); }
 .gn-field { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; }
 .gn-field-label { color: var(--fg-dim); font-size: 11px; }

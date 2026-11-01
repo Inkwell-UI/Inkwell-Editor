@@ -44,6 +44,9 @@
   "extra": {
     "entry": true,
     "needsGlue": "addMessageHandler",
-    "unverifiedInGame": "runtime message delivery"
+    "unverifiedInGame": "runtime message delivery",
+    "inspector": {
+      "description": "Runs when the game sends the named message to the menu."
+    }
   }
 }

@@ -21,6 +21,9 @@
   },
   "as2Template": "templates/FunctionExit.as2",
   "extra": {
-    "signatureInputs": "outputs"
+    "signatureInputs": "outputs",
+    "inspector": {
+      "description": "Ends the function and hands back its results through the chosen exit."
+    }
   }
 }

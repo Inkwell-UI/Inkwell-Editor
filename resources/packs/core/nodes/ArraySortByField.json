@@ -30,5 +30,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/ArraySortByField.as2"
+  "as2Template": "templates/ArraySortByField.as2",
+  "extra": {
+    "inspector": {
+      "description": "Sorts a list of objects by one of their fields, ascending or descending."
+    }
+  }
 }

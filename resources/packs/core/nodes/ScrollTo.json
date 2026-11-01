@@ -46,5 +46,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/ScrollTo.as2"
+  "as2Template": "templates/ScrollTo.as2",
+  "extra": {
+    "inspector": {
+      "description": "Scrolls a frame to a position."
+    }
+  }
 }

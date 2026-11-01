@@ -3,6 +3,7 @@ import { LOC_KEY, pinCompat, SAVED_TYPES, type Graph, type GraphNode, type NodeD
 import { isFunctionEntry, resolvePins, type ResolvedPin } from '../../shared/graphValidate'
 import { menuVariablesFor } from '../../shared/graphs'
 import { parseBindings, type BindProp } from '../../shared/graphBinding'
+import { isMockPinType, mockRead, pinMocksOf } from '../../shared/pinMock'
 import { FLOW_RUN_PIN, FLOW_TIMER_PIN } from '../../shared/devLink'
 import { ident } from '../../shared/overlay'
 import { SET_TEXT } from '../lint/localization'
@@ -256,8 +257,18 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   }
   const safeId = (s: string): string => s.replace(/[\\"\r\n]/g, '_')
 
-  /** The AS2 expression feeding data input `pin` of node `n`. */
+  /**
+   * The AS2 expression feeding data input `pin` of node `n`. In the preview build an input bound to a mock field (`extra.pinMock`, Inspector) reads that field
+   * while it has a value and falls back to the wire or literal; never in the game build. Read at run time, so it is not cached with the pure nodes.
+   */
   const input = (n: GraphNode, pin: ResolvedPin, ctx: Ctx, visiting: ReadonlySet<string>): Val => {
+    const v = inputOf(n, pin, ctx, visiting)
+    const mock = i.preview && isMockPinType(pin.type) ? pinMocksOf(n.extra)[pin.name] : undefined
+    if (mock === undefined) return v
+    const m = `_global.Inkwell.mock[${as2Literal(mock)}]`
+    return { expr: `(${m} != undefined ? ${mockRead(pin.type as 'String' | 'Number' | 'Bool', m)} : ${v.expr})`, volatile: true }
+  }
+  const inputOf = (n: GraphNode, pin: ResolvedPin, ctx: Ctx, visiting: ReadonlySet<string>): Val => {
     const src = dataIn.get(key(n.id, pin.name))
     if (!src) {
       const v = n.fields[pin.name]

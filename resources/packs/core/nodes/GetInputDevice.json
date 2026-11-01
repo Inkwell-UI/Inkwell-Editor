@@ -31,6 +31,9 @@
   "fields": {},
   "as2Template": "templates/GetInputDevice.as2",
   "extra": {
-    "note": "exec, not pure: a pure node has one output (docs/templates.md)"
+    "note": "exec, not pure: a pure node has one output (docs/templates.md)",
+    "inspector": {
+      "description": "Tells whether the player is using a gamepad or a keyboard and mouse."
+    }
   }
 }

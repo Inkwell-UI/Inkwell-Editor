@@ -31,7 +31,10 @@
   "as2Template": "templates/OnItemSelected.as2",
   "extra": {
     "entry": true,
-    "unverifiedInGame": "CLIK addEventListener"
+    "unverifiedInGame": "CLIK addEventListener",
+    "inspector": {
+      "description": "Runs when the player picks an item in a list."
+    }
   },
   "requiresRuntime": true
 }

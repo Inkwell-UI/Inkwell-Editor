@@ -1,6 +1,8 @@
 import { GraphVariable, SAVED_TYPES, type Graph } from '@inkwell-ui/spec'
 import { newGraphId } from '../../shared/graphs'
-import type { BindProp } from '../../shared/graphBinding'
+import { parseBindings, type BindProp } from '../../shared/graphBinding'
+import type { OverlayDoc } from '../../shared/overlay'
+import { pinMocksOf } from '../../shared/pinMock'
 
 /** Pure logic of the Variables and Data binding panels. */
 type Variable = Graph['variables'][number]
@@ -53,6 +55,27 @@ export function mockValue(type: 'String' | 'Number' | 'Bool', text: string): str
   if (type === 'Number') return Number.isFinite(Number(text)) && text.trim() !== '' ? Number(text) : 0
   if (type === 'Bool') return text === 'true'
   return text
+}
+
+/** The value typed into a mock field that has no type yet: `true` or `false` is a Bool, a number a Number, anything else a String. */
+export function inferMock(text: string): string | number | boolean {
+  const t = text.trim()
+  if (t === 'true' || t === 'false') return t === 'true'
+  return t !== '' && Number.isFinite(Number(t)) ? Number(t) : text
+}
+
+/** Where each mock key is read: layer names (Data Binding) and the names of graphs with a node input bound to it (`extra.pinMock`). A deleted layer is skipped. */
+export function mockUses(overlay: OverlayDoc | undefined, graphs: readonly Graph[], layerName: (id: string) => string | undefined): Map<string, string[]> {
+  const uses = new Map<string, string[]>()
+  const add = (key: string, label: string | undefined): void => {
+    const list = uses.get(key) ?? []
+    if (label !== undefined && !list.includes(label)) list.push(label)
+    uses.set(key, list)
+  }
+  for (const [id, entry] of Object.entries((overlay?.nodes ?? {}) as Record<string, { dataBinding?: unknown }>))
+    for (const b of parseBindings(entry.dataBinding).bindings) if (b.source === 'mock') add(b.name, layerName(id))
+  for (const g of graphs) for (const n of g.nodes) for (const key of Object.values(pinMocksOf(n.extra))) add(key, g.name)
+  return uses
 }
 
 /** Drag payload of a variable row (Variables panel) dropped on a graph canvas: `{swfId, varId}` as JSON. */

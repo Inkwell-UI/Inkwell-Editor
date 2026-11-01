@@ -27,5 +27,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/SetText.as2"
+  "as2Template": "templates/SetText.as2",
+  "extra": {
+    "inspector": {
+      "description": "Changes the text of a text layer."
+    }
+  }
 }

@@ -34,7 +34,10 @@
   },
   "as2Template": "templates/OnFocus.as2",
   "extra": {
-    "entry": true
+    "entry": true,
+    "inspector": {
+      "description": "Runs when a button gets focus."
+    }
   },
   "requiresRuntime": true
 }

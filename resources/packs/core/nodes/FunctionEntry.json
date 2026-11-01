@@ -17,6 +17,9 @@
   "extra": {
     "entry": true,
     "functionEntry": true,
-    "signatureOutputs": "inputs"
+    "signatureOutputs": "inputs",
+    "inspector": {
+      "description": "Where a function starts. Its inputs come from the function's signature."
+    }
   }
 }

@@ -35,5 +35,9 @@
   ],
   "fields": {},
   "as2Template": "templates/CallRuntime.as2",
-  "extra": {}
+  "extra": {
+    "inspector": {
+      "description": "Sends a named command to the Inkwell Runtime in the game and gives back its text answer."
+    }
+  }
 }

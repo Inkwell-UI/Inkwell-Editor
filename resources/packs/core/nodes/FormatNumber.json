@@ -34,5 +34,10 @@
       "default": 0
     }
   },
-  "as2Template": "templates/FormatNumber.as2"
+  "as2Template": "templates/FormatNumber.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a number into text with a set number of digits and decimals."
+    }
+  }
 }

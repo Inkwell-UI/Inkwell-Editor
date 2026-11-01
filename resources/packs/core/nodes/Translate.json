@@ -22,6 +22,9 @@
   "fields": {},
   "as2Template": "templates/Translate.as2",
   "extra": {
-    "unverifiedInGame": "relies on the engine translating $KEY when assigned to a TextField"
+    "unverifiedInGame": "relies on the engine translating $KEY when assigned to a TextField",
+    "inspector": {
+      "description": "Passes a translation key on as text. The game translates it when it is shown."
+    }
   }
 }

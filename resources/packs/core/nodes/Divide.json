@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Divide.as2"
+  "as2Template": "templates/Divide.as2",
+  "extra": {
+    "inspector": {
+      "description": "Divides the first number by the second."
+    }
+  }
 }

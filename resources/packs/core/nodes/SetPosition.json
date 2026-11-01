@@ -46,5 +46,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/SetPosition.as2"
+  "as2Template": "templates/SetPosition.as2",
+  "extra": {
+    "inspector": {
+      "description": "Moves a layer to x and y."
+    }
+  }
 }

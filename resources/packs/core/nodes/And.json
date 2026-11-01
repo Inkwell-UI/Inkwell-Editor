@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/And.as2"
+  "as2Template": "templates/And.as2",
+  "extra": {
+    "inspector": {
+      "description": "True only when both values are true."
+    }
+  }
 }

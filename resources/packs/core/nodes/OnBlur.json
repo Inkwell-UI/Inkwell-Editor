@@ -34,7 +34,10 @@
   },
   "as2Template": "templates/OnBlur.as2",
   "extra": {
-    "entry": true
+    "entry": true,
+    "inspector": {
+      "description": "Runs when a button loses focus."
+    }
   },
   "requiresRuntime": true
 }

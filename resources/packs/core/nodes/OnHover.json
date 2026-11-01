@@ -34,7 +34,10 @@
   },
   "as2Template": "templates/OnHover.as2",
   "extra": {
-    "entry": true
+    "entry": true,
+    "inspector": {
+      "description": "Runs when the mouse moves over a button."
+    }
   },
   "requiresRuntime": true
 }

@@ -30,5 +30,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Substring.as2"
+  "as2Template": "templates/Substring.as2",
+  "extra": {
+    "inspector": {
+      "description": "Takes part of a text, from a start position for a given length."
+    }
+  }
 }

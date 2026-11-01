@@ -39,6 +39,7 @@ For a `customMenu` the preview SWF also carries a mock `_root.inkwell` (the Inkw
 The Mock Data panel's key/value list (overlay `mockData`) is delivered by `preview/mockDelivery.ts` after every load of the movie (a rebuild restarts it) and whenever the data changes (`PreviewPanel`). The graph classes of the **preview build** read it:
 - a graph variable whose **name** equals a mock key takes its value (Number/String/Bool, coerced) and its bindings are re-applied;
 - `mock:<key>` bindings (below) set the bound property.
+- a node **input** bound in the Inspector (`extra.pinMock` of the graph node, `{ <pin>: <key> }`, `shared/pinMock.ts`; String, Number and Bool inputs, wired or not) reads the key at run time while it has a value (`_global.Inkwell.mock[key]`, coerced to the pin type) and falls back to its wire or literal otherwise. Preview build only; the game build ignores the link. The read is volatile (never cached with the pure nodes), so a changed value applies on the next run, and a mock-only save does not rebuild; binding or unbinding is a graph save and does.
 
 Mock data is never part of the game SWF, never shipped. Removing a key re-delivers the list without it, but a variable keeps the last value it had.
 

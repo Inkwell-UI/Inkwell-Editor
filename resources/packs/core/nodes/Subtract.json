@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Subtract.as2"
+  "as2Template": "templates/Subtract.as2",
+  "extra": {
+    "inspector": {
+      "description": "Subtracts the second number from the first."
+    }
+  }
 }

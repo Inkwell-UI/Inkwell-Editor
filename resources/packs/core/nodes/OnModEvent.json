@@ -34,6 +34,9 @@
   "extra": {
     "entry": true,
     "needsGlue": "addModEventHandler",
-    "unverifiedInGame": "mod event delivery"
+    "unverifiedInGame": "mod event delivery",
+    "inspector": {
+      "description": "Runs when another mod sends the named event."
+    }
   }
 }

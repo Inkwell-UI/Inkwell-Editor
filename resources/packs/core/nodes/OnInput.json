@@ -22,7 +22,10 @@
   "as2Template": "templates/OnInput.as2",
   "extra": {
     "entry": true,
-    "needsGlue": "addInputHandler"
+    "needsGlue": "addInputHandler",
+    "inspector": {
+      "description": "Runs when the player presses a chosen input action, such as Accept or Cancel."
+    }
   },
   "requiresRuntime": true
 }

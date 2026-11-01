@@ -4,6 +4,7 @@ import { temporal } from 'zundo'
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import type { Graph, GraphNode } from '@inkwell-ui/spec'
 import { applySignature, callFields, refreshCall, refreshCalls, staleCalls } from '../../shared/functions'
+import { withPinMock } from '../../shared/pinMock'
 import { registerHistory, unregisterHistory } from './swfHistory'
 
 /**
@@ -41,6 +42,12 @@ const withField = (fields: Record<string, unknown>, field: string, value: unknow
   return value === undefined ? rest : { ...rest, [field]: value }
 }
 
+/** The node's data with `extra` replaced (removed when undefined). */
+const withExtra = (data: GraphNodeData, extra: Record<string, unknown> | undefined): GraphNodeData => {
+  const { extra: _old, ...rest } = data
+  return (extra ? { ...rest, extra } : rest) as GraphNodeData
+}
+
 interface Doc {
   name: string
   nodes: FlowNode[]
@@ -64,6 +71,14 @@ export interface GraphState extends Doc {
   removeNodes(ids: string[]): void
   /** Sets one field (`undefined` removes it); typing in the same field joins the current word's history entry. */
   setField(nodeId: string, field: string, value: unknown): void
+  /**
+   * Binds the data input `pin` of a node to a variable the way the canvas does it, with a real wire from a new Get Variable node (`kind` is its pack-qualified id, `slot`
+   * offsets it so several bound inputs of one node do not overlap), or with `next` undefined only unwires the input. The input's old wire is removed, and so is the node
+   * `drop` (the Get Variable that fed it, when nothing else uses it). One history entry.
+   */
+  bindInput(nodeId: string, pin: string, next: { id: string; kind: string; variable: string; slot: number } | undefined, drop?: string): void
+  /** Binds the input `pin` of a node to the mock data field `key` (preview only), or with `undefined` removes the binding (`extra.pinMock`, shared/pinMock.ts). */
+  setPinMock(nodeId: string, pin: string, key: string | undefined): void
   moveNodes(positions: Record<string, { x: number; y: number }>): void
   connect(from: { node: string; pin: string }, to: { node: string; pin: string }): void
   disconnect(edgeId: string): void
@@ -212,6 +227,19 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
           history.edit(`${nodeId}:${field}`, value, get, () =>
             set((s) => ({ nodes: s.nodes.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, fields: withField(n.data.fields, field, value) } } : n)) }))
           ),
+        bindInput: (nodeId, pin, next, drop) =>
+          set((s) => {
+            const target = s.nodes.find((n) => n.id === nodeId)
+            const edges = s.edges.filter((e) => !(e.target === nodeId && pinOf(e.targetHandle) === pin) && e.source !== drop && e.target !== drop)
+            const nodes = drop ? s.nodes.filter((n) => n.id !== drop) : s.nodes
+            const groups = drop ? s.groups.map((g) => (g.nodes.includes(drop) ? { ...g, nodes: g.nodes.filter((id) => id !== drop) } : g)) : s.groups
+            if (!next || !target) return { nodes, edges, groups }
+            const pos = { x: target.position.x - 240, y: target.position.y + next.slot * 40 }
+            const node = { id: next.id, type: NODE_TYPE, position: pos, data: { id: next.id, kind: next.kind, fields: { variable: next.variable }, pos: { ...pos } } as GraphNodeData }
+            return { nodes: [...nodes, node], edges: [...edges, newEdge({ node: next.id, pin: 'value' }, { node: nodeId, pin })], groups }
+          }),
+        setPinMock: (nodeId, pin, key) =>
+          set((s) => ({ nodes: s.nodes.map((n) => (n.id === nodeId ? { ...n, data: withExtra(n.data, withPinMock(n.data.extra, pin, key)) } : n)) })),
         moveNodes: (pos) => set((s) => ({ nodes: s.nodes.map((n) => (pos[n.id] ? { ...n, position: pos[n.id]! } : n)) })),
         connect: (from, to) =>
           set((s) => {

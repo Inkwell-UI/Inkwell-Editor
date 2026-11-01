@@ -33,5 +33,10 @@
       "default": "info"
     }
   },
-  "as2Template": "templates/Log.as2"
+  "as2Template": "templates/Log.as2",
+  "extra": {
+    "inspector": {
+      "description": "Writes a message to the Trace panel."
+    }
+  }
 }

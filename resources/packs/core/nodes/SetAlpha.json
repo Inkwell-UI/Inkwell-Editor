@@ -41,5 +41,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/SetAlpha.as2"
+  "as2Template": "templates/SetAlpha.as2",
+  "extra": {
+    "inspector": {
+      "description": "Sets how opaque a layer is."
+    }
+  }
 }

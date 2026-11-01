@@ -23,5 +23,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Throw.as2"
+  "as2Template": "templates/Throw.as2",
+  "extra": {
+    "inspector": {
+      "description": "Raises an error with a message and stops this run."
+    }
+  }
 }

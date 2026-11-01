@@ -35,6 +35,9 @@
   },
   "as2Template": "templates/GetVisible.as2",
   "extra": {
-    "volatile": true
+    "volatile": true,
+    "inspector": {
+      "description": "Reads whether a layer is visible."
+    }
   }
 }

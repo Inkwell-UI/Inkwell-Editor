@@ -39,5 +39,10 @@
       "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
     }
   },
-  "as2Template": "templates/GetField.as2"
+  "as2Template": "templates/GetField.as2",
+  "extra": {
+    "inspector": {
+      "description": "Reads one field of an object by its name."
+    }
+  }
 }

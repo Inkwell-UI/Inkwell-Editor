@@ -41,5 +41,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/SetTint.as2"
+  "as2Template": "templates/SetTint.as2",
+  "extra": {
+    "inspector": {
+      "description": "Colours a layer with a colour number."
+    }
+  }
 }

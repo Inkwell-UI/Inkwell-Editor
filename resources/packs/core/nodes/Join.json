@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Join.as2"
+  "as2Template": "templates/Join.as2",
+  "extra": {
+    "inspector": {
+      "description": "Joins the items of a list into one text, with a separator between them."
+    }
+  }
 }

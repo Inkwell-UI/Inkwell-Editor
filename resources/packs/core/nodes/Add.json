@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Add.as2"
+  "as2Template": "templates/Add.as2",
+  "extra": {
+    "inspector": {
+      "description": "Adds two numbers."
+    }
+  }
 }

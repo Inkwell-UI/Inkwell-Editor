@@ -26,6 +26,9 @@
   },
   "as2Template": "templates/StopTimer.as2",
   "extra": {
-    "cancelsTimer": "name"
+    "cancelsTimer": "name",
+    "inspector": {
+      "description": "Stops a running timer by its name."
+    }
   }
 }

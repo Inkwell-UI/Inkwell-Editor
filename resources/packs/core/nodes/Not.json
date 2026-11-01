@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Not.as2"
+  "as2Template": "templates/Not.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns true into false and false into true."
+    }
+  }
 }

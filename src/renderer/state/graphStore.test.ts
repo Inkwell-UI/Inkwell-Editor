@@ -34,6 +34,26 @@ const base = (): Graph =>
   }) as Graph
 const past = (s: ReturnType<typeof getGraphStore>) => s.temporal.getState().pastStates.length
 
+describe('binding an input to a variable', () => {
+  it('adds a Get Variable node with a wire in one entry, replaces the old wire, and unbinding removes the node it fed from', () => {
+    const s = getGraphStore('swf', 'Hud', base())
+    const before = past(s)
+    s.getState().bindInput('a', 'message', { id: 'g1', kind: 'core/GetVariable@1', variable: 'v', slot: 1 })
+    expect(past(s) - before).toBeLessThanOrEqual(1)
+    let g = toGraph(s.getState())
+    expect(g.nodes.find((n) => n.id === 'g1')).toMatchObject({ kind: 'core/GetVariable@1', fields: { variable: 'v' } })
+    expect(g.edges).toEqual([{ from: { node: 'g1', pin: 'value' }, to: { node: 'a', pin: 'message' } }])
+    s.getState().bindInput('a', 'message', { id: 'g2', kind: 'core/GetVariable@1', variable: 'v', slot: 1 }, 'g1')
+    g = toGraph(s.getState())
+    expect(g.nodes.map((n) => n.id)).toEqual(['a', 'g2'])
+    expect(g.edges).toHaveLength(1)
+    s.getState().bindInput('a', 'message', undefined, 'g2')
+    g = toGraph(s.getState())
+    expect(g.nodes.map((n) => n.id)).toEqual(['a'])
+    expect(g.edges).toEqual([])
+  })
+})
+
 describe('graph store', () => {
   it('round-trips the file shape with unknown keys, and edits become the saved graph', () => {
     const s = getGraphStore('swf', 'Hud', base())

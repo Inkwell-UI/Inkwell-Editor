@@ -23,5 +23,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/RemoveComponent.as2"
+  "as2Template": "templates/RemoveComponent.as2",
+  "extra": {
+    "inspector": {
+      "description": "Removes one component made with Create Component."
+    }
+  }
 }

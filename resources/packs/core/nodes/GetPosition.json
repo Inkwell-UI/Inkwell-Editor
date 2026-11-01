@@ -46,5 +46,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/GetPosition.as2"
+  "as2Template": "templates/GetPosition.as2",
+  "extra": {
+    "inspector": {
+      "description": "Reads where a layer is, as x and y."
+    }
+  }
 }

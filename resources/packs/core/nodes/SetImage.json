@@ -29,6 +29,9 @@
   "fields": {},
   "as2Template": "templates/SetImage.as2",
   "extra": {
-    "unverifiedInGame": "image asset resolution is defined by the compiler's loader classes (Phase 5)"
+    "unverifiedInGame": "image asset resolution is defined by the compiler's loader classes (Phase 5)",
+    "inspector": {
+      "description": "Loads a picture into an image layer from a path."
+    }
   }
 }

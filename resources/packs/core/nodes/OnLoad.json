@@ -15,6 +15,9 @@
   "fields": {},
   "as2Template": "templates/OnLoad.as2",
   "extra": {
-    "entry": true
+    "entry": true,
+    "inspector": {
+      "description": "Runs once when the menu's graph starts."
+    }
   }
 }

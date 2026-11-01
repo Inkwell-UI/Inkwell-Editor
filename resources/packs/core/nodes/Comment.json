@@ -14,6 +14,9 @@
     }
   },
   "extra": {
-    "editorOnly": true
+    "editorOnly": true,
+    "inspector": {
+      "description": "A note on the graph. It does nothing when the mod runs."
+    }
   }
 }

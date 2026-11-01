@@ -34,7 +34,10 @@
   },
   "as2Template": "templates/OnClick.as2",
   "extra": {
-    "entry": true
+    "entry": true,
+    "inspector": {
+      "description": "Runs when a button is clicked or accepted."
+    }
   },
   "requiresRuntime": true
 }

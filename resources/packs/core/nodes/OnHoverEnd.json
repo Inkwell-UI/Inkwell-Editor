@@ -34,7 +34,10 @@
   },
   "as2Template": "templates/OnHoverEnd.as2",
   "extra": {
-    "entry": true
+    "entry": true,
+    "inspector": {
+      "description": "Runs when the mouse leaves a button."
+    }
   },
   "requiresRuntime": true
 }

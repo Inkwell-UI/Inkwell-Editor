@@ -56,5 +56,10 @@
       "default": ""
     }
   },
-  "as2Template": "templates/Switch.as2"
+  "as2Template": "templates/Switch.as2",
+  "extra": {
+    "inspector": {
+      "description": "Runs the path of the first case that equals the value, or Default when none does."
+    }
+  }
 }

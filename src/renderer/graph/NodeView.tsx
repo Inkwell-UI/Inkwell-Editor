@@ -1,9 +1,12 @@
 import { Handle, NodeResizer, Position, type NodeProps } from '@xyflow/react'
 import { incoming, outgoing, parseNodeStatus } from '@nicklaj/knotwork'
-import { CircleX, TriangleAlert, Zap } from 'lucide-react'
+import { CircleX, Link, TriangleAlert, Zap } from 'lucide-react'
 import { createContext, memo, useContext } from 'react'
 import { useStore } from 'zustand'
 import type { Graph, NodeDef } from '@inkwell-ui/spec'
+import { mockDataOf } from '../../shared/graphBinding'
+import { isMockPinType, pinMocksOf } from '../../shared/pinMock'
+import { useActiveOverlay } from '../hooks/useProject'
 import { categoryVar, fieldRows, nodePins, PIN_STYLE, type FieldRow, type LayerOption } from '../model/graphModel'
 import { useComponentGraphs } from '../state/componentGraphs'
 import { functionChoices, inHandle, outHandle, pinName, pointCall, type FlowNode, type GraphStore } from '../state/graphStore'
@@ -56,6 +59,23 @@ function Pin({ side, name, type, label, bad, node }: { side: 'in' | 'out'; name:
       />
       {value !== undefined && <span className={`gn-pin-val mono${badge?.game ? ' is-game' : ''}`} title={badge?.game ? strings.dev.pinGameTip(value) : strings.graph.pinValueTip(value)} data-testid="pin-value" data-source={badge?.game ? 'game' : 'preview'}>{value.length > 24 ? `${value.slice(0, 23)}…` : value}</span>}
       <span className="gn-pin-label">{label}{type !== 'unknown' && ['Text', 'Button', 'List', 'Image', 'Clip'].includes(type) ? <span className="gn-pin-type"> {type}</span> : null}</span>
+    </div>
+  )
+}
+
+/**
+ * The value box of an input bound to a mock data field (Inspector, `shared/pinMock.ts`): the field's current value in dim italics, since that is what the preview
+ * reads (the key is the tooltip). A wire into the same input is not used in the preview, and a deleted field has no value: both carry a warning. Only a bound
+ * input mounts this, so the other nodes do not re-render when mock data changes.
+ */
+function MockInputValue({ pinKey, wired }: { pinKey: string; wired: boolean }) {
+  const value = mockDataOf(useActiveOverlay())[pinKey]
+  const note = value === undefined ? strings.bind.missing(pinKey) : wired ? strings.pinMock.readsOverWire(pinKey) : undefined
+  return (
+    <div className="gn-mock" title={note ?? strings.pinMock.reads(pinKey)} data-testid="pin-mock">
+      {value === undefined ? <span className="var-chip-dot mock-dot-none" aria-hidden="true" /> : <Link size={12} aria-hidden="true" />}
+      <span className="gn-mock-value">{value === undefined ? strings.pinMock.noValue : value === '' ? strings.bind.emptyValue : String(value)}</span>
+      {note && <TriangleAlert size={13} className="tone-warn" role="img" aria-label={note} />}
     </div>
   )
 }
@@ -125,15 +145,20 @@ function InkwellNodeView({ id, data, selected }: NodeProps<FlowNode>) {
     )
   }
 
-  const rows = fieldRows(def, { data }, pins, new Set(wired.split(',')), { sig: ctx.signature, props, components: Object.values(componentGraphs).map((g) => ({ id: g.component!, name: g.name })), functions: callKey ? functionChoices(ctx.store) : [] })
+  // an input bound to mock data shows that field's value instead of its own value box, like a wired input shows none (only String, Number and Bool inputs can be bound)
+  const mockKeys = pinMocksOf(data.extra)
+  const bound = (name: string): string | undefined => (pins.inputs.some((p) => p.name === name && isMockPinType(p.type)) ? mockKeys[name] : undefined)
+  const wiredSet = new Set(wired.split(','))
+  const rows = fieldRows(def, { data }, pins, new Set([...wiredSet, ...pins.inputs.filter((p) => bound(p.name) !== undefined).map((p) => p.name)]), { sig: ctx.signature, props, components: Object.values(componentGraphs).map((g) => ({ id: g.component!, name: g.name })), functions: callKey ? functionChoices(ctx.store) : [] })
   const rowOf = new Map(rows.map((r) => [r.key, r]))
   const pinRows = (list: typeof pins.inputs, side: 'inputs'): React.ReactNode =>
     list.map((p) => {
       const row: FieldRow | undefined = p.type === 'Exec' ? undefined : rowOf.get(p.name)
+      const key = bound(p.name)
       return (
         <div key={p.name} className="gn-pin">
           <Pin side="in" name={p.name} type={p.type} label={pinLabel(p, def, side)} bad={bad.has(p.name)} />
-          {row && <div className="gn-inline"><FieldEditor row={row} ctx={fctx} bare /></div>}
+          {key !== undefined ? <div className="gn-inline"><MockInputValue pinKey={key} wired={wiredSet.has(p.name)} /></div> : row && <div className="gn-inline"><FieldEditor row={row} ctx={fctx} bare /></div>}
         </div>
       )
     })

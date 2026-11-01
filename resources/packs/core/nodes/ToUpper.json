@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/ToUpper.as2"
+  "as2Template": "templates/ToUpper.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a text into upper case."
+    }
+  }
 }

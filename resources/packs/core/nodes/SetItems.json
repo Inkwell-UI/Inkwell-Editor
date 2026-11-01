@@ -28,5 +28,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/SetItems.as2"
+  "as2Template": "templates/SetItems.as2",
+  "extra": {
+    "inspector": {
+      "description": "Fills a list with the items of an array."
+    }
+  }
 }

@@ -29,5 +29,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/PlaySound.as2"
+  "as2Template": "templates/PlaySound.as2",
+  "extra": {
+    "inspector": {
+      "description": "Plays a game sound by its name."
+    }
+  }
 }

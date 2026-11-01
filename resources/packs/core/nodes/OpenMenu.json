@@ -29,5 +29,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/OpenMenu.as2"
+  "as2Template": "templates/OpenMenu.as2",
+  "extra": {
+    "inspector": {
+      "description": "Opens another menu by its name."
+    }
+  }
 }

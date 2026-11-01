@@ -43,5 +43,10 @@
       "default": "increment"
     }
   },
-  "as2Template": "templates/Counter.as2"
+  "as2Template": "templates/Counter.as2",
+  "extra": {
+    "inspector": {
+      "description": "Adds to a named counter, resets it, or just reads it."
+    }
+  }
 }

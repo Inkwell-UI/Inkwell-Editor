@@ -56,5 +56,10 @@
       "description": "Component kind of the target pin"
     }
   },
-  "as2Template": "templates/GetScroll.as2"
+  "as2Template": "templates/GetScroll.as2",
+  "extra": {
+    "inspector": {
+      "description": "Reads how far a scrolling frame is scrolled and how far it can go."
+    }
+  }
 }

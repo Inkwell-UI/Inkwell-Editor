@@ -23,5 +23,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/ClearChildComponents.as2"
+  "as2Template": "templates/ClearChildComponents.as2",
+  "extra": {
+    "inspector": {
+      "description": "Removes every component that was created inside a frame."
+    }
+  }
 }

@@ -30,5 +30,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Sequence.as2"
+  "as2Template": "templates/Sequence.as2",
+  "extra": {
+    "inspector": {
+      "description": "Runs several paths one after another, from the first to the last."
+    }
+  }
 }

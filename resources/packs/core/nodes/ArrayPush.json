@@ -39,5 +39,10 @@
       "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
     }
   },
-  "as2Template": "templates/ArrayPush.as2"
+  "as2Template": "templates/ArrayPush.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the list with one more item added at the end."
+    }
+  }
 }

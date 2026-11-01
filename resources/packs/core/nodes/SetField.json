@@ -44,5 +44,10 @@
       "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
     }
   },
-  "as2Template": "templates/SetField.as2"
+  "as2Template": "templates/SetField.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the object with one field set to a value."
+    }
+  }
 }

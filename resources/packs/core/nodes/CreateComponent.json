@@ -48,6 +48,9 @@
   },
   "as2Template": "templates/CreateComponent.as2",
   "extra": {
-    "createsComponent": "component"
+    "createsComponent": "component",
+    "inspector": {
+      "description": "Adds a copy of a component inside a frame."
+    }
   }
 }

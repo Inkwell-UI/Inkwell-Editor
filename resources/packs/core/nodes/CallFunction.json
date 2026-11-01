@@ -111,6 +111,9 @@
       "inputs",
       "outputs",
       "exits"
-    ]
+    ],
+    "inspector": {
+      "description": "Runs one of this menu's functions, then continues."
+    }
   }
 }

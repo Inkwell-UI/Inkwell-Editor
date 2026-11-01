@@ -39,5 +39,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/For.as2"
+  "as2Template": "templates/For.as2",
+  "extra": {
+    "inspector": {
+      "description": "Repeats the body for each whole number from first to last, then continues with Completed."
+    }
+  }
 }

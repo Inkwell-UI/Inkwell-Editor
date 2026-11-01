@@ -16,6 +16,9 @@
   "fields": {},
   "as2Template": "templates/GetTime.as2",
   "extra": {
-    "volatile": true
+    "volatile": true,
+    "inspector": {
+      "description": "Gives the seconds since the menu started."
+    }
   }
 }

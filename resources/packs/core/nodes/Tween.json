@@ -81,6 +81,9 @@
   },
   "as2Template": "templates/Tween.as2",
   "extra": {
-    "timer": "seconds"
+    "timer": "seconds",
+    "inspector": {
+      "description": "Animates one property of a layer from one value to another, with easing."
+    }
   }
 }

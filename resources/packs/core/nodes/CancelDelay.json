@@ -26,6 +26,9 @@
   },
   "as2Template": "templates/CancelDelay.as2",
   "extra": {
-    "cancelsTimer": "name"
+    "cancelsTimer": "name",
+    "inspector": {
+      "description": "Cancels a waiting Delay by its name, so its next step never runs."
+    }
   }
 }

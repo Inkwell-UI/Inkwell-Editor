@@ -458,15 +458,37 @@ export const strings = {
     count: (n: number) => `${n} bound`
   },
 
+  /** Mock data on a node input (Inspector, `shared/pinMock.ts`). The look and the wording follow `bind`, the layer Data section. */
+  pinMock: {
+    link: (pin: string, mock: boolean) => `Bind ${pin} to a variable${mock ? ' or mock data' : ''}`,
+    unlink: (pin: string) => `Remove ${pin} mock binding`,
+    unlinkVariable: (pin: string) => `Remove ${pin} variable binding`,
+    popTitle: (pin: string) => `Bind ${pin} to`,
+    none: 'No mock data fields of this type yet.',
+    newField: 'New field',
+    previewOnlyHelp: 'Mock data only exists in the preview. In the game this input keeps its own value.',
+    typeNote: (pin: string, type: string) => `${pin} cannot be driven by a ${type} value`,
+    wireIgnored: (from: string) => `${from}, not used in the preview`,
+    /** The value box of a bound input on the canvas (`graph/NodeView.tsx`). */
+    reads: (key: string) => `Reads ${key} in the preview. In the game this input keeps its own value.`,
+    readsOverWire: (key: string) => `Reads ${key} in the preview, so the wire is not used there.`,
+    noValue: 'No value'
+  },
+
   insp: {
     title: 'Inspector',
     none: 'Nothing selected. Select a layer in the Navigator, on the stage (Inspect mode) or in the Lint dock.',
     graphNode: (id?: string) => `Graph node ${id ?? ''}`,
-    gnDetails: 'Details',
-    gnKind: 'Kind',
     gnId: (id: string) => `Graph node ID: ${id}`,
+    gnCopyId: 'Copy node ID',
     gnIssues: (n: number) => `Issues (${n})`,
-    gnFields: 'Fields',
+    gnInputs: 'Inputs',
+    gnOutputs: 'Outputs',
+    gnNotConnected: 'Not connected',
+    gnFrom: (node: string, pin?: string) => (pin ? `From ${node} (${pin})` : `From ${node}`),
+    gnFromVariable: (name: string) => `From variable ${name}`,
+    gnTo: (node: string, pin: string) => `To ${node} (${pin})`,
+    gnGoTo: (node: string) => `Go to ${node}`,
     gnNone: 'The graph node is not in the open graph.',
     nodeId: (id: string) => `Figma node ID: ${id}`,
     tabs: { behavior: 'Behavior', translations: 'Translations', game: 'In game', figma: 'Figma' },
@@ -687,14 +709,21 @@ export const strings = {
 
   mock: {
     title: 'Mock Data',
-    presets: ['Empty', 'Typical', 'Stress'],
-    later: `${BY} contract data shapes (0.5): presets need a list's item shape`,
+    presets: 'Presets',
+    later: 'Not available yet',
     add: 'Add field',
     key: 'Mock data key',
     type: 'Mock data type',
+    typeUnknown: 'Type',
     value: 'Mock data value',
+    valueMissing: 'Type a value',
     remove: (k: string) => `Remove ${k}`,
-    empty: 'No mock data. Add fields that data bindings can use.'
+    empty: 'No mock data. Add fields that data bindings can use.',
+    inUse: (n: number) => `In use (${n})`,
+    unused: (n: number) => `Not used (${n})`,
+    nothingReads: 'Nothing reads this',
+    summary: (missing: number, total: number) => (missing ? `${missing} ${missing === 1 ? 'field is' : 'fields are'} read but ${missing === 1 ? 'has' : 'have'} no value` : `${total} ${total === 1 ? 'field' : 'fields'}`),
+    missingTip: (k: string) => `${k} is read but has no value`
   },
 
   top: {

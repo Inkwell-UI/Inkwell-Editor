@@ -57,6 +57,9 @@
   },
   "as2Template": "templates/Fade.as2",
   "extra": {
-    "timer": "seconds"
+    "timer": "seconds",
+    "inspector": {
+      "description": "Fades a layer from one opacity to another over some seconds."
+    }
   }
 }

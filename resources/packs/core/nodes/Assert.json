@@ -28,5 +28,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Assert.as2"
+  "as2Template": "templates/Assert.as2",
+  "extra": {
+    "inspector": {
+      "description": "Logs an error and stops this run when the condition is false."
+    }
+  }
 }

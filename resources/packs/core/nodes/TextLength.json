@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/TextLength.as2"
+  "as2Template": "templates/TextLength.as2",
+  "extra": {
+    "inspector": {
+      "description": "Counts the characters of a text."
+    }
+  }
 }

@@ -15,7 +15,10 @@
   "fields": {},
   "as2Template": "templates/OnOpen.as2",
   "extra": {
-    "entry": true
+    "entry": true,
+    "inspector": {
+      "description": "Runs each time the menu opens."
+    }
   },
   "requiresRuntime": true
 }
