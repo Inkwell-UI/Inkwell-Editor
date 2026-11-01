@@ -89,6 +89,7 @@ export function createSession(deps: SessionDeps) {
   const graphs = new Map<string, Map<string, Graph>>() // swf name -> graph id -> graph (the renderer saves; main validates)
   let localization: { localization?: Localization; error?: string } = {} // localization.json (V2.3): the tab is the writer; main keeps the saved copy for deploy
   const previewThemes = new Map<string, string>() // swf id -> theme mode the stage toolbar previews (not saved)
+  const previewAspects = new Map<string, number>() // swf id -> aspect ratio the stage toolbar previews (not saved); absent = the design's own
   const menus = new Map<string, { settings?: MenuSettings; error?: string }>() // swf name -> swfs/<name>/menu.json (the panel is the writer; main keeps the saved copy for deploy)
   let packs: Promise<PackSet> | undefined
   /** The bundled core pack first (it wins an id clash), then the project's cached packs that match packs.lock (`refreshPacks`). */
@@ -300,6 +301,7 @@ export function createSession(deps: SessionDeps) {
       assets,
       previewFonts: fonts(),
       themeFor: (name, swfId) => ({ ...(menus.get(name)?.settings?.userDefaults?.theme ? { default: menus.get(name)!.settings!.userDefaults!.theme! } : {}), ...(previewThemes.has(swfId) ? { preview: previewThemes.get(swfId)! } : {}) }),
+      aspectFor: (swfId) => previewAspects.get(swfId),
       devBuild: () => link().deploy === true,
       onDevBuild: (n) => void devFresh.add(n),
       get packDirs(): string[] { return packDirs },
@@ -718,6 +720,15 @@ export function createSession(deps: SessionDeps) {
       if (!info) return { ok: false }
       if (mode) previewThemes.set(info.id, mode)
       else previewThemes.delete(info.id)
+      server!.rebuild(info.id)
+      return { ok: true }
+    },
+    /** Aspect ratio (width / height) the stage toolbar previews (IPC input, so checked); the preview SWF is laid out again for it. Rebuilds only on a change. */
+    setPreviewAspect(swfName: string, aspect: unknown): { ok: boolean } {
+      const info = server?.swfs().find((i) => i.name === swfName)
+      if (!info || typeof aspect !== 'number' || !(aspect >= 1 && aspect <= 8)) return { ok: false }
+      if (previewAspects.get(info.id) === aspect) return { ok: true }
+      previewAspects.set(info.id, aspect)
       server!.rebuild(info.id)
       return { ok: true }
     },

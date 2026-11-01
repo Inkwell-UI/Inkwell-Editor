@@ -1,6 +1,6 @@
 import { isAbsolute, join, resolve, sep } from 'node:path'
 import { MENU_NAME, type MenuSettings } from '@inkwell-ui/spec'
-import { defaultMenuSettings, menuJsonPath, minRuntimeOf, modIniPath, resolveMenuNames } from '../../shared/menu'
+import { defaultMenuSettings, menuJsonPath, menuVariants, minRuntimeOf, modIniPath, resolveMenuNames } from '../../shared/menu'
 import { maxVersion } from '../../shared/runtimeFeatures'
 import { runtimeCheckNames } from '../runtime/runtimeCheck'
 import type { ResolvedSettings, StoredSettings } from '../../shared/doctor'
@@ -154,6 +154,7 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
     } else if (s.kind === 'customMenu') {
       const m = resolveMenuNames(o.modId, { swf: s.name, settings: s.menu ?? defaultMenuSettings() })
       add(m.swf)
+      if (!o.dev) Object.values(menuVariants(o.modId, { swf: s.name, settings: s.menu ?? defaultMenuSettings() })).forEach(add) // one SWF per screen shape; the runtime picks by the screen's aspect
       // an invalid or duplicate menu name is the export gate's `menu-name-invalid` / `menu-name-duplicate`, not a path clash
       if (MENU_NAME.test(m.name) && !RESERVED_WINDOWS_NAME.test(m.name) && !plan.files.some((f) => f.rel.toLowerCase() === menuJsonPath(m.name).toLowerCase())) add(menuJsonPath(m.name))
       if (o.dev && MENU_NAME.test(m.name)) devReloadPaths(m.name).forEach(add)

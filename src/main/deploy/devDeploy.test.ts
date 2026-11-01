@@ -1,4 +1,5 @@
 // Dev deploy (docs/dev-mode.md, SPEC-CHANGES S6/O5): the dev INI and the dev SWF are written only when the toggle is on and the target is a folder; Package Mod and the Vortex zip never get them.
+import { writeVariants } from './variants.testutil'
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -23,6 +24,7 @@ function setup(initial: boolean) {
   const dir = join(tmp, 'project')
   mkdirSync(join(dir, 'build'), { recursive: true })
   writeFileSync(join(dir, 'build', 'wheel.swf'), 'FWS-game')
+  writeVariants(join(dir, 'build'), 'wheel', 'FWS-game')
   writeFileSync(join(dir, 'build', 'wheel.dev.swf'), 'FWS-dev')
   const swf: DeploySwf = { name: 'wheel', orphaned: false, kind: 'customMenu', ir: { root: 'r', nodes: { r: frame('r', []) } } as unknown as Swf, build: { state: 'done', lint: [] } }
   const mods = join(tmp, 'mods')

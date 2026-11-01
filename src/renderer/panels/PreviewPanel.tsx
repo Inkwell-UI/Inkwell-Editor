@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { CircleX, Link2Off, WifiOff } from 'lucide-react'
-import type { AspectId } from '../../shared/preview'
+import { ASPECTS, type AspectId } from '../../shared/preview'
+import { reflowIr } from '../../shared/reflow'
 import { inkwell } from '../hooks/api'
 import { useElementSize } from '../hooks/useElementSize'
 import { usePreviewBuilds } from '../hooks/usePreviewBuilds'
@@ -77,8 +78,21 @@ export function PreviewPanel() {
     return () => (offs.forEach((off) => off()), c.dispose())
   }, [])
 
+  // the preview SWF is laid out again for the chosen screen (main rebuilds only on a change)
+  useEffect(() => {
+    if (swf && !swf.orphaned) void inkwell?.setPreviewAspect(swf.name, ASPECTS[aspect])
+  }, [swf?.name, swf?.orphaned, aspect])
+
   const entry = entries.find((e) => e.latest.swfId === swf?.id) ?? (swf ? undefined : entries[0])
   const build = entry?.shown
+  // the overlays draw the layout of the shown build (its stage may be another aspect than the design's)
+  // the screen frame follows the shown build, not the selection, so frame and SWF change together when the rebuild lands
+  const shownAspect = useMemo((): AspectId => {
+    const ratio = build ? build.stage.width / build.stage.height : ASPECTS[aspect]
+    const near = (id: AspectId): boolean => Math.abs(ASPECTS[id] - ratio) < 0.01
+    return near(aspect) ? aspect : (Object.keys(ASPECTS) as AspectId[]).find(near) ?? aspect
+  }, [aspect, build?.stage.width, build?.stage.height])
+  const shownIr = useMemo(() => (swf && build ? reflowIr(swf.ir, build.stage) : swf?.ir), [swf?.ir, build?.stage.width, build?.stage.height])
   useEffect(() => {
     if (ctl && build) {
       useTraceStore.getState().newBuild() // pin values belong to the build that traced them
@@ -189,10 +203,10 @@ export function PreviewPanel() {
           <div className="stage-scroll">
             <div className="stage-zoom" style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}>
               {ctl && build?.bytes ? (
-                <AspectFrame aspect={aspect}>
+                <AspectFrame aspect={shownAspect}>
                   <SwfViewport backend={ctl.backend} stage={build.stage} />
-                  {swf && <InspectOverlay ir={swf.ir} stage={build.stage} active={mode === 'inspect' && !(isMenu && focusOn)} selected={selected} extraBounds={runtimeBounds} onSelect={(id) => select(id, 'stage')} />}
-                  {swf && isMenu && focusOn && <FocusGraphOverlay ir={swf.ir} swfId={swf.id} swfName={swf.name} stage={build.stage} active={mode === 'inspect'} onSelect={(id) => select(id, 'stage')} />}
+                  {swf && shownIr && <InspectOverlay ir={shownIr}stage={build.stage} active={mode === 'inspect' && !(isMenu && focusOn)} selected={selected} extraBounds={runtimeBounds} onSelect={(id) => select(id, 'stage')} />}
+                  {swf && shownIr && isMenu && focusOn && <FocusGraphOverlay ir={shownIr}swfId={swf.id} swfName={swf.name} stage={build.stage} active={mode === 'inspect'} onSelect={(id) => select(id, 'stage')} />}
                   <SafeZoneOverlay visible={safe} />
                 </AspectFrame>
               ) : (

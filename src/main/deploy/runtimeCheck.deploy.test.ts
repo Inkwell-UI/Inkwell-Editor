@@ -1,4 +1,5 @@
 // The runtime check in the deploy path (S3, O4): files written, mandatory in a package, warning in a folder deploy, hostile menu.json values, no collision with the widget plugin.
+import { writeVariants } from './variants.testutil'
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -23,7 +24,7 @@ function input(over: Partial<DeployInput> = {}, ...names: string[]): DeployInput
     modId: 'M', modName: 'My Mod', swfs: (names.length ? names : ['wheel']).map((n) => swf(n)), root: join(mkdtempSync(join(tmpdir(), 'inkwell-rc-')), 'mod'), gameDirs: [],
     buildDir: mkdtempSync(join(tmpdir(), 'inkwell-rcb-')), ffdec: noFfdec, vanillaHashes: new Set(), stubsDir, ...over
   }
-  for (const s of i.swfs) writeFileSync(join(i.buildDir, `${s.name}.swf`), 'FWS-mine')
+  for (const s of i.swfs) (writeFileSync(join(i.buildDir, `${s.name}.swf`), 'FWS-mine'), writeVariants(i.buildDir, s.name, 'FWS-mine'))
   return i
 }
 

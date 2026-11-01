@@ -23,6 +23,7 @@ const api: InkwellApi = {
   saveOverlay: (swfName, overlay) => ipcRenderer.invoke(IPC.overlaySave, swfName, overlay),
   saveMenuSettings: (swfName, settings) => ipcRenderer.invoke(IPC.menuSave, swfName, settings),
   setPreviewTheme: (swfName, mode) => ipcRenderer.invoke(IPC.previewTheme, swfName, mode),
+  setPreviewAspect: (swfName, aspect) => ipcRenderer.invoke(IPC.previewAspect, swfName, aspect),
   setSwfTarget: (swfName, kind, more) => ipcRenderer.invoke(IPC.swfTarget, swfName, kind, more),
   listContracts: () => ipcRenderer.invoke(IPC.contractsList),
   getProjectFonts: () => ipcRenderer.invoke(IPC.projectFonts),

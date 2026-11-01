@@ -10,13 +10,15 @@ import type { AssetStore, ImageMode } from '../images/assets'
 import { loadCodegenPacks, type CodegenPacks } from '../codegen/packs'
 import { loadProject, saveProject, type Project } from '../project'
 import { bindingsOf } from '../../shared/graphBinding'
+import { MENU_VARIANT_ASPECTS, aspectRatioOf, applyTheme, themeModes } from '@inkwell-ui/spec'
+import { variantBuildName } from '../../shared/menu'
+import { reflowIr, stageForAspect } from '../../shared/reflow'
 import { listSettings, locKeysOf } from '../../shared/overlay'
 import { embeddedFontsFor } from '../fonts/embedBuild'
 import { readGraphs } from '../project/graphFiles'
 import { exclusive } from '../project/lock'
 import { snapshotContent, writeSnapshot, type FigmaSnapshot, type SnapshotSource } from '../project/snapshot'
 import type { PreviewFontSet } from '../previewFonts'
-import { applyTheme, themeModes } from '@inkwell-ui/spec'
 import { themeLint } from '../lint/theme'
 import { focusOptions } from '../lint/focus'
 import { contractFor, contractLint, loadContracts } from '../lint/contract'
@@ -51,6 +53,8 @@ export interface PipelineConfig {
   onDevBuild?: (name: string) => void
   /** The theme names of one SWF: the menu's default (Menu settings, baked into the game SWF) and the one the stage toolbar previews. */
   themeFor?: (name: string, swfId: string) => { default?: string; preview?: string }
+  /** The aspect ratio (width / height) the stage toolbar previews one SWF at; undefined = the design's own. */
+  aspectFor?: (swfId: string) => number | undefined
   /** After figma/snapshot.json was checked (written only when its content changed). */
   onSnapshot?: (s: FigmaSnapshot) => void
   /** Contract data (contracts/<menu>/<layer>.json) a menu replacement is checked against; without it a replacement with a contract gets `contract-unknown`. */
@@ -160,7 +164,10 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     const modes = themeModes(ir)
     const defaultMode = want?.default && modes.includes(want.default) ? want.default : modes[0]
     const gameIr = applyTheme(ir, defaultMode)
-    const previewIr = applyTheme(ir, want?.preview && modes.includes(want.preview) ? want.preview : defaultMode)
+    // the stage toolbar's aspect ratio: the preview SWF is the design laid out again for that screen (constraints, auto layout); the game SWF is not
+    const aspect = cfg.aspectFor?.(swfId)
+    const themedIr = applyTheme(ir, want?.preview && modes.includes(want.preview) ? want.preview : defaultMode)
+    const previewIr = aspect ? reflowIr(themedIr, stageForAspect(ir.stage, aspect)) : themedIr
     const images = cfg.assets ? (h: string) => cfg.assets!.get(h) : undefined
     // embedded custom fonts (V5): the layers' fonts, the characters to embed and the licence/glyph/size findings
     const emb = cfg.projectDir ? await embeddedFontsFor(cfg.projectDir, name, ir, overlayNodes) : undefined
@@ -170,7 +177,19 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     // W3/W4: the focus graph and prompts of a custom menu (overlay), with their lint
     const fo = focusOptions(ir, overlayNodes)
     const inputOpts = { ...(fo.focus ? { focus: fo.focus } : {}), ...(fo.prompts ? { prompts: fo.prompts } : {}) }
-    const r = await compileSwf(gameIr, { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), ...(components.length ? { components } : {}), buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+    const gameOpts = { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), ...(components.length ? { components } : {}), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) }
+    const r = await compileSwf(gameIr, { ...gameOpts, buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`) })
+    // a custom menu ships one game SWF per other screen shape (Spec `variants`): the design laid out again for that screen; the runtime opens the nearest one
+    const vt = createStageTimer()
+    if (ir.target.kind === 'customMenu') {
+      vt.start('variant-builds')
+      for (const a of MENU_VARIANT_ASPECTS) {
+        const vir = reflowIr(gameIr, stageForAspect(ir.stage, aspectRatioOf(a)!))
+        await compileSwf(vir, { ...gameOpts, buildDir: join(cfg.buildDir, 'variants', a.replace(':', 'x')), outPath: join(cfg.buildDir, variantBuildName(name, a)) })
+      }
+      vt.end('variant-builds')
+    }
+    const variants: BuildTiming = ir.target.kind === 'customMenu' ? vt.finishBuild() : { stages: {}, total: 0 }
     if (emb) r.lint.push(...emb.issues)
     r.lint.push(...fo.lint)
     if (ir.target.kind === 'menuReplacement') r.lint.push(...contractLint(ir, r.layerPaths, contractLayers, r.contractProvided))
@@ -189,7 +208,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     // Preview SWF: same content with device-font text, built after the game SWF. Its failure is reported to the preview panel only.
     const pt = createStageTimer()
     pt.start('preview-build')
-    const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: ir.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
+    const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: previewIr.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
     try {
       const pr = await compileSwf(previewIr, { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), ...(components.length ? { components } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
       const buf = await readFile(pr.swfPath)
@@ -203,7 +222,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     }
     pt.end('preview-build')
     const prev = pt.finishBuild()
-    const timing: BuildTiming = { stages: { ...sync.stages, ...r.timings.stages, ...dev.stages, ...prev.stages }, total: sync.total + r.timings.total + dev.total + prev.total }
+    const timing: BuildTiming = { stages: { ...sync.stages, ...r.timings.stages, ...variants.stages, ...dev.stages, ...prev.stages }, total: sync.total + r.timings.total + variants.total + dev.total + prev.total }
     cfg.onBuild?.(r.swfPath, timing, r.lint.length, toReport(swfId, name, r))
     cfg.onPreview?.(preview) // after onBuild, so the window's timing is already the new build's when the renderer answers
     return {

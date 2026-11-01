@@ -1,5 +1,6 @@
 // The vanilla/guard tests need nothing external. The real deploy needs Java, the user's FFDec and the wrapper jar (like the other FFDec tests);
 // the .pex/.esp part also needs INKWELL_PAPYRUS (or a papyrus path in the environment).
+import { writeVariants } from './variants.testutil'
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -46,15 +47,16 @@ describe('prepareDeploy guards', () => {
   it('customMenu deploys its built SWF under Interface/Inkwell/<modId>/, the MenuDef JSON and the commented default INI', async () => {
     const i = input({ modName: 'My Mod', swfs: [{ ...swf('wheel'), menu: MenuSettings.parse({ specVersion: 6, flags: { pausesGame: true, cursor: true, modal: true }, triggers: { hotkey: 37, modEvent: 'M_Open' }, userDefaults: { uiScale: 1.25 } }) }] })
     writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    writeVariants(i.buildDir, 'wheel', 'FWS-mine')
     const r = await prepareDeploy(i)
-    expect(r.ok && r.prepared.info.map((f) => f.rel)).toEqual(['Interface/Inkwell/M/Wheel.swf', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json', 'SKSE/Plugins/Inkwell/M.ini'])
+    expect(r.ok && r.prepared.info.map((f) => f.rel)).toEqual(['Interface/Inkwell/M/Wheel.swf', 'Interface/Inkwell/M/Wheel_16x10.swf', 'Interface/Inkwell/M/Wheel_21x9.swf', 'Interface/Inkwell/M/Wheel_32x9.swf', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json', 'SKSE/Plugins/Inkwell/M.ini'])
     expect(r.ok && r.prepared.info.find((f) => f.rel.endsWith('.ini'))).toMatchObject({ keepExisting: true })
     if (!r.ok) throw new Error(r.error)
     expect((await commitDeploy(i, r.prepared)).ok).toBe(true)
     expect(readFileSync(join(i.root, 'Interface', 'Inkwell', 'M', 'Wheel.swf'), 'utf8')).toBe('FWS-mine')
     // the JSON is the Spec's MenuDef: validated, the effective input context written out, no author-only keys
     expect(JSON.parse(readFileSync(join(i.root, 'SKSE', 'Plugins', 'Inkwell', 'menus', 'M_Wheel.json'), 'utf8'))).toEqual({
-      specVersion: 8, name: 'M_Wheel', swf: 'Interface/Inkwell/M/Wheel.swf', minRuntime: '0.3.0',
+      specVersion: 8, name: 'M_Wheel', swf: 'Interface/Inkwell/M/Wheel.swf', variants: { '16:10': 'Interface/Inkwell/M/Wheel_16x10.swf', '21:9': 'Interface/Inkwell/M/Wheel_21x9.swf', '32:9': 'Interface/Inkwell/M/Wheel_32x9.swf' }, minRuntime: '0.3.0',
       flags: { pausesGame: true, cursor: true, modal: true, closeOnEscape: true }, inputContext: 'menuMode', depth: 3, triggers: { hotkey: 37, papyrus: true, modEvent: 'M_Open' }
     })
     const iniPath = join(i.root, 'SKSE', 'Plugins', 'Inkwell', 'M.ini')
@@ -67,9 +69,9 @@ describe('prepareDeploy guards', () => {
     writeFileSync(iniPath, '[Menu.M_Wheel]\nUIScale=0.75\n')
     const again = await prepareDeploy(i)
     if (!again.ok) throw new Error(again.error)
-    expect(await commitDeploy(i, again.prepared)).toMatchObject({ ok: true, preserved: ['SKSE/Plugins/Inkwell/M.ini'], unchanged: 2 })
+    expect(await commitDeploy(i, again.prepared)).toMatchObject({ ok: true, preserved: ['SKSE/Plugins/Inkwell/M.ini'], unchanged: 5 })
     expect(readFileSync(iniPath, 'utf8')).toBe('[Menu.M_Wheel]\nUIScale=0.75\n')
-    expect(Object.keys((await readManifest(i.root))!.files)).toEqual(['Interface/Inkwell/M/Wheel.swf', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json'])
+    expect(Object.keys((await readManifest(i.root))!.files)).toEqual(['Interface/Inkwell/M/Wheel.swf', 'Interface/Inkwell/M/Wheel_16x10.swf', 'Interface/Inkwell/M/Wheel_21x9.swf', 'Interface/Inkwell/M/Wheel_32x9.swf', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json'])
     // a menu removed from the project retires its SWF and JSON, but the INI stays
     const gone = await prepareDeploy({ ...i, swfs: [] })
     expect(gone.ok).toBe(false) // no SWF at all is a plan error; the INI is not even considered
@@ -79,6 +81,7 @@ describe('prepareDeploy guards', () => {
   it('a deploy from before the menu layout retires its flat Interface/<name>.swf (byte-identical files only)', async () => {
     const i = input({})
     writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    writeVariants(i.buildDir, 'wheel', 'FWS-mine')
     await writeDeploy({ root: i.root, modId: 'M', files: new Map([['Interface/wheel.swf', { data: Buffer.from('FWS-old'), swf: 'wheel' }]]) })
     const r = await prepareDeploy(i)
     if (!r.ok) throw new Error(r.error)
@@ -92,7 +95,7 @@ describe('prepareDeploy guards', () => {
     const menus = (n: number, over: (k: number) => Partial<DeploySwf> = () => ({})): DeploySwf[] => Array.from({ length: n }, (_, k) => ({ ...swf(`m${k}`), ...over(k) }))
     const issues = async (swfs: DeploySwf[], only?: string) => {
       const i = input({ swfs, ...(only ? { only } : {}) })
-      for (const s of swfs) writeFileSync(join(i.buildDir, `${s.name}.swf`), 'FWS-' + s.name)
+      for (const s of swfs) (writeFileSync(join(i.buildDir, `${s.name}.swf`), 'FWS-' + s.name), writeVariants(i.buildDir, s.name, 'FWS-' + s.name))
       const r = await prepareDeploy(i)
       if (!r.ok) throw new Error(r.error)
       return r.prepared.issues.filter((x) => x.code.startsWith('menu') || x.code === 'saved-variable-invalid')
@@ -111,6 +114,7 @@ describe('prepareDeploy guards', () => {
   it('refuses an unmodified vanilla SWF and writes nothing', async () => {
     const i = input({})
     writeFileSync(join(i.buildDir, 'wheel.swf'), 'vanilla-bytes')
+    writeVariants(i.buildDir, 'wheel', 'vanilla-bytes')
     const r = await prepareDeploy({ ...i, vanillaHashes: new Set([sha256(Buffer.from('vanilla-bytes'))]) })
     expect(r).toMatchObject({ ok: false, error: expect.stringContaining('unmodified vanilla') })
     expect(existsSync(i.root)).toBe(false)
@@ -125,6 +129,7 @@ describe('prepareDeploy guards', () => {
     it("deploys its built SWF to the contract's file, next to a custom menu that is unaffected", async () => {
       const i = input({ swfs: [swf('wheel'), inv()], contracts: [layer] })
       writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+      writeVariants(i.buildDir, 'wheel', 'FWS-mine')
       writeFileSync(join(i.buildDir, 'inv.swf'), 'FWS-inventory')
       const r = await prepareDeploy(i)
       expect(r.ok && r.prepared.info.map((f) => f.rel)).toContain('Interface/inventorymenu.swf')
@@ -176,6 +181,7 @@ describe('prepareDeploy guards', () => {
     const inv: DeploySwf = { ...swf('inv'), kind: 'menuReplacement', build: { state: 'done', lint } }
     const i = input({ swfs: [swf('wheel'), inv] })
     writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    writeVariants(i.buildDir, 'wheel', 'FWS-mine')
     writeFileSync(join(i.buildDir, 'inv.swf'), 'FWS-inv')
     const r = await prepareDeploy(i)
     if (!r.ok) throw new Error(r.error)
@@ -192,6 +198,7 @@ describe('prepareDeploy guards', () => {
     const i = input({ swfs: [bad, loose] })
     writeFileSync(join(i.buildDir, 'bad.swf'), 'FWS-bad')
     writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    writeVariants(i.buildDir, 'wheel', 'FWS-mine')
     const all = await prepareDeploy(i)
     if (!all.ok) throw new Error(all.error)
     expect(all.prepared.issues).toEqual([
@@ -199,7 +206,7 @@ describe('prepareDeploy guards', () => {
       { severity: 'warning', code: 'unreachable-node', message: expect.stringContaining('Stray'), swf: 'wheel', nodeId: 'x', layerName: 'Stray' },
       { severity: 'warning', code: 'runtime-check-missing', message: expect.stringContaining('no Papyrus compiler'), swf: 'wheel' } // no compiler in this input: a folder deploy only warns
     ])
-    expect([...all.prepared.files.keys()]).toEqual(['Interface/Inkwell/M/Wheel.swf', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json', 'SKSE/Plugins/Inkwell/M.ini']) // the blocked SWF contributes nothing
+    expect([...all.prepared.files.keys()]).toEqual(['Interface/Inkwell/M/Wheel.swf', 'Interface/Inkwell/M/Wheel_16x10.swf', 'Interface/Inkwell/M/Wheel_21x9.swf', 'Interface/Inkwell/M/Wheel_32x9.swf', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json', 'SKSE/Plugins/Inkwell/M.ini']) // the blocked SWF contributes nothing
     const one = await prepareDeploy({ ...i, only: 'wheel' })
     expect(one.ok && one.prepared.issues.map((l) => l.swf)).toEqual(['wheel', 'wheel'])
   })
@@ -211,10 +218,11 @@ describe('prepareDeploy guards', () => {
     await assets.put(img.hash, img.png)
     const i = input({ swfs: [{ ...swf('wheel'), ir }], imageMode: 'dds', assets })
     writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    writeVariants(i.buildDir, 'wheel', 'FWS-mine')
     const r = await prepareDeploy(i)
     if (!r.ok) throw new Error(r.error)
     const rel = `textures/Inkwell/M/${img.hash}.dds`
-    expect(r.prepared.info.map((f) => f.rel).sort()).toEqual(['Interface/Inkwell/M/Wheel.swf', 'SKSE/Plugins/Inkwell/M.ini', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json', rel])
+    expect(r.prepared.info.map((f) => f.rel).sort()).toEqual(['Interface/Inkwell/M/Wheel.swf', 'Interface/Inkwell/M/Wheel_16x10.swf', 'Interface/Inkwell/M/Wheel_21x9.swf', 'Interface/Inkwell/M/Wheel_32x9.swf', 'SKSE/Plugins/Inkwell/M.ini', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json', rel])
     expect(readDdsHeader(r.prepared.files.get(rel)!.data)).toMatchObject({ width: 64, height: 32, format: 'BGRA8' })
     expect((await commitDeploy(i, r.prepared)).ok).toBe(true)
     expect(readDdsBgra8(readFileSync(join(i.root, 'textures', 'Inkwell', 'M', `${img.hash}.dds`)))).toEqual(img.image)
@@ -228,6 +236,7 @@ describe('prepareDeploy guards', () => {
     const ir = { nodes: { i: { ...frame('i', []), type: 'image', asset: 'a'.repeat(40), scaleMode: 'fill' } } } as unknown as Swf
     const i = input({ swfs: [{ ...swf('wheel'), ir }], imageMode: 'dds', assets: createAssetStore() })
     writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    writeVariants(i.buildDir, 'wheel', 'FWS-mine')
     expect(await prepareDeploy(i)).toMatchObject({ ok: false, error: expect.stringContaining('not in the project') })
     expect(existsSync(i.root)).toBe(false)
     expect(await prepareDeploy({ ...i, root: 'C:\\Games\\Skyrim Special Edition\\Data' })).toMatchObject({ ok: false, error: expect.stringContaining('Data folder') })

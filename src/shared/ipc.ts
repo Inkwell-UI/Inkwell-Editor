@@ -70,6 +70,7 @@ export const IPC = {
   swfTarget: 'swf:target',
   contractsList: 'contracts:list',
   previewTheme: 'preview:theme',
+  previewAspect: 'preview:aspect',
   locLoad: 'loc:load',
   projectFonts: 'fonts:project',
   projectFontAdd: 'fonts:projectAdd',
@@ -150,6 +151,8 @@ export interface InkwellApi {
   /** Writes `swfs/<swfName>/menu.json` (the Spec's MenuSettings; validated, unknown keys kept as sent). The project state follows. */
   saveMenuSettings(swfName: string, settings: MenuSettings): Promise<SaveOverlayResult>
   setPreviewTheme(swfName: string, mode: string): Promise<{ ok: boolean }>
+  /** Aspect ratio (width / height) the preview SWF is laid out for; rebuilds it. */
+  setPreviewAspect(swfName: string, aspect: number): Promise<{ ok: boolean }>
   /** Target of a SWF; a menu replacement also takes `contract` and `layers` (W5; empty removes them). */
   setSwfTarget(swfName: string, kind: 'hudWidget' | 'customMenu' | 'menuReplacement', more?: { contract?: string; layers?: string[] }): Promise<{ ok: true } | { ok: false; error: string }>
   /** The shipped contracts (menu name, layer names). */

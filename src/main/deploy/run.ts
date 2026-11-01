@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { entriesFor, imageHashes, writeTranslationFile, type Graph, type Localization, type MenuSettings, type Swf } from '@inkwell-ui/spec'
-import { buildMenuDef, defaultMenuSettings, menuJsonPath, menuLint, modIniPath, modIniText, resolveMenuNames, type MenuSource } from '../../shared/menu'
+import { buildMenuDef, defaultMenuSettings, menuJsonPath, menuLint, menuVariants, modIniPath, modIniText, resolveMenuNames, variantBuildName, type MenuSource } from '../../shared/menu'
 import { stableStringify } from '../project'
 import type { CodegenPacks } from '../codegen/packs'
 import type { DeployFileInfo, DeployLintItem, DeployResult } from '../../shared/deploy'
@@ -174,8 +174,14 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
         issues.push(...menuRows.filter((r) => r.swf === s.name))
         if (s.menuError) fail('menu-file-invalid', `${s.menuError}. Fix or delete swfs/${s.name}/menu.json.`)
         if (issues.slice(first).some((l) => l.severity === 'error')) continue
-        const src: MenuSource = { swf: s.name, settings: s.menu ?? defaultMenuSettings(), ...(s.features ? { features: s.features } : {}) }
+        const src: MenuSource = { swf: s.name, settings: s.menu ?? defaultMenuSettings(), ...(s.features ? { features: s.features } : {}), ...(i.dev ? { noVariants: true } : {}) }
         files.set(resolveMenuNames(i.modId, src).swf, { data, swf: s.name })
+        // one game SWF per other screen shape (built next to the main one); a missing file is a missing build, not a skipped variant
+        for (const [aspect, rel] of Object.entries(menuVariants(i.modId, src))) {
+          const v = await readFile(join(i.buildDir, variantBuildName(s.name, aspect))).catch(() => undefined)
+          if (v) files.set(rel, { data: v, swf: s.name })
+          else fail('build-not-ready', `${s.name}: the ${aspect} SWF has no build yet (${join(i.buildDir, variantBuildName(s.name, aspect))}). Run Build All first.`)
+        }
         devMenus.push(resolveMenuNames(i.modId, src).name)
         if (i.dev) for (const rel of devReloadPaths(resolveMenuNames(i.modId, src).name)) if (allowed.has(rel)) files.set(rel, { data, swf: s.name })
         files.set(menuJsonPath(resolveMenuNames(i.modId, src).name), { data: Buffer.from(stableStringify(buildMenuDef(i.modId, src).def)), swf: s.name })

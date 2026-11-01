@@ -1,5 +1,5 @@
 import {
-  effectiveInputContext, HOTKEY_RANGE, MENU_NAME, MENU_SLOTS, MENU_WARN_THRESHOLD, MenuDef, MenuSettings, MOD_EVENT_NAME, SPEC_VERSION, writeDefaultModIni, type UserDefaults
+  effectiveInputContext, HOTKEY_RANGE, MENU_NAME, MENU_SLOTS, MENU_WARN_THRESHOLD, MenuDef, MenuSettings, MENU_VARIANT_ASPECTS, MOD_EVENT_NAME, SPEC_VERSION, variantSwfPath, writeDefaultModIni, type UserDefaults
 } from '@inkwell-ui/spec'
 import type { DeployLintItem } from './deploy'
 import { minRuntimeFor } from './runtimeFeatures'
@@ -32,6 +32,18 @@ export interface MenuSource {
   settings: MenuSettings
   /** Runtime features the SWF uses (`RuntimeFeature` names); absent = only the base menu. */
   features?: readonly string[]
+  /** A Dev deploy ships the one dev SWF only: no screen-shape variants in the JSON or the plan. */
+  noVariants?: boolean
+}
+
+/** The build file of one screen shape's game SWF, next to `<name>.swf` in the build folder. */
+export const variantBuildName = (swfName: string, aspect: string): string => `${swfName}_${aspect.replace(':', 'x')}.swf`
+
+/** The other screen shapes a custom menu ships a SWF for (Spec `variants`): aspect "W:H" -> the file's path relative to Data/. */
+export function menuVariants(modId: string, m: MenuSource): Record<string, string> {
+  if (m.noVariants) return {}
+  const swf = resolveMenuNames(modId, m).swf
+  return Object.fromEntries(MENU_VARIANT_ASPECTS.map((a) => [a, variantSwfPath(swf, a)]))
 }
 
 /** The mod name of the translation files (V13.2): set in the menu JSON when the SWF has translated text. */
@@ -62,7 +74,7 @@ export function buildMenuDef(modId: string, m: MenuSource): { def: MenuDef; prob
   if (problems.length) return { problems }
   // userDefaults and the author-only keys never reach the deployed JSON; unknown keys of the source are not part of the runtime's file either
   const parsed = MenuDef.safeParse({
-    specVersion: SPEC_VERSION, name: r.name, swf: r.swf, minRuntime: minRuntimeOf(m), flags: s.flags, inputContext: effectiveInputContext(s), depth: s.depth, triggers: s.triggers,
+    specVersion: SPEC_VERSION, name: r.name, swf: r.swf, ...(m.noVariants ? {} : { variants: menuVariants(modId, m) }), minRuntime: minRuntimeOf(m), flags: s.flags, inputContext: effectiveInputContext(s), depth: s.depth, triggers: s.triggers,
     ...(menuTranslations(modId, m) ? { translations: menuTranslations(modId, m) } : {})
   })
   if (!parsed.success) return { problems: parsed.error.issues.map((i) => ({ code: i.path[0] === 'swf' ? 'menu-swf-invalid' : 'menu-invalid', message: `${i.path.join('.') || 'menu'}: ${i.message}` })) }

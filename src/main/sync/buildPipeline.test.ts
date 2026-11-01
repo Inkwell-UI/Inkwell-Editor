@@ -218,3 +218,35 @@ describe('build pipeline: offline (no sync server) and figma/snapshot.json', () 
     expect(preview).toContain('if (m["fade"] != undefined)')
   })
 })
+
+describe('build pipeline: screen shapes', () => {
+  async function build(kind: 'hudWidget' | 'customMenu', aspect?: number) {
+    const buildDir = await mkdtemp(join(tmpdir(), 'inkwell-pipe-'))
+    const jobs: FfdecJob[] = []
+    const ffdec = { build: async (job: FfdecJob) => (jobs.push(job), await copyFile(job.base, job.out), { ok: true, ms: 0, wallMs: 0 }) }
+    const got: { preview?: Record<string, any> } = {}
+    const p = createBuildPipeline({ ...base, buildDir, ffdec, onPreview: (pv) => (got.preview = pv), ...(aspect ? { aspectFor: () => aspect } : {}) })
+    const root = frame('f', ['s'], { transform: { x: 0, y: 0, width: 1920, height: 1080, rotation: 0 } })
+    const s = rectShape('s', { transform: { x: 0, y: 0, width: 1920, height: 76, rotation: 0 }, anchor: { h: 'stretch', v: 'top' } })
+    await p.onChange('test', swf([root, s], { target: { kind } }), 'menu')
+    return { buildDir, jobs, ...got }
+  }
+  const stageOf = (b: Buffer): number => parseSwf(b).frameSize.x1 / 20 // twips
+
+  it('a custom menu also builds one game SWF per other screen shape, laid out for it', async () => {
+    const r = await build('customMenu')
+    expect(r.jobs.map((j) => basename(j.out))).toEqual(['menu.swf', 'menu_16x10.swf', 'menu_21x9.swf', 'menu_32x9.swf', 'menu.preview.swf'])
+    expect(stageOf(await readFile(join(r.buildDir, 'menu_21x9.swf')))).toBe(2520)
+    expect(stageOf(await readFile(join(r.buildDir, 'menu.swf')))).toBe(1920)
+  })
+
+  it('a HUD widget builds no variants', async () => {
+    expect((await build('hudWidget')).jobs.map((j) => basename(j.out))).toEqual(['menu.swf', 'menu.preview.swf'])
+  })
+
+  it('the preview follows the chosen aspect, the game SWF does not', async () => {
+    const r = await build('hudWidget', 21 / 9)
+    expect(r.preview).toMatchObject({ stage: { width: 2520, height: 1080 } })
+    expect(stageOf(await readFile(join(r.buildDir, 'menu.swf')))).toBe(1920)
+  })
+})

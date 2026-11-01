@@ -45,6 +45,7 @@ describe('MenuDef', () => {
     expect(r.problems).toEqual([])
     expect(r.def).toEqual({
       specVersion: 8, name: 'MyMod_Wheel', swf: 'Interface/Inkwell/MyMod/Wheel.swf', minRuntime: '0.3.0',
+      variants: { '16:10': 'Interface/Inkwell/MyMod/Wheel_16x10.swf', '21:9': 'Interface/Inkwell/MyMod/Wheel_21x9.swf', '32:9': 'Interface/Inkwell/MyMod/Wheel_32x9.swf' },
       flags: { pausesGame: false, cursor: true, modal: true, closeOnEscape: true }, inputContext: 'menuMode', depth: 6, triggers: { hotkey: 37, papyrus: true, modEvent: 'MyMod_OpenWheel' }
     })
     expect(MenuDef.safeParse(r.def).success).toBe(true)

@@ -1,4 +1,5 @@
 // Localization in the editor (SPEC-CHANGES V2, V3, V13): edit operations, lint, codegen of keyed texts, the menu glue and the deploy files. No FFDec needed.
+import { writeVariants } from './deploy/variants.testutil'
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -157,6 +158,7 @@ describe('keyed Set Text in graphs (V13.2)', () => {
     const root = join(mkdtempSync(join(tmpdir(), 'inkwell-locgraph-')), 'mod')
     const buildDir = mkdtempSync(join(tmpdir(), 'inkwell-build-'))
     writeFileSync(join(buildDir, 'wheel.swf'), 'FWS-mine')
+    writeVariants(buildDir, 'wheel', 'FWS-mine')
     const i: DeployInput = { modId: 'M', swfs: [{ name: 'wheel', orphaned: false, kind: 'customMenu', ir: menuIr(), build: { state: 'done', lint: [] }, overlay: {}, graphs: [gr([setText('a', '$Inkwell_M_Start')])] }], root, gameDirs: [], buildDir, ffdec: noFfdec, vanillaHashes: new Set(), localization: loc({ entries: { $Inkwell_M_Start: { ENGLISH: 'Start', GERMAN: 'Starten' } } }) }
     const r = await prepareDeploy(i)
     if (!r.ok) throw new Error(r.error)
@@ -199,6 +201,7 @@ describe('deploy', () => {
     const i: DeployInput = { modId: 'M', swfs: [deploySwf()], root: join(mkdtempSync(join(tmpdir(), 'inkwell-locdeploy-')), 'mod'), gameDirs: [], buildDir: mkdtempSync(join(tmpdir(), 'inkwell-build-')), ffdec: noFfdec, vanillaHashes: new Set(), ...over }
     mkdirSync(i.buildDir, { recursive: true })
     writeFileSync(join(i.buildDir, 'wheel.swf'), 'FWS-mine')
+    writeVariants(i.buildDir, 'wheel', 'FWS-mine')
     return i
   }
 
@@ -218,7 +221,7 @@ describe('deploy', () => {
     const r = await prepareDeploy(i)
     if (!r.ok) throw new Error(r.error)
     expect(r.prepared.info.map((f) => f.rel)).toEqual([
-      'Interface/Inkwell/M/Wheel.swf', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json', 'SKSE/Plugins/Inkwell/M.ini', 'Interface/Translations/M_ENGLISH.txt', 'Interface/Translations/M_GERMAN.txt'
+      'Interface/Inkwell/M/Wheel.swf', 'Interface/Inkwell/M/Wheel_16x10.swf', 'Interface/Inkwell/M/Wheel_21x9.swf', 'Interface/Inkwell/M/Wheel_32x9.swf', 'SKSE/Plugins/Inkwell/menus/M_Wheel.json', 'SKSE/Plugins/Inkwell/M.ini', 'Interface/Translations/M_ENGLISH.txt', 'Interface/Translations/M_GERMAN.txt'
     ])
     expect((await commitDeploy(i, r.prepared)).ok).toBe(true)
     const json = JSON.parse(readFileSync(join(i.root, 'SKSE', 'Plugins', 'Inkwell', 'menus', 'M_Wheel.json'), 'utf8'))

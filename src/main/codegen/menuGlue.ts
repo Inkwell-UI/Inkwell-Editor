@@ -29,6 +29,8 @@ export interface MenuGlueInput {
   prompts?: readonly (readonly (string | null)[])[]
   /** Dev build (S6): `dumpVariables()` asks every graph for its variables. The normal game build keeps the empty method. */
   dev?: boolean
+  /** Design size of this SWF (a screen-shape variant is wider); UI scale grows from its centre. Default 1920x1080. */
+  stage?: { width: number; height: number }
 }
 
 export const menuClassName = (swfCls: string): string => `${swfCls}Menu`
@@ -160,8 +162,8 @@ export function menuClassSource(i: MenuGlueInput): string {
     '        if (s != 1 || ox != 0 || oy != 0) {',
     '            _root._xscale = 100 * s;',
     '            _root._yscale = 100 * s;',
-    '            _root._x = 960 * (1 - s) + ox;',
-    '            _root._y = 540 * (1 - s) + oy;',
+    `            _root._x = ${(i.stage?.width ?? 1920) / 2} * (1 - s) + ox;`,
+    `            _root._y = ${(i.stage?.height ?? 1080) / 2} * (1 - s) + oy;`,
     '        }',
     ...(tx.length ? ['        // V13.2: the compiled text is the source language; the runtime answers with the game language, or with the key itself when it has no entry', ...tx] : []),
     ...(i.themed ? ['        // V6.4: the INI Theme key names a mode of the Figma variable collection; empty keeps the theme baked into the SWF', '        this.applyTheme(bridge.theme);'] : []),
