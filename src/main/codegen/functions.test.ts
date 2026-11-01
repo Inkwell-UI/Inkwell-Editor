@@ -73,7 +73,7 @@ describe('codegen', () => {
     expect(main.source).toContain('Done: function(c_count:Number) {')
     expect(main.source).toContain('Failed: function(c_count:Number) {')
     expect(main.source).toContain('})).run("42");')
-    expect(main.source).toContain('String(c_count)') // the output wired on to ToString
+    expect(main.source).toContain('.s(c_count, 0)') // the output wired on to ToString
   })
 
   it('a function name that is not a plain identifier skips the function and reports it', () => {

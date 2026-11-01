@@ -28,7 +28,8 @@ describe('Call Widget', () => {
     const g = graph('main', [call('Show', params), node('go', 'core/OnClick@1', { target: 'L' }), node('c', 'core/CallWidget@1', { name: 'Show', params }), node('t', 'core/ToString@1')], [wire('go', 'then', 'c', 'in'), wire('t', 'value', 'c', 'title')])
     const r = gen(g)
     expect(r.issues).toEqual([])
-    expect(r.classes[0]!.source).toContain('if (__g.Show != undefined) __g.Show(String(0), 0);') // wired title, defaulted hold
+    expect(r.classes[0]!.source).toContain('if (__g.Show != undefined) __g.Show(')
+    expect(r.classes[0]!.source).toMatch(/__g\.Show\(.*\.s\(0, 0\)\), 0\);/) // wired title, defaulted hold
   })
 })
 

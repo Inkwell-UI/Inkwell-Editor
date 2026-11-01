@@ -2694,7 +2694,7 @@ exports[`golden AS2 per node kind > mathutils/MoveTowards@1 1`] = `
         __g.Run = function() {
             try {
                 // [l] core/Log@1
-                trace("[Inkwell] info l: " + String((({ f: function(c, t, m) { var d = t - c, r = Math.abs(d) <= Math.abs(m) ? t : c + (d < 0 ? -1 : 1) * Math.abs(m); return isFinite(r) ? r : 0; } }).f(0, 0, 1))));
+                trace("[Inkwell] info l: " + String((({ f: function(c, t, m) { var d = t - c; var r = Math.abs(d) <= Math.abs(m) ? t : c + (d < 0 ? -1 : 1) * Math.abs(m); return isFinite(r) ? r : 0; } }).f(0, 0, 1))));
             } catch (e) {
                 __g.fail("e", e);
             }

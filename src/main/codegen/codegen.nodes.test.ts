@@ -44,7 +44,7 @@ describe('Counter', () => {
     expect(r.issues).toEqual([])
     const out = body(r.classes[0]!.source)
     expect(out).toMatch(/var c1_value = Number\(__g\.ctr\["n"\]\) \|\| 0;/)
-    expect(count(out, 'var t_p = String(c1_value);')).toBe(1)
+    expect(out.match(/var t_p = .*\.s\(c1_value, 0\);/g)).toHaveLength(1)
     expect(out.indexOf('var c1_value')).toBeLessThan(out.indexOf('var t_p'))
     expect(count(out, '.text = t_p;')).toBe(2)
     expect(out).toContain('__g.ctr["n"] += 1;')
