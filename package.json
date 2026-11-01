@@ -23,6 +23,7 @@
     "deploy:graph-popup": "tsx scripts/deploy-graph-popup.ts",
     "deploy:menu-slice": "tsx scripts/deploy-menu-slice.ts",
     "deploy:menu-nodes": "tsx scripts/deploy-menu-nodes.ts",
+    "deploy:menu-date-spike": "tsx scripts/deploy-menu-date-spike.ts",
     "deploy:menu-i18n": "tsx scripts/deploy-menu-i18n.ts",
     "deploy:menu-themes": "tsx scripts/deploy-menu-themes.ts",
     "deploy:menu-gamepad": "tsx scripts/deploy-menu-gamepad.ts",

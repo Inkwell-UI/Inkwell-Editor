@@ -1,0 +1,43 @@
+{
+  "comments": [],
+  "edges": [
+    {
+      "from": {
+        "node": "open",
+        "pin": "then"
+      },
+      "to": {
+        "node": "raw",
+        "pin": "in"
+      }
+    }
+  ],
+  "groups": [],
+  "id": "main",
+  "name": "Main",
+  "nodes": [
+    {
+      "fields": {},
+      "id": "open",
+      "kind": "core/OnOpen@1",
+      "pos": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "fields": {
+        "code": "var show = function(n, label, f) { var r; try { r = String(f()); } catch (e) { r = \"ERROR \" + e; } __g.base[\"line\" + n].text = label + r; };\nvar d0 = new Date(0);\nshow(1, \"typeof Date: \", function() { return typeof(Date); });\nshow(2, \"now ms: \", function() { return new Date().getTime(); });\nshow(3, \"UTC now: \", function() { var d = new Date(); return d.getUTCFullYear() + \"-\" + (d.getUTCMonth() + 1) + \"-\" + d.getUTCDate() + \" \" + d.getUTCHours() + \":\" + d.getUTCMinutes() + \":\" + d.getUTCSeconds(); });\nshow(4, \"local: \", function() { var d = new Date(); return d.getFullYear() + \"-\" + (d.getMonth() + 1) + \"-\" + d.getDate() + \" \" + d.getHours() + \":\" + d.getMinutes() + \" tz \" + d.getTimezoneOffset(); });\nshow(5, \"Date.UTC(2024,1,29): \", function() { return Date.UTC(2024, 1, 29) + \" want 1709164800000\"; });\nshow(6, \"epoch 0 year/weekday: \", function() { return d0.getUTCFullYear() + \"/\" + d0.getUTCDay() + \" want 1970/4\"; });\nshow(7, \"getTimer: \", function() { return getTimer(); });"
+      },
+      "id": "raw",
+      "kind": "core/RawAS2@1",
+      "pos": {
+        "x": 300,
+        "y": 0
+      }
+    }
+  ],
+  "scope": "menu",
+  "specVersion": 8,
+  "variables": []
+}

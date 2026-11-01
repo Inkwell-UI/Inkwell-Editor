@@ -1,0 +1,533 @@
+{
+  "id": "menu",
+  "name": "Inkwell Date Spike",
+  "nodes": {
+    "1:1": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [
+        "2:1",
+        "2:2",
+        "2:3",
+        "2:4",
+        "2:5",
+        "2:6",
+        "2:7",
+        "2:8",
+        "2:9"
+      ],
+      "clipContent": false,
+      "id": "1:1",
+      "name": "stage",
+      "opacity": 1,
+      "parent": null,
+      "transform": {
+        "height": 1080,
+        "rotation": 0,
+        "width": 1920,
+        "x": 0,
+        "y": 0
+      },
+      "type": "frame",
+      "visible": true
+    },
+    "2:1": {
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "fills": [
+        {
+          "color": {
+            "b": 0.12,
+            "g": 0.07,
+            "r": 0.05
+          },
+          "type": "solid"
+        }
+      ],
+      "id": "2:1",
+      "name": "panel",
+      "opacity": 1,
+      "parent": "1:1",
+      "paths": [
+        [
+          {
+            "op": "M",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 900,
+            "y": 0
+          },
+          {
+            "op": "L",
+            "x": 900,
+            "y": 520
+          },
+          {
+            "op": "L",
+            "x": 0,
+            "y": 520
+          },
+          {
+            "op": "Z"
+          }
+        ]
+      ],
+      "strokes": [
+        {
+          "alignment": "center",
+          "fill": {
+            "color": {
+              "b": 0.8,
+              "g": 0.9,
+              "r": 0.2
+            },
+            "type": "solid"
+          },
+          "weight": 2
+        }
+      ],
+      "transform": {
+        "height": 520,
+        "rotation": 0,
+        "width": 900,
+        "x": 510,
+        "y": 200
+      },
+      "type": "shape",
+      "visible": true
+    },
+    "2:2": {
+      "align": "center",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "INKWELL DATE SPIKE",
+      "id": "2:2",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "title",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 18,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 32"
+          },
+          "size": 32,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 50,
+        "rotation": 0,
+        "width": 820,
+        "x": 550,
+        "y": 220
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:3": {
+      "align": "left",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "...",
+      "id": "2:3",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "line1",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 3,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 36,
+        "rotation": 0,
+        "width": 820,
+        "x": 550,
+        "y": 290
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:4": {
+      "align": "left",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "...",
+      "id": "2:4",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "line2",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 3,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 36,
+        "rotation": 0,
+        "width": 820,
+        "x": 550,
+        "y": 340
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:5": {
+      "align": "left",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "...",
+      "id": "2:5",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "line3",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 3,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 36,
+        "rotation": 0,
+        "width": 820,
+        "x": 550,
+        "y": 390
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:6": {
+      "align": "left",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "...",
+      "id": "2:6",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "line4",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 3,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 36,
+        "rotation": 0,
+        "width": 820,
+        "x": 550,
+        "y": 440
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:7": {
+      "align": "left",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "...",
+      "id": "2:7",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "line5",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 3,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 36,
+        "rotation": 0,
+        "width": 820,
+        "x": 550,
+        "y": 490
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:8": {
+      "align": "left",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "...",
+      "id": "2:8",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "line6",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 3,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 36,
+        "rotation": 0,
+        "width": 820,
+        "x": 550,
+        "y": 540
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    },
+    "2:9": {
+      "align": "left",
+      "anchor": {
+        "h": "left",
+        "v": "top"
+      },
+      "children": [],
+      "content": "...",
+      "id": "2:9",
+      "letterSpacing": {
+        "unit": "px",
+        "value": 0
+      },
+      "lineHeight": {
+        "unit": "auto"
+      },
+      "name": "line7",
+      "opacity": 1,
+      "parent": "1:1",
+      "runs": [
+        {
+          "end": 3,
+          "fill": {
+            "color": {
+              "b": 1,
+              "g": 1,
+              "r": 1
+            },
+            "type": "solid"
+          },
+          "font": {
+            "kind": "alias",
+            "name": "Everywhere / Medium / 24"
+          },
+          "size": 24,
+          "start": 0
+        }
+      ],
+      "sizing": "fixed",
+      "textFit": "none",
+      "transform": {
+        "height": 36,
+        "rotation": 0,
+        "width": 820,
+        "x": 550,
+        "y": 590
+      },
+      "truncate": false,
+      "type": "text",
+      "verticalAlign": "center",
+      "visible": true
+    }
+  },
+  "root": "1:1",
+  "specVersion": 8,
+  "stage": {
+    "height": 1080,
+    "width": 1920
+  },
+  "target": {
+    "kind": "customMenu"
+  }
+}

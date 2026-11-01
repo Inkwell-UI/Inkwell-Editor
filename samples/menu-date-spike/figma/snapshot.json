@@ -1,0 +1,15 @@
+{
+  "protocolVersion": 5,
+  "schema": 1,
+  "specVersion": 6,
+  "swfs": {
+    "menu": {
+      "assets": [],
+      "frameId": "menu",
+      "frameName": "stage",
+      "nodes": 21,
+      "rootHash": "00000000"
+    }
+  },
+  "updatedAt": "2026-10-26T00:00:00.000Z"
+}
