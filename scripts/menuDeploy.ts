@@ -8,7 +8,7 @@ import { copyFileSync, createReadStream, cpSync, existsSync, mkdirSync, mkdtempS
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
-import { applyTheme, Swf, themeModes } from '@inkwell-ui/spec'
+import { MENU_VARIANT_ASPECTS, aspectRatioOf, applyTheme, Swf, themeModes } from '@inkwell-ui/spec'
 import { createFfdecWrapper } from '../src/main/build/ffdecWrapper'
 import { loadCodegenPacks } from '../src/main/codegen/packs'
 import { commitDeploy, prepareDeploy, type DeployInput, type DeploySwf } from '../src/main/deploy/run'
@@ -18,7 +18,8 @@ import { generateToken } from '../src/main/runtime/devIni'
 import { withDevToken } from '../src/main/runtime/token'
 import { loadSettings, saveSettings } from '../src/main/settings'
 import { compileSwf } from '../src/main/swf/compile'
-import { defaultMenuSettings, flatMenuSettings } from '../src/shared/menu'
+import { defaultMenuSettings, flatMenuSettings, variantBuildName } from '../src/shared/menu'
+import { reflowIr, stageForAspect } from '../src/shared/reflow'
 import { listSettings, locKeysOf } from '../src/shared/overlay'
 import { embeddedFontsFor } from '../src/main/fonts/embedBuild'
 import { readLocalization } from '../src/main/project/localizationFile'
@@ -94,6 +95,10 @@ async function main(o: MenuDeployOptions): Promise<void> {
       graphs: { graphs: Object.values(s.graphs ?? {}), packs }
     })
     const common = { ...fontOpts, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), modId, instanceNames: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : []))), roles: Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.role ? [[id, o.role]] : []))), lists: listSettings(nodes), graphs: { graphs: Object.values(s.graphs ?? {}), packs }, ffdec }
+    // one game SWF per other screen shape, as the build pipeline writes them; the deploy gate wants them (`build-not-ready` otherwise)
+    for (const a of MENU_VARIANT_ASPECTS) {
+      await compileSwf(reflowIr(ir, stageForAspect(ir.stage, aspectRatioOf(a)!)), { ...common, buildDir: resolve(buildDir, 'variants', a.replace(':', 'x')), outPath: resolve(buildDir, variantBuildName('menu', a)) })
+    }
     let dev: DeployInput['dev']
     if (devDeploy) {
       await compileSwf(ir, { ...common, buildDir: resolve(buildDir, 'dev'), outPath: resolve(buildDir, 'menu.dev.swf'), dev: true })
