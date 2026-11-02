@@ -192,6 +192,26 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     window.addEventListener('keyup', key)
     return () => { window.removeEventListener('keydown', key); window.removeEventListener('keyup', key) }
   }, [markSplice])
+  // C held while clicking empty canvas drops a Comment node there (like Unreal)
+  const cHeld = useRef(false)
+  useEffect(() => {
+    const key = (e: KeyboardEvent): void => {
+      if (e.key.toLowerCase() === 'c' && !e.ctrlKey && !e.metaKey && !(e.target as HTMLElement).closest('input, select, textarea')) cHeld.current = e.type === 'keydown'
+    }
+    const clear = (): void => { cHeld.current = false }
+    window.addEventListener('keydown', key)
+    window.addEventListener('keyup', key)
+    window.addEventListener('blur', clear)
+    return () => { window.removeEventListener('keydown', key); window.removeEventListener('keyup', key); window.removeEventListener('blur', clear) }
+  }, [])
+  const onPaneClick = (e: React.MouseEvent): void => {
+    if (!cHeld.current || isReadOnlyGraph(store)) return
+    const kind = [...defs].find(([k, d]) => k.startsWith('core/') && d.kind === 'Comment')?.[0]
+    if (!kind) return
+    const id = crypto.randomUUID()
+    store.getState().addNode({ id, kind, pos: rf.screenToFlowPosition({ x: e.clientX, y: e.clientY }) })
+    store.getState().setSelection([id])
+  }
   const onConnectEnd: OnConnectEnd = useCallback((event, state) => {
     if (state.isValid || state.toNode || !state.fromNode || !state.fromHandle) return
     const e = event as MouseEvent
@@ -405,6 +425,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onConnectEnd={onConnectEnd}
+          onPaneClick={onPaneClick}
           isValidConnection={isValidConnection}
           onNodeDoubleClick={(_, n) => {
             const s = store.getState().nodes.find((x) => x.id === n.id)
