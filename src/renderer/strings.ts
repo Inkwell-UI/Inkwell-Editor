@@ -172,6 +172,8 @@ export const strings = {
     cursor: 'Show the cursor',
     modal: 'Modal menu',
     closeOnEscape: 'Close with Esc',
+    blur: 'Blur game background',
+    hideHud: 'Hide the HUD',
     inputContext: 'Input context',
     inputContexts: { menuMode: 'MenuMode', none: 'None' } as Record<string, string>,
     depth: 'Menu depth',
@@ -343,6 +345,8 @@ export const strings = {
   graph: {
     title: 'Graph',
     tidy: 'Tidy layout',
+    fullscreen: 'Fullscreen graph (Enter)',
+    fullscreenExit: 'Exit fullscreen (Esc)',
     as2Split: 'AS2 Split',
     as2Title: 'Generated AS2 (read-only)',
     pinValueTip: (v: string) => `Last value in the preview: ${v}`,

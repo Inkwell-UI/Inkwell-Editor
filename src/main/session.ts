@@ -302,6 +302,7 @@ export function createSession(deps: SessionDeps) {
       previewFonts: fonts(),
       themeFor: (name, swfId) => ({ ...(menus.get(name)?.settings?.userDefaults?.theme ? { default: menus.get(name)!.settings!.userDefaults!.theme! } : {}), ...(previewThemes.has(swfId) ? { preview: previewThemes.get(swfId)! } : {}) }),
       aspectFor: (swfId) => previewAspects.get(swfId),
+      onMenuSettings: (name, settings) => void menus.set(name, { settings }), // the build that follows pushes the project to the window
       devBuild: () => link().deploy === true,
       onDevBuild: (n) => void devFresh.add(n),
       get packDirs(): string[] { return packDirs },

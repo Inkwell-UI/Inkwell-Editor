@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Graph } from '@inkwell-ui/spec'
+import type { Graph, MenuSettings } from '@inkwell-ui/spec'
 import type { PreviewBuild } from '../../shared/preview'
 import type { SwfReport } from '../../shared/syncState'
 import { createStageTimer, type BuildTiming } from '../../shared/timing'
@@ -11,7 +11,8 @@ import { loadCodegenPacks, type CodegenPacks } from '../codegen/packs'
 import { loadProject, saveProject, type Project } from '../project'
 import { bindingsOf } from '../../shared/graphBinding'
 import { MENU_VARIANT_ASPECTS, aspectRatioOf, applyTheme, themeModes } from '@inkwell-ui/spec'
-import { variantBuildName } from '../../shared/menu'
+import { defaultMenuSettings, hasBackgroundBlur, variantBuildName } from '../../shared/menu'
+import { readMenuSettings, writeMenuLocked } from '../project/menuFile'
 import { reflowIr, stageForAspect } from '../../shared/reflow'
 import { listSettings, locKeysOf } from '../../shared/overlay'
 import { embeddedFontsFor } from '../fonts/embedBuild'
@@ -55,6 +56,8 @@ export interface PipelineConfig {
   themeFor?: (name: string, swfId: string) => { default?: string; preview?: string }
   /** The aspect ratio (width / height) the stage toolbar previews one SWF at; undefined = the design's own. */
   aspectFor?: (swfId: string) => number | undefined
+  /** A sync wrote a custom menu's menu.json (flags.blur from a Figma background blur); the caller refreshes its cached copy. */
+  onMenuSettings?: (name: string, settings: MenuSettings) => void
   /** After figma/snapshot.json was checked (written only when its content changed). */
   onSnapshot?: (s: FigmaSnapshot) => void
   /** Contract data (contracts/<menu>/<layer>.json) a menu replacement is checked against; without it a replacement with a contract gets `contract-unknown`. */
@@ -132,6 +135,16 @@ export function createBuildPipeline(cfg: PipelineConfig) {
         p.swfs[name] = { ir: ir as unknown as Record<string, unknown>, overlay }
         // graphs and menu.json are saved by the editor; the cached copy here may be stale, so a build never writes them back
         await saveProject(dir, { ...p, swfs: Object.fromEntries(Object.entries(p.swfs).map(([n, { graphs: _g, menu: _m, menuError: _e, ...rest }]) => [n, rest])) })
+        // a Figma background blur on a menu's root frame turns Menu settings > Blur game background on, once: a menu.json that already has the flag (set by hand) is left alone
+        if (ir.target.kind === 'customMenu' && hasBackgroundBlur(ir as unknown as Parameters<typeof hasBackgroundBlur>[0])) {
+          const m = await readMenuSettings(dir, name)
+          if (!m.error && m.settings?.flags.blur === undefined) {
+            const s = m.settings ?? defaultMenuSettings()
+            const next = { ...s, flags: { ...s.flags, blur: true } }
+            await writeMenuLocked(dir, name, next)
+            cfg.onMenuSettings?.(name, next)
+          }
+        }
         // figma/snapshot.json follows ir.json in the same lock; a failure is reported, the build goes on (ir.json is already saved)
         try {
           const irs = Object.fromEntries(Object.entries(p.swfs).map(([n, s]) => [n, s.ir as unknown as Parameters<typeof compileSwf>[0]]))

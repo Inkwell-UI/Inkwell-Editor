@@ -90,6 +90,29 @@ describe('build pipeline: overlay written by the editor UI', () => {
   })
 })
 
+describe('build pipeline: Figma background blur', () => {
+  it('turns menu.json flags.blur on once for a custom menu whose root has the effect; a hand-set flag is never overridden', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'inkwell-pipe-blur-'))
+    await cp(resolve(__dirname, '../../../samples/hud-minimal'), dir, { recursive: true, filter: (p) => !/[\/]build([\/]|$)/.test(p) && !/swfs[\/](root|root2)/.test(p) })
+    const ffdec = { build: async (job: FfdecJob) => (await copyFile(job.base, job.out), { ok: true, ms: 0, wallMs: 0 }) }
+    const told: string[] = []
+    const p = createBuildPipeline({ ...base, projectDir: dir, buildDir: join(dir, 'build'), ffdec, onMenuSettings: (n, s) => told.push(`${n}:${s.flags.blur}`) })
+    const blurred = (effects: unknown[]) => swf([frame('f', ['s'], { extra: { figma: { effects } } }), rectShape('s')], { target: { kind: 'customMenu' } })
+    const file = join(dir, 'swfs/menu/menu.json')
+    const flags = async () => JSON.parse(await readFile(file, 'utf8')).flags
+
+    await p.onChange('test', blurred([{ type: 'LAYER_BLUR', visible: true }]), 'menu')
+    await expect(stat(file)).rejects.toThrow() // no background blur: no menu.json is created
+    await p.onChange('test', blurred([{ type: 'BACKGROUND_BLUR', visible: true, radius: 20 }]), 'menu')
+    expect((await flags()).blur).toBe(true)
+    const saved = JSON.parse(await readFile(file, 'utf8'))
+    await writeFile(file, JSON.stringify({ ...saved, flags: { ...saved.flags, blur: false } })) // the author turns it off in Menu settings
+    await p.onChange('test', blurred([{ type: 'BACKGROUND_BLUR', visible: true, radius: 20 }]), 'menu')
+    expect((await flags()).blur).toBe(false)
+    expect(told).toEqual(['menu:true']) // the session's cached copy is refreshed once, not for the hand-set flag
+  })
+})
+
 describe('build pipeline: projects with graphs', () => {
   it('building a SWF never hangs on the graphs of another SWF (saveProject inside the lock) and never writes back a stale graph', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'inkwell-pipe-graphs-'))

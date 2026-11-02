@@ -1,9 +1,21 @@
 // Names, MenuDef, default INI and the menu lint codes (S1, S2, S9), pure.
 import { MenuDef, MenuSettings, parseIni, findMenuIni, resolveMenu, MENU_SLOTS, MENU_WARN_THRESHOLD, RUNTIME_LINT_CODES } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
-import { buildMenuDef, defaultMenuSettings, flatMenuSettings, menuLint, menuSwfName, menuSwfPath, minRuntimeOf, modIniText, resolveMenuNames, type MenuSource } from './menu'
+import { buildMenuDef, defaultMenuSettings, flatMenuSettings, hasBackgroundBlur, menuLint, menuSwfName, menuSwfPath, minRuntimeOf, modIniText, resolveMenuNames, type MenuSource } from './menu'
 
 const src = (swf: string, over: Record<string, unknown> = {}): MenuSource => ({ swf, settings: MenuSettings.parse({ specVersion: 6, ...over }) })
+
+describe('hasBackgroundBlur', () => {
+  const ir = (effects: unknown) => ({ root: 'r', nodes: { r: { extra: { figma: { effects } } } } })
+  it('is true only for a visible BACKGROUND_BLUR effect on the root', () => {
+    expect(hasBackgroundBlur(ir([{ type: 'BACKGROUND_BLUR', visible: true, radius: 20 }]))).toBe(true)
+    expect(hasBackgroundBlur(ir([{ type: 'BACKGROUND_BLUR', radius: 20 }]))).toBe(true)
+    expect(hasBackgroundBlur(ir([{ type: 'BACKGROUND_BLUR', visible: false }]))).toBe(false)
+    expect(hasBackgroundBlur(ir([{ type: 'LAYER_BLUR', visible: true }, { type: 'DROP_SHADOW' }]))).toBe(false)
+    expect(hasBackgroundBlur({ root: 'r', nodes: { r: {} } })).toBe(false)
+    expect(hasBackgroundBlur({ root: 'r', nodes: { c: { extra: { figma: { effects: [{ type: 'BACKGROUND_BLUR' }] } } } } })).toBe(false)
+  })
+})
 
 describe('names', () => {
   it('menu name <modId>_<Swf>, swf Interface/Inkwell/<modId>/<Swf>.swf (O2, one constant), overridable from menu.json', () => {

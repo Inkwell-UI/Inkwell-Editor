@@ -86,7 +86,7 @@ export function MenuSettingsForm() {
     setMsg(undefined)
     void inkwell?.saveMenuSettings(swf.name, p.data).then((r) => setMsg(r.ok ? { ok: true, text: S.saved } : { ok: false, text: S.saveError(r.error) }))
   }
-  const flag = (k: 'pausesGame' | 'cursor' | 'modal' | 'closeOnEscape') => (v: boolean) => edit((d) => ({ ...d, flags: { ...d.flags, [k]: v } }))
+  const flag = (k: 'pausesGame' | 'cursor' | 'modal' | 'closeOnEscape' | 'blur' | 'hideHud') => (v: boolean) => edit((d) => ({ ...d, flags: { ...d.flags, [k]: v } }))
   const user = (k: keyof UserDefaults, v: number | string | undefined) =>
     edit((d) => {
       const u: Record<string, unknown> = { ...d.userDefaults }
@@ -193,6 +193,8 @@ export function MenuSettingsForm() {
               <Check label={S.cursor} checked={doc.flags.cursor} onChange={flag('cursor')} testId="menu-cursor" />
               <Check label={S.modal} checked={doc.flags.modal} onChange={flag('modal')} testId="menu-modal" />
               <Check label={S.closeOnEscape} checked={doc.flags.closeOnEscape} onChange={flag('closeOnEscape')} testId="menu-esc" />
+              <Check label={S.blur} checked={doc.flags.blur ?? false} onChange={flag('blur')} testId="menu-blur" />
+              <Check label={S.hideHud} checked={doc.flags.hideHud ?? false} onChange={flag('hideHud')} testId="menu-hide-hud" />
             </div>
             <Fold id="menu-advanced" title={S.advanced} summary={S.advancedSummary(S.inputContexts[ctx] ?? ctx, doc.depth)}>
               <div className="menu-pair">

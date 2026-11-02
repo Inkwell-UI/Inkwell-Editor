@@ -19,6 +19,12 @@ export const modIniPath = (modId: string): string => `${MOD_INI_DIR}/${modId}.in
 /** What a plain `MenuSettings` of a new menu holds (every default of the Spec schema, current spec version). */
 export const defaultMenuSettings = (): MenuSettings => MenuSettings.parse({ specVersion: SPEC_VERSION })
 
+/** True when the design's root frame has a visible Figma background blur (the plugin keeps `effects` verbatim under `extra.figma`): a sync then defaults the menu's `flags.blur` on. */
+export function hasBackgroundBlur(ir: { root: string; nodes: Record<string, { extra?: Record<string, unknown> } | undefined> }): boolean {
+  const fx = (ir.nodes[ir.root]?.extra?.['figma'] as { effects?: unknown } | undefined)?.effects
+  return Array.isArray(fx) && fx.some((e: { type?: unknown; visible?: unknown } | null) => e?.type === 'BACKGROUND_BLUR' && e.visible !== false)
+}
+
 /** SWF folder name -> the file/class stem of the menu: letters, digits and `_`, a capital first letter (`main-menu` -> `Main_menu`). */
 export function menuSwfName(swfName: string): string {
   const s = swfName.replace(/[^A-Za-z0-9_]/g, '_')
