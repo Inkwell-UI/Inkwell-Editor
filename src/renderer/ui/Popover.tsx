@@ -19,14 +19,18 @@ export function Popover({ trigger, children, align = 'start', up, label, classNa
   const root = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [side, setSide] = useState(align)
+  const flipped = useRef(false)
   // keep the panel inside its own panel (a layout panel clips what sticks out) and the window: if it overflows on the requested side, open it towards the other
   useLayoutEffect(() => {
     if (!open || !panel.current) return
     const r = panel.current.getBoundingClientRect()
     const bounds = root.current?.closest('[data-panel]')?.getBoundingClientRect()
-    if (r.left < Math.max(0, bounds?.left ?? 0) && side === 'end') setSide('start')
-    else if (r.right > Math.min(window.innerWidth, bounds?.right ?? window.innerWidth) && side === 'start') setSide('end')
+    // flip at most once per opening: a panel wider than its container overflows on both sides, and flipping back and forth never ends (React's "maximum update depth", a blank window)
+    if (flipped.current) return
+    if (r.left < Math.max(0, bounds?.left ?? 0) && side === 'end') (flipped.current = true, setSide('start'))
+    else if (r.right > Math.min(window.innerWidth, bounds?.right ?? window.innerWidth) && side === 'start') (flipped.current = true, setSide('end'))
   }, [open, side])
+  useEffect(() => void (open || (flipped.current = false)), [open])
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent): void => {
