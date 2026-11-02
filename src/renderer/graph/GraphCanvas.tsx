@@ -4,7 +4,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import {
-  createClipboard, FindBar, HaloEdge, isTyping, nodeIndex, NAVIGATION_PROPS, SpawnMenu, useSpaceMenu, useWheelNavigation, type SpawnOption
+  createClipboard, FindBar, isTyping, nodeIndex, NAVIGATION_PROPS, SpawnMenu, useSpaceMenu, useWheelNavigation, type SpawnOption
 } from '@nicklaj/knotwork'
 import type { NodeDef as KwDef } from '@nicklaj/knotwork'
 import '@nicklaj/knotwork/knotwork.css'
@@ -18,7 +18,7 @@ import { useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import { componentRows } from '../model/componentList'
 import { COMPONENT_DRAG, PROP_DRAG, ensureComponentGraphs, useComponentGraphs } from '../state/componentGraphs'
-import { categoriesOf, categoryVar, connectionRule, layerOptions, nodePins, nodeTarget, PIN_STYLE, spawnDefs, spawnFields, spawnFor, spawnWire, type SpawnFromPin } from '../model/graphModel'
+import { categoriesOf, categoryVar, connectionRule, displacedEdges, layerOptions, nodePins, nodeTarget, PIN_STYLE, spawnDefs, spawnFields, spawnFor, spawnWire, type SpawnFromPin } from '../model/graphModel'
 import { callFields } from '../../shared/functions'
 import { pinMocksOf } from '../../shared/pinMock'
 import { findGraphStore, functionGraphs, getLibraryFunctions, isReadOnlyGraph, newEdge, NODE_TYPE, pinName, visibleVariables, type FlowEdge, type FlowNode, type GraphStore } from '../state/graphStore'
@@ -33,11 +33,12 @@ import { useTraceStore } from '../state/traceStore'
 import { strings } from '../strings'
 import { functionOfOption, functionOption } from '../model/functionSpawn'
 import { FUNCTION_DRAG } from './GraphsList'
+import { BendEdge } from './BendEdge'
 import { GraphContext, InkwellNode, type GraphCtx } from './NodeView'
 import './graph.css'
 
 const nodeTypes = { [NODE_TYPE]: InkwellNode }
-const edgeTypes = { default: HaloEdge }
+const edgeTypes = { default: BendEdge }
 
 interface MenuState {
   x: number
@@ -140,10 +141,57 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   const onConnect = useCallback(
     (c: Connection) => {
       const s = store.getState()
-      if (rule(s.nodes, s.edges, c) === null) s.connect({ node: c.source, pin: pinName(c.sourceHandle) }, { node: c.target, pin: pinName(c.targetHandle) })
+      if (rule(s.nodes, s.edges, c) !== null) return
+      const replace = displacedEdges(defs, variablesRef.current, s.signature, s.nodes, s.edges, c)
+      s.connect({ node: c.source, pin: pinName(c.sourceHandle) }, { node: c.target, pin: pinName(c.targetHandle) }, replace)
     },
-    [rule, store]
+    [rule, store, defs]
   )
+  // Ctrl + drop a node on an Exec wire: the node goes between the wire's two nodes (needs a free Exec input and output; part of the drag's undo entry)
+  const wireUnder = useCallback((nodeId: string) => {
+    const s = store.getState()
+    const node = s.nodes.find((n) => n.id === nodeId)
+    const pins = node && nodePins(defs, node, variablesRef.current, s.signature)
+    const inPin = pins?.inputs.find((p) => p.type === 'Exec' && !s.edges.some((e) => e.target === nodeId && pinName(e.targetHandle) === p.name))
+    const outPin = pins?.outputs.find((p) => p.type === 'Exec' && !s.edges.some((e) => e.source === nodeId && pinName(e.sourceHandle) === p.name))
+    const el = wrap.current?.querySelector(`.react-flow__node[data-id="${CSS.escape(nodeId)}"]`)
+    if (!inPin || !outPin || !el) return null
+    const r = el.getBoundingClientRect()
+    for (const g of wrap.current!.querySelectorAll<SVGGElement>('.react-flow__edge[data-id]')) {
+      const e = s.edges.find((x) => x.id === g.dataset.id)
+      const path = g.querySelector('path')
+      const m = path?.getScreenCTM()
+      if (!e || !path || !m || e.source === nodeId || e.target === nodeId) continue
+      const from = s.nodes.find((n) => n.id === e.source)
+      const out = from && nodePins(defs, from, variablesRef.current, s.signature)?.outputs.find((p) => p.name === pinName(e.sourceHandle))
+      if (out?.type !== 'Exec') continue
+      const len = path.getTotalLength()
+      for (let d = 0; d <= len; d += 8) {
+        const p = path.getPointAtLength(d).matrixTransform(m)
+        if (p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom) return { edge: e, inPin: inPin.name, outPin: outPin.name }
+      }
+    }
+    return null
+  }, [defs, store])
+  // the wire and its two nodes get data-splice (styled in graph.css) while Ctrl is held over it; React never touches these attributes
+  const dragId = useRef<string | null>(null)
+  const markSplice = useCallback((ctrl: boolean) => {
+    const root = wrap.current
+    if (!root) return
+    root.querySelectorAll('[data-splice]').forEach((el) => el.removeAttribute('data-splice'))
+    const hit = ctrl && dragId.current ? wireUnder(dragId.current) : null
+    if (!hit) return
+    const mark = (sel: string, v: string): void => root.querySelector(sel)?.setAttribute('data-splice', v)
+    mark(`.react-flow__edge[data-id="${CSS.escape(hit.edge.id)}"]`, 'wire')
+    mark(`.react-flow__node[data-id="${CSS.escape(hit.edge.source)}"]`, 'end')
+    mark(`.react-flow__node[data-id="${CSS.escape(hit.edge.target)}"]`, 'end')
+  }, [wireUnder])
+  useEffect(() => { // pressing or releasing Ctrl while the node rests over a wire
+    const key = (e: KeyboardEvent): void => { if (dragId.current && e.key === 'Control') markSplice(e.type === 'keydown') }
+    window.addEventListener('keydown', key)
+    window.addEventListener('keyup', key)
+    return () => { window.removeEventListener('keydown', key); window.removeEventListener('keyup', key) }
+  }, [markSplice])
   const onConnectEnd: OnConnectEnd = useCallback((event, state) => {
     if (state.isValid || state.toNode || !state.fromNode || !state.fromHandle) return
     const e = event as MouseEvent
@@ -371,8 +419,15 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
             const lib = functionGraphs(store).find((g) => g.id === fn) // a pack's function (`<pack>/<id>`)
             if (lib) openLibraryFunction({ id: swf.id, name: swf.name }, lib)
           }}
-          onNodeDragStart={() => store.getState().beginDrag()}
-          onNodeDragStop={() => store.getState().endDrag()}
+          onNodeDragStart={(_, node) => { dragId.current = node.id; store.getState().beginDrag() }}
+          onNodeDrag={(e) => markSplice(e.ctrlKey || e.metaKey)}
+          onNodeDragStop={(e, node) => {
+            const hit = e.ctrlKey || e.metaKey ? wireUnder(node.id) : null
+            if (hit) store.getState().splice(hit.edge.id, node.id, hit.inPin, hit.outPin)
+            dragId.current = null
+            markSplice(false)
+            store.getState().endDrag()
+          }}
           onDelete={({ nodes: n, edges: ed }) => store.getState().deleteSelection(n.map((x) => x.id), ed.map((x) => x.id))}
           onSelectionChange={onSelectionChange}
           onMoveStart={space.cancel}

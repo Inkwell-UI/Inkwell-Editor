@@ -145,3 +145,11 @@
 .var-pop { display: flex; flex-direction: column; gap: 6px; width: 240px; }
 .var-pop .gn-input { max-width: none; }
 .var-pop .check { margin: 0; font-size: 12px; }
+
+/* Ctrl-drag a node over an Exec wire: the wire it will be spliced into and the two nodes it will sit between */
+.react-flow__edge[data-splice='wire'] .react-flow__edge-path { stroke: var(--focus-graph); stroke-width: 4; stroke-dasharray: 8 6; }
+.react-flow__node[data-splice='end'] { outline: 2px solid var(--focus-graph); outline-offset: 3px; border-radius: var(--radius); }
+
+/* wire bend points (layout only): a plain dot on the wire */
+.gw-bend { fill: var(--accent); stroke: var(--bg, #18181b); stroke-width: 1.5; pointer-events: all; cursor: grab; }
+.gw-bend:hover { fill: var(--focus); }

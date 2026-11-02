@@ -67,6 +67,29 @@ describe('graph store', () => {
     expect(g.nodes[0]).toMatchObject({ hint: 'x', pos: { x: 1, y: 2, z: 9 } })
   })
 
+  it('wire bends are saved as edge extra and removed with an empty list', () => {
+    const s = getGraphStore('swf', 'Hud', base())
+    s.getState().addNode({ id: 'b', kind: 'core/Log@1', pos: { x: 5, y: 6 } })
+    s.getState().connect({ node: 'a', pin: 'then' }, { node: 'b', pin: 'in' })
+    const id = s.getState().edges[0]!.id
+    s.getState().setBends(id, [{ x: 1, y: 2 }])
+    expect(toGraph(s.getState()).edges[0]!.extra).toEqual({ bends: [{ x: 1, y: 2 }] })
+    s.getState().setBends(id, [])
+    expect(toGraph(s.getState()).edges[0]).toEqual({ from: { node: 'a', pin: 'then' }, to: { node: 'b', pin: 'in' } })
+  })
+
+  it('splice puts a node between the two ends of a wire', () => {
+    const s = getGraphStore('swf', 'Hud', base())
+    s.getState().addNode({ id: 'b', kind: 'core/Log@1', pos: { x: 5, y: 6 } })
+    s.getState().addNode({ id: 'c', kind: 'core/Log@1', pos: { x: 9, y: 6 } })
+    s.getState().connect({ node: 'a', pin: 'then' }, { node: 'b', pin: 'in' })
+    s.getState().splice(s.getState().edges[0]!.id, 'c', 'in', 'then')
+    expect(toGraph(s.getState()).edges).toEqual([
+      { from: { node: 'a', pin: 'then' }, to: { node: 'c', pin: 'in' } },
+      { from: { node: 'c', pin: 'then' }, to: { node: 'b', pin: 'in' } }
+    ])
+  })
+
   it('typing coalesces per word; selection is not recorded; a drag is one entry', () => {
     const s = getGraphStore('swf', 'Hud', base())
     const type = (v: string) => (tick(40), s.getState().setField('a', 'message', v))

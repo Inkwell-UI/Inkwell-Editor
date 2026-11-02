@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, ChevronRight, SplitSquareHorizontal } from 'lucide-react'
+import { ChevronDown, ChevronRight, SplitSquareHorizontal, WandSparkles } from 'lucide-react'
 import { nodeIndex } from '@nicklaj/knotwork'
 import { useStore } from 'zustand'
 import { As2View } from '../graph/As2View'
@@ -57,7 +57,7 @@ export function GraphPanel() {
       title={strings.graph.title}
       actions={
         <>
-          <Btn label={strings.graph.tidy} onClick={tidy} reason={store ? undefined : strings.nav.noSwf} testId="graph-tidy">{strings.graph.tidy}</Btn>
+          <Btn icon={WandSparkles} label={strings.graph.tidy} onClick={tidy} reason={store ? undefined : strings.nav.noSwf} testId="graph-tidy" />
           <Btn icon={SplitSquareHorizontal} pressed={split} onClick={() => setSplit(!split)} label={strings.graph.as2Split} testId="as2-split">{strings.graph.as2Split}</Btn>
         </>
       }

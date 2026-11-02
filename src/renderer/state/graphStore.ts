@@ -80,8 +80,13 @@ export interface GraphState extends Doc {
   /** Binds the input `pin` of a node to the mock data field `key` (preview only), or with `undefined` removes the binding (`extra.pinMock`, shared/pinMock.ts). */
   setPinMock(nodeId: string, pin: string, key: string | undefined): void
   moveNodes(positions: Record<string, { x: number; y: number }>): void
-  connect(from: { node: string; pin: string }, to: { node: string; pin: string }): void
+  /** `replace` = ids of the wires the new one displaces, removed in the same undo step. */
+  connect(from: { node: string; pin: string }, to: { node: string; pin: string }, replace?: string[]): void
   disconnect(edgeId: string): void
+  /** Layout-only bend points of a wire (`extra.bends`); an empty list removes them. Never compiled. */
+  setBends(edgeId: string, bends: { x: number; y: number }[]): void
+  /** Puts a node between the two ends of a wire: `edgeId` becomes `source -> node.inPin` plus `node.outPin -> target`. */
+  splice(edgeId: string, nodeId: string, inPin: string, outPin: string): void
   setSelection(ids: string[]): void
   /** The scope of a variable is the graph's scope (menu graph: menu variables; component graph: component variables) unless given: `saved` (S5) goes to the menu graph. */
   addVariable(v: Pick<Variable, 'id' | 'name' | 'type'> & { default?: unknown; scope?: Variable['scope'] }): void
@@ -241,12 +246,29 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
         setPinMock: (nodeId, pin, key) =>
           set((s) => ({ nodes: s.nodes.map((n) => (n.id === nodeId ? { ...n, data: withExtra(n.data, withPinMock(n.data.extra, pin, key)) } : n)) })),
         moveNodes: (pos) => set((s) => ({ nodes: s.nodes.map((n) => (pos[n.id] ? { ...n, position: pos[n.id]! } : n)) })),
-        connect: (from, to) =>
+        connect: (from, to, replace = []) =>
           set((s) => {
             const id = edgeId(from, to)
-            return s.edges.some((e) => e.id === id) ? s : { edges: [...s.edges, newEdge(from, to)] }
+            if (s.edges.some((e) => e.id === id)) return s // the same wire again: nothing is displaced
+            return { edges: [...s.edges.filter((e) => !replace.includes(e.id)), newEdge(from, to)] }
           }),
         disconnect: (id) => set((s) => ({ edges: s.edges.filter((e) => e.id !== id) })),
+        setBends: (id, bends) =>
+          set((s) => ({
+            edges: s.edges.map((e) => {
+              if (e.id !== id) return e
+              const { bends: _old, ...extra } = (e.data!.extra ?? {}) as Record<string, unknown>
+              const { extra: _x, ...rest } = e.data!
+              return { ...e, data: { ...rest, ...(bends.length || Object.keys(extra).length ? { extra: bends.length ? { ...extra, bends } : extra } : {}) } as GraphEdgeData }
+            })
+          })),
+        splice: (id, nodeId, inPin, outPin) =>
+          set((s) => {
+            const e = s.edges.find((x) => x.id === id)
+            if (!e) return s
+            const { from, to } = e.data as GraphEdgeData
+            return { edges: [...s.edges.filter((x) => x.id !== id), newEdge(from, { node: nodeId, pin: inPin }), newEdge({ node: nodeId, pin: outPin }, to)] }
+          }),
         setSelection: (ids) => {
           const on = new Set(ids)
           set((s) => ({ nodes: s.nodes.map((n) => (!!n.selected === on.has(n.id) ? n : { ...n, selected: on.has(n.id) }) ) }))

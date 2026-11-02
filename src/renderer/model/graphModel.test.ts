@@ -5,7 +5,7 @@ import { loadPacks } from '../../main/packs'
 import { defIndex, emptyGraph } from '../../shared/graphs'
 import { toFlow } from '../state/graphStore'
 import {
-  categoriesOf, connectionRule, eventNodes, fieldRows, humanize, layerChoices, layerOptions, nodePins, nodeTarget, spawnDefs, spawnFields, spawnFor, spawnWire, type Defs
+  categoriesOf, connectionRule, displacedEdges, eventNodes, fieldRows, humanize, layerChoices, layerOptions, nodePins, nodeTarget, spawnDefs, spawnFields, spawnFor, spawnWire, type Defs
 } from './graphModel'
 
 const defs: Defs = defIndex(await loadPacks([resolve(__dirname, '../../../resources/packs/core')]))
@@ -41,10 +41,13 @@ describe('connection rules', () => {
     const u = build([node('a', 'Log'), { id: 'x', kind: 'other/Thing@1', fields: {}, pos: { x: 0, y: 0 } }])
     expect(rule(u.nodes, u.edges, link('a', 'then', 'x', 'in'))).toMatch(/Unknown pack node/)
   })
-  it('an exec output and a data input take one wire', () => {
-    expect(ok(link('call', 'then', 'log', 'in'))).toMatch(/exec output already/)
-    expect(ok(link('call', 'n', 'set', 'text'))).toMatch(/input already has a wire/)
-    expect(ok(link('set', 'then', 'set2', 'in'))).toBeNull() // several wires INTO an exec input are fine
+  it('an exec output and a data input take one wire: a new link is allowed and displaces the old one', () => {
+    const d = (l: ReturnType<typeof link>) => displacedEdges(defs, [], undefined, g.nodes, g.edges, l)
+    const edge = (s: string, sp: string, t: string, tp: string) => g.edges.find((e) => e.source === s && e.sourceHandle === `${sp}-out` && e.target === t && e.targetHandle === `${tp}-in`)!.id
+    expect(ok(link('call', 'then', 'log', 'in'))).toBeNull()
+    expect(d(link('call', 'then', 'log', 'in'))).toEqual([edge('call', 'then', 'set', 'in')])
+    expect(d(link('call', 'n', 'set', 'text'))).toEqual([edge('call', 'title', 'set', 'text')])
+    expect(d(link('set', 'then', 'set2', 'in'))).toEqual([]) // several wires INTO an exec input are fine
   })
   it('refuses an exec loop, but not a data wire that happens to point back', () => {
     const loop = build([node('a', 'Log'), node('b', 'Log'), node('c', 'Log')], [['a', 'then', 'b', 'in'], ['b', 'then', 'c', 'in']])
@@ -82,9 +85,6 @@ describe('spawn menu', () => {
     expect(o.every((x) => x.pin?.startsWith('Exec:'))).toBe(true)
     expect(o.some((x) => x.def.kind === 'core/Branch@1')).toBe(true)
     expect(o.some((x) => x.def.kind === 'core/GetText@1')).toBe(false)
-  })
-  it('an Exec output that already has a wire offers nothing (the rule refuses it)', () => {
-    expect(run({ nodeId: 'call', handle: 'then-out', type: 'source' })).toEqual([])
   })
   it('from a String output: nodes with a String input, each pin once; from an input: nodes with a matching output', () => {
     const o = run({ nodeId: 'call', handle: 'title-out', type: 'source' })

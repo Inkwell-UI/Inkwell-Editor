@@ -72,13 +72,6 @@ export function connectionRule(defs: Defs, vars: () => Graph['variables'], sig: 
     if (a.type === 'Exec') return null
     return pinCompat(a.type, b.type) === 'none' ? `${a.type} cannot connect to ${b.type} (use a To String / To Number node)` : null
   }
-  const usedOnce: Rule<FlowNode> = (l, ctx) => {
-    const { a, b } = ends(l, ctx)
-    if (typeof a !== 'object' || typeof b !== 'object') return null
-    if (a.type === 'Exec' && outgoing(ctx.edges, l.source).some((e) => e.sourceHandle === l.sourceHandle)) return 'This exec output already has a wire (use Sequence for several)'
-    if (b.type !== 'Exec' && incoming(ctx.edges, l.target).some((e) => e.targetHandle === l.targetHandle)) return 'This input already has a wire'
-    return null
-  }
   const noExecLoop: Rule<FlowNode> = (l, ctx) => {
     const { a } = ends(l, ctx)
     if (typeof a !== 'object' || a.type !== 'Exec') return null
@@ -97,7 +90,20 @@ export function connectionRule(defs: Defs, vars: () => Graph['variables'], sig: 
     }
     return null
   }
-  return composeRules<FlowNode>(known, matches, noSelfLink(), usedOnce, noExecLoop)
+  return composeRules<FlowNode>(known, matches, noSelfLink(), noExecLoop)
+}
+
+/** The ids of the wires a new link replaces: an Exec output and any data input take one wire, so the old one goes. */
+export function displacedEdges(defs: Defs, vars: Graph['variables'], sig: Graph['signature'], nodes: FlowNode[], edges: FlowEdge[], l: Link): string[] {
+  const pin = (id: string, handle: string | null | undefined, side: 'inputs' | 'outputs') =>
+    nodePins(defs, nodes.find((n) => n.id === id)!, vars, sig)?.[side].find((p) => p.name === pinName(handle))
+  const a = pin(l.source, l.sourceHandle, 'outputs')
+  const b = pin(l.target, l.targetHandle, 'inputs')
+  if (!a || !b) return []
+  const ids: string[] = []
+  if (a.type === 'Exec') ids.push(...outgoing(edges, l.source).filter((e) => e.sourceHandle === l.sourceHandle).map((e) => e.id))
+  if (b.type !== 'Exec') ids.push(...incoming(edges, l.target).filter((e) => e.targetHandle === l.targetHandle).map((e) => e.id))
+  return ids
 }
 
 // ---- spawn menu ---------------------------------------------------------------------------------------------------------------------
