@@ -151,7 +151,21 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 
 /* workspace */
 .workspace { flex: 1; display: flex; min-width: 0; min-height: 0; }
+.workspace { position: relative; }
 .split { display: flex; min-width: 0; min-height: 0; }
+/* fullscreen graph: nodes with an edge leave the flow; the side ones slide in when the pointer reaches their hot strip (::after) or focus is inside, the dock stays as its strip and opens over the graph */
+.workspace[data-overlay] { --dock-strip-h: 34px; padding-bottom: var(--dock-strip-h); }
+.workspace[data-overlay] .splitter { display: none; }
+.workspace[data-overlay] [data-edge] { position: absolute; z-index: 20; background: var(--surface-1); box-shadow: 0 0 16px var(--shadow); transition: transform 0.15s ease; }
+.workspace[data-overlay] [data-edge='left'], .workspace[data-overlay] [data-edge='right'] { top: 0; bottom: var(--dock-strip-h); width: clamp(240px, 22vw, 340px); }
+.workspace[data-overlay] [data-edge='left'] { left: 0; transform: translateX(-100%); }
+.workspace[data-overlay] [data-edge='right'] { right: 0; transform: translateX(100%); }
+.workspace[data-overlay] [data-edge='left']::after, .workspace[data-overlay] [data-edge='right']::after { content: ''; position: absolute; top: 0; bottom: 0; width: 24px; }
+.workspace[data-overlay] [data-edge='left']::after { left: 100%; }
+.workspace[data-overlay] [data-edge='right']::after { right: 100%; }
+.workspace[data-overlay] [data-edge='left']:hover, .workspace[data-overlay] [data-edge='left']:focus-within, .workspace[data-overlay] [data-edge='right']:hover, .workspace[data-overlay] [data-edge='right']:focus-within, .workspace[data-overlay] [data-edge][data-keep] { transform: none; }
+.workspace[data-overlay] [data-edge='bottom'] { left: 0; right: 0; bottom: 0; }
+.workspace[data-overlay] [data-edge='bottom']:not([data-folded]) { height: 45%; }
 .slot { display: flex; min-width: 0; min-height: 0; background: var(--surface-1); border: 1px solid var(--line); }
 .splitter { flex: none; background: var(--bg); position: relative; }
 .splitter::after { content: ''; position: absolute; inset: 0; }

@@ -3,8 +3,12 @@
  * panels themselves (panels are named by registry id), so a layout can be saved, diffed, edited by hand or replaced by a docking library's
  * serialized form behind `Workspace`.
  */
+/** A side the node docks to; while the graph is fullscreen (Behaviour) a node with an edge slides in over the graph from that side. */
+export type Edge = 'left' | 'right' | 'bottom'
+
 export interface PanelNode {
   kind: 'panel'
+  edge?: Edge
   /** Registry id (see panelRegistry.ts). Each id may appear at most once in a layout. */
   panel: string
   /** Share of the parent split along its direction (flex-grow; default 1). */
@@ -21,6 +25,7 @@ export interface SplitNode {
   direction: 'row' | 'column'
   children: LayoutNode[]
   size?: number
+  edge?: Edge
 }
 /** Several panels sharing one slot, shown as tabs (Zone 2 and the bottom dock). */
 export interface TabsNode {
@@ -32,6 +37,7 @@ export interface TabsNode {
   /** The group can fold down to its tab strip (the Behaviour dock); `folded` is its state, which `applyOverrides` takes from the user's `folds`. */
   foldable?: boolean
   folded?: boolean
+  edge?: Edge
 }
 export type LayoutNode = PanelNode | SplitNode | TabsNode
 
@@ -96,13 +102,13 @@ export function removePanel(n: LayoutNode, id: string): LayoutNode | undefined {
   if (n.kind === 'tabs') {
     const tabs = n.tabs.filter((t) => t.panel !== id)
     if (!tabs.length) return undefined
-    if (tabs.length === 1) return { ...tabs[0]!, ...(n.size !== undefined ? { size: n.size } : {}) }
+    if (tabs.length === 1) return { ...tabs[0]!, ...(n.size !== undefined ? { size: n.size } : {}), ...(n.edge ? { edge: n.edge } : {}) }
     const active = n.active && tabs.some((t) => t.panel === n.active) ? n.active : undefined
     return { ...n, tabs, ...(active ? { active } : { active: undefined }) }
   }
   const children = n.children.flatMap((c) => removePanel(c, id) ?? [])
   if (!children.length) return undefined
-  if (children.length === 1) return { ...children[0]!, ...(n.size !== undefined ? { size: n.size } : {}) }
+  if (children.length === 1) return { ...children[0]!, ...(n.size !== undefined ? { size: n.size } : {}), ...(n.edge ? { edge: n.edge } : {}) }
   return { ...n, children }
 }
 

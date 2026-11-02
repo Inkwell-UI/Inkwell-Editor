@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, ChevronRight, SplitSquareHorizontal, WandSparkles } from 'lucide-react'
+import { ChevronDown, ChevronRight, Maximize2, Minimize2, SplitSquareHorizontal, WandSparkles } from 'lucide-react'
 import { nodeIndex } from '@nicklaj/knotwork'
 import { useStore } from 'zustand'
 import { As2View } from '../graph/As2View'
@@ -16,6 +16,7 @@ import { useComponentGraphs } from '../state/componentGraphs'
 import { findGraphStore, isReadOnlyGraph, type GraphStore } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { useSettingsStore } from '../state/settingsStore'
+import { useWorkspaceStore } from '../state/workspaceStore'
 import { strings } from '../strings'
 import { VariableStrip } from '../graph/VariableStrip'
 import { Btn } from '../ui/Btn'
@@ -33,6 +34,7 @@ export function GraphPanel() {
   const actions = useGraphActions()
   const defs = usePacks()
   const [split, setSplit] = useState(false)
+  const full = useWorkspaceStore((s) => s.graphFull)
   const [tidied, setTidied] = useState(0) // bumps the canvas to fit the view after a tidy
   const tidy = (): void => {
     if (!store) return
@@ -58,6 +60,7 @@ export function GraphPanel() {
       actions={
         <>
           <Btn icon={WandSparkles} label={strings.graph.tidy} onClick={tidy} reason={store ? undefined : strings.nav.noSwf} testId="graph-tidy" />
+          <Btn icon={full ? Minimize2 : Maximize2} pressed={full} label={full ? strings.graph.fullscreenExit : strings.graph.fullscreen} onClick={() => useWorkspaceStore.getState().setGraphFull(!full)} testId="graph-fullscreen" />
           <Btn icon={SplitSquareHorizontal} pressed={split} onClick={() => setSplit(!split)} label={strings.graph.as2Split} testId="as2-split">{strings.graph.as2Split}</Btn>
         </>
       }

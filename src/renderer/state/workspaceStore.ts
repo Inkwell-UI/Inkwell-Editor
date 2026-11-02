@@ -18,6 +18,9 @@ export interface WorkspaceStore {
   tabs: Record<WorkspaceId, Record<string, string>>
   /** Foldable tab groups the user folded or opened this session (tabs key -> folded); not persisted, a foldable group starts as its layout says. */
   folds: Record<string, boolean>
+  /** The Behaviour graph fills the window; the side panels and the dock slide in over it (session only). */
+  graphFull: boolean
+  setGraphFull(on: boolean): void
   setActive(id: WorkspaceId): void
   setFold(key: string, folded: boolean): void
   setSizes(key: string, sizes: number[] | undefined): void
@@ -57,6 +60,8 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
     (set, get) => ({
       ...sanitizePersisted(undefined),
       folds: {},
+      graphFull: false,
+      setGraphFull: (graphFull) => set({ graphFull }),
       setActive: (active) => set({ active }),
       setFold: (key, folded) => set((s) => ({ folds: { ...s.folds, [key]: folded } })),
       setSizes: (key, sizes) =>

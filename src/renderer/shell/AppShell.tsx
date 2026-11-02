@@ -35,11 +35,12 @@ function WorkspaceView() {
   const tabs = useWorkspaceStore((s) => s.tabs[active])
   const folds = useWorkspaceStore((s) => s.folds)
   const detached = usePopoutStore((s) => s.detached)
+  const graphFull = useWorkspaceStore((s) => s.graphFull)
   const layout = useMemo(() => {
     const base = detached ? (removePanel(WORKSPACES[active].layout, 'preview') ?? WORKSPACES[active].layout) : WORKSPACES[active].layout
     return applyOverrides(base, { sizes, tabs, folds })
   }, [active, sizes, tabs, folds, detached])
-  return <Workspace layout={layout} onResize={(k, s) => useWorkspaceStore.getState().setSizes(k, s)} onTab={(k, p) => useWorkspaceStore.getState().setTab(k, p)} onFold={(k, f) => useWorkspaceStore.getState().setFold(k, f)} stripExtras={STRIP_EXTRAS} />
+  return <Workspace layout={layout} onResize={(k, s) => useWorkspaceStore.getState().setSizes(k, s)} onTab={(k, p) => useWorkspaceStore.getState().setTab(k, p)} onFold={(k, f) => useWorkspaceStore.getState().setFold(k, f)} stripExtras={STRIP_EXTRAS} overlayEdges={graphFull && active === 'behaviour'} />
 }
 
 /**
@@ -68,6 +69,18 @@ export function AppShell() {
       const k = e.key.toLowerCase()
       if (k === 'z' && !e.shiftKey) (e.preventDefault(), undoSwf(id))
       else if ((k === 'z' && e.shiftKey) || k === 'y') (e.preventDefault(), redoSwf(id))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // Enter toggles the fullscreen graph (Behaviour, not while typing or on a focused control that Enter activates); Esc leaves it
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      const ws = useWorkspaceStore.getState()
+      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || e.defaultPrevented || ws.active !== 'behaviour' || useDialogStore.getState().open || isTyping(e.target)) return
+      if (e.key === 'Escape' && ws.graphFull) ws.setGraphFull(false)
+      else if (e.key === 'Enter' && !(e.target instanceof HTMLElement && e.target.closest('button, a, summary, [role="menuitem"], [role="option"], [role="tab"]'))) (e.preventDefault(), ws.setGraphFull(!ws.graphFull))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

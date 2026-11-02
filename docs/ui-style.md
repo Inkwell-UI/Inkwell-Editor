@@ -59,6 +59,10 @@ The bottom dock of every workspace is one `TabGroup` in `workspace/Workspace.tsx
 - User actions: the chevron at the right of the strip folds or opens it, clicking the selected tab folds it, clicking any tab while folded opens it.
 - Strip extras: `stripExtras` on `Workspace`, keyed by a panel id in the group (`AppShell.tsx`, `STRIP_EXTRAS`). The Behaviour dock shows `shell/DockStrip.tsx` (trace line count and Hot Reload, the shared `hooks/useHotReload.ts`).
 
+## Fullscreen graph
+
+The icon button next to Tidy in the Graph panel sets `graphFull` (`workspaceStore`, session only). `WorkspaceView` passes `overlayEdges` to `Workspace` (Behaviour only), which sets `data-overlay` on `.workspace`. Layout nodes with an `edge` (`left`, `right`, `bottom`; set in `workspaces.ts`, kept by `removePanel`) become `data-edge` and, under `.workspace[data-overlay]`, leave the flow. The graph stays mounted, so its view is kept. Left and right slide in on hover of a 24px hot strip (`::after`) or focus inside; the dock stays as its tab strip (a reserved `--dock-strip-h`) and opens over the graph at 45% height. Splitters are hidden meanwhile. A new edge node needs no CSS.
+
 ## Pack text for the Inspector
 
 A node definition can carry `extra.inspector` (no spec change, optional): `description` (one line under the node name), `labels` (field or unwired pin name to the label shown) and `options` (field name to option value to label). Only the Inspector reads them (`fieldRows(..., inspector = true)` in `model/graphModel.ts`); the canvas node keeps raw names. A field without a label shows its name as words (`valueType` becomes "Value type"). Only Compare has text so far (`Inkwell-Core-Pack/nodes/Compare.json`, `CHANGELOG.md`). After editing a pack run `yarn sync:core-pack`.

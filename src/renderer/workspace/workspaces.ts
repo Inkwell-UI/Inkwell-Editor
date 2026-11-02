@@ -54,15 +54,15 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
       direction: 'row',
       children: [
         // the left column runs the full height: the layers (with contracts as a tab) over Logic (graphs, functions, components and the open graph's variables)
-        { kind: 'split', direction: 'column', size: 1.3, children: [{ ...tabs(['navigator', 'contracts']), size: 11 }, { kind: 'panel', panel: 'logic', size: 9 }] },
+        { kind: 'split', direction: 'column', size: 1.3, edge: 'left', children: [{ ...tabs(['navigator', 'contracts']), size: 11 }, { kind: 'panel', panel: 'logic', size: 9 }] },
         {
           kind: 'split',
           direction: 'column',
           size: 6.7,
           children: [
-            { kind: 'split', direction: 'row', size: 5, children: [{ kind: 'panel', panel: 'graph', size: 5 }, { kind: 'split', direction: 'column', size: 1.7, children: [{ ...preview, fixed: BEHAVIOUR_PREVIEW_HEIGHT }, { ...inspector, size: 1 }] }] },
+            { kind: 'split', direction: 'row', size: 5, children: [{ kind: 'panel', panel: 'graph', size: 5 }, { kind: 'split', direction: 'column', size: 1.7, edge: 'right', children: [{ ...preview, fixed: BEHAVIOUR_PREVIEW_HEIGHT }, { ...inspector, size: 1 }] }] },
             // folded to its tab strip until a tab is chosen: the trace is empty most of the time and the graph needs the height
-            tabs(['trace', 'mockData', 'dataBinding', 'library', 'lintBudget'], 'trace', 1.4, 'folded')
+            { ...tabs(['trace', 'mockData', 'dataBinding', 'library', 'lintBudget'], 'trace', 1.4, 'folded'), edge: 'bottom' }
           ]
         }
       ]

@@ -1,4 +1,4 @@
-import { Fragment, useRef, type ComponentType, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { Fragment, useEffect, useRef, type ComponentType, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { strings } from '../strings'
 import { nodeKey, validateLayout, type LayoutNode, type SplitNode, type TabsNode } from './layout'
@@ -18,6 +18,8 @@ export interface WorkspaceProps {
   onFold?(key: string, folded: boolean): void
   /** Extra content at the right of a folded tab group's strip, found by any panel id in the group. */
   stripExtras?: Record<string, ComponentType>
+  /** Nodes with an `edge` leave the flow and slide in over the rest from their side (the fullscreen graph). */
+  overlayEdges?: boolean
 }
 
 interface Ctx {
@@ -33,7 +35,28 @@ interface Ctx {
  * tab strip, panels become registry components. A bad layout shows its problems instead of a half-built window. This is the one component
  * to replace if a docking library is adopted; layouts and panels stay as they are.
  */
-export function Workspace({ layout, registry = panelRegistry, onResize = () => undefined, onTab = () => undefined, onFold = () => undefined, stripExtras = {} }: WorkspaceProps) {
+export function Workspace({ layout, registry = panelRegistry, onResize = () => undefined, onTab = () => undefined, onFold = () => undefined, stripExtras = {}, overlayEdges = false }: WorkspaceProps) {
+  useEffect(() => {
+    if (!overlayEdges) return
+    // a window that is not maximised: the cursor flicked out sideways ends :hover, so the side panel the cursor was heading for stays open (data-keep) until it comes back
+    const edge = (side: string): HTMLElement | null => document.querySelector(`.workspace[data-overlay] [data-edge="${side}"]`)
+    const clear = (): void => document.querySelectorAll('[data-keep]').forEach((el) => el.removeAttribute('data-keep'))
+    const out = (e: MouseEvent): void => {
+      if (e.relatedTarget) return
+      const r = document.querySelector('.workspace')?.getBoundingClientRect()
+      if (!r) return
+      const hovered = document.querySelector<HTMLElement>('.workspace[data-overlay] [data-edge="left"]:hover, .workspace[data-overlay] [data-edge="right"]:hover')
+      const side = e.clientX <= r.left + 60 ? 'left' : e.clientX >= r.right - 60 ? 'right' : undefined
+      ;(hovered ?? (side && edge(side)))?.setAttribute('data-keep', '')
+    }
+    document.addEventListener('mouseout', out)
+    document.addEventListener('mousemove', clear)
+    return () => {
+      document.removeEventListener('mouseout', out)
+      document.removeEventListener('mousemove', clear)
+      clear()
+    }
+  }, [overlayEdges])
   const errors = validateLayout(layout, registry === panelRegistry ? panelIds : Object.keys(registry))
   if (errors.length)
     return (
@@ -43,7 +66,7 @@ export function Workspace({ layout, registry = panelRegistry, onResize = () => u
       </div>
     )
   return (
-    <div className="workspace">
+    <div className="workspace" data-overlay={overlayEdges || undefined}>
       <Node node={layout} ctx={{ registry, onResize, onTab, onFold, stripExtras }} axis="row" />
     </div>
   )
@@ -66,7 +89,7 @@ function Node({ node, ctx, axis }: { node: LayoutNode; ctx: Ctx; axis: 'row' | '
         : { flex: `0 0 ${node.fixed}px`, height: node.fixed, minHeight: node.fixed, minWidth: def.minSize.width }
       : cellStyle(node, { minWidth: def.minSize.width, minHeight: def.minSize.height })
     return (
-      <div className="slot" data-cell data-panel={node.panel} data-fixed={node.fixed || undefined} style={style}>
+      <div className="slot" data-cell data-panel={node.panel} data-fixed={node.fixed || undefined} data-edge={node.edge} style={style}>
         <Component />
       </div>
     )
@@ -125,7 +148,7 @@ function SplitView({ node, ctx }: { node: SplitNode; ctx: Ctx; axis: 'row' | 'co
   }
 
   return (
-    <div ref={ref} className="split" data-cell style={cellStyle(node, { flexDirection: node.direction })}>
+    <div ref={ref} className="split" data-cell data-edge={node.edge} style={cellStyle(node, { flexDirection: node.direction })}>
       {node.children.map((c, i) => (
         <Fragment key={c.kind === 'panel' ? c.panel : `${c.kind}${i}`}>
           <Node node={c} ctx={ctx} axis={node.direction} />
@@ -181,7 +204,7 @@ function TabGroup({ node, ctx }: { node: TabsNode; ctx: Ctx }) {
   const label = folded ? strings.dockShow : strings.dockHide
   const Extra = folded ? node.tabs.map((t) => ctx.stripExtras[t.panel]).find(Boolean) : undefined
   return (
-    <div className="slot tabgroup" data-cell data-tabs={key} data-folded={folded || undefined} style={style}>
+    <div className="slot tabgroup" data-cell data-tabs={key} data-folded={folded || undefined} data-edge={node.edge} style={style}>
       {node.foldable ? (
         <div className="tabstrip">
           {tablist}
