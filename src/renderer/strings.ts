@@ -342,7 +342,7 @@ export const strings = {
 
   graph: {
     title: 'Graph',
-    tidy: 'Tidy Layout',
+    tidy: 'Tidy layout',
     as2Split: 'AS2 Split',
     as2Title: 'Generated AS2 (read-only)',
     pinValueTip: (v: string) => `Last value in the preview: ${v}`,
@@ -778,7 +778,7 @@ export const strings = {
     approvalNote: 'Open Figma and run the Inkwell plugin: it connects by itself. The first time, this window asks you to allow it.',
     mirror: 'Mirror Figma selection',
     mirrorNote: 'Selecting a layer in Figma selects it here. Selecting here cannot select it in Figma yet.',
-    tidyHang: 'Tidy Layout: hang data nodes under the exec line',
+    tidyHang: 'Tidy layout: hang data nodes under the exec line',
     tidyHangTip: 'On: the exec chain is one straight line and data nodes (Get Variable, Split, Array Push...) hang below it, next to the node they feed. Off: every node sits in a column by how far along the wires it is.',
     buildAll: 'Build All',
     building: 'Building...',
