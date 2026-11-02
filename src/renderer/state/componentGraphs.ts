@@ -9,6 +9,10 @@ interface State {
   error: string | undefined
 }
 export const useComponentGraphs = create<State>(() => ({ graphs: {}, loaded: false, error: undefined }))
+/** Drag payload of a Components row dropped on a graph canvas: the Figma component id. */
+export const COMPONENT_DRAG = 'application/x-inkwell-component'
+/** Drag payload of a prop block (the Inspector of a component graph) dropped on that graph's canvas: the prop id. */
+export const PROP_DRAG = 'application/x-inkwell-prop'
 type Api = Pick<InkwellApi, 'listComponentGraphs' | 'createComponentGraph' | 'deleteComponentGraph'>
 
 let loading: Promise<void> | undefined

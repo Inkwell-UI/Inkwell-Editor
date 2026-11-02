@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Component, Crosshair } from 'lucide-react'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf, useProject } from '../hooks/useProject'
-import { createComponentGraph, loadComponentGraphs, useComponentGraphs } from '../state/componentGraphs'
+import { COMPONENT_DRAG, createComponentGraph, loadComponentGraphs, useComponentGraphs } from '../state/componentGraphs'
 import { openComponentGraph, useGraphDocs } from '../state/graphDocs'
 import { useSyncState } from '../hooks/useSyncState'
 import { figmaSelectReason } from '../model/connection'
@@ -45,7 +45,7 @@ export function ComponentsSection() {
               const g = graphs[r.id]
               const active = !!g && g.id === activeId
               return (
-                <li key={r.id} className={`graph-row graph-row-grid${active ? ' is-selected' : ''}`} data-testid="component-row">
+                <li key={r.id} className={`graph-row graph-row-grid${active ? ' is-selected' : ''}`} data-testid="component-row" draggable onDragStart={(e) => { e.dataTransfer.setData(COMPONENT_DRAG, r.id); e.dataTransfer.effectAllowed = 'link' }}>
                   <div className="graph-row-main">
                     <button type="button" className="layer-main" aria-pressed={active} title={swf ? undefined : strings.comp.noSwf} disabled={!swf} onClick={() => void openGraph(r.id, r.name)} data-testid="component-graph">
                       <Component size={14} aria-hidden="true" className="type-icon" />

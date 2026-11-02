@@ -17,7 +17,7 @@ import { useVisibleVariables } from './useVisibleVariables'
 import { useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import { componentRows } from '../model/componentList'
-import { ensureComponentGraphs, useComponentGraphs } from '../state/componentGraphs'
+import { COMPONENT_DRAG, PROP_DRAG, ensureComponentGraphs, useComponentGraphs } from '../state/componentGraphs'
 import { categoriesOf, categoryVar, connectionRule, layerOptions, nodePins, nodeTarget, PIN_STYLE, spawnDefs, spawnFields, spawnFor, spawnWire, type SpawnFromPin } from '../model/graphModel'
 import { callFields } from '../../shared/functions'
 import { pinMocksOf } from '../../shared/pinMock'
@@ -187,7 +187,8 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
 
   // a variable dragged from the Variables panel: ask Get or Set, then spawn that node at the drop point
   const onVarDragOver = (e: React.DragEvent): void => {
-    if (e.dataTransfer.types.includes(VARIABLE_DRAG) || e.dataTransfer.types.includes(FUNCTION_DRAG)) (e.preventDefault(), (e.dataTransfer.dropEffect = 'link'))
+    if (isReadOnlyGraph(store)) return // a library function opened to read: nothing is dropped into it
+    if (e.dataTransfer.types.includes(VARIABLE_DRAG) || e.dataTransfer.types.includes(FUNCTION_DRAG) || e.dataTransfer.types.includes(COMPONENT_DRAG) || e.dataTransfer.types.includes(PROP_DRAG)) (e.preventDefault(), (e.dataTransfer.dropEffect = 'link'))
   }
   // a function dragged from the Library (the project's or a pack's): a Call Function node of it at the drop point
   const dropFunction = (e: React.DragEvent, fnId: string): void => {
@@ -199,7 +200,36 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     store.getState().addNode({ id, kind: call, pos: rf.screenToFlowPosition({ x: e.clientX, y: e.clientY }), fields: callFields(fn) })
     store.getState().setSelection([id])
   }
+  // a component dragged from the Components list: a Create Component node of it at the drop point (dropped on an existing one, it points that node at the component)
+  const dropComponent = (e: React.DragEvent, componentId: string): void => {
+    const create = [...defs].find(([k, d]) => k.startsWith('core/') && (d.extra as { createsComponent?: string } | undefined)?.createsComponent)?.[0]
+    if (!create) return
+    e.preventDefault()
+    const field = (defs.get(create)!.extra as { createsComponent: string }).createsComponent
+    const hit = (e.target as HTMLElement).closest('.react-flow__node')?.getAttribute('data-id')
+    if (hit && store.getState().nodes.find((n) => n.id === hit)?.data.kind === create) return store.getState().setField(hit, field, componentId)
+    const id = crypto.randomUUID()
+    store.getState().addNode({ id, kind: create, pos: rf.screenToFlowPosition({ x: e.clientX, y: e.clientY }), fields: { [field]: componentId } })
+    store.getState().setSelection([id])
+  }
+  // a prop dragged from the Inspector of this component graph: a Get Prop node of it (dropped on an existing Get Prop node, it points that node at the prop)
+  const dropProp = (e: React.DragEvent, propId: string): void => {
+    const prop = store.getState().props?.find((p) => p.id === propId)
+    const get = [...defs].find(([k, d]) => k.startsWith('core/') && (d.extra as { readsProp?: string } | undefined)?.readsProp)?.[0]
+    if (!prop || !get) return
+    e.preventDefault()
+    const hit = (e.target as HTMLElement).closest('.react-flow__node')?.getAttribute('data-id')
+    if (hit && store.getState().nodes.find((n) => n.id === hit)?.data.kind === get) return store.getState().setNodeProp(hit, prop.id)
+    const id = crypto.randomUUID()
+    store.getState().addNode({ id, kind: get, pos: rf.screenToFlowPosition({ x: e.clientX, y: e.clientY }), fields: { prop: prop.id, propType: prop.type, propName: prop.name } })
+    store.getState().setSelection([id])
+  }
   const onVarDrop = (e: React.DragEvent): void => {
+    if (isReadOnlyGraph(store)) return
+    const propId = e.dataTransfer.getData(PROP_DRAG)
+    if (propId) return dropProp(e, propId)
+    const componentId = e.dataTransfer.getData(COMPONENT_DRAG)
+    if (componentId) return dropComponent(e, componentId)
     const fnId = e.dataTransfer.getData(FUNCTION_DRAG)
     if (fnId) return dropFunction(e, fnId)
     const raw = e.dataTransfer.getData(VARIABLE_DRAG)
