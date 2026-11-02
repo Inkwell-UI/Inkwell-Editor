@@ -13,12 +13,12 @@ type Variable = ReturnType<GraphStore['getState']>['variables'][number]
 
 /**
  * The open graph's variables as a row of chips under the breadcrumb, so they stay in view while wiring. The dot has the colour of the type's pin; a chip is dragged onto the canvas to get
- * or set it and clicked to edit it (name, type, default, saved, delete). "Add" makes one in the open graph: a menu graph's variable is a menu variable, a component graph's a component one.
+ * or set it and clicked to edit it (name, type, default, saved, delete). "Add" makes one in the open graph: a menu graph's variable is a menu variable, a component graph's a component one, a function graph's a per-call local.
  */
 export function VariableStrip({ swfId, store }: { swfId: string; store: GraphStore }) {
   const variables = useStore(store, (s) => s.variables)
   const scope = useStore(store, (s) => s.meta.scope)
-  const canAdd = !isReadOnlyGraph(store) && (scope === 'menu' || scope === 'component')
+  const canAdd = !isReadOnlyGraph(store) && (scope === 'menu' || scope === 'component' || scope === 'function')
   if (!variables.length && !canAdd) return null
   return (
     <div className="var-strip" role="group" aria-label={strings.vars.title} data-testid="variables-panel">
@@ -72,7 +72,9 @@ function AddVariable({ swfId, store, close }: { swfId: string; store: GraphStore
   const [type, setType] = useState<(typeof VARIABLE_TYPES)[number]>('Number')
   const add = (): void => {
     if (!name.trim()) return
-    store.getState().addVariable({ id: newVariableId(name, openGraphs(swfId)), name: name.trim(), type, default: defaultFor(type) })
+    const { meta, addVariable } = store.getState()
+    // the Spec variable scope has no `function`: a function's variables are per-call locals, stored as `component` (never `saved`)
+    addVariable({ id: newVariableId(name, openGraphs(swfId)), name: name.trim(), type, default: defaultFor(type), ...(meta.scope === 'function' && { scope: 'component' as const }) })
     close()
   }
   return (
