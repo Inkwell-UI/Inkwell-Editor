@@ -5,6 +5,8 @@ import { useStore } from 'zustand'
 import { strings } from '../strings'
 import type { GraphStore } from '../state/graphStore'
 import { useSwfGraphs } from '../hooks/useGraphs'
+import { PROP_DRAG } from '../state/componentGraphs'
+import { PIN_STYLE } from '../model/graphModel'
 import { InspCard, InspFoot, InspHeader } from '../ui/InspParts'
 import { NameBox } from './SignatureEditor'
 
@@ -45,19 +47,30 @@ export function PropsEditor({ store }: { store: GraphStore }) {
         <div className="props-editor">
         {props.length === 0 && <p className="empty">{strings.graph.propsEmpty}</p>}
         {props.map((p, i) => (
-          <div className="gn-param" key={p.id}>
-            <NameBox value={p.name} label={strings.graph.sigName} problem={(n) => propNameProblem(props, i, n)} onCommit={(name) => patch(i, { name })} />
-            <select className="gn-input" aria-label={strings.graph.sigType} value={p.type} onChange={(e) => { const type = e.target.value as Prop['type']; patch(i, { type, default: zero(type) }) }}>
-              {FUNCTION_PIN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+          <div className="props-block" key={p.id} data-testid={`prop-${p.name}`}>
+            <div className="props-block-head" draggable title={strings.graph.propDrag} onDragStart={(e) => { e.dataTransfer.setData(PROP_DRAG, p.id); e.dataTransfer.effectAllowed = 'link' }}>
+              <span className="props-block-title"><span className="var-chip-dot" style={{ background: PIN_STYLE[p.type]?.color }} aria-hidden="true" /><b>{p.name}</b> <span className="dim">{p.type}</span></span>
+              <button type="button" className="gn-icon btn-hover-err" title={strings.graph.sigRemove(p.name)} aria-label={strings.graph.sigRemove(p.name)} onClick={() => set(props.filter((_, j) => j !== i))}><X size={12} aria-hidden="true" /></button>
+            </div>
+            <div className="props-block-grid">
+              <label className="gn-field"><span className="gn-field-label">{strings.graph.sigName}</span>
+                <NameBox value={p.name} label={strings.graph.sigName} problem={(n) => propNameProblem(props, i, n)} onCommit={(name) => patch(i, { name })} />
+              </label>
+              <label className="gn-field"><span className="gn-field-label">{strings.graph.sigType}</span>
+                <select className="gn-input" aria-label={strings.graph.sigType} value={p.type} onChange={(e) => { const type = e.target.value as Prop['type']; patch(i, { type, default: zero(type) }) }}>
+                  {FUNCTION_PIN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+            </div>
             {p.type === 'Bool' ? (
-              <input type="checkbox" aria-label={strings.graph.propDefault} checked={p.default === true} onChange={(e) => patch(i, { default: e.target.checked })} />
-            ) : p.type === 'Number' ? (
-              <input className="gn-input" type="number" aria-label={strings.graph.propDefault} value={typeof p.default === 'number' ? p.default : 0} onChange={(e) => patch(i, { default: Number(e.target.value) })} />
-            ) : p.type === 'String' ? (
-              <input className="gn-input" aria-label={strings.graph.propDefault} value={typeof p.default === 'string' ? p.default : ''} onChange={(e) => patch(i, { default: e.target.value })} />
-            ) : <span />}
-            <button type="button" className="gn-icon btn-hover-err" title={strings.graph.sigRemove(p.name)} aria-label={strings.graph.sigRemove(p.name)} onClick={() => set(props.filter((_, j) => j !== i))}><X size={12} aria-hidden="true" /></button>
+              <label className="check"><input type="checkbox" checked={p.default === true} onChange={(e) => patch(i, { default: e.target.checked })} />{strings.graph.propDefault}</label>
+            ) : p.type === 'Number' || p.type === 'String' ? (
+              <label className="gn-field"><span className="gn-field-label">{strings.graph.propDefault}</span>
+                {p.type === 'Number'
+                  ? <input className="gn-input" type="number" value={typeof p.default === 'number' ? p.default : 0} onChange={(e) => patch(i, { default: Number(e.target.value) })} />
+                  : <input className="gn-input" value={typeof p.default === 'string' ? p.default : ''} onChange={(e) => patch(i, { default: e.target.value })} />}
+              </label>
+            ) : null}
           </div>
         ))}
         <button type="button" className="gn-add" onClick={() => set([...props, { id: crypto.randomUUID(), name: fresh(), type: 'String', default: '' }])}>

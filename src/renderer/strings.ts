@@ -389,6 +389,7 @@ export const strings = {
     propsEmpty: 'No props yet. A prop is data the one who places this component can give it.',
     propAdd: 'Add prop',
     propDefault: 'Default value',
+    propDrag: 'Drag into the graph to read this prop',
     sigInputs: 'Inputs',
     sigOutputs: 'Outputs',
     sigExits: 'Exits (the ways a call can continue)',

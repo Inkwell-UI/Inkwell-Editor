@@ -76,8 +76,14 @@
 .gn-param { display: grid; grid-template-columns: minmax(0, 1fr) 62px auto; gap: 4px; align-items: center; }
 .signature { padding: 2px 0 6px; }
 .props-editor { display: flex; flex-direction: column; gap: 4px; }
-.props-editor .gn-param { grid-template-columns: minmax(0, 1fr) 70px; }
-.props-editor .gn-param > .gn-icon { justify-self: end; }
+/* a prop is a block in the button tone (like a wire row of the node Inspector) holding the usual darker fields */
+.props-editor { gap: 10px; }
+.props-block { display: flex; flex-direction: column; gap: 8px; padding: 8px; border-radius: var(--radius); background: var(--btn-bg); }
+.props-block-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.props-block-title { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.props-block-grid { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 8px; }
+.props-block .gn-field { gap: 4px; align-items: stretch; }
+.props-block .gn-input:not([type="checkbox"]) { min-height: var(--ctl-h); }
 .sig-title { margin: 0 0 4px; font-size: 12px; font-weight: 600; color: var(--fg-dim); }
 .sig-body { display: flex; flex-direction: column; gap: 10px; }
 .sig-group { display: flex; flex-direction: column; gap: 4px; }
@@ -119,6 +125,7 @@
 .graph-row-grid:hover .row-reveal, .graph-row-grid:focus-within .row-reveal { opacity: 1; }
 .row-reveal { display: inline-flex; gap: 2px; opacity: 0; }
 .graph-row-main:hover .row-reveal, .graph-row-main:focus-within .row-reveal, .row-reveal:has([aria-expanded='true']) { opacity: 1; }
+.row-menu-pop .popover { min-width: 0; padding: 4px; } /* the menu is as wide as its items, so it fits inside a narrow panel instead of being clipped */
 .row-menu { list-style: none; margin: 0; padding: 0; min-width: 130px; }
 .row-menu-item { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 4px; padding: 6px 10px; color: var(--fg); font: inherit; cursor: pointer; }
 .row-menu-item:hover, .row-menu-item:focus-visible { background: var(--hover); }

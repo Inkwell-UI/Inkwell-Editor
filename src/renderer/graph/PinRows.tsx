@@ -54,12 +54,14 @@ function WireRow({ type, text, target, p }: { type: string; text: string; target
 
 const NotConnected = () => <div className="pinrow-wire pinrow-none"><span className="pinrow-wire-text">{strings.insp.gnNotConnected}</span></div>
 
+/** The variable look of the Variables strip: a dot in the colour of the variable's type. */
+const TypeDot = ({ type }: { type?: string | undefined }) => <span className="var-chip-dot" style={{ background: type ? dot(type) : 'var(--fg-dim)' }} aria-hidden="true" />
+
 /** The filled box of a bound input, the same look as a bound layer property in the Data section (`BindingRows`), with a link icon for a variable and a flask for mock data. */
 function BoundBox({ name, type, preview, note }: { name: string; type?: string | undefined; preview: boolean; note?: string | undefined }) {
-  const Icon = preview ? FlaskConical : Link
   return (
     <span className="bindfld-value is-bound" title={preview ? strings.pinMock.previewOnlyHelp : undefined}>
-      <Icon size={14} className="pinrow-ico" aria-hidden="true" />
+      {preview ? <FlaskConical size={14} className="pinrow-ico" aria-hidden="true" /> : <TypeDot type={type} />}
       <b>{name}</b>
       {type && <span className="dim">{type}</span>}
       {preview && <span className="chip chip-warn">{strings.bind.previewOnly}</span>}
@@ -140,7 +142,7 @@ function BindInput({ p, pin, slot, seed, wire, children }: { p: PinRowsProps; pi
               <>
                 <h4 className="bindfld-group">{strings.bind.variables}</h4>
                 <ul className="plain menu">
-                  {vars.map((v) => <li key={v.id}><button type="button" className="pinrow-opt" onClick={() => { bind(v.id); close() }}><Link size={14} className="pinrow-ico" aria-hidden="true" />{v.name} <span className="dim">{v.type}</span></button></li>)}
+                  {vars.map((v) => <li key={v.id}><button type="button" className="pinrow-opt" onClick={() => { bind(v.id); close() }}><TypeDot type={v.type} />{v.name} <span className="dim">{v.type}</span></button></li>)}
                 </ul>
               </>
             )}
