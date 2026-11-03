@@ -169,7 +169,23 @@ interface Entry {
   swfName: string
   store: GraphStore
   timer?: ReturnType<typeof setTimeout>
+  /** The graph's file exists. A layer's graph that never held anything has none. */
+  onDisk: boolean
 }
+
+/** The graphs a layer owns (the menu graph and layer graphs). A function, component or library graph is created on purpose and kept even when empty. */
+const LAYER_SCOPES: ReadonlySet<string> = new Set(['menu', 'component'])
+/** A layer's graph with nothing in it is just a blank canvas, not a graph: it is not kept on disk and its layer shows no graph icon (docs/graphs.md, Layer graphs). */
+export const isBlankDoc = (s: Pick<GraphState, 'nodes' | 'edges' | 'variables' | 'comments' | 'groups' | 'meta'>): boolean =>
+  LAYER_SCOPES.has(String(s.meta.scope)) && !s.nodes.length && !s.edges.length && !s.variables.length && !s.comments.length && !s.groups.length
+interface BlankHandlers {
+  /** A layer graph became blank (true) or got content again (false): by an edit, an undo or a redo. */
+  change(swfId: string, graphId: string, blank: boolean): void
+  /** The file of a graph that became blank is to be removed. */
+  remove(swfName: string, graphId: string): void
+}
+let blankHandlers: BlankHandlers | undefined
+export const setBlankHandlers = (h: BlankHandlers | undefined): void => void (blankHandlers = h)
 const stores = new Map<string, Entry>() // `${swfId}/${graphId}`
 let saver: ((swfName: string, graph: Graph) => void) | undefined
 export const setGraphSaver = (fn: typeof saver): void => void (saver = fn)
@@ -181,12 +197,19 @@ const SAVE_DELAY = 300
 function save(e: Entry): void {
   clearTimeout(e.timer)
   delete e.timer
-  saver?.(e.swfName, toGraph(e.store.getState()))
+  const s = e.store.getState()
+  if (!isBlankDoc(s)) {
+    e.onDisk = true
+    return saver?.(e.swfName, toGraph(s))
+  }
+  if (e.onDisk) blankHandlers?.remove(e.swfName, String(s.meta.id)) // never written, nothing to remove
+  e.onDisk = false
 }
 /** Writes every graph whose last change is still waiting for its debounce (call before closing a project or switching SWF). */
 export const flushGraphSaves = (): void => stores.forEach((e) => e.timer && save(e))
 
-export function getGraphStore(swfId: string, swfName: string, initial: Graph): GraphStore {
+/** `draft`: the graph is not on disk yet (a layer's blank canvas); it is written once it holds something. */
+export function getGraphStore(swfId: string, swfName: string, initial: Graph, draft = false): GraphStore {
   const key = `${swfId}/${initial.id}`
   const hit = stores.get(key)
   if (hit) {
@@ -335,12 +358,13 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
       { ...history.options, limit: 100 }
     )
   ) as unknown as GraphStore
-  const entry: Entry = { swfName, store }
+  const entry: Entry = { swfName, store, onDisk: !draft }
   stores.set(key, entry)
   registerHistory(swfId, `graph:${initial.id}`, store.temporal)
   store.subscribe((s, prev) => {
     if (s.signature !== prev.signature && s.meta.scope === 'function') syncCallers(swfId, initial.id, toGraph(s))
     if (docKeyOf(s) === docKeyOf(prev)) return // selection and measuring are not edits
+    if (isBlankDoc(s) !== isBlankDoc(prev)) blankHandlers?.change(swfId, initial.id, isBlankDoc(s))
     onEdit?.()
     clearTimeout(entry.timer)
     entry.timer = setTimeout(() => save(entry), SAVE_DELAY)

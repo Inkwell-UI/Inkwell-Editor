@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Check, Lock, Pencil, Plus, Trash2, Workflow, X } from 'lucide-react'
+import { Check, Pencil, Plus, Trash2, Workflow, X } from 'lucide-react'
 import { useStore } from 'zustand'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { usePacks } from '../hooks/usePacks'
@@ -7,42 +7,19 @@ import { useActiveSwf } from '../hooks/useProject'
 import { eventNodes } from '../model/graphModel'
 import { setActiveGraph } from '../state/graphDocs'
 import { findGraphStore } from '../state/graphStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { InspFold } from '../ui/InspParts'
 import { RowMenu } from '../ui/RowMenu'
+import { moveToPack, useLocalPacks } from './packMove'
 import { useGraphActions } from './useGraphActions'
 
 /**
- * The Navigator's GRAPHS section (UX 4.2): one row per graph of the active SWF (name, scope, its events), `[+ Graph]`, rename and delete. Functions never show in the Navigator: the Logic
- * panel's Functions section lists them (`FunctionRows`).
+ * Rows of the Logic panel's Functions section (`FunctionRows`): a function's name and signature, rename and delete. A layer's graph has no list: the Navigator's layer opens it
+ * (`state/graphDocs.ts` `openLayerGraph`).
  */
 /** The drag payload of a function row: its id. The Library's local packs accept it and the graph canvas turns it into a Call Function node. */
 export const FUNCTION_DRAG = 'application/x-inkwell-function'
-
-export function GraphsList() {
-  const swf = useActiveSwf()
-  const { ids, activeId, loaded } = useSwfGraphs()
-  const actions = useGraphActions()
-  const scopeOf = (id: string): unknown => (swf ? findGraphStore(swf.id, id)?.getState().meta.scope : undefined)
-  // the menu graph always first; the rest keep their order (Array.sort is stable)
-  const mine = swf ? ids.filter((id) => scopeOf(id) !== 'function').sort((a, b) => Number(scopeOf(b) === 'menu') - Number(scopeOf(a) === 'menu')) : []
-  return (
-    <InspFold
-      id="logic-graphs"
-      title={`${strings.nav.graphs} (${mine.length})`}
-      summary={graphNames(swf?.id, mine)}
-      defaultOpen
-      actions={<Btn icon={Plus} variant="quiet" label={strings.nav.addGraph} testId="graph-add-nav" onClick={() => void actions.add()} reason={actions.canAdd} />}
-    >
-      {actions.error && <p className="tone-error">{actions.error}</p>}
-      {swf && loaded && mine.length === 0 && <p className="empty">{strings.nav.graphsEmpty}</p>}
-      <ul className="graph-list" role="list">
-        {swf && mine.map((id) => <GraphRow key={id} swfId={swf.id} id={id} active={id === activeId} actions={actions} />)}
-      </ul>
-    </InspFold>
-  )
-}
 
 /** The graphs' names for a closed card's summary; read once per render, which is enough because a closed card has no rename. */
 export function graphNames(swfId: string | undefined, ids: string[]): string {
@@ -89,15 +66,18 @@ function Row({ swfId, id, active, actions, store }: { swfId: string; id: string;
   const nodes = useStore(store, (s) => s.nodes)
   const sig = useStore(store, (s) => s.signature)
   const defs = usePacks()
+  const swf = useActiveSwf()
+  const locals = useLocalPacks()
   const events = scope === 'function' ? [] : eventNodes(defs, nodes)
-  return <GraphRowView id={id} name={name} scope={String(scope)} sig={sig} events={events.map((e) => (e.detail ? `${e.title}: ${e.detail}` : e.title))} active={active} onOpen={() => setActiveGraph(swfId, id)} onRename={(n) => actions.rename(id, n)} onDelete={() => void actions.remove(id)} />
+  const moves = scope === 'function' && swf ? locals.map((p) => ({ label: strings.lib.moveTo(p.id), onClick: () => void moveToPack(swf, id, p.id) })) : []
+  return <GraphRowView id={id} moves={moves} name={name} scope={String(scope)} sig={sig} events={events.map((e) => (e.detail ? `${e.title}: ${e.detail}` : e.title))} active={active} onOpen={() => setActiveGraph(swfId, id)} onRename={(n) => actions.rename(id, n)} onDelete={() => void actions.remove(id)} />
 }
 
 /**
  * One graph row (name, scope tag, rename, delete with confirm, signature line). The Library's pack rows use it for a pack's functions too, so a function looks the same in a pack as in the
  * project's list; `extra` adds buttons after the delete one.
  */
-export function GraphRowView({ id, name, scope, sig, events = [], active, locked, onOpen, onRename, onDelete, extra }: {
+export function GraphRowView({ id, name, scope, sig, events = [], active, locked, onOpen, onRename, onDelete, extra, moves }: {
   id: string
   name: string
   scope: string
@@ -110,6 +90,8 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
   onRename(name: string): void
   onDelete(): void
   extra?: ReactNode
+  /** More items for the "..." menu of a function row, between Rename and Delete (Move to <pack>). */
+  moves?: { label: string; onClick(): void }[]
 }) {
   const [editing, setEditing] = useState<string>()
   const [confirm, setConfirm] = useState(false)
@@ -136,7 +118,7 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
         ) : (
           <>
             <button type="button" className="layer-main" aria-pressed={active} title={locked} onClick={locked ? undefined : onOpen} onDoubleClick={fn && !locked ? () => setEditing(name) : undefined} data-testid="graph-open">
-              {locked ? <Lock size={14} aria-hidden="true" className="type-icon" /> : <Workflow size={14} aria-hidden="true" className="type-icon" />}
+              <Workflow size={14} aria-hidden="true" className="type-icon" />
               <span className="layer-name">{name}</span>
               {!fn && <span className="layer-type">{scope === 'menu' ? strings.nav.menuGraph : scope === 'blueprint' ? strings.nav.componentGraph : strings.nav.layerGraph}</span>}
             </button>
@@ -146,7 +128,7 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
                   // a function row stays quiet until it is hovered or focused: its extra action, then "..." with rename and delete
                   <span className="row-reveal">
                     {extra}
-                    <RowMenu label={strings.lib.more} testId="graph-more" items={[{ label: strings.lib.rename, onClick: () => setEditing(name) }, { label: strings.lib.delete, danger: true, onClick: () => setConfirm(true) }]} />
+                    <RowMenu label={strings.lib.more} testId="graph-more" items={[{ label: strings.lib.rename, onClick: () => setEditing(name) }, ...(moves ?? []), { label: strings.lib.delete, danger: true, onClick: () => setConfirm(true) }]} />
                   </span>
                 )
               ) : (

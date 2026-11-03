@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, Maximize2, Minimize2, SplitSquareHorizontal, WandSparkles } from 'lucide-react'
+import { ChevronDown, ChevronRight, Lock, LockOpen, Maximize2, Minimize2, SplitSquareHorizontal, WandSparkles } from 'lucide-react'
 import { nodeIndex } from '@nicklaj/knotwork'
 import { useStore } from 'zustand'
 import { As2View } from '../graph/As2View'
 import { GraphCanvas } from '../graph/GraphCanvas'
-import { useGraphActions } from '../graph/useGraphActions'
 import { useSwfGraphs } from '../hooks/useGraphs'
 import { useLibraryPacks, usePacks } from '../hooks/usePacks'
 import { useActiveOverlay, useActiveSwf } from '../hooks/useProject'
@@ -13,11 +12,12 @@ import { tidyPositions } from '../model/graphLayout'
 import { ownersOfGraph } from '../model/graphNav'
 import { menuGraphId, openComponentGraph, openGraphs, openLibraryFunction, setActiveGraph, useGraphDocs } from '../state/graphDocs'
 import { useComponentGraphs } from '../state/componentGraphs'
+import { useGraphFollow } from '../state/graphFollow'
 import { findGraphStore, isReadOnlyGraph, type GraphStore } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { useSettingsStore } from '../state/settingsStore'
 import { useWorkspaceStore } from '../state/workspaceStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { VariableStrip } from '../graph/VariableStrip'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
@@ -26,13 +26,13 @@ import { Panel } from './Panel'
 /**
  * Zone 4: the Knotwork graph of the active SWF's open graph (UX 4.4): breadcrumb (SWF > layer > graph > node; the graph is a dropdown of the SWF's graphs, the others are links), the event jump
  * list, the canvas, and the AS2 split view (`graph/As2View.tsx`: generated class, selected node's lines highlighted, click a line to select its node). Which graph is open is `state/graphDocs`:
- * the Navigator's Graphs section sets it, and selecting a component that has a graph opens that graph (bridge).
+ * selecting a layer opens its graph, a blank canvas when it has none (bridge, `state/graphDocs.ts` `openLayerGraph`); the lock button and Ctrl+Click on a layer keep the open one (`state/graphFollow.ts`).
  */
 export function GraphPanel() {
   const swf = useActiveSwf()
   const { activeId, store, loaded } = useSwfGraphs()
-  const actions = useGraphActions()
   const defs = usePacks()
+  const locked = useGraphFollow((s) => s.locked)
   const [split, setSplit] = useState(false)
   const full = useWorkspaceStore((s) => s.graphFull)
   const [tidied, setTidied] = useState(0) // bumps the canvas to fit the view after a tidy
@@ -59,6 +59,7 @@ export function GraphPanel() {
       title={strings.graph.title}
       actions={
         <>
+          <Btn icon={locked ? Lock : LockOpen} pressed={locked} label={locked ? strings.graph.unlock : strings.graph.lock} onClick={() => useGraphFollow.getState().setLocked(!locked)} testId="graph-lock" />
           <Btn icon={WandSparkles} label={strings.graph.tidy} onClick={tidy} reason={store ? undefined : strings.nav.noSwf} testId="graph-tidy" />
           <Btn icon={full ? Minimize2 : Maximize2} pressed={full} label={full ? strings.graph.fullscreenExit : strings.graph.fullscreen} onClick={() => useWorkspaceStore.getState().setGraphFull(!full)} testId="graph-fullscreen" />
           <Btn icon={SplitSquareHorizontal} pressed={split} onClick={() => setSplit(!split)} label={strings.graph.as2Split} testId="as2-split">{strings.graph.as2Split}</Btn>
@@ -73,8 +74,6 @@ export function GraphPanel() {
         ) : !store || !activeId ? (
           <div className="graph-empty" data-testid="graph-empty">
             <p className="empty">{strings.graph.empty}</p>
-            <Btn variant="primary" testId="graph-add" onClick={() => void actions.add()} reason={actions.canAdd}>{strings.nav.addGraphShort}</Btn>
-            {actions.error && <p className="tone-error">{actions.error}</p>}
           </div>
         ) : (
           <OpenGraph key={`${swf.id}/${activeId}`} store={store} graphId={activeId} split={split} tidied={tidied} />
@@ -172,6 +171,7 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
         }}
       >
         <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} fitSignal={tidied} />
+        {nodes.length === 0 && <p className="graph-blank-hint" data-testid="graph-blank-hint">{strings.graph.blankHint}</p>}
         <EventList events={events} selected={selectedNode} onPick={(id) => setFocus({ id, n: (focus?.n ?? 0) + 1 })} />
         {split && (
           <As2View swfName={swf.name} store={store} selectedNode={selectedNode} onPick={(id) => revealNode(graphId, id)} />

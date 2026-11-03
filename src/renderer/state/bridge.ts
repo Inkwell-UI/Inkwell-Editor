@@ -1,12 +1,13 @@
 import { reloadPacks } from '../hooks/usePacks'
 import { inkwell } from '../hooks/api'
 import { useProjectStore } from './projectStore'
-import { graphForComponent } from '../model/graphNav'
 import { setComponentGraph } from './componentGraphs'
-import { setActiveGraph, useGraphDocs } from './graphDocs'
+import { openLayerGraph } from './graphDocs'
+import { useGraphFollow } from './graphFollow'
 import { setGraphEditListener, setGraphSaver } from './graphStore'
 import { graphEdited } from './hotReload'
-import { getOverlayDoc, setOverlaySaver } from './overlayStore'
+import { setOverlaySaver } from './overlayStore'
+import { setMenuSaver } from './menuStore'
 import { useSelectionStore } from './selectionStore'
 import { useTimingStore } from './timingStore'
 import { useSyncStore } from './syncStore'
@@ -63,6 +64,7 @@ export function startBridge(): () => void {
   )
 
   setOverlaySaver((name, doc) => void api.saveOverlay(name, doc))
+  setMenuSaver((name, doc) => api.saveMenuSettings(name, doc))
   // a library function that is open for editing is saved back into its pack folder (its store is named `@lib:<packId>`), then the pack set is read again
   setGraphSaver((name, graph) =>
     name.startsWith('@lib:')
@@ -73,14 +75,16 @@ export function startBridge(): () => void {
   )
   setGraphEditListener(graphEdited)
 
-  // one selection model: selecting a component opens its graph
+  // one selection model: selecting a layer opens its graph (a blank canvas when it has none)
   offs.push(
     useSelectionStore.subscribe((s, prev) => {
       const swfId = useProjectStore.getState().activeSwfId
       if (!s.component || s.component === prev.component || !swfId) return
-      const docs = useGraphDocs.getState()
-      const id = graphForComponent(getOverlayDoc(swfId), s.component, docs.ids[swfId] ?? [], docs.active[swfId])
-      if (id) setActiveGraph(swfId, id)
+      const follow = useGraphFollow.getState()
+      if (follow.takeSkip() || follow.locked || s.inspects !== 'component') return // Ctrl+Click, the lock, or a graph node click that targets a layer
+      const swf = useProjectStore.getState().project?.swfs.find((x) => x.id === swfId)
+      const layer = swf?.ir.nodes[s.component]
+      if (swf && layer) openLayerGraph({ id: swf.id, name: swf.name, root: swf.ir.root }, s.component, layer.name)
     })
   )
 

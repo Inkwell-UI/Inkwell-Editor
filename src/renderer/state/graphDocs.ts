@@ -2,11 +2,13 @@ import type { Graph, NodeDef } from '@inkwell-ui/spec'
 import { create } from 'zustand'
 import type { InkwellApi } from '../../shared/ipc'
 import { extractFunction } from '../../shared/functions'
-import { scriptsOf } from '../../shared/graphs'
+import { emptyGraph, newGraphId, scriptsOf } from '../../shared/graphs'
+import { inkwell } from '../hooks/api'
+import { ownersOfGraph } from '../model/graphNav'
 import type { OverlayDoc } from '../../shared/overlay'
-import { dropGraphStore, findGraphStore, getGraphStore, resetGraphs, retargetCalls, saveGraphNow, toGraph, type GraphStore } from './graphStore'
+import { dropGraphStore, findGraphStore, getGraphStore, resetGraphs, retargetCalls, saveGraphNow, setBlankHandlers, toGraph, type GraphStore } from './graphStore'
 import { resetComponentGraphs } from './componentGraphs'
-import { editNode } from './overlayStore'
+import { editNode, editNodeQuiet, getOverlayDoc } from './overlayStore'
 
 /**
  * Which graphs each SWF has and which one the Graph panel shows. The graph files are loaded once per SWF (IPC `listGraphs` + `loadGraph`) into
@@ -63,19 +65,46 @@ export const menuGraphId = (swfId: string): string | undefined =>
 const scriptsPatch = (list: string[]): { scripts: string[] | null } => ({ scripts: list.length ? list : null })
 
 /**
- * `[+ Graph]` (UX 4.2): the SWF's menu graph when it has none, otherwise a component graph. The new id is attached to the overlay `scripts` of the
- * frame (menu graph) or of `component` (component graph; the frame when nothing is selected).
+ * Layer graphs (docs/graphs.md): a layer has at most one graph and every layer has a canvas for it. The canvas of a layer with no graph is a blank draft that lives in memory only (its store is
+ * `draft`, not in `ids`, not on disk). Once it holds something the graph is written, listed and attached to the layer's overlay `scripts`; when an edit, an undo or a redo leaves it blank again
+ * the file is removed and the layer is detached. The attach and detach are derived from the graph's content, so they are not history entries of their own: the graph's own undo entries revert them.
  */
-export async function addGraph(o: { swf: SwfRef & { root: string }; overlay: OverlayDoc | undefined; component: string | undefined; name: (scope: Graph['scope']) => string }, api: Api): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
-  const scope: Graph['scope'] = menuGraphId(o.swf.id) ? 'component' : 'menu'
-  const attachTo = scope === 'menu' ? o.swf.root : (o.component ?? o.swf.root)
-  const r = await api.createGraph(o.swf.name, o.name(scope), scope)
-  if (!r.ok) return r
-  getGraphStore(o.swf.id, o.swf.name, r.graph)
-  editNode(o.swf.id, attachTo, scriptsPatch([...scriptsOf(o.overlay?.nodes?.[attachTo]), r.graph.id]))
-  useGraphDocs.setState((s) => ({ ids: { ...s.ids, [o.swf.id]: [...(s.ids[o.swf.id] ?? []), r.graph.id] }, active: { ...s.active, [o.swf.id]: r.graph.id } }))
-  return { ok: true, id: r.graph.id }
+const drafts = new Map<string, string>() // `${swfId}/${layerId}` -> the graph id of the layer's blank canvas, kept for the session
+
+/** Opens the graph of `layer` in the Graph panel: its existing graph, or its blank canvas. Returns the graph id. */
+export function openLayerGraph(swf: SwfRef & { root: string }, layer: string, layerName: string): string {
+  const key = `${swf.id}/${layer}`
+  const ids = useGraphDocs.getState().ids[swf.id] ?? []
+  let id = scriptsOf(getOverlayDoc(swf.id)?.nodes?.[layer]).find((g) => ids.includes(g)) ?? drafts.get(key)
+  if (layer === swf.root && !id) id = menuGraphId(swf.id) // a menu graph that no overlay lists yet is still the frame's
+  if (!id || !findGraphStore(swf.id, id)) {
+    const scope: Graph['scope'] = layer === swf.root && !menuGraphId(swf.id) ? 'menu' : 'component'
+    const name = layer === swf.root ? swf.name : layerName
+    id = newGraphId(name, new Set([...ids, ...drafts.values()]))
+    getGraphStore(swf.id, swf.name, emptyGraph(id, name, scope), true)
+    drafts.set(key, id)
+  }
+  setActiveGraph(swf.id, id)
+  return id
 }
+
+/** A layer graph got content (`blank` false) or lost it (true): list and attach it, or unlist and detach it. Registered with the graph store below. */
+export function layerGraphChange(swfId: string, graphId: string, blank: boolean): void {
+  const owners = ownersOfGraph(getOverlayDoc(swfId), graphId)
+  const draftOwner = [...drafts].find(([k, v]) => k.startsWith(`${swfId}/`) && v === graphId)?.[0].slice(swfId.length + 1)
+  if (blank) {
+    for (const layer of owners) {
+      drafts.set(`${swfId}/${layer}`, graphId) // the layer keeps this store as its blank canvas
+      const list = scriptsOf(getOverlayDoc(swfId)?.nodes?.[layer])
+      editNodeQuiet(swfId, layer, scriptsPatch(list.filter((id) => id !== graphId)))
+    }
+    useGraphDocs.setState((s) => ({ ids: { ...s.ids, [swfId]: (s.ids[swfId] ?? []).filter((id) => id !== graphId) } }))
+    return
+  }
+  if (draftOwner && !owners.includes(draftOwner)) editNodeQuiet(swfId, draftOwner, scriptsPatch([...scriptsOf(getOverlayDoc(swfId)?.nodes?.[draftOwner]), graphId]))
+  useGraphDocs.setState((s) => ((s.ids[swfId] ?? []).includes(graphId) ? s : { ids: { ...s.ids, [swfId]: [...(s.ids[swfId] ?? []), graphId] } }))
+}
+setBlankHandlers({ change: layerGraphChange, remove: (swfName, graphId) => void inkwell?.deleteGraph(swfName, graphId) })
 
 const addId = (swfId: string, id: string, activate: boolean): void =>
   useGraphDocs.setState((s) => ({ ids: { ...s.ids, [swfId]: [...(s.ids[swfId] ?? []), id] }, active: activate ? { ...s.active, [swfId]: id } : s.active }))
@@ -198,5 +227,6 @@ export function resetGraphDocs(): void {
   resetGraphs()
   resetComponentGraphs()
   loading.clear()
+  drafts.clear()
   useGraphDocs.setState({ ids: {}, active: {}, loaded: {}, error: undefined })
 }

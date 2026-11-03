@@ -1,3 +1,4 @@
+import { useGraphFollow } from '../state/graphFollow'
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, CircleX, Component, Sparkles, DollarSign, FileCode, Frame, Gamepad2, Image as ImageIcon, Link2, Search, Shapes, TriangleAlert, Type, Workflow, type LucideIcon } from 'lucide-react'
 import { useComponentIr } from '../hooks/useComponentIr'
@@ -12,7 +13,7 @@ import { discardOrphanSwf, discardOverlayOrphan, relinkOverlayOrphan } from '../
 import { useSelectionStore } from '../state/selectionStore'
 import { useToastStore } from '../state/toastStore'
 import { useTraceStore } from '../state/traceStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { FigmaSelectBtn } from '../ui/FigmaSelectBtn'
 import { Panel } from './Panel'
@@ -143,7 +144,7 @@ export function NavigatorPanel() {
                           {r.expanded ? <ChevronDown size={12} aria-hidden="true" /> : <ChevronRight size={12} aria-hidden="true" />}
                         </button>
                       ) : <span className="twisty" aria-hidden="true" />}
-                      <button type="button" className="layer-main" data-layer-id={r.id} onClick={() => select(r.id, 'navigator')}>
+                      <button type="button" className="layer-main" data-layer-id={r.id} onClick={(e) => (e.ctrlKey || e.metaKey ? useGraphFollow.getState().skipNext() : undefined, select(r.id, 'navigator'))} title={strings.nav.layerTip}>
                         <Icon size={14} aria-hidden="true" className="type-icon" />
                         <span className="layer-name">{r.name}</span>
                         <span className="layer-type">{strings.nav.typeNames[r.type] ?? r.type}</span>

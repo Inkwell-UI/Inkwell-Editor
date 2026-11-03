@@ -111,12 +111,9 @@
 /* live pin value badge (Ruffle preview) */
 .gn-pin-val.is-game { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
 .gn-pin-val { margin-right: 6px; padding: 0 5px; border-radius: var(--radius); font-size: 10px; line-height: 15px; color: var(--fg); background: var(--accent-bg); border: 1px solid var(--line-strong); max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lib-form { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 8px; }
 .graph-row[draggable="true"] { cursor: grab; }
-.section-title.library-heading { margin-top: 0; } /* the first thing in the panel: the panel's own padding is the gap above it */
 .logic-nav { display: flex; flex-direction: column; gap: 8px; }
 .logic-nav > .insp-fold { margin-top: 0; } /* the three cards of the Logic panel sit 8px apart; the panel's own padding is the gap above the first */
-.graph-list.library-children, .empty.library-children { margin-left: 16px; } /* the functions of a group sit under its name */
 .btn.row-confirm-delete { color: var(--err); } /* the quiet button style, in the error colour, for "Delete ..." */
 .btn.row-confirm-delete:hover { background: var(--err-bg); }
 .graph-row-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 2px; padding: 4px 6px 4px 2px; }
@@ -131,7 +128,6 @@
 .row-menu-item { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 4px; padding: 6px 10px; color: var(--fg); font: inherit; cursor: pointer; }
 .row-menu-item:hover, .row-menu-item:focus-visible { background: var(--hover); }
 .row-menu-item.is-danger { color: var(--err); }
-.pack-row.is-drop { outline: 1px dashed var(--accent); outline-offset: -1px; background: var(--accent-bg); }
 .lib-fns { margin: 2px 0 0 14px; display: flex; flex-direction: column; gap: 2px; }
 
 /* The open graph's variables, a row of chips under the breadcrumb. The dot is the colour of the type's pin. */
@@ -157,3 +153,13 @@
 /* wire bend points (layout only): a plain dot on the wire */
 .gw-bend { fill: var(--accent); stroke: var(--bg, #18181b); stroke-width: 1.5; pointer-events: all; cursor: grab; }
 .gw-bend:hover { fill: var(--focus); }
+
+/* the blank canvas of a layer with no graph yet: one dim line, never in the way of a click */
+.graph-blank-hint { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); margin: 0; padding: 4px 10px; border-radius: var(--radius); background: var(--surface-2); color: var(--fg-dim); font-size: 12px; pointer-events: none; white-space: nowrap; }
+
+/* Library panel > Functions: a pack's functions under a small heading, a local pack takes a dropped function (a tone step, no dashed outline) */
+.logic-pack { margin-top: 8px; border-radius: var(--radius); }
+.logic-pack.is-drop { background: var(--accent-bg); }
+.logic-pack-head { display: flex; align-items: center; gap: 6px; padding: 2px 6px; font-size: 12px; font-weight: 600; color: var(--fg-dim); }
+.logic-pack-ver { font-size: 11px; font-weight: 400; color: var(--fg-faint); }
+.logic-pack-empty { padding: 0 6px; font-size: 11px; }

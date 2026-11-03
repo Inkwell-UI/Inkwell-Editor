@@ -51,6 +51,21 @@ export function editNode(swfId: string, nodeId: string, patch: NodeOverlayPatch)
   if (!e) throw new Error(`No overlay store for swf ${swfId}`)
   e.store.getState().setDoc(patchNodeOverlay(e.store.getState().doc, nodeId, patch))
 }
+/**
+ * `editNode` without a history entry: for data the editor derives from something that is already in the history (a layer's `scripts` follows whether its graph holds anything, which the graph's
+ * own undo entries already revert), so an undo never has to take two steps for one action.
+ */
+export function editNodeQuiet(swfId: string, nodeId: string, patch: NodeOverlayPatch): void {
+  const e = stores.get(swfId)
+  if (!e) return
+  const t = e.store.temporal.getState()
+  t.pause()
+  try {
+    editNode(swfId, nodeId, patch)
+  } finally {
+    t.resume()
+  }
+}
 /** Undo/redo follow the SWF's one history, which also holds its graphs' edits (swfHistory.ts). */
 export { undoSwf, redoSwf }
 export const resetOverlays = (): void => (stores.clear(), resetSwfHistory())

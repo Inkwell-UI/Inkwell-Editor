@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useGraphDocs, loadSwfGraphs } from '../state/graphDocs'
+import { useGraphDocs, loadSwfGraphs, openLayerGraph } from '../state/graphDocs'
 import { findGraphStore, type GraphStore } from '../state/graphStore'
 import { inkwell } from './api'
 import { useActiveSwf } from './useProject'
@@ -13,5 +13,10 @@ export function useSwfGraphs(): { ids: string[]; activeId: string | undefined; s
   }, [swf?.id, swf?.name]) // eslint-disable-line react-hooks/exhaustive-deps
   const ids = (swf && docs.ids[swf.id]) || []
   const activeId = swf ? docs.active[swf.id] : undefined
-  return { ids, activeId, store: swf && activeId ? findGraphStore(swf.id, activeId) : undefined, loaded: !!swf && !!docs.loaded[swf.id] }
+  const loaded = !!swf && !!docs.loaded[swf.id]
+  // nothing open (the SWF has no graph yet): the frame's blank canvas
+  useEffect(() => {
+    if (swf && loaded && !activeId && !swf.orphaned) openLayerGraph({ id: swf.id, name: swf.name, root: swf.ir.root }, swf.ir.root, swf.name)
+  }, [swf, loaded, activeId])
+  return { ids, activeId, store: swf && activeId ? findGraphStore(swf.id, activeId) : undefined, loaded }
 }
