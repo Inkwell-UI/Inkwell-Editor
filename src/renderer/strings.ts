@@ -620,14 +620,19 @@ export const strings = {
       help: 'Lower order comes first and gets focus when the menu opens. Without an override, Down/Right go to the next and Up/Left to the previous component (wrapping). Custom menus need Input Context MenuMode for the pad.'
     },
     prompt: {
-      action: 'Prompt action',
+      title: 'Prompt',
+      action: 'Action',
       actionNone: 'Choose an action',
-      custom: 'Other name',
-      glyph: (d: string) => `${d} glyph`,
-      dflt: (g: string) => `Default (${g})`,
-      noDefault: 'No default: set one',
+      shows: 'Shows',
+      noDefault: 'None',
       keyHelp: 'Key cap label, 1 to 8 characters (Enter, E, Tab)',
-      help: 'The glyph is drawn at the top left of the frame, one frame-height tall (key caps and Start/Options are wider): leave room for it left of the label. The label is the text layer of the frame; give it a translation key to localize it.'
+      icon: 'Icon',
+      label: 'Text',
+      optional: 'Optional',
+      iconNone: 'Top left of the prompt',
+      byDefault: (name: string) => `${name} (default)`,
+      labelNone: 'None',
+      missing: (id: string) => `Missing layer ${id}`
     },
     sourceNote: 'Change these in Figma.',
     srcPosition: 'Position',

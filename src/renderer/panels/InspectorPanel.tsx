@@ -94,6 +94,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
   const entry = (overlay?.nodes?.[node.id] ?? {}) as { role?: string; instanceName?: string }
   const font = sync?.fonts?.find((f) => f.swfName === swfName && f.nodeId === node.id)
   const swf = useActiveSwf()
+  const isPrompt = entry.role === 'prompt'
   const isWidgetFrame = swf?.ir.target.kind === 'hudWidget' && widgetFrame(swf.ir)?.frame.id === node.id
   const [tab, setTab] = useState<(typeof INSP_TABS)[number]>(highlight ? 'game' : 'behavior') // a click on an issue in the Lint dock lands on the tab that lists it
   const boundCount = parseBindings((entry as { dataBinding?: string }).dataBinding).bindings.length
@@ -150,9 +151,13 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         <InspFold id="identity" title={strings.insp.groupIdentity} summary={entry.role ? strings.insp.roleNames[entry.role] ?? entry.role : strings.insp.noRole} defaultOpen>
           <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
           {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
-          {entry.role === 'prompt' && <PromptField swfId={swfId} nodeId={node.id} value={(entry as { prompt?: Record<string, string> }).prompt} />}
           <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
         </InspFold>
+        {isPrompt && (
+          <InspFold id="prompt" title={strings.insp.prompt.title} summary={(entry as { prompt?: { action?: string } }).prompt?.action ?? strings.insp.prompt.actionNone} defaultOpen>
+            <PromptField swfId={swfId} node={node} nodes={swf?.ir.nodes ?? {}} value={(entry as { prompt?: Record<string, string> }).prompt} />
+          </InspFold>
+        )}
         {swf?.ir.target.kind === 'customMenu' && (
           <InspFold id="focus" title={strings.insp.focus.label} summary={typeof (entry as { focus?: FocusValue }).focus?.order === 'number' ? strings.insp.focus.orderSummary((entry as { focus?: FocusValue }).focus!.order!) : strings.insp.focus.none} defaultOpen>
             <FocusField swfId={swfId} nodeId={node.id} value={(entry as { focus?: FocusValue }).focus} />
@@ -602,9 +607,13 @@ function FocusField({ swfId, nodeId, value }: { swfId: string; nodeId: string; v
   )
 }
 
-/** Overlay `prompt` of a role-`prompt` frame (W4): the action and optional glyph overrides per device (default: the action's glyph, Spec `PROMPT_DEFAULTS`). */
-function PromptField({ swfId, nodeId, value }: { swfId: string; nodeId: string; value: Record<string, string> | undefined }) {
+/**
+ * The Prompt card (W4) of a layer with role Prompt: its action, the glyph per device, and which of its own layers is the icon place and which is the text (both optional: a layer named
+ * promptIcon, the first text layer). Only the prompt's children are offered. Overlay `prompt`: action, keyboard, xbox, playstation, icon, label (Spec `PromptOverlay`).
+ */
+function PromptField({ swfId, node, nodes, value }: { swfId: string; node: Node; nodes: Record<string, Node>; value: Record<string, string> | undefined }) {
   const t = strings.insp.prompt
+  const nodeId = node.id
   const [key, setKey] = useState<string>()
   const action = value?.['action'] ?? ''
   const dflt = (PROMPT_DEFAULTS as Record<string, Record<string, string>>)[action]
@@ -614,37 +623,54 @@ function PromptField({ swfId, nodeId, value }: { swfId: string; nodeId: string; 
     else delete next[k]
     editNode(swfId, nodeId, { prompt: Object.keys(next).length ? next : null })
   }
+  const kids = node.children.flatMap((c) => nodes[c] ?? [])
+  const layerSelect = (k: 'icon' | 'label', none: string, only?: string) => {
+    const cur = value?.[k] ?? ''
+    const choices = kids.filter((n) => !only || n.type === only)
+    const auto = k === 'icon' ? kids.find((n) => n.name === 'promptIcon')?.name : kids.find((n) => n.type === 'text')?.name
+    return (
+      <div className="prompt-field">
+        <div className="prompt-lbl"><span>{t[k]}</span>{k === 'label' && <span>{t.optional}</span>}</div>
+        <select value={cur} onChange={(e) => set(k, e.target.value)} className={cur ? undefined : 'prompt-default'} data-testid={`prompt-${k}`}>
+          <option value="">{auto ? t.byDefault(auto) : none}</option>
+          {cur && !choices.some((n) => n.id === cur) && <option value={cur}>{t.missing(cur)}</option>}
+          {choices.map((n) => <option key={n.id} value={n.id}>{n.name}</option>)}
+        </select>
+      </div>
+    )
+  }
   const keyErr = key !== undefined && key !== '' && !KEY_LABEL.test(key)
   const glyphSelect = (d: 'xbox' | 'playstation', list: readonly string[]) => (
-    <label className="field-label">
-      {t.glyph(strings.stage.promptDevices[d]!)}
-      <select value={value?.[d] ?? ''} onChange={(e) => set(d, e.target.value)} data-testid={`prompt-${d}`}>
-        <option value="">{dflt ? t.dflt(dflt[d]!) : t.noDefault}</option>
-        {list.map((g) => <option key={g} value={g}>{g}</option>)}
-      </select>
-    </label>
+    <select value={value?.[d] ?? ''} onChange={(e) => set(d, e.target.value)} className={value?.[d] ? undefined : 'prompt-default'} aria-label={strings.stage.promptDevices[d]} data-testid={`prompt-${d}`}>
+      <option value="">{dflt?.[d] ?? t.noDefault}</option>
+      {list.map((g) => <option key={g} value={g}>{g}</option>)}
+    </select>
   )
   return (
-    <div className="field" data-testid="prompt-field">
-      <label className="field-label">
-        {t.action}
+    <>
+      <div className="prompt-field">
+        <div className="prompt-lbl"><span>{t.action}</span></div>
         <select value={action} onChange={(e) => set('action', e.target.value)} data-testid="prompt-action">
           <option value="">{t.actionNone}</option>
           {action && !(PROMPT_ACTIONS as readonly string[]).includes(action) && <option value={action}>{action}</option>}
           {PROMPT_ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
-      </label>
-      <label className="field-label">
-        {t.glyph(strings.stage.promptDevices['keyboard']!)}
-        <input value={key ?? value?.['keyboard'] ?? ''} placeholder={dflt?.['keyboard'] ?? ''} className={keyErr ? 'is-invalid' : undefined} aria-invalid={keyErr} spellCheck={false} data-testid="prompt-keyboard"
-          onChange={(e) => setKey(e.target.value)}
-          onBlur={() => { if (key !== undefined && !keyErr) set('keyboard', key); setKey(undefined) }}
-          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setKey(undefined) }} />
-      </label>
-      {keyErr && <p className="tone-error">{t.keyHelp}</p>}
-      {glyphSelect('xbox', XBOX_GLYPHS)}
-      {glyphSelect('playstation', PS_GLYPHS)}
-      <p className="dim">{t.help}</p>
-    </div>
+      </div>
+      <div className="prompt-field">
+        <div className="prompt-lbl"><span>{t.shows}</span></div>
+        <div className="prompt-glyphs">
+          <input value={key ?? value?.['keyboard'] ?? ''} placeholder={dflt?.['keyboard'] ?? ''} className={keyErr ? 'is-invalid' : undefined} aria-invalid={keyErr} aria-label={strings.stage.promptDevices['keyboard']} spellCheck={false} data-testid="prompt-keyboard"
+            onChange={(e) => setKey(e.target.value)}
+            onBlur={() => { if (key !== undefined && !keyErr) set('keyboard', key); setKey(undefined) }}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setKey(undefined) }} />
+          {glyphSelect('xbox', XBOX_GLYPHS)}
+          {glyphSelect('playstation', PS_GLYPHS)}
+        </div>
+        <div className="prompt-glyphs prompt-sub">{(['keyboard', 'xbox', 'playstation'] as const).map((d) => <span key={d}>{strings.stage.promptDevices[d]}</span>)}</div>
+        {keyErr && <p className="tone-error">{t.keyHelp}</p>}
+      </div>
+      {layerSelect('icon', t.iconNone)}
+      {layerSelect('label', t.labelNone, 'text')}
+    </>
   )
 }
