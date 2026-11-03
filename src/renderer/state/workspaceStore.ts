@@ -61,7 +61,12 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       ...sanitizePersisted(undefined),
       folds: {},
       graphFull: false,
-      setGraphFull: (graphFull) => set({ graphFull }),
+      setGraphFull: (graphFull) => {
+        set({ graphFull })
+        // the fullscreen graph also folds the bottom dock to its tab strip
+        const dock = graphFull && tabsKeyOf(WORKSPACES.behaviour.layout, 'trace')
+        if (dock) get().setFold(dock, true)
+      },
       setActive: (active) => set({ active }),
       setFold: (key, folded) => set((s) => ({ folds: { ...s.folds, [key]: folded } })),
       setSizes: (key, sizes) =>
