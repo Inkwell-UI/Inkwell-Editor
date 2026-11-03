@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronRight, Maximize2, Minimize2, SplitSquareHorizontal, WandSparkles } from 'lucide-react'
 import { nodeIndex } from '@nicklaj/knotwork'
 import { useStore } from 'zustand'
@@ -84,6 +84,8 @@ export function GraphPanel() {
   )
 }
 
+let refocusBody = false
+
 function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graphId: string; split: boolean; tidied: number }) {
   const swf = useActiveSwf()!
   const overlay = useActiveOverlay()
@@ -95,6 +97,11 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
   const reveal = useSelectionStore((s) => s.reveal)
   const revealNode = useSelectionStore((s) => s.revealGraphNode)
   const [focus, setFocus] = useState<{ id: string; n: number }>()
+  const bodyRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (refocusBody) bodyRef.current?.focus()
+    refocusBody = false
+  }, [])
   // a Lint row, trace line or AS2 line pointed at a node of this graph: select it and centre the canvas on it
   useEffect(() => {
     if (reveal && reveal.graph === graphId && nodeIndex(store.getState().nodes).has(reveal.node)) setFocus({ id: reveal.node, n: reveal.n })
@@ -127,6 +134,7 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
         <span aria-hidden="true">&gt;</span>
         <Popover
           label={strings.graph.pickGraph}
+          className="crumb-pop"
           trigger={(p, open) => (
             <button type="button" className="btn btn-quiet crumb-trigger" {...p} title={strings.graph.pickGraph} aria-label={`${strings.graph.pickGraph}: ${name}`} data-testid="crumb-graph">
               <span className="btn-label">{name}</span>
@@ -148,7 +156,21 @@ function OpenGraph({ store, graphId, split, tidied }: { store: GraphStore; graph
       </nav>
       <VariableStrip swfId={swf.id} store={store} />
       {isReadOnlyGraph(store) && <p className="dim settings-sub" role="status" data-testid="graph-readonly">{strings.graph.readOnly}</p>}
-      <div className={`graph-body${split ? ' is-split' : ''}`}>
+      <div
+        ref={bodyRef}
+        tabIndex={-1}
+        style={{ outline: 'none' }}
+        className={`graph-body${split ? ' is-split' : ''}`}
+        onKeyDown={(e) => {
+          // Tab / Shift+Tab step through the breadcrumb's graph list; typing fields keep Tab
+          const t = e.target as HTMLElement
+          if (e.key !== 'Tab' || e.ctrlKey || e.altKey || e.metaKey || t.closest('input, textarea, select, [contenteditable="true"]') || choices.length < 2) return
+          e.preventDefault()
+          refocusBody = true // the switch remounts this graph and drops focus; the next one takes it back
+          const i =choices.findIndex((c) => c.id === graphId)
+          choices[(i + (e.shiftKey ? choices.length - 1 : 1)) % choices.length]?.pick()
+        }}
+      >
         <GraphCanvas swf={swf} overlay={overlay} store={store} defs={defs} focusNode={focus} fitSignal={tidied} />
         <EventList events={events} selected={selectedNode} onPick={(id) => setFocus({ id, n: (focus?.n ?? 0) + 1 })} />
         {split && (

@@ -52,6 +52,7 @@ export function TitleBar() {
           <Popover
             key={top.id}
             label={top.label}
+            className="title-pop"
             trigger={(p, open) => <button type="button" className="btn btn-quiet titlebar-menu" {...p} aria-haspopup="menu" aria-pressed={open}>{top.label}</button>}
           >
             {(close) => (

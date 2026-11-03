@@ -340,6 +340,14 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     const k = e.key.toLowerCase()
     if (mod && k === 'f') return void (e.preventDefault(), setFind(true))
     if (mod && k === 'c') return void (e.preventDefault(), clipboard.copy())
+    if (mod && k === 'x') {
+      e.preventDefault()
+      if (readOnly || !clipboard.copy()) return
+      const st = store.getState()
+      const ids = new Set(st.nodes.filter((n) => n.selected).map((n) => n.id))
+      st.deleteSelection([...ids], st.edges.filter((ed) => ids.has(ed.source) || ids.has(ed.target)).map((ed) => ed.id))
+      return
+    }
     if (mod && k === 'v') return void (e.preventDefault(), clipboard.paste())
     if (mod && k === 'a') return void (e.preventDefault(), store.getState().setSelection(store.getState().nodes.map((n) => n.id)))
     if (!mod && !e.altKey && k === 'f') {

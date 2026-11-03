@@ -75,13 +75,12 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Enter toggles the fullscreen graph (Behaviour, not while typing or on a focused control that Enter activates); Esc leaves it
+  // Enter toggles the fullscreen graph (Behaviour, not while typing or on a focused control that Enter activates)
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const ws = useWorkspaceStore.getState()
       if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || e.defaultPrevented || ws.active !== 'behaviour' || useDialogStore.getState().open || isTyping(e.target)) return
-      if (e.key === 'Escape' && ws.graphFull) ws.setGraphFull(false)
-      else if (e.key === 'Enter' && !(e.target instanceof HTMLElement && e.target.closest('button, a, summary, [role="menuitem"], [role="option"], [role="tab"]'))) (e.preventDefault(), ws.setGraphFull(!ws.graphFull))
+      if (e.key === 'Enter' && !(e.target instanceof HTMLElement && e.target.closest('button, a, summary, [role="menuitem"], [role="option"], [role="tab"]'))) (e.preventDefault(), ws.setGraphFull(!ws.graphFull))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

@@ -49,12 +49,20 @@ export function Workspace({ layout, registry = panelRegistry, onResize = () => u
       const side = e.clientX <= r.left + 60 ? 'left' : e.clientX >= r.right - 60 ? 'right' : undefined
       ;(hovered ?? (side && edge(side)))?.setAttribute('data-keep', '')
     }
+    // a native dropdown popup takes the hover and a re-render after the pick can drop the focus: pin the panel open (data-hold) from a press inside it until a press outside
+    const hold = (e: PointerEvent): void => {
+      document.querySelectorAll('[data-hold]').forEach((el) => el.removeAttribute('data-hold'))
+      if (e.target instanceof Element) e.target.closest('.workspace[data-overlay] [data-edge="left"], .workspace[data-overlay] [data-edge="right"]')?.setAttribute('data-hold', '')
+    }
     document.addEventListener('mouseout', out)
     document.addEventListener('mousemove', clear)
+    document.addEventListener('pointerdown', hold, true)
     return () => {
       document.removeEventListener('mouseout', out)
       document.removeEventListener('mousemove', clear)
+      document.removeEventListener('pointerdown', hold, true)
       clear()
+      document.querySelectorAll('[data-hold]').forEach((el) => el.removeAttribute('data-hold'))
     }
   }, [overlayEdges])
   const errors = validateLayout(layout, registry === panelRegistry ? panelIds : Object.keys(registry))
