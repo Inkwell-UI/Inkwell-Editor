@@ -1,4 +1,5 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
+import { writeAtomic } from '../deploy/write'
 import type { RecentProject } from '../../shared/projectState'
 
 export const RECENT_KEEP = 10
@@ -22,4 +23,4 @@ export async function loadRecent(file: string): Promise<RecentProject[]> {
   }
 }
 
-export const saveRecent = (file: string, list: readonly RecentProject[]): Promise<void> => writeFile(file, JSON.stringify(list, null, 2) + '\n')
+export const saveRecent = (file: string, list: readonly RecentProject[]): Promise<void> => writeAtomic(file, JSON.stringify(list, null, 2) + '\n')

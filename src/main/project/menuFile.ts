@@ -1,5 +1,6 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { writeAtomic } from '../deploy/write'
 import { MenuSettings } from '@inkwell-ui/spec'
 import { stableStringify } from './index'
 import { exclusive } from './lock'
@@ -35,7 +36,7 @@ export async function readMenuSettings(project: string, swf: string): Promise<{ 
 export async function writeMenuLocked(project: string, swf: string, m: MenuSettings): Promise<void> {
   const f = fileOf(project, swf)
   await mkdir(join(project, 'swfs', swf), { recursive: true })
-  await writeFile(f, menuText(m))
+  await writeAtomic(f, menuText(m))
 }
 
 /** Validates against the Spec schema and writes `swfs/<swf>/menu.json`. */

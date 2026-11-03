@@ -1,5 +1,6 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
+import { writeAtomic } from '../deploy/write'
 import { Graph } from '@inkwell-ui/spec'
 import type { GraphResult } from '../../shared/graphs'
 import { graphText, parseGraph } from './graphFiles'
@@ -38,7 +39,7 @@ export function writeComponentGraph(project: string, doc: unknown): Promise<Grap
   return exclusive(async (): Promise<GraphResult> => {
     try {
       await mkdir(join(project, COMPONENTS_DIR), { recursive: true })
-      await writeFile(fileOf(project, g.component!), graphText(g))
+      await writeAtomic(fileOf(project, g.component!), graphText(g))
       return { ok: true }
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }

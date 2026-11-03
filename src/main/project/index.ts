@@ -1,5 +1,6 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
+import { writeAtomic } from '../deploy/write'
 import { migrate, SPEC_VERSION, type Graph, type MenuSettings } from '@inkwell-ui/spec'
 import { z } from 'zod'
 import { cleanModId } from '../../shared/modId'
@@ -74,12 +75,12 @@ export async function loadProject(dir: string): Promise<Project> {
 export async function saveProject(dir: string, project: Project): Promise<void> {
   const meta = ProjectMetaSchema.parse(project.meta)
   await Promise.all(['figma', 'shared'].map((d) => mkdir(join(dir, d), { recursive: true })))
-  await writeFile(join(dir, 'project.json'), stableStringify(meta))
+  await writeAtomic(join(dir, 'project.json'), stableStringify(meta))
   for (const [name, swf] of Object.entries(project.swfs)) {
     const d = join(dir, 'swfs', name)
     await mkdir(d, { recursive: true })
-    await writeFile(join(d, 'ir.json'), stableStringify(swf.ir))
-    await writeFile(join(d, 'overlay.json'), stableStringify(swf.overlay))
+    await writeAtomic(join(d, 'ir.json'), stableStringify(swf.ir))
+    await writeAtomic(join(d, 'overlay.json'), stableStringify(swf.overlay))
     // menu.json is written only when the project holds one (and it was readable): a file the editor could not read survives
     if (swf.menu && !swf.menuError) await writeMenuLocked(dir, name, swf.menu)
     // graph files are written, never deleted here: a graph the editor could not read must survive. Unlocked: the build pipeline calls this inside `exclusive`.

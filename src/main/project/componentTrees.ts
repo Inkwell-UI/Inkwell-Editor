@@ -1,5 +1,6 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
+import { writeAtomic } from '../deploy/write'
 import { Node } from '@inkwell-ui/spec'
 import { z } from 'zod'
 import { componentSlug } from './componentFiles'
@@ -42,7 +43,7 @@ export async function writeComponentTrees(project: string, trees: readonly Compo
     const file = `${componentSlug(t.id)}.json`
     keep.add(file)
     const text = stableStringify(t)
-    if ((await readFile(join(dir, file), 'utf8').catch(() => undefined)) !== text) await writeFile(join(dir, file), text)
+    if ((await readFile(join(dir, file), 'utf8').catch(() => undefined)) !== text) await writeAtomic(join(dir, file), text)
   }
   for (const n of await readdir(dir).catch(() => [])) if (n.endsWith('.json') && !keep.has(n)) await rm(join(dir, n), { force: true })
 }

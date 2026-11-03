@@ -1,5 +1,6 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { writeAtomic } from '../deploy/write'
 import { ProjectMetaSchema, stableStringify } from './index'
 import { exclusive } from './lock'
 
@@ -8,6 +9,6 @@ export function writeProjectSetting(projectDir: string, key: 'strictMode' | 'mod
   return exclusive(async () => {
     const file = join(projectDir, 'project.json')
     const meta = ProjectMetaSchema.parse({ ...JSON.parse(await readFile(file, 'utf8')), [key]: value })
-    await writeFile(file, stableStringify(meta))
+    await writeAtomic(file, stableStringify(meta))
   })
 }

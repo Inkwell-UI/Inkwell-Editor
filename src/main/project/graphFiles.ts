@@ -1,5 +1,6 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
+import { writeAtomic } from '../deploy/write'
 import { Graph, migrate, SPEC_VERSION } from '@inkwell-ui/spec'
 import { isGraphId, type GraphResult } from '../../shared/graphs'
 import { stableStringify } from './index'
@@ -51,7 +52,7 @@ export async function readGraphs(project: string, swf: string): Promise<{ graphs
 export async function writeGraphLocked(project: string, swf: string, g: Graph): Promise<GraphResult> {
   try {
     await mkdir(dirOf(project, swf), { recursive: true })
-    await writeFile(fileOf(project, swf, g.id), graphText(g))
+    await writeAtomic(fileOf(project, swf, g.id), graphText(g))
     return { ok: true }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }

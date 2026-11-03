@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { NodeDef, PackIndex, PackManifest, packAssetUrl, parsePacksLock, SPEC_VERSION, writePacksLock, type PackIndexEntry, type PackLockEntry, type PacksLock } from '@inkwell-ui/spec'
 import { readZip } from '../deploy/zip'
+import { writeAtomic } from '../deploy/write'
 import { compareSemver as cmp } from '../../shared/semverRange'
 import type { LockedPack, PackCandidate, PackResult, PacksState } from '../../shared/packs'
 
@@ -142,7 +143,7 @@ export function createPackManager(deps: PackManagerDeps) {
     try {
       await writeCache(projectDir, p.entry, p.fetched)
       const next: PacksLock = { ...lock, packs: [...lock.packs.filter((e) => e.id !== p.entry.id), p.entry] }
-      await writeFile(join(projectDir, 'packs.lock'), writePacksLock(next))
+      await writeAtomic(join(projectDir, 'packs.lock'), writePacksLock(next))
       pending.delete(token)
       return { ok: true }
     } catch (e) {

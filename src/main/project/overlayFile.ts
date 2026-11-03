@@ -1,5 +1,6 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { writeAtomic } from '../deploy/write'
 import { Overlay } from '@inkwell-ui/spec'
 import { normalizeOverlay, overlayProblems } from '../../shared/overlay'
 import type { SaveOverlayResult } from '../../shared/ipc'
@@ -23,7 +24,7 @@ export function writeOverlay(projectDir: string, swfName: string, doc: unknown):
   return exclusive(async () => {
     const dir = join(projectDir, 'swfs', swfName)
     await mkdir(dir, { recursive: true })
-    await writeFile(join(dir, 'overlay.json'), stableStringify(full))
+    await writeAtomic(join(dir, 'overlay.json'), stableStringify(full))
     return { ok: true } as const
   })
 }

@@ -1,5 +1,6 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { writeAtomic } from '../deploy/write'
 import { Localization, SPEC_VERSION } from '@inkwell-ui/spec'
 import { stableStringify } from './index'
 import { exclusive } from './lock'
@@ -39,7 +40,7 @@ export function writeLocalization(project: string, doc: unknown): Promise<{ ok: 
     const cur = await readLocalization(project)
     if (cur.error) return { ok: false, error: `localization.json could not be read (${cur.error}); fix or delete it first.` } as const
     try {
-      await writeFile(fileOf(project), localizationText(p.data))
+      await writeAtomic(fileOf(project), localizationText(p.data))
       return { ok: true, localization: p.data } as const
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) } as const

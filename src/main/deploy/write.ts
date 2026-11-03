@@ -35,7 +35,7 @@ export function staleFiles(old: Manifest | undefined, next: Iterable<string>, sc
 }
 
 /** Temp file in the same folder, then rename: a reader never sees a half-written file. */
-export async function writeAtomic(path: string, data: Uint8Array): Promise<void> {
+export async function writeAtomic(path: string, data: string | Uint8Array): Promise<void> {
   await mkdir(dirname(path), { recursive: true })
   const tmp = `${path}.inkwell-tmp`
   await writeFile(tmp, data)
