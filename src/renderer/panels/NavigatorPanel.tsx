@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, CircleX, Component, Sparkles, DollarSign, FileCode, Frame, Gamepad2, Image as ImageIcon, Link2, Search, Shapes, TriangleAlert, Type, Workflow, type LucideIcon } from 'lucide-react'
 import { useComponentIr } from '../hooks/useComponentIr'
+import { useOpenComponent } from '../hooks/useOpenComponent'
+import { useSwfGraphs } from '../hooks/useGraphs'
 import { useActiveOverlay, useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { useSyncState } from '../hooks/useSyncState'
 import { buildLayerTree, filterTree, flattenTree, runtimeMatches, withRuntimeRows, type Badge, type LayerRow } from '../model/layerTree'
@@ -14,6 +16,8 @@ import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { FigmaSelectBtn } from '../ui/FigmaSelectBtn'
 import { Panel } from './Panel'
+
+const SWF_VALUE = '@swf' // the select value of the active SWF (a component id never starts with @)
 
 const TYPE_ICON: Record<string, LucideIcon> = { frame: Frame, text: Type, shape: Shapes, image: ImageIcon, component: Component, instance: Workflow }
 
@@ -61,6 +65,9 @@ export function NavigatorPanel() {
 
   const lint = useMemo(() => rows.filter((r) => swf && r.swfName === swf.name && r.nodeId).map((r) => ({ nodeId: r.nodeId!, severity: r.severity })), [rows, swf])
   const comp = useComponentIr() // a component's graph is open: the layers are what the component is made of, not the menu
+  const { rows: compRows, openGraph, openMenu } = useOpenComponent()
+  const meta = useSwfGraphs().store?.getState().meta
+  const compId = meta?.scope === 'blueprint' && typeof meta.component === 'string' ? meta.component : undefined
   const tree = useMemo(
     () => (comp === 'unavailable' ? undefined : comp ? buildLayerTree(comp.ir, comp.inSwf ? (overlay ?? swf?.overlay) : undefined, []) : swf ? buildLayerTree(swf.ir, overlay ?? swf.overlay, lint) : undefined),
     [comp, swf, overlay, lint]
@@ -73,7 +80,9 @@ export function NavigatorPanel() {
   const designRows: LayerRow[] = filtered ? flattenTree(filtered, collapsed, query.trim() !== '') : []
   // the instances a graph made while the preview runs, under the layer they were added to (not in a component's own layer list)
   const flat = comp ? designRows : withRuntimeRows(designRows, spawned, nameOf, query)
-  const orphans = useMemo(() => computeOrphans((project?.swfs ?? []).map((s) => (s.id === swf?.id && overlay ? { ...s, overlay } : s))), [project, swf, overlay])
+  // layers of components kept on the Figma page (in no SWF) are live, so their overlay entries are not orphans
+  const pageIds = useMemo(() => new Set([...(sync?.pageComponents ?? []).map((c) => c.id), ...(sync?.pageComponentTrees ?? []).flatMap((t) => Object.keys(t.nodes))]), [sync?.pageComponents, sync?.pageComponentTrees])
+  const orphans = useMemo(() => computeOrphans((project?.swfs ?? []).map((s) => (s.id === swf?.id && overlay ? { ...s, overlay } : s)), pageIds), [project, swf, overlay, pageIds])
   const unreachable = [...(sync?.looseLayers ?? []).map((l) => ({ ...l, note: strings.nav.unreachableLoose })), ...(sync?.unreachableNodes ?? []).map((l) => ({ id: l.id, name: l.name, note: strings.nav.unreachableInSwf(l.swfName) }))]
 
   const toggle = (id: string): void => setCollapsed((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n })
@@ -91,13 +100,20 @@ export function NavigatorPanel() {
   return (
     <Panel title={strings.nav.title}>
       <div className="nav">
+        {swf && (compRows.length > 0 || compId) && (
+          <select className="nav-source" aria-label={strings.nav.source} value={compId ?? SWF_VALUE} onChange={(e) => (e.target.value === SWF_VALUE ? openMenu() : void openGraph(e.target.value, compRows.find((r) => r.id === e.target.value)?.name ?? e.target.value))}>
+            <option value={SWF_VALUE}>{swf.name}</option>
+            <hr />
+            {compId && !compRows.some((r) => r.id === compId) && <option value={compId}>{comp && comp !== 'unavailable' ? comp.name : compId}</option>}
+            {compRows.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        )}
         <label className="search">
           <Search size={14} aria-hidden="true" />
           <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={strings.nav.search} aria-label={strings.nav.search} />
         </label>
 
         <section aria-label={strings.nav.layers}>
-          {comp && comp !== 'unavailable' && <header className="section-title"><h3>{strings.nav.componentLayers(comp.name)}</h3></header>}
           {comp === 'unavailable' ? (
             <p className="empty">{strings.nav.componentUnknown}</p>
           ) : !swf ? (

@@ -13,7 +13,7 @@ export const heldKeys = (entry: Record<string, unknown>): string[] => Object.key
  * Orphans of the project. Pure: for every SWF, orphaned SWFs first as one entry, then overlay entries whose node id does not exist
  * in that SWF's IR. An orphaned SWF's overlay entries are not listed one by one (the SWF entry covers them). Empty overlay entries hold nothing and are skipped.
  */
-export function computeOrphans(swfs: readonly Pick<SwfDoc, 'id' | 'name' | 'orphaned' | 'ir' | 'overlay'>[]): OrphanEntry[] {
+export function computeOrphans(swfs: readonly Pick<SwfDoc, 'id' | 'name' | 'orphaned' | 'ir' | 'overlay'>[], pageComponentIds: ReadonlySet<string> = new Set()): OrphanEntry[] {
   const out: OrphanEntry[] = []
   for (const s of swfs) {
     if (s.orphaned) {
@@ -21,7 +21,7 @@ export function computeOrphans(swfs: readonly Pick<SwfDoc, 'id' | 'name' | 'orph
       continue
     }
     for (const [nodeId, entry] of Object.entries(s.overlay.nodes ?? {})) {
-      if (s.ir.nodes[nodeId] || !entry || typeof entry !== 'object') continue
+      if (s.ir.nodes[nodeId] || pageComponentIds.has(nodeId) || !entry || typeof entry !== 'object') continue
       const held = heldKeys(entry)
       if (held.length) out.push({ kind: 'overlay', swfId: s.id, swfName: s.name, nodeId, held })
     }
