@@ -1,0 +1,22 @@
+{
+  "kind": "ClearFocusLinks",
+  "major": 1,
+  "title": "Clear Focus Links",
+  "category": "Components",
+  "milestone": "0.6",
+  "pure": false,
+  "inputs": [
+    { "name": "in", "type": "Exec" },
+    { "name": "target", "type": "Clip", "description": "The element whose links are removed" }
+  ],
+  "outputs": [
+    { "name": "then", "type": "Exec" }
+  ],
+  "fields": {},
+  "as2Template": "templates/ClearFocusLinks.as2",
+  "extra": {
+    "inspector": {
+      "description": "Removes every focus link set on an element. Do this before removing it."
+    }
+  }
+}

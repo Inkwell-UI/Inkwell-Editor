@@ -131,7 +131,7 @@ export const strings = {
     layers: 'Layers',
     runtimeTag: 'Runtime',
     runtimeTip: 'Made by a graph while the preview runs (Create Component). Not a layer of your design: it is gone when the preview restarts.',
-    componentLayers: (name: string) => `INSIDE ${name.toUpperCase()}`,
+    source: 'Show layers of',
     componentUnknown: 'This component is not in any frame, so its layers are known only while Figma is connected.',
     noSwf: 'No SWF yet.',
     noLayers: 'This SWF has no layers.',
@@ -364,7 +364,7 @@ export const strings = {
     title: 'Graph',
     tidy: 'Tidy layout',
     fullscreen: 'Fullscreen graph (Enter)',
-    fullscreenExit: 'Exit fullscreen (Esc)',
+    fullscreenExit: 'Exit fullscreen (Enter)',
     as2Split: 'AS2 Split',
     as2Title: 'Generated AS2 (read-only)',
     pinValueTip: (v: string) => `Last value in the preview: ${v}`,
@@ -381,7 +381,7 @@ export const strings = {
     keyGroups: (selected: number, wires: number): [string, string][][] => {
       const nav: [string, string][] = [['Zoom to all', 'F'], ['Find nodes', 'Ctrl+F']]
       const groups: [string, string][][] = selected
-        ? [[['Copy', 'Ctrl+C'], ['Duplicate', 'Ctrl+D'], [selected > 1 ? `Delete ${selected} nodes` : 'Delete', 'Del']], [['Zoom to selection', 'F'], ['Find nodes', 'Ctrl+F']]]
+        ? [[['Cut', 'Ctrl+X'], ['Copy', 'Ctrl+C'], ['Duplicate', 'Ctrl+D'], [selected > 1 ? `Delete ${selected} nodes` : 'Delete', 'Del']], [['Zoom to selection', 'F'], ['Find nodes', 'Ctrl+F']]]
         : wires
           ? [[['Delete wire', 'Del']], nav]
           : [[['Add a node', 'Space'], ['Paste', 'Ctrl+V'], ['Select all', 'Ctrl+A']], nav]
@@ -443,11 +443,14 @@ export const strings = {
     scope: 'Variable scope',
     scopeMenu: 'menu',
     scopeComponent: 'layer',
-    scopeSaved: 'saved',
-    scopeTip: (scope: string) => (scope === 'menu' ? 'Visible to every graph of this SWF' : scope === 'saved' ? 'Kept in the save game by the Inkwell Runtime (Bool, Number, String); custom menus only' : 'Visible to this layer graph only'),
+    savedBadge: 'Saved: kept in the save game',
+    globalBadge: 'Global: layer graphs can use this variable',
+    scopeTip: (scope: string) => (scope === 'menu' ? 'Visible to this menu graph and its components; turn on Global to share it with the layer graphs' : scope === 'saved' ? 'Keep in the save game (Inkwell Runtime; Bool, Number, String; custom menus only)' : 'Visible to this layer graph only'),
     add: 'Add',
     addVariable: 'Add variable',
-    keepSaved: 'Keep in the save game',
+    keepSaved: 'Saved',
+    global: 'Global',
+    globalNote: 'A variable of the menu graph. Edit it there.',
     nameFirst: 'Type a name first',
     pick: 'Pick variable...',
     none: 'No variables in this graph.',

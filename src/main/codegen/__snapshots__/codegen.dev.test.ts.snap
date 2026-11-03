@@ -109,26 +109,30 @@ class mods.M.TGraph_main {
         }
         __g.v_label = "x";
         // [e] core/OnOpen@1
-        __g.onOpen = function() {
-            try {
-                __g.rn("e");
-                var t_a = __g.pv("a", "value", (isFinite(1 + 2) ? (1 + 2) : 0));
-                // [s] core/SetVariable@1
-                __g.rn("s");
-                __g.v_count = t_a;
-                __g.bridge.watch("main", "count", "menu", __g.v_count);
-                // [t] core/SetVariable@1
-                __g.rn("t");
-                __g.v_total = t_a;
-                __g.bridge.setSaved("total", __g.v_total);
-                __g.bridge.watch("main", "total", "saved", __g.v_total);
-                // [l] core/Log@1
-                __g.rn("l");
-                __g.log("info", "l", "");
-            } catch (e) {
-                __g.fail("e", e);
-            }
-        };
+        // shortcut: another OnOpen node of this graph runs first, in node order
+        __g.onOpen = (function(prev) {
+            return function() {
+                if (prev != undefined) prev();
+                try {
+                    __g.rn("e");
+                    var t_a = __g.pv("a", "value", (isFinite(1 + 2) ? (1 + 2) : 0));
+                    // [s] core/SetVariable@1
+                    __g.rn("s");
+                    __g.v_count = t_a;
+                    __g.bridge.watch("main", "count", "menu", __g.v_count);
+                    // [t] core/SetVariable@1
+                    __g.rn("t");
+                    __g.v_total = t_a;
+                    __g.bridge.setSaved("total", __g.v_total);
+                    __g.bridge.watch("main", "total", "saved", __g.v_total);
+                    // [l] core/Log@1
+                    __g.rn("l");
+                    __g.log("info", "l", "");
+                } catch (e) {
+                    __g.fail("e", e);
+                }
+            };
+        })(__g.onOpen);
     }
 }
 "
@@ -206,20 +210,24 @@ class mods.M.TGraph_main {
         }
         __g.v_label = "x";
         // [e] core/OnOpen@1
-        __g.onOpen = function() {
-            try {
-                var t_a = (isFinite(1 + 2) ? (1 + 2) : 0);
-                // [s] core/SetVariable@1
-                __g.v_count = t_a;
-                // [t] core/SetVariable@1
-                __g.v_total = t_a;
-                __g.bridge.setSaved("total", __g.v_total);
-                // [l] core/Log@1
-                __g.log("info", "l", "");
-            } catch (e) {
-                __g.fail("e", e);
-            }
-        };
+        // shortcut: another OnOpen node of this graph runs first, in node order
+        __g.onOpen = (function(prev) {
+            return function() {
+                if (prev != undefined) prev();
+                try {
+                    var t_a = (isFinite(1 + 2) ? (1 + 2) : 0);
+                    // [s] core/SetVariable@1
+                    __g.v_count = t_a;
+                    // [t] core/SetVariable@1
+                    __g.v_total = t_a;
+                    __g.bridge.setSaved("total", __g.v_total);
+                    // [l] core/Log@1
+                    __g.log("info", "l", "");
+                } catch (e) {
+                    __g.fail("e", e);
+                }
+            };
+        })(__g.onOpen);
     }
 }
 "

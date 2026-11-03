@@ -10,7 +10,7 @@ export interface MenuGlueInput {
   /** The SWF class stem (`Hud`); the class is `<swfCls>Menu`. */
   swfCls: string
   /** The graph classes in graph order (`cls` is the simple name from codegen). */
-  graphs: readonly { cls: string; id: string }[]
+  graphs: readonly { cls: string; id: string; menu?: true }[]
   /** Clip paths from the base clip (`_root`) of layers whose overlay role is `button` or `list`: they are made focusable so On Focus / On Blur and Tab/arrow focus work. */
   focusable?: readonly string[]
   /** Keyed text layers (V13.2): clip paths from the base clip and their `$KEY`; `begin()` replaces the compiled source text with `bridge.translate(key)` when the runtime has an entry. */
@@ -99,9 +99,13 @@ function themeSource(t: NonNullable<MenuGlueInput['themed']>): string[] {
 export function menuClassSource(i: MenuGlueInput): string {
   const mod = ident(i.modId)
   const cls = menuClassName(i.swfCls)
-  const create = i.graphs.flatMap((g, k) => [
+  // the menu graph starts first and is the `owner` of the layer graphs, which reach its global variables through it (`menuGraph()`)
+  const hasMenuGraph = i.graphs.some((g) => g.menu)
+  const ordered = [...i.graphs.filter((g) => g.menu), ...i.graphs.filter((g) => !g.menu)]
+  const create = ordered.flatMap((g, k) => [
     `        g = new mods.${mod}.${g.cls}(this.base);`,
     '        g.bridge = bridge;',
+    ...(hasMenuGraph && !g.menu ? ['        g.owner = this.graphs[0];'] : []),
     `        this.base.inkwellGraph${k} = g;`,
     '        this.graphs.push(g);',
     `        try {`,
@@ -217,6 +221,12 @@ export function menuClassSource(i: MenuGlueInput): string {
           '        else if (action == "Right") d = 3;',
           '        if (d < 0) return;',
           '        var f = Selection.getFocus();',
+          '        // Set Focus Link: a link set at run time on the focused clip wins over the compiled table (elements made by Create Component)',
+          '        var lk = eval(f).inkwellFocus[["up", "down", "left", "right"][d]];',
+          '        if (lk != undefined) {',
+          '            Selection.setFocus(lk);',
+          '            return;',
+          '        }',
           '        var k = -1;',
           '        for (var i = 0; i < this.focusPaths.length; i++) {',
           '            if (f == targetPath(this.clip(this.focusPaths[i]))) k = i;',
@@ -244,7 +254,11 @@ export function menuClassSource(i: MenuGlueInput): string {
                 '            l.me = this;',
                 '            l.onLoadInit = function(mc) {',
                 '                for (var n in mc) {',
-                '                    if (typeof(mc[n]) == "movieclip") mc[n]._visible = false;',
+                '                    if (typeof(mc[n]) == "movieclip") {',
+                '                        mc[n]._visible = false;',
+                // The vanilla menu clip polls Init on every frame until the engine sets _codeObjInitialized; Ruffle never does, so it traced forever.
+                ...(i.previewArt ? ['                        mc[n].onEnterFrame = null;'] : []),
+                '                    }',
                 '                }',
                 '                var ic = mc.attachMovie(this.a[2], "ic", 9000);',
                 ...(i.previewArt ? ['                trace("[Inkwell] prompt art: " + this.a[2] + " " + (ic == undefined ? "not found in " + this.a[1] + ".swf" : "ok " + ic._width + "x" + ic._height));'] : []),
@@ -286,7 +300,7 @@ export function menuClassSource(i: MenuGlueInput): string {
         ]
       : []),
     '    function onOpen() {',
-    ...(fg ? ['        Selection.setFocus(this.clip(this.focusPaths[0]));'] : []),
+    ...(fg ? ['        Selection.setFocus(this.clip(this.focusPaths[0]));', ...(i.listClass ? [`        ${i.listClass}.sync();`] : [])] : []),
     '        for (var k = 0; k < this.graphs.length; k++) {',
     '            var g = this.graphs[k];',
     '            if (g.onOpen != undefined) g.onOpen();',
@@ -301,8 +315,9 @@ export function menuClassSource(i: MenuGlueInput): string {
     '    }',
     '    function onInput(action) {',
     ...(pr ? ['        this.updatePrompts();'] : []),
-    ...(fg ? ['        this.moveFocus(action);'] : []),
-    ...(i.listClass ? [`        ${i.listClass}.input(action);`] : []),
+    ...(fg && i.listClass
+      ? [`        if (!${i.listClass}.input(action, true)) this.moveFocus(action);`, `        ${i.listClass}.sync();`]
+      : [...(fg ? ['        this.moveFocus(action);'] : []), ...(i.listClass ? [`        ${i.listClass}.input(action);`] : [])]),
     ...(i.scrollClass ? [`        ${i.scrollClass}.input(action);`] : []),
     '        for (var k = 0; k < this.graphs.length; k++) this.graphs[k].handleInput(action);',
     '    }',

@@ -51,6 +51,6 @@ describe.skipIf(!can)('every core template compiles with FFDec', () => {
       ffdec.stop()
     }
     expect(failures).toEqual([])
-    expect(compiled).toBe(153) // core 108 + mathutils 37 + inventory 15 nodes, minus the 7 skipped by kindGraph (editor-only, function nodes, Create Component)
+    expect(compiled).toBe(155) // core 110 + mathutils 37 + inventory 15 nodes, minus the 7 skipped by kindGraph (editor-only, function nodes, Create Component)
   }, 300_000)
 })

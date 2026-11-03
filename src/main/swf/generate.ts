@@ -29,6 +29,8 @@ export interface GenerateOptions {
   components?: readonly { id: string; name: string; nodes: Record<string, Node> }[]
   /** Overlay `dataBinding` strings by Figma layer id; applied by the graph classes (docs/codegen.md, Data binding). Without graphs nothing is bound. */
   bindings?: Record<string, string>
+  /** Graph id -> the layer it is attached to (overlay `scripts`): the menu glue starts the layer graphs by the depth of that layer in the tree (breadth first), the menu graph first. */
+  graphLayers?: Record<string, string>
   /** Overlay `role` by Figma layer id. A customMenu SWF makes its `button` and `list` layers focusable, and the preview's Play panel can click the `button` ones. */
   roles?: Record<string, string>
   /**
@@ -766,6 +768,13 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
         layerPath: (id, g) => (g.scope === 'blueprint' ? componentPath(id) : id === (widget && wf ? wf.frame.id : ir.root) ? '' : layerPaths.get(id)?.startsWith(basePrefix) ? layerPaths.get(id)!.slice(basePrefix.length) : undefined)
       })
     : undefined
+  // layer graphs run by the depth of their layer (root = 0); a graph without a layer goes last; Array.sort is stable, so equal depths keep the graph order
+  const depth = new Map<string, number>([[ir.root, 0]])
+  for (const queue = [ir.root]; queue.length; ) {
+    const id = queue.shift()!
+    for (const k of (ir.nodes[id] as { children?: string[] } | undefined)?.children ?? []) if (!depth.has(k)) { depth.set(k, depth.get(id)! + 1); queue.push(k) }
+  }
+  const depthOf = (graphId: string): number => depth.get(opts.graphLayers?.[graphId] ?? '') ?? Number.MAX_SAFE_INTEGER
   const graphCalls = gen?.classes.flatMap((c) => c.calls) ?? []
   const graphDriven = graphCalls.length > 0
   for (const x of gen?.issues ?? []) lint.push(issue('error', x.code, ir.root, `Graph "${x.graphId}"${x.nodeId ? ` node ${x.nodeId}` : ''}: ${x.message}`))
@@ -839,7 +848,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       const clip = a ? pathOf(glyphId(pid, d)) : undefined
       return a && clip ? [{ clip, file: a.file, sprite: a.sprite, h: Math.round(ir.nodes[glyphId(pid, d)]?.transform.height ?? 0) }] : []
     })).filter((a) => a.h > 0)
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, stage: ir.stage, ...(artGlue.length ? { art: artGlue, ...(opts.preview ? { previewArt: true } : {}) } : {}), graphs: gen?.classes.filter((c) => !c.fn && !c.component).map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(scrollInfos.length ? { scrollClass: scrollClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, stage: ir.stage, ...(artGlue.length ? { art: artGlue, ...(opts.preview ? { previewArt: true } : {}) } : {}), graphs: gen?.classes.filter((c) => !c.fn && !c.component).sort((a, b) => depthOf(a.graphId) - depthOf(b.graphId)).map((c) => ({ cls: c.cls, id: c.graphId, ...(opts.graphs?.graphs.find((g) => g.id === c.graphId)?.scope === 'menu' ? { menu: true as const } : {}) })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(scrollInfos.length ? { scrollClass: scrollClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
       frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, [...listInfos.map((l) => listAttachCode(mod, l, '_root')), ...scrollInfos.map((x) => scrollAttachCode(mod, x, '_root')), ...flowInfos.map((f) => flowAttachCode(mod, f, '_root'))]))

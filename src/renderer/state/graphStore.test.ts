@@ -149,7 +149,9 @@ describe('graph store', () => {
     comp.getState().addVariable({ id: 'cv', name: 'pressed', type: 'Bool' })
     expect(comp.getState().variables[0]).toMatchObject({ scope: 'component' })
     const seen = visibleVariables(toGraph(comp.getState()), toGraph(menu.getState())).map((v) => v.id)
-    expect(seen).toEqual(['v', 'cv'])
+    expect(seen).toEqual(['cv']) // a layer graph reaches only the menu variables marked global
+    menu.getState().updateVariable('v', { global: true })
+    expect(visibleVariables(toGraph(comp.getState()), toGraph(menu.getState())).map((v) => v.id)).toEqual(['v', 'cv'])
     expect(visibleVariables(toGraph(menu.getState()), undefined).map((v) => v.id)).toEqual(['v'])
     comp.getState().removeVariable('cv')
     expect(comp.getState().variables).toEqual([])

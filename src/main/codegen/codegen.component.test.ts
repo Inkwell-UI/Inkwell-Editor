@@ -118,3 +118,26 @@ describe('menu variables in a component graph', () => {
     expect(r.classes.every((c) => !c.source.includes('function menuGraph'))).toBe(true)
   })
 })
+
+describe('global menu variables in a layer graph', () => {
+  const vars = [
+    { id: 'sel', name: 'selected', type: 'String' as const, scope: 'menu' as const, default: '', global: true },
+    { id: 'priv', name: 'hidden', type: 'String' as const, scope: 'menu' as const, default: '' }
+  ]
+  const menu = { ...graph('main', [node('ol', 'core/OnLoad@1')], []), variables: vars }
+  const layerOf = (variable: string) => ({ ...graph('lay', [node('ol', 'core/OnLoad@1'), node('sv', 'core/SetVariable@1', { variable }), node('t', 'core/ToString@1')], [wire('ol', 'then', 'sv', 'in')]), scope: 'component' as const })
+  const make = (variable: string) => generateGraphClasses({ modId: 'M', swfCls: 'T', graphs: [menu, layerOf(variable)] as never, packs, layerPath: () => undefined })
+
+  it('writes a global through the menu graph instance and runs its bindings', () => {
+    const r = make('sel')
+    const c = r.classes.find((x) => x.graphId === 'lay')!
+    expect(c.source).toContain('__g.menuGraph().v_selected = ')
+    expect(c.source).toContain('var owner;')
+    expect(c.source).toContain('__g.mb("selected");')
+  })
+
+  it('a menu variable that is not global stays out of reach of a layer graph', () => {
+    const r = make('priv')
+    expect(r.issues.map((x) => x.message)).toEqual(['Set Variable: field "variable" names a variable that does not exist.'])
+  })
+})

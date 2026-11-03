@@ -10,6 +10,7 @@ import type { AssetStore, ImageMode } from '../images/assets'
 import { loadCodegenPacks, type CodegenPacks } from '../codegen/packs'
 import { loadProject, saveProject, type Project } from '../project'
 import { bindingsOf } from '../../shared/graphBinding'
+import { graphLayersOf } from '../../shared/graphs'
 import { MENU_VARIANT_ASPECTS, aspectRatioOf, applyTheme, themeModes } from '@inkwell-ui/spec'
 import { defaultMenuSettings, hasBackgroundBlur, variantBuildName } from '../../shared/menu'
 import { readMenuSettings, writeMenuLocked } from '../project/menuFile'
@@ -104,6 +105,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     timer.start('sync')
     let instanceNames: Record<string, string> = {}
     let bindings: Record<string, string> = {}
+    let graphLayers: Record<string, string> = {}
     let roles: Record<string, string> = {}
     let lists: Record<string, { itemTemplate?: string; spacing?: number }> = {}
     let locKeys: Record<string, string> = {}
@@ -126,6 +128,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
         imageMode = p.meta.imageMode ?? 'embedded'
         const nodes = (overlay['nodes'] ?? {}) as Record<string, { instanceName?: string; dataBinding?: unknown; role?: unknown; locKey?: unknown; list?: { itemTemplate?: unknown; spacing?: unknown } }>
         bindings = bindingsOf(nodes)
+        graphLayers = graphLayersOf(nodes)
         roles = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (typeof o.role === 'string' && o.role ? [[id, o.role]] : [])))
         instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : [])))
         lists = listSettings(nodes)
@@ -190,7 +193,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     // W3/W4: the focus graph and prompts of a custom menu (overlay), with their lint
     const fo = focusOptions(ir, overlayNodes)
     const inputOpts = { ...(fo.focus ? { focus: fo.focus } : {}), ...(fo.prompts ? { prompts: fo.prompts } : {}), ...(fo.promptLayers ? { promptLayers: fo.promptLayers } : {}) }
-    const gameOpts = { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), ...(components.length ? { components } : {}), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) }
+    const gameOpts = { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings, graphLayers } : {}), ...(components.length ? { components } : {}), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) }
     const r = await compileSwf(gameIr, { ...gameOpts, buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`) })
     // a custom menu ships one game SWF per other screen shape (Spec `variants`): the design laid out again for that screen; the runtime opens the nearest one
     const vt = createStageTimer()
@@ -213,7 +216,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     if (cfg.devBuild?.() && ir.target.kind === 'customMenu') {
       devBuilt = true
       dt.start('dev-build')
-      await compileSwf(gameIr, { modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), ...(components.length ? { components } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+      await compileSwf(gameIr, { modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings, graphLayers } : {}), ...(components.length ? { components } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
       dt.end('dev-build')
       cfg.onDevBuild?.(name)
     }
@@ -223,7 +226,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     pt.start('preview-build')
     const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: previewIr.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
     try {
-      const pr = await compileSwf(previewIr, { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), ...(components.length ? { components } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
+      const pr = await compileSwf(previewIr, { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings, graphLayers } : {}), ...(components.length ? { components } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
       const buf = await readFile(pr.swfPath)
       preview.bytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
       preview.notes = {

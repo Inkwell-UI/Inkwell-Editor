@@ -4,6 +4,7 @@ import { temporal } from 'zundo'
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import type { Graph, GraphNode } from '@inkwell-ui/spec'
 import { applySignature, callFields, refreshCall, refreshCalls, staleCalls } from '../../shared/functions'
+import { menuVariablesFor } from '../../shared/graphs'
 import { withPinMock } from '../../shared/pinMock'
 import { registerHistory, unregisterHistory } from './swfHistory'
 
@@ -90,7 +91,7 @@ export interface GraphState extends Doc {
   setSelection(ids: string[]): void
   /** The scope of a variable is the graph's scope (menu graph: menu variables; component graph: component variables) unless given: `saved` (S5) goes to the menu graph. */
   addVariable(v: Pick<Variable, 'id' | 'name' | 'type'> & { default?: unknown; scope?: Variable['scope'] }): void
-  updateVariable(id: string, patch: Partial<Pick<Variable, 'name' | 'type' | 'default' | 'scope'>>): void
+  updateVariable(id: string, patch: Partial<Pick<Variable, 'name' | 'type' | 'default' | 'scope' | 'global'>>): void
   removeVariable(id: string): void
   /** Function graphs: gives the function a new signature; the wires of its Function Entry / Exit nodes follow their pin by id. Callers follow through the store listener. */
   setSignature(next: NonNullable<Graph['signature']>): void
@@ -445,7 +446,7 @@ export function resetGraphs(): void {
   stores.clear()
 }
 
-/** Variables a graph can use: the menu graph's menu variables plus its own component variables (a menu graph just its own). */
+/** Variables a graph can use: its own plus the menu graph's menu variables it may reach (`menuVariablesFor`: all for a component graph, the global ones for a layer graph). */
 export function visibleVariables(graph: Pick<Graph, 'variables' | 'scope'>, menu: Pick<Graph, 'variables'> | undefined): Graph['variables'] {
-  return graph.scope === 'menu' || !menu ? graph.variables : [...menu.variables.filter((v) => v.scope === 'menu'), ...graph.variables.filter((v) => v.scope === 'component')]
+  return graph.scope === 'menu' || !menu ? graph.variables : [...menuVariablesFor(graph, [{ scope: 'menu', variables: menu.variables }]), ...graph.variables.filter((v) => v.scope === 'component')]
 }

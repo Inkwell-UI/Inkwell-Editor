@@ -1,0 +1,5 @@
+// [{{node.id}}] core/SetFocusLink@1
+var {{node.uid}}_f = {{in.from}};
+if ({{node.uid}}_f.inkwellFocus == undefined) {{node.uid}}_f.inkwellFocus = {};
+{{node.uid}}_f.inkwellFocus[{{field.direction}}] = {{in.to}};
+{{next.then}}

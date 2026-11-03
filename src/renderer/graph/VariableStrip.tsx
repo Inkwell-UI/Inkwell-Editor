@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Globe, Plus, Save, Trash2 } from 'lucide-react'
 import { useStore } from 'zustand'
 import { PIN_STYLE } from '../model/graphModel'
 import { defaultFor, newVariableId, parseJsonDefault, savedTypeError, SAVED_VARIABLE_TYPES, VARIABLE_DRAG, variableDragData, VARIABLE_TYPES } from '../model/variables'
@@ -8,6 +8,7 @@ import { isReadOnlyGraph, type GraphStore } from '../state/graphStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
+import { useVisibleVariables } from './useVisibleVariables'
 
 type Variable = ReturnType<GraphStore['getState']>['variables'][number]
 
@@ -16,7 +17,9 @@ type Variable = ReturnType<GraphStore['getState']>['variables'][number]
  * or set it and clicked to edit it (name, type, default, saved, delete). "Add" makes one in the open graph: a menu graph's variable is a menu variable, a component graph's a component one, a function graph's a per-call local.
  */
 export function VariableStrip({ swfId, store }: { swfId: string; store: GraphStore }) {
-  const variables = useStore(store, (s) => s.variables)
+  const own = useStore(store, (s) => s.variables)
+  const variables = useVisibleVariables(store, swfId) // plus the menu graph's variables this graph may use (globals in a layer graph)
+  const ownIds = new Set(own.map((v) => v.id))
   const scope = useStore(store, (s) => s.meta.scope)
   const canAdd = !isReadOnlyGraph(store) && (scope === 'menu' || scope === 'component' || scope === 'function')
   if (!variables.length && !canAdd) return null
@@ -42,11 +45,14 @@ export function VariableStrip({ swfId, store }: { swfId: string; store: GraphSto
             >
               <span className="var-chip-dot" style={{ background: PIN_STYLE[v.type]?.color }} aria-hidden="true" />
               <span className="var-chip-name">{v.name}</span>
-              <span className="var-chip-type">{v.type}{v.scope === 'saved' ? ` · ${strings.vars.scopeSaved}` : ''}</span>
+              <span className="var-chip-type">
+                {v.type}
+                {v.scope === 'saved' ? <ChipFlag icon={Save} tip={strings.vars.savedBadge} /> : v.global === true ? <ChipFlag icon={Globe} tip={strings.vars.globalBadge} /> : null}
+              </span>
             </button>
           )}
         >
-          {(close) => <VariableEditor store={store} v={v} canSave={scope === 'menu' && !isReadOnlyGraph(store)} close={close} />}
+          {(close) => (ownIds.has(v.id) ? <VariableEditor store={store} v={v} canSave={scope === 'menu' && !isReadOnlyGraph(store)} close={close} /> : <p className="var-pop">{strings.vars.globalNote}</p>)}
         </Popover>
       ))}
       {canAdd && (
@@ -64,6 +70,15 @@ export function VariableStrip({ swfId, store }: { swfId: string; store: GraphSto
         </Popover>
       )}
     </div>
+  )
+}
+
+/** The dim icon at the end of a chip: saved (floppy) or global (globe). Saved and global exclude each other. */
+function ChipFlag({ icon: Icon, tip }: { icon: typeof Save; tip: string }) {
+  return (
+    <span className="var-chip-flag" role="img" aria-label={tip} title={tip}>
+      <Icon size={11} aria-hidden="true" />
+    </span>
   )
 }
 
@@ -99,11 +114,15 @@ function VariableEditor({ store, v, canSave, close }: { store: GraphStore; v: Va
         {(saved ? SAVED_VARIABLE_TYPES : VARIABLE_TYPES).map((t) => <option key={t} value={t}>{t}</option>)}
       </select>
       <DefaultEditor type={v.type} value={v.default} onChange={(d) => a.updateVariable(v.id, { default: d })} />
-      {canSave && !savedReason && (
-        <label className="check" title={strings.vars.scopeTip('saved')}>
-          <input type="checkbox" checked={saved} onChange={(e) => a.updateVariable(v.id, { scope: e.target.checked ? 'saved' : 'menu' })} />
-          {strings.vars.keepSaved}
-        </label>
+      {canSave && (!savedReason || !saved) && (
+        <div className="var-pop-flags">
+          {!savedReason && (
+            <Btn icon={Save} pressed={saved} label={strings.vars.scopeTip('saved')} onClick={() => a.updateVariable(v.id, { scope: saved ? 'menu' : 'saved' })}>{strings.vars.keepSaved}</Btn>
+          )}
+          {!saved && (
+            <Btn icon={Globe} pressed={v.global === true} label={strings.vars.scopeTip('menu')} onClick={() => a.updateVariable(v.id, { global: v.global === true ? undefined : true })}>{strings.vars.global}</Btn>
+          )}
+        </div>
       )}
       <Btn icon={Trash2} variant="danger" label={strings.vars.remove(v.name)} onClick={() => (a.removeVariable(v.id), close())}>{strings.lib.delete}</Btn>
     </div>

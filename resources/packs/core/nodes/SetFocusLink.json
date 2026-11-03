@@ -1,0 +1,30 @@
+{
+  "kind": "SetFocusLink",
+  "major": 1,
+  "title": "Set Focus Link",
+  "category": "Components",
+  "milestone": "0.6",
+  "pure": false,
+  "inputs": [
+    { "name": "in", "type": "Exec" },
+    { "name": "from", "type": "Clip", "description": "The element that has focus when the pad is pressed" },
+    { "name": "to", "type": "Clip", "description": "The element that gets focus" }
+  ],
+  "outputs": [
+    { "name": "then", "type": "Exec" }
+  ],
+  "fields": {
+    "direction": {
+      "type": "string",
+      "enum": ["up", "down", "left", "right"],
+      "default": "down",
+      "description": "Pad direction the link answers"
+    }
+  },
+  "as2Template": "templates/SetFocusLink.as2",
+  "extra": {
+    "inspector": {
+      "description": "Sets where one pad direction goes from an element made at run time. Works in a menu that has a focus graph."
+    }
+  }
+}

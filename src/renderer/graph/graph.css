@@ -125,7 +125,7 @@
 .graph-row-grid:hover .row-reveal, .graph-row-grid:focus-within .row-reveal { opacity: 1; }
 .row-reveal { display: inline-flex; gap: 2px; opacity: 0; }
 .graph-row-main:hover .row-reveal, .graph-row-main:focus-within .row-reveal, .row-reveal:has([aria-expanded='true']) { opacity: 1; }
-.row-menu-pop .popover { min-width: 0; padding: 4px; } /* the menu is as wide as its items, so it fits inside a narrow panel instead of being clipped */
+.popover.row-menu-pop { min-width: 0; padding: 4px; } /* the menu is as wide as its items, so it fits inside a narrow panel instead of being clipped */
 .row-menu { list-style: none; margin: 0; padding: 0; min-width: 130px; }
 .row-menu-item { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 4px; padding: 6px 10px; color: var(--fg); font: inherit; cursor: pointer; }
 .row-menu-item:hover, .row-menu-item:focus-visible { background: var(--hover); }
@@ -142,9 +142,12 @@
 .var-chip-add { color: var(--fg-dim); cursor: pointer; }
 .var-chip-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .var-chip-type { font-size: 11px; color: var(--fg-dim); }
+.var-chip-flag { display: inline-flex; margin-left: 4px; vertical-align: -1px; }
 .var-pop { display: flex; flex-direction: column; gap: 6px; width: 240px; }
 .var-pop .gn-input { max-width: none; }
 .var-pop .check { margin: 0; font-size: 12px; }
+.var-pop-flags { display: flex; gap: 6px; }
+.var-pop-flags .btn { flex: 1; min-width: 0; justify-content: center; }
 
 /* Ctrl-drag a node over an Exec wire: the wire it will be spliced into and the two nodes it will sit between */
 .react-flow__edge[data-splice='wire'] .react-flow__edge-path { stroke: var(--focus-graph); stroke-width: 4; stroke-dasharray: 8 6; }

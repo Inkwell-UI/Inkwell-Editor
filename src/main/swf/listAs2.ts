@@ -54,6 +54,7 @@ class ${me} {
     var rows;
     var top;
     var hl;
+    var has;
     var full;
     var listeners;
 
@@ -170,15 +171,47 @@ class ${me} {
     }
 
     // the runtime's user events (S7 On Input actions), called by the menu class
-    static function input(action) {
+    // gated (the menu has a focus graph): only the list that has focus reacts. Returns true when the key was used; Up on the first and Down on the last item, Left and Right are not, so the menu class passes them to the focus graph.
+    static function input(action, gated) {
         ${me}.runtimeInput = true;
-        var l = ${me}.pick();
-        if (l == undefined) return;
-        if (action == "Up") l.move(-1);
-        else if (action == "Down") l.move(1);
-        else if (action == "PageUp") l.move(-l.full);
-        else if (action == "PageDown") l.move(l.full);
-        else if (action == "Accept") l.accept();
+        var l = gated == true ? ${me}.focused() : ${me}.pick();
+        if (l == undefined) return false;
+        if (action == "Up") return l.move(-1);
+        if (action == "Down") return l.move(1);
+        if (action == "PageUp") return l.move(-l.full);
+        if (action == "PageDown") return l.move(l.full);
+        if (action == "Accept") {
+            l.accept();
+            return true;
+        }
+        return false;
+    }
+
+    // the focus path is the list clip or one of its rows (a clicked row is a button)
+    function owns(f) {
+        var p = targetPath(this.clip);
+        return f == p || f.substr(0, p.length + 1) == p + ".";
+    }
+
+    static function focused() {
+        var f = Selection.getFocus();
+        for (var k = 0; k < ${me}.lists.length; k++) {
+            if (${me}.lists[k].owns(f)) return ${me}.lists[k];
+        }
+        return undefined;
+    }
+
+    // the menu class calls this after every focus move of the focus graph: only the focused list shows its highlight, and a list that gains focus without one highlights its first item
+    static function sync() {
+        var f = Selection.getFocus();
+        for (var k = 0; k < ${me}.lists.length; k++) {
+            var l = ${me}.lists[k];
+            var h = l.owns(f);
+            if (h == l.has) continue;
+            l.has = h;
+            if (h && l.hl < 0 && l.items.length > 0) l.highlight(0);
+            else l.refresh();
+        }
     }
 
     function under() {
@@ -197,9 +230,11 @@ class ${me} {
 
     function move(d) {
         var n = this.items.length;
-        if (n == 0) return;
+        if (n == 0) return false;
+        if (this.hl >= 0 && (d == -1 || d == 1) && (this.hl + d < 0 || this.hl + d > n - 1)) return false;
         var i = this.hl < 0 ? (d > 0 ? d - 1 : 0) : this.hl + d;
         this.highlight(i);
+        return true;
     }
 
     function highlight(i) {
@@ -303,7 +338,7 @@ class ${me} {
             row._x = this.tx;
             row._y = this.ty + r * this.rowH;
             row.itemIndex = i;
-            row._alpha = i == this.hl ? 100 : 60;
+            row._alpha = i == this.hl && this.has != false ? 100 : 60;
             this.fill(row, this.items[i]);
         }
     }

@@ -260,6 +260,26 @@ exports[`golden AS2 per node kind > core/ClearChildComponents@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/ClearFocusLinks@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/ClearFocusLinks@1
+                delete __g.base.title.inkwellFocus;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/CloseMenu@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -937,14 +957,18 @@ exports[`golden AS2 per node kind > core/OnClose@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
         // [n1] core/OnClose@1
-        __g.onClose = function() {
-            try {
-                // [l_then] core/Log@1
-                trace("[Inkwell] info l_then: " + "");
-            } catch (e) {
-                __g.fail("n1", e);
-            }
-        };"
+        // shortcut: another OnClose node of this graph runs first, in node order
+        __g.onClose = (function(prev) {
+            return function() {
+                if (prev != undefined) prev();
+                try {
+                    // [l_then] core/Log@1
+                    trace("[Inkwell] info l_then: " + "");
+                } catch (e) {
+                    __g.fail("n1", e);
+                }
+            };
+        })(__g.onClose);"
 `;
 
 exports[`golden AS2 per node kind > core/OnFocus@1 1`] = `
@@ -1024,14 +1048,18 @@ exports[`golden AS2 per node kind > core/OnLoad@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
         // [n1] core/OnLoad@1
-        __g.onLoad = function() {
-            try {
-                // [l_then] core/Log@1
-                trace("[Inkwell] info l_then: " + "");
-            } catch (e) {
-                __g.fail("n1", e);
-            }
-        };
+        // shortcut: another OnLoad node of this graph runs first, in node order
+        __g.onLoad = (function(prev) {
+            return function() {
+                if (prev != undefined) prev();
+                try {
+                    // [l_then] core/Log@1
+                    trace("[Inkwell] info l_then: " + "");
+                } catch (e) {
+                    __g.fail("n1", e);
+                }
+            };
+        })(__g.onLoad);
         if (__g.onLoad != undefined) __g.onLoad();"
 `;
 
@@ -1055,14 +1083,18 @@ exports[`golden AS2 per node kind > core/OnOpen@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
         // [n1] core/OnOpen@1
-        __g.onOpen = function() {
-            try {
-                // [l_then] core/Log@1
-                trace("[Inkwell] info l_then: " + "");
-            } catch (e) {
-                __g.fail("n1", e);
-            }
-        };"
+        // shortcut: another OnOpen node of this graph runs first, in node order
+        __g.onOpen = (function(prev) {
+            return function() {
+                if (prev != undefined) prev();
+                try {
+                    // [l_then] core/Log@1
+                    trace("[Inkwell] info l_then: " + "");
+                } catch (e) {
+                    __g.fail("n1", e);
+                }
+            };
+        })(__g.onOpen);"
 `;
 
 exports[`golden AS2 per node kind > core/OnRuntimeMessage@1 1`] = `
@@ -1475,6 +1507,28 @@ exports[`golden AS2 per node kind > core/SetField@1 1`] = `
         __g.base.Run = function(a) {
             if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
             __g.Run();
+        };"
+`;
+
+exports[`golden AS2 per node kind > core/SetFocusLink@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/SetFocusLink@1
+                var n1_f = __g.base.title;
+                if (n1_f.inkwellFocus == undefined) n1_f.inkwellFocus = {};
+                n1_f.inkwellFocus["down"] = __g.base.title;
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
         };"
 `;
 

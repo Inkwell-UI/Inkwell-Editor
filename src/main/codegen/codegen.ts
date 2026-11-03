@@ -637,7 +637,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         ]
       : [
           { t: '    var base;' },
-          ...(comp ? [{ t: '    var owner;' }, { t: '    var props;' }] : []),
+          ...(comp ? [{ t: '    var owner;' }, { t: '    var props;' }] : foreign.length ? [{ t: '    var owner;' }] : []),
           { t: '    var inputHandlers;' },
           ...(i.menu ? [{ t: '    var bridge;' }, { t: '    var messageHandlers;' }, { t: '    var modEventHandlers;' }] : []),
           { t: `    function ${cls}(base${comp ? ', props, owner' : ''}) {` },
@@ -655,7 +655,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           ...(i.menu ? [{ t: '        this.messageHandlers = [];' }, { t: '        this.modEventHandlers = [];' }] : []),
           { t: '    }' }
         ]),
-    ...(comp && foreign.length
+    ...(foreign.length
       ? [
           { t: '    // the menu graph: the owner chain of a component ends at the graph that has no owner' },
           { t: '    function menuGraph() {' }, { t: '        var o = this;' }, { t: '        while (o.owner != undefined) o = o.owner;' }, { t: '        return o;' }, { t: '    }' },

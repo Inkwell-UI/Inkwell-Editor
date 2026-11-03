@@ -94,6 +94,12 @@ class mods.M.MenuMenu {
         else if (action == "Right") d = 3;
         if (d < 0) return;
         var f = Selection.getFocus();
+        // Set Focus Link: a link set at run time on the focused clip wins over the compiled table (elements made by Create Component)
+        var lk = eval(f).inkwellFocus[["up", "down", "left", "right"][d]];
+        if (lk != undefined) {
+            Selection.setFocus(lk);
+            return;
+        }
         var k = -1;
         for (var i = 0; i < this.focusPaths.length; i++) {
             if (f == targetPath(this.clip(this.focusPaths[i]))) k = i;

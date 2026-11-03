@@ -149,19 +149,24 @@ describe('layers', () => {
   const ir = {
     root: 'r',
     nodes: {
-      r: { id: 'r', name: 'Hud', type: 'frame' },
+      r: { id: 'r', name: 'Hud', type: 'frame', children: ['t', 'i', 'p'] },
       t: { id: 't', name: 'Title Text', type: 'text' },
       i: { id: 'i', name: 'Icon', type: 'image' },
-      p: { id: 'p', name: 'panel', type: 'shape' }
+      p: { id: 'p', name: 'panel', type: 'shape', children: ['c'] },
+      c: { id: 'c', name: 'child', type: 'shape' }
     }
   } as never
   it('lists layers by instance name (overlay first), root excluded, sorted; pins filter by type', () => {
     const all = layerOptions(ir, { nodes: { t: { instanceName: 'title' } } })
-    expect(all.map((l) => l.label)).toEqual(['Icon', 'panel', 'title'])
+    expect(all.map((l) => l.label)).toEqual(['child', 'Icon', 'panel', 'title'])
     expect(layerChoices(all, 'Text').map((l) => l.id)).toEqual(['t'])
     expect(layerChoices(all, 'Image').map((l) => l.id)).toEqual(['i'])
-    expect(layerChoices(all, 'Clip')).toHaveLength(3)
-    expect(layerOptions(ir, undefined, true)).toHaveLength(4) // a component's graph can pick the component's own root
+    expect(layerChoices(all, 'Clip')).toHaveLength(4)
+    expect(layerOptions(ir, undefined, true)).toHaveLength(5) // a component's graph can pick the component's own root
+  })
+  it('a layer offers itself and its descendants only, never the layers above it', () => {
+    const sub = { ...(ir as { nodes: object }), root: 'p' } as never
+    expect(layerOptions(sub, undefined, true).map((l) => l.id).sort()).toEqual(['c', 'p'])
   })
   it('an Image pin also lists a layer that has the Image role (a frame that loads a picture at run time)', () => {
     const all = layerOptions(ir, { nodes: { p: { role: 'image' } } })

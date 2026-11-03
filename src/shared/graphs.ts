@@ -99,12 +99,17 @@ export const scriptsOf = (overlayEntry: unknown): string[] => {
   return Array.isArray(s) ? s.filter((x): x is string => typeof x === 'string') : []
 }
 
+/** Graph id -> the Figma layer it is attached to (overlay `scripts`); the layer's depth orders the layer graphs at run time. */
+export const graphLayersOf = (nodes: Record<string, unknown> | undefined): Record<string, string> =>
+  Object.fromEntries(Object.entries(nodes ?? {}).flatMap(([layer, o]) => scriptsOf(o).map((g) => [g, layer] as const)))
+
 /**
  * The menu variables a component graph can read and write: those of the SWF's menu graph (scope `menu`). They live on the menu graph's instance; a component reaches it through its owner chain
- * (`__g.menuGraph()`, codegen). None for any other graph, and an own variable with the same id wins.
+ * (`__g.menuGraph()`, codegen). A layer graph (scope `component`) gets only those marked `global`; the menu glue gives it the menu graph as `owner`. None for any other graph,
+ * and an own variable with the same id wins.
  */
 export function menuVariablesFor(g: Pick<Graph, 'scope' | 'variables'>, graphs: readonly Pick<Graph, 'scope' | 'variables'>[]): Graph['variables'] {
-  if (g.scope !== 'blueprint') return []
+  if (g.scope !== 'blueprint' && g.scope !== 'component') return []
   const own = new Set(g.variables.map((v) => v.id))
-  return (graphs.find((x) => x.scope === 'menu')?.variables ?? []).filter((v) => v.scope === 'menu' && !own.has(v.id))
+  return (graphs.find((x) => x.scope === 'menu')?.variables ?? []).filter((v) => v.scope === 'menu' && (g.scope === 'blueprint' || v.global === true) && !own.has(v.id))
 }

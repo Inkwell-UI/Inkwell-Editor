@@ -52,7 +52,7 @@ describe('dev flavour of the graph class', () => {
     const s = generateGraphClasses({ modId: 'M', swfCls: 'T', graphs: [t], packs, layerPath: () => undefined, menu: true, dev: true }).classes[0]!.source
     expect(s).toContain('this.bridge.pin(nodeId, "$run", this.rc[nodeId]);')
     expect(s).toContain('this.bridge.pin(nodeId, "$timer", this.tq + " " + what);')
-    expect(s).toMatch(/__g\.onOpen = function\(\) \{\s+try \{\s+__g\.rn\("e"\);/)
+    expect(s).toMatch(/return function\(\) \{\s+if \(prev != undefined\) prev\(\);\s+try \{\s+__g\.rn\("e"\);/)
     expect(s).toContain('__g.wt("d", "slow", 1 * 1000);')
     expect(s).toContain('__g.wx("x", "slow");')
     expect(s).not.toContain('trace("[Inkwell] run')

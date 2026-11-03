@@ -96,6 +96,12 @@ describe('prompt glyphs', () => {
     expect(one('playstation', 'Share').length).toBeGreaterThan(1)
     expect(glyphParts('keyboard', 'Enter', 48).items.length).toBeGreaterThan(1)
   })
+  it('a list in a menu with a focus graph only gets keys while focused and hands edge keys to the graph', () => {
+    const src = menuClassSource({ modId: 'M', swfCls: 'Menu', graphs: [], listClass: 'mods.M.InkwellList', focus: { paths: ['a', 'l'], moves: [[1, 1, 1, 1], [0, 0, 0, 0]] } })
+    expect(src).toContain('if (!mods.M.InkwellList.input(action, true)) this.moveFocus(action);')
+    expect(src).toContain('mods.M.InkwellList.sync();')
+    expect(menuClassSource({ modId: 'M', swfCls: 'Menu', graphs: [], listClass: 'mods.M.InkwellList' })).toContain('mods.M.InkwellList.input(action);')
+  })
   it('golden menu class with a focus graph and a prompt', () => {
     expect(menuClassSource({ modId: 'M', swfCls: 'Menu', graphs: [], focus: { paths: ['a', 'p.b'], moves: [[1, 1, 1, 1], [0, 0, 0, 0]] }, prompts: [['pr.glyph_keyboard', 'pr.glyph_xbox', null]] })).toMatchSnapshot()
   })

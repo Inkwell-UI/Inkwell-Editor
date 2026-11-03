@@ -1,0 +1,3 @@
+// [{{node.id}}] core/ClearFocusLinks@1
+delete {{in.target}}.inkwellFocus;
+{{next.then}}

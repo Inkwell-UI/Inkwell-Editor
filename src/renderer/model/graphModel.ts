@@ -317,10 +317,17 @@ export interface LayerOption {
   role?: string
 }
 
-/** The SWF's layers (root excluded, unless `withRoot`: a component's own root is a layer its graph can pick) by instance name, sorted. */
+/** The layers under `ir.root` (root excluded, unless `withRoot`: a component's own root is a layer its graph can pick; layers above the root are never offered) by instance name, sorted. */
 export function layerOptions(ir: Pick<Swf, 'nodes' | 'root'>, overlay: OverlayDoc | undefined, withRoot = false): LayerOption[] {
+  const scope = new Set<string>()
+  const walk = (id: string): void => {
+    if (scope.has(id) || !ir.nodes[id]) return
+    scope.add(id)
+    for (const k of (ir.nodes[id] as { children?: string[] }).children ?? []) walk(k)
+  }
+  walk(ir.root)
   return Object.values(ir.nodes)
-    .filter((n) => withRoot || n.id !== ir.root)
+    .filter((n) => scope.has(n.id) && (withRoot || n.id !== ir.root))
     .map((n) => {
       const o = overlay?.nodes?.[n.id] as { instanceName?: string; role?: unknown } | undefined
       return { id: n.id, label: o?.instanceName || n.name, type: n.type, ...(typeof o?.role === 'string' ? { role: o.role } : {}) }
