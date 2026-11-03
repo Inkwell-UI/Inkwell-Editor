@@ -29,7 +29,7 @@ export interface PackCandidate {
   changelog: string
   nodes: number
   /** The pure nodes and function names the download holds (the preview before installing). */
-  nodeList: { title: string; category: string }[]
+  nodeList: { title: string; category: string; description?: string }[]
   functionNames: string[]
   /** The index marks the pack deprecated (the reason). */
   deprecated?: string

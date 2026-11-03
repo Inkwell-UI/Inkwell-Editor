@@ -7,6 +7,7 @@ import { strings } from '../../shared/strings'
 import { inkwell } from '../hooks/api'
 import { reloadPacks, useLibraryPacks, usePacks } from '../hooks/usePacks'
 import { useProject } from '../hooks/useProject'
+import { inspectorText } from '../model/graphModel'
 import { useToastStore } from '../state/toastStore'
 import { Btn } from '../ui/Btn'
 import { Dialog } from '../ui/Dialog'
@@ -201,7 +202,7 @@ function Preview({ r, what }: { r: PackResultOf | undefined; what: 'nodes' | 'fu
   if (what === 'history') return c.changelog ? <pre className="pm-changelog pm-history" data-testid="pack-changelog">{c.changelog}</pre> : <p className="pm-hint">{PM.noChangelog}</p>
   if (what === 'functions') return c.functionNames.length ? <ul className="pm-fns" role="list">{c.functionNames.map((n) => <li key={n}>{n}</li>)}</ul> : <p className="pm-hint">{PM.nothing}</p>
   const nodes = [...c.nodeList].sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title))
-  return nodes.length ? <ul className="pm-fns" role="list" data-testid="pack-nodes">{nodes.map((d, i) => <li key={i}><span>{d.title}</span><span className="pm-ver">{d.category}</span></li>)}</ul> : <p className="pm-hint">{PM.nothing}</p>
+  return nodes.length ? <ul className="pm-fns" role="list" data-testid="pack-nodes">{nodes.map((d, i) => <li key={i}><span>{d.title}{d.description && <span className="pm-fns-desc">{d.description}</span>}</span><span className="pm-ver">{d.category}</span></li>)}</ul> : <p className="pm-hint">{PM.nothing}</p>
 }
 
 function Flag({ e }: { e: Entry }) {
@@ -325,7 +326,7 @@ export function PackManager({ onClose }: { onClose(): void }) {
     if (e.where === 'index' && t !== 'overview') return <Preview r={preview} what={t} />
     if (t === 'nodes') {
       const nodes = [...defs.entries()].filter(([k]) => k.startsWith(`${e.id}/`)).map(([, d]) => d).sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title))
-      return nodes.length ? <ul className="pm-fns" role="list" data-testid="pack-nodes">{nodes.map((d) => <li key={d.kind}><span>{d.title}</span><span className="pm-ver">{d.category}</span></li>)}</ul> : <p className="pm-hint">{e.problem ? PM.problemHint : PM.nothing}</p>
+      return nodes.length ? <ul className="pm-fns" role="list" data-testid="pack-nodes">{nodes.map((d) => <li key={d.kind}><span>{d.title}{inspectorText(d).description && <span className="pm-fns-desc">{inspectorText(d).description}</span>}</span><span className="pm-ver">{d.category}</span></li>)}</ul> : <p className="pm-hint">{e.problem ? PM.problemHint : PM.nothing}</p>
     }
     if (t === 'functions') return <ul className="pm-fns" role="list">{e.functions.map((f) => <li key={f.id}>{f.name}</li>)}</ul>
     if (t === 'history') return <Preview r={preview} what="history" />

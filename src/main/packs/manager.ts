@@ -69,7 +69,7 @@ async function download(fetch: Fetch, url: string): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer())
 }
 
-interface Fetched { bytes: Buffer; files: Map<string, Buffer>; manifest: PackManifest; nodes: number; nodeList: { title: string; category: string }[]; functionNames: string[]; changelog: string }
+interface Fetched { bytes: Buffer; files: Map<string, Buffer>; manifest: PackManifest; nodes: number; nodeList: { title: string; category: string; description?: string }[]; functionNames: string[]; changelog: string }
 
 /** Unzips a downloaded asset and checks that it is a pack: `manifest.json` at the root (Spec schema) and node files that parse. */
 function inspect(bytes: Buffer): Fetched {
@@ -88,7 +88,8 @@ function inspect(bytes: Buffer): Fetched {
     if (!/^nodes\/[^/]+\.json$/.test(name)) continue
     const r = NodeDef.safeParse(JSON.parse(data.toString('utf8')))
     if (!r.success) throw new Error(`${name}: ${r.error.issues[0]?.message ?? 'invalid node definition'}`)
-    nodeList.push({ title: r.data.title, category: r.data.category })
+    const description = ((r.data.extra ?? {}) as { inspector?: { description?: string } }).inspector?.description
+    nodeList.push({ title: r.data.title, category: r.data.category, ...(description ? { description } : {}) })
   }
   return { bytes, files, manifest, nodes: nodeList.length, nodeList, functionNames, changelog: files.get('CHANGELOG.md')?.toString('utf8') ?? '' }
 }

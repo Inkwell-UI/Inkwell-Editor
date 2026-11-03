@@ -808,7 +808,8 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .pm-history { max-height: none; }
 .pm-fns > li { justify-content: space-between; }
 .pm-fns { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.pm-fns > li { display: flex; align-items: center; height: var(--ctl-h-sm); padding: 0 8px; background: var(--bg); border-radius: var(--radius); }
+.pm-fns > li { display: flex; align-items: center; min-height: var(--ctl-h-sm); padding: 3px 8px; gap: 12px; background: var(--bg); border-radius: var(--radius); }
+.pm-fns-desc { display: block; color: var(--fg-dim); font-size: 11px; }
 @media (max-width: 720px) { .pm-body { grid-template-columns: 1fr; grid-template-rows: 160px 1fr; } }
 
 .stage-more-head { flex-basis: 100%; font-size: 11px; color: var(--fg-faint); }
