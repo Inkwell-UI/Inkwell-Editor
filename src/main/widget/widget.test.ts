@@ -3,7 +3,7 @@ import { generate } from '../swf/generate'
 import { frame, rectShape, swf, textNode } from '../swf/ir.testutil'
 import { parseSwf, readImportAssets2 } from '../swf/swfReader.testutil'
 import { TAG } from '../swf/tags'
-import { widgetPlacement } from './frame'
+import { widgetPlacement } from '../../shared/widgetFrame'
 import { CONTRACT_METHODS } from './widgetAs2'
 
 // root (stage) > Hud (right/top, at 1500,40, 380x120) > panel + two texts in different fonts

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { isPackageTarget, type DeployScope, type DeployTargetId, type PrepareResult } from '../../shared/deploy'
 import { inkwell } from '../hooks/api'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { useToastStore } from './toastStore'
 
 type Prepared = Extract<PrepareResult, { ok: true }>

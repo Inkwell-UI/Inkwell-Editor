@@ -1,7 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { CONTRACT_LAYERS, checkContract, ContractLayer, mergeContract, type ContractLayerName, type MergedContract, type Swf } from '@inkwell-ui/spec'
-import type { LintIssue } from '../swf/lint'
+import type { LintIssue } from '../../shared/swfLint'
 
 /** The contract layers the editor ships (`resources/contracts`, a copy of the Spec's `contracts/`: `yarn sync:contracts`). */
 export const contractsDir = (appPath: string): string => join(appPath, 'resources/contracts')

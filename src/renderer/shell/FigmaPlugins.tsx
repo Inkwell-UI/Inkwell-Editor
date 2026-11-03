@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { inkwell } from '../hooks/api'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { Dialog } from '../ui/Dialog'
 import { SettingItem } from '../ui/SettingItem'

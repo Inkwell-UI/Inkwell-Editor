@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SyncUiState } from '../../shared/syncState'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { figmaConnection, figmaSelectReason } from './connection'
 
 const s = (o: Partial<SyncUiState>): SyncUiState => ({ server: 'listening', connections: 0, build: 'idle', lintCount: 0, swfCount: 0, orphanedCount: 0, ...o })

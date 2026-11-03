@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { packVersion, parseVersion, RUNTIME_MESSAGES, RUNTIME_PLUGIN_NAME } from '@inkwell-ui/spec'
-import type { LintIssue } from '../swf/lint'
+import type { LintIssue } from '../../shared/swfLint'
 import { buildPlayerAliasEsp } from '../widget/esp'
 import { isPapyrusName, str, type PapyrusScript } from '../widget/papyrus'
 import { compilePapyrus } from '../widget/papyrusCompiler'

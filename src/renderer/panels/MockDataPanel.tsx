@@ -7,7 +7,7 @@ import { PIN_STYLE } from '../model/graphModel'
 import { inferMock, mockType, mockUses, mockValue } from '../model/variables'
 import { openGraphs } from '../state/graphDocs'
 import { editOverlay } from '../state/overlayStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { Panel } from './Panel'
 

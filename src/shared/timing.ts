@@ -1,3 +1,5 @@
+/** Edit-to-preview target in ms (design spec: measure from day one). */
+export const TARGET_MS = 3000
 export interface BuildTiming {
   stages: Record<string, number>
   total: number

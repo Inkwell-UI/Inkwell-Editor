@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { entriesFor, pseudoLocalize, type Localization } from '@inkwell-ui/spec'
 import { useLocalizationStore } from '../state/localizationStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { previewBus } from './previewBus'
 import { Languages } from 'lucide-react'
 

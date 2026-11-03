@@ -1,5 +1,5 @@
 import type { Node, Swf } from '@inkwell-ui/spec'
-import type { WidgetAnchor } from '../../shared/overlay'
+import type { WidgetAnchor } from './overlay'
 
 /** Design space (IR, 1920x1080) -> SkyUI HUD space (1280x720). k = 2/3 on both axes: 16:9 in, 16:9 out, so no distortion. */
 export const HUD_SCALE = 2 / 3

@@ -2,7 +2,7 @@ import { Plus, X } from 'lucide-react'
 import type { Graph } from '@inkwell-ui/spec'
 import { ident } from '../../shared/overlay'
 import { layerChoices, type FieldRow, type LayerOption } from '../model/graphModel'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 /** What the field editors need from their surroundings (the canvas node or the Inspector). */
 export interface FieldCtx {

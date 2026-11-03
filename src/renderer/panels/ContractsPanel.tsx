@@ -1,5 +1,5 @@
 import { useActiveSwf } from '../hooks/useProject'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Panel } from './Panel'
 
 /** Contracts are only for menu replacements (design spec, "Menus, contracts and SkyUI"). */

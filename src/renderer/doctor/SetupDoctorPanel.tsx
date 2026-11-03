@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ROW_SETTINGS, type CheckResult, type Fix, type SettingKey } from '../../shared/doctor'
 import { useSetupDoctor, type DoctorHook } from '../hooks/useSetupDoctor'
 import { formatMs } from '../model/statusBar'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { SettingItem, type ItemTone } from '../ui/SettingItem'
 

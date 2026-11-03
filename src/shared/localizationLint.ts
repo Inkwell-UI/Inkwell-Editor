@@ -1,5 +1,5 @@
 import { LOC_KEY, type Graph, type Localization, type Swf } from '@inkwell-ui/spec'
-import type { DeployLintItem } from '../../shared/deploy'
+import type { DeployLintItem } from './deploy'
 
 // Localization lint (SPEC-CHANGES V2, V3, V10, V13). Pure: the deploy gate and the Localization tab call it with the project's SWFs and `localization.json`.
 // Codes: errors loc-key-invalid, loc-key-duplicate; warnings loc-translation-missing, loc-key-orphan, loc-source-changed, loc-needs-runtime.

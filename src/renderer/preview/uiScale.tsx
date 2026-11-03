@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { Scaling } from 'lucide-react'
 import { UI_SCALE_RANGE } from '@inkwell-ui/spec'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Popover } from '../ui/Popover'
 import { previewBus } from './previewBus'
 

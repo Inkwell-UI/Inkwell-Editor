@@ -1,6 +1,6 @@
 import type { Swf } from '@inkwell-ui/spec'
 import type { GenerateOptions } from '../swf/generate'
-import type { LintIssue } from '../swf/lint'
+import type { LintIssue } from '../../shared/swfLint'
 import { readLocalization } from '../project/localizationFile'
 import { readFonts, readFontBytes } from '../project/fontFiles'
 import { analyzeFont, fontIssues, fontUses, planFont, type FontInfo } from './embed'

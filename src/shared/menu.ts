@@ -1,5 +1,5 @@
 import {
-  effectiveInputContext, HOTKEY_RANGE, MENU_NAME, MENU_SLOTS, MENU_WARN_THRESHOLD, MenuDef, MenuSettings, MENU_VARIANT_ASPECTS, MOD_EVENT_NAME, SPEC_VERSION, variantSwfPath, writeDefaultModIni, type UserDefaults
+  effectiveInputContext, menuSwfPath, HOTKEY_RANGE, MENU_NAME, MENU_SLOTS, MENU_WARN_THRESHOLD, MenuDef, MenuSettings, MENU_VARIANT_ASPECTS, MOD_EVENT_NAME, SPEC_VERSION, variantSwfPath, writeDefaultModIni, type UserDefaults
 } from '@inkwell-ui/spec'
 import type { DeployLintItem } from './deploy'
 import { minRuntimeFor } from './runtimeFeatures'
@@ -7,8 +7,7 @@ import { minRuntimeFor } from './runtimeFeatures'
 // The custom-menu target (docs/menus.md): names and paths derived from the project, the MenuDef the runtime reads, the commented default INI and the
 // lint codes of the export gate. Pure: the main process deploys with it, the Menu settings panel validates with it.
 
-/** O2 (owner decision 2026-10-26, unverified in game): where a menu SWF goes. THE one place to change if the engine refuses a sub-path; the fallback is `Interface/<modId>_<Swf>.swf`. */
-export const menuSwfPath = (modId: string, swfFile: string): string => `Interface/Inkwell/${modId}/${swfFile}.swf`
+export { menuSwfPath }
 /** The O2 fallback layout (S9): the menu SWF flat under `Interface/` as `<menuName>.swf`. Returns the settings with `swf` set so the planner, the gate and the JSON all see it (the deploy script's `--flat`). */
 export const flatMenuSettings = (modId: string, swfFolder: string, s: MenuSettings): MenuSettings => ({ ...s, swf: `Interface/${resolveMenuNames(modId, { swf: swfFolder, settings: s }).name}.swf` })
 export const MENU_JSON_DIR = 'SKSE/Plugins/Inkwell/menus'

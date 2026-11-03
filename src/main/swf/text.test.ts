@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { textNode } from './ir.testutil'
 import type { Node } from '@inkwell-ui/spec'
-import { describeTextMapping, fallbackAlias, fontAlias, mapText, NATURAL_LINE_HEIGHT } from './text'
+import { describeTextMapping, fallbackAlias, fontAlias, mapText, NATURAL_LINE_HEIGHT } from '../../shared/textMapping'
 
 type TextNode = Parameters<typeof mapText>[0]
 const map = (over: Record<string, unknown> = {}, font?: string) => mapText(textNode('t', over, font) as TextNode)

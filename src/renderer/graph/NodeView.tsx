@@ -13,7 +13,7 @@ import { functionChoices, inHandle, outHandle, pinName, pointCall, type FlowNode
 import type { createGraphValidation } from '../state/graphValidation'
 import { usePinBadge } from '../state/devStore'
 import { useRunCount, useTraceStore } from '../state/traceStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { FieldEditor } from './FieldEditors'
 
 /** Everything a node needs from the canvas, by context so the node components stay memoized on their own props. */

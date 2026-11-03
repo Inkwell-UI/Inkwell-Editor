@@ -2,7 +2,7 @@ import { Palette } from 'lucide-react'
 import { themeModes } from '@inkwell-ui/spec'
 import { useActiveSwf } from '../hooks/useProject'
 import { inkwell } from '../hooks/api'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 
 /** Theme mode of the stage toolbar (SPEC-CHANGES V6.3): rebuilds the preview SWF with another mode of the Figma variable collection. The game SWF keeps the menu's default theme. */

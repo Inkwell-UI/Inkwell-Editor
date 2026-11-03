@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { FLOW_RUN_PIN, FLOW_TIMER_PIN, flowLine, formatDevValue, initialDevState, type DevEvent, type DevScope, type DevState } from '../../shared/devLink'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { useTraceStore } from './traceStore'
 
 /**

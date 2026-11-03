@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { ProjectFontInfo } from '../../shared/fonts'
 import { inkwell } from '../hooks/api'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { useToastStore } from './toastStore'
 
 /**

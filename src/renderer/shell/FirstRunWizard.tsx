@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { ROW_SETTINGS, type CheckId, type CheckResult, type Fix } from '../../shared/doctor'
 import { FixButton, SettingField } from '../doctor/SetupDoctorPanel'
 import { useSetupDoctor, type DoctorHook } from '../hooks/useSetupDoctor'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 
 const t = strings.firstRun

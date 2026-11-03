@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FACES, modeFromEnv, resolvePreviewFonts, ttfFullName } from './previewFonts'
-import { KNOWN_ALIASES } from './swf/text'
+import { KNOWN_ALIASES } from '../shared/textMapping'
 import { cmapFormat4, ttfWithCmap } from './fonts/sfnt.testutil'
 import { FIGMA_FACES, installedFileName } from '../shared/fonts'
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { editToPreview, TARGET_MS, type BuildRecord } from '../model/timingHistory'
 import { formatMs, timingStages } from '../model/statusBar'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 const CHART = { w: 336, h: 64, pad: 6, keep: 12 }
 

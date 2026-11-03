@@ -1,4 +1,4 @@
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { SettingItem } from '../ui/SettingItem'
 
 const s = strings.starterKit

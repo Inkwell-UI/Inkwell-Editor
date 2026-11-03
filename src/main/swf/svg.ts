@@ -1,5 +1,5 @@
 import type { Node } from '@inkwell-ui/spec'
-import { issue, type LintIssue } from './lint'
+import { issue, type LintIssue } from '../../shared/swfLint'
 
 type Shape = Extract<Node, { type: 'shape' }>
 type Fill = Shape['fills'][number]

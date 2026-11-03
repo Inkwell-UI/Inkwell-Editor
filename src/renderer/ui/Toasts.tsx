@@ -1,6 +1,6 @@
 import { CircleCheck, CircleX, Info, X } from 'lucide-react'
 import { useToastStore } from '../state/toastStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 const ICON = { ok: CircleCheck, error: CircleX, info: Info } as const
 

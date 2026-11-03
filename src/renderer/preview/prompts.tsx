@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { Gamepad2, Keyboard } from 'lucide-react'
 import type { PromptDevice } from '@inkwell-ui/spec'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { previewBus } from './previewBus'
 
 // The Prompts preview toggle (W4, UX 4.3 `[Prompts: Xbox v]`): which glyphs the preview's prompts show. The mock bridge answers getInputDevice from the mock key `inputDevice` and

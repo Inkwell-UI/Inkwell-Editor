@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, type ComponentType, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { nodeKey, validateLayout, type LayoutNode, type SplitNode, type TabsNode } from './layout'
 import { panelIds, panelRegistry, type PanelDef } from './panelRegistry'
 

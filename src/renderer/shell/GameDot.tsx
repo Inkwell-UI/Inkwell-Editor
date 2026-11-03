@@ -3,7 +3,7 @@ import { devTone, type DevState } from '../../shared/devLink'
 import { inkwell } from '../hooks/api'
 import { useDevStore } from '../state/devStore'
 import { hotReload } from '../state/hotReload'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
 

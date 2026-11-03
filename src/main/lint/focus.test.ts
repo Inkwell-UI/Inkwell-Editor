@@ -8,7 +8,7 @@ import { generate } from '../swf/generate'
 import { glyphParts, withPromptGlyphs } from '../swf/promptGlyphs'
 import { menuClassSource } from '../codegen/menuGlue'
 import { defaultMenuSettings, menuLint } from '../../shared/menu'
-import { focusOptions, hasFocusGraph } from './focus'
+import { focusOptions, hasFocusGraph } from '../../shared/focusLint'
 
 const sample = resolve(__dirname, '../../../samples/menu-gamepad')
 const load = async () => {

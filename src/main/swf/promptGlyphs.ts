@@ -1,5 +1,5 @@
 import type { Node, PromptDevice, Swf } from '@inkwell-ui/spec'
-import { issue, type LintIssue } from './lint'
+import { issue, type LintIssue } from '../../shared/swfLint'
 
 // The Prompt component (SPEC-CHANGES W4): Inkwell's own vector glyph set, added at compile time as three child frames of a role-`prompt` frame
 // (`glyph_keyboard`, `glyph_xbox`, `glyph_playstation`, at the frame's top left, one frame-height tall); the menu class shows the one of the active device.

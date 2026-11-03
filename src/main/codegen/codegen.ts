@@ -6,7 +6,7 @@ import { parseBindings, type BindProp } from '../../shared/graphBinding'
 import { isMockPinType, mockRead, pinMocksOf } from '../../shared/pinMock'
 import { FLOW_RUN_PIN, FLOW_TIMER_PIN } from '../../shared/devLink'
 import { ident } from '../../shared/overlay'
-import { SET_TEXT } from '../lint/localization'
+import { SET_TEXT } from '../../shared/localizationLint'
 import type { CodegenPacks } from './packs'
 
 /** Template format: Inkwell-Core-Pack `docs/templates.md`. The renderer and its decisions: `docs/codegen.md`. */

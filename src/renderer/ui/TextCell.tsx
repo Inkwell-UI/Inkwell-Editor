@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 /** One translation text field: edits stay local until Enter or blur; empty shows the missing marker. Used by the Localization table and the Inspector. */
 export function TextCell({ value, title, onCommit }: { value: string; title: string; onCommit(v: string): void }) {

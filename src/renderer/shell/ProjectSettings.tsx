@@ -3,7 +3,7 @@ import { inkwell } from '../hooks/api'
 import { useProject } from '../hooks/useProject'
 import { useLocalizationStore } from '../state/localizationStore'
 import { modIdProblem } from '../../shared/modId'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 
 const s = strings.settings.project

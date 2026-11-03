@@ -4,7 +4,7 @@ import { reloadSummary } from '../../shared/devLink'
 import { useDeployStore } from '../state/deployStore'
 import { useDevStore } from '../state/devStore'
 import { hotReload, hotReloadDeploys } from '../state/hotReload'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { useActiveSwf, useProject } from './useProject'
 
 /** The Hot Reload button's action and state, shared by the Trace panel and the folded dock strip: `reason` is why it is disabled, `text` the last result. */

@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import type { LintIssue } from '../swf/lint'
+import type { LintIssue } from '../../shared/swfLint'
 import type { PapyrusScript } from './papyrus'
 
 /** Header stubs shipped with the editor (original, written from scratch; no Bethesda or SkyUI files). */

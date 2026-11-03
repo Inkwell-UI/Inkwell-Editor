@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { generate } from './generate'
-import { previewDeviceFont } from './text'
+import { previewDeviceFont } from '../../shared/textMapping'
 import { frame, rectShape, swf, textNode } from './ir.testutil'
 import { parseSwf, readEditText, readImportAssets2, readPlace } from './swfReader.testutil'
 import { TAG, writeSwf } from './tags'

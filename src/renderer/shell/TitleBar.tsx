@@ -3,7 +3,7 @@ import { ChevronRight } from 'lucide-react'
 import type { AppMenu, AppMenuItem } from '../../shared/appMenu'
 import { inkwell } from '../hooks/api'
 import { useProject } from '../hooks/useProject'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Popover } from '../ui/Popover'
 
 /** One menu entry; an entry with a submenu (Open Recent) expands in place. */

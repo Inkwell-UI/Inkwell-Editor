@@ -1,7 +1,7 @@
 import type { Swf } from '@inkwell-ui/spec'
 import { describe, expect, it } from 'vitest'
 import { withPromptGlyphs } from '../swf/promptGlyphs'
-import { focusOptions } from './focus'
+import { focusOptions } from '../../shared/focusLint'
 
 const t = (x: number, y: number, w: number, h: number) => ({ x, y, width: w, height: h, rotation: 0 })
 const font = { kind: 'alias', name: '$EverywhereMediumFont' }

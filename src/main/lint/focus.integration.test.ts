@@ -11,7 +11,7 @@ import { corePack } from '../codegen/codegen.testutil'
 import { loadCodegenPacks } from '../codegen/packs'
 import { loadProject } from '../project'
 import { compileSwf } from '../swf/compile'
-import { focusOptions } from './focus'
+import { focusOptions } from '../../shared/focusLint'
 
 const ffdecDir = process.env['INKWELL_FFDEC'] ?? 'C:\\Program Files (x86)\\FFDec'
 const javaPath = process.env['INKWELL_JAVA'] ?? 'java'

@@ -1,6 +1,6 @@
 import { promoteStrict, SEVERITY_RANK, type Severity } from '../../shared/lint'
 import type { LayerRef, LintRow, SyncUiState } from '../../shared/syncState'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 /** One row of the Lint & Budget dock. The single validation source is the main process; this only merges its feeds and applies display rules. */
 export interface DockRow {

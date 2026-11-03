@@ -1,6 +1,6 @@
 import { Copy, ChevronRight, type LucideIcon } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from './Btn'
 
 /**

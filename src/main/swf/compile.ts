@@ -4,7 +4,7 @@ import type { Swf } from '@inkwell-ui/spec'
 import { createStageTimer, type BuildTiming } from '../../shared/timing'
 import type { FfdecJob, FfdecResult } from '../build/ffdecWrapper'
 import { generate, type Generated, ident, type GenerateOptions } from './generate'
-import type { LintIssue } from './lint'
+import type { LintIssue } from '../../shared/swfLint'
 import { writeSwf } from './tags'
 
 export interface CompileOptions extends GenerateOptions {

@@ -10,7 +10,7 @@ import { addFont, readFontBytes, readFonts, saveFontSettings } from '../project/
 import { generate } from '../swf/generate'
 import { compileSwf } from '../swf/compile'
 import { frame, swf, textNode } from '../swf/ir.testutil'
-import { mapText } from '../swf/text'
+import { mapText } from '../../shared/textMapping'
 import { embeddedFontsFor } from './embedBuild'
 import { analyzeFont, charsetChars, fontHash, fontIssues, fontUses, licenseVerdict, planFont, FONT_SIZE_WARN } from './embed'
 import { writeLocalization } from '../project/localizationFile'

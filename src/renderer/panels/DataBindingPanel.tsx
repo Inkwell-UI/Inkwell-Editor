@@ -9,7 +9,7 @@ import { bindableVariables, bindingTypeOk, mockType } from '../model/variables'
 import { openGraphs } from '../state/graphDocs'
 import { editNode } from '../state/overlayStore'
 import { useSelectionStore } from '../state/selectionStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { Panel } from './Panel'
 

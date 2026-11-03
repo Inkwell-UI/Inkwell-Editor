@@ -7,7 +7,7 @@ import { createComponentGraph, loadComponentGraphs, useComponentGraphs } from '.
 import { menuGraphId, openComponentGraph, setActiveGraph, useGraphDocs } from '../state/graphDocs'
 import { useSelectionStore } from '../state/selectionStore'
 import { useToastStore } from '../state/toastStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 /** Every component the project has, and the actions that open one's graph (made on first use) or go back to the active SWF's menu graph. Shared by the Logic panel's Components list and the Navigator's source dropdown. */
 export function useOpenComponent() {

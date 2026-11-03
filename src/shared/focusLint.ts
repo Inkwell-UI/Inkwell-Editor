@@ -1,5 +1,5 @@
 import { focusGraph, resolvePrompt, type PromptDevice, type Swf } from '@inkwell-ui/spec'
-import type { LintIssue } from '../swf/lint'
+import type { LintIssue } from './swfLint'
 
 /**
  * Focus graph (W3) and prompts (W4) of one SWF from its overlay: the compile options of a custom menu and their lint. Focus issues come from the Spec's `focusGraph`

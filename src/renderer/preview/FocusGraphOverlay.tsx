@@ -5,7 +5,7 @@ import { useActiveOverlay, useDockRows } from '../hooks/useProject'
 import { computeBounds, hitTest } from '../model/hitTest'
 import { editNode, editOverlay } from '../state/overlayStore'
 import { patchNodeOverlay } from '../../shared/overlay'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { forwardToStage } from './forwardInput'
 import { fitStage, toStagePoint } from './geometry'
 

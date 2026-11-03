@@ -3,7 +3,7 @@ import { inkwell } from '../hooks/api'
 import { useSyncState } from '../hooks/useSyncState'
 import { figmaSelectReason } from '../model/connection'
 import { useToastStore } from '../state/toastStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from './Btn'
 
 /** Select (or, with `focus`, select and zoom to) a layer in Figma. Enabled only while an approved plugin is connected; otherwise disabled with the reason. */

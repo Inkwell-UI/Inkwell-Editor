@@ -3,7 +3,7 @@ import { FolderOpen, FolderPlus, PenLine, BrushCleaning } from 'lucide-react'
 import { PRODUCT_NAME } from '../../shared/product'
 import type { OpenResult, RecentProject } from '../../shared/projectState'
 import { inkwell } from '../hooks/api'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 
 const SHOWN = 6

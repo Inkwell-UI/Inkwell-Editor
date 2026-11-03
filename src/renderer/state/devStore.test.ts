@@ -7,7 +7,7 @@ import { GameDetails, gameLabel } from '../shell/GameDot'
 import { TracePanel } from '../panels/TracePanel'
 import { MAX_GAME_LINES, sortedWatch, useDevStore } from './devStore'
 import { useTraceStore } from './traceStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 const connected = (over: Partial<DevState> = {}): DevState => ({
   ...initialDevState(), phase: 'connected', session: 1, tokenSource: 'editor', tokenMasked: 'ab12...ef90', port: 8788,

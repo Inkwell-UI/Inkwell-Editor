@@ -1,6 +1,6 @@
 import { useId, useState, type ReactNode } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 /** Props of Panel, the chrome every panel wraps itself in. */
 export interface PanelProps {

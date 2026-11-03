@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { Localization, SPEC_VERSION } from '@inkwell-ui/spec'
 import { inkwell } from '../hooks/api'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { useToastStore } from './toastStore'
 
 /**

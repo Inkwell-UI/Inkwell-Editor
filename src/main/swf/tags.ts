@@ -207,25 +207,8 @@ export function defineFont3Placeholder(id: number, name: string, ascentPx = 0.9,
   return tag(TAG.DefineFont3, cat(u16(id), u8(0x80 | 0x08 | 0x04), u8(0), u8(nm.length), nm, u16(0), u32(4), s16(Math.round(ascentPx * 1024 * 20)), s16(Math.round(descentPx * 1024 * 20)), s16(0), u16(0)))
 }
 
-export interface EditTextSpec {
-  id: number
-  /** Field size in px, including the 2px gutter on each side. */
-  wPx: number
-  hPx: number
-  /** Character id of the imported font (ImportAssets2). */
-  fontId: number
-  /** Preview only: a device font class (`_sans`...) instead of fontId + outlines. Draws nothing in Skyrim; Ruffle renders it. */
-  fontClass?: string
-  sizePx: number
-  color: { r: number; g: number; b: number; a: number }
-  text: string
-  wordWrap: boolean
-  multiline: boolean
-  autoSize: boolean
-  /** 0 left, 1 right, 2 center, 3 justify. */
-  align: number
-  leadingPx: number
-}
+import type { EditTextSpec } from '../../shared/editText'
+export type { EditTextSpec }
 
 /**
  * Variant A (proven in game): dynamic, read-only, HasFont + FontID, UseOutlines, never FontClass.

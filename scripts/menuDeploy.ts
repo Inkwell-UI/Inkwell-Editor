@@ -23,7 +23,7 @@ import { reflowIr, stageForAspect } from '../src/shared/reflow'
 import { listSettings, locKeysOf } from '../src/shared/overlay'
 import { embeddedFontsFor } from '../src/main/fonts/embedBuild'
 import { readLocalization } from '../src/main/project/localizationFile'
-import { focusOptions } from '../src/main/lint/focus'
+import { focusOptions } from '../src/shared/focusLint'
 
 const root = resolve(__dirname, '..')
 const arg = (k: string): string | undefined => {

@@ -1,5 +1,5 @@
 import { inkwell } from '../hooks/api'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { loadSwfGraphs, useGraphDocs } from './graphDocs'
 import { findGraphStore } from './graphStore'
 import { editOverlay, getOverlayDoc } from './overlayStore'

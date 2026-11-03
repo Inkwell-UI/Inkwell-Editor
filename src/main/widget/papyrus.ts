@@ -1,7 +1,7 @@
 import type { WidgetCall } from '../codegen/codegen'
 import type { SettableText } from '../swf/generate'
 import { QUEST_FORM_ID } from './esp'
-import type { WidgetPlacement } from './frame'
+import type { WidgetPlacement } from '../../shared/widgetFrame'
 
 export interface PapyrusScript {
   /** Script name = file name without `.psc`. */

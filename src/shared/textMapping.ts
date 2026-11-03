@@ -1,7 +1,7 @@
 import type { Node } from '@inkwell-ui/spec'
-import { FIGMA_FACES } from '../../shared/fonts'
-import { issue, type LintIssue } from './lint'
-import type { EditTextSpec } from './tags'
+import { FIGMA_FACES } from './fonts'
+import { issue, type LintIssue } from './swfLint'
+import type { EditTextSpec } from './editText'
 
 type TextNode = Extract<Node, { type: 'text' }>
 

@@ -6,7 +6,7 @@ import { COMPONENT_DRAG } from '../state/componentGraphs'
 import { useSyncState } from '../hooks/useSyncState'
 import { figmaSelectReason } from '../model/connection'
 import { useToastStore } from '../state/toastStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { InspFold } from '../ui/InspParts'
 

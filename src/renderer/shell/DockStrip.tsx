@@ -2,7 +2,7 @@ import { useHotReload } from '../hooks/useHotReload'
 import { useProject } from '../hooks/useProject'
 import { useDevStore } from '../state/devStore'
 import { useTraceStore } from '../state/traceStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 
 /** What the folded Behaviour dock still says: how much trace there is, and the Hot Reload button (the Trace panel's own, see `useHotReload`). */

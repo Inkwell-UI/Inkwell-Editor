@@ -1,6 +1,6 @@
 import { isThemeBindingKey, themedCollection, type Swf } from '@inkwell-ui/spec'
 import { bindingMode } from '../../shared/theme'
-import type { LintIssue } from '../swf/lint'
+import type { LintIssue } from '../../shared/swfLint'
 
 /**
  * Theme findings of one SWF (SPEC-CHANGES V6.5): `theme-default-unknown` (error, the menu's default theme is not a mode of the themed collection), `theme-variable-missing`

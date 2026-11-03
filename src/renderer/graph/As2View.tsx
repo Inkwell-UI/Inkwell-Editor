@@ -4,7 +4,7 @@ import type { GraphAs2 } from '../../shared/graphs'
 import { inkwell } from '../hooks/api'
 import { highlightAs2, linesOfNode, nodeOfLine, sourceLines } from '../model/as2View'
 import { docKeyOf, toGraph, type GraphStore } from '../state/graphStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 const DEBOUNCE_MS = 250
 

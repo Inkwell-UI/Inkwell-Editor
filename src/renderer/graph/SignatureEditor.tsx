@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { FUNCTION_PIN_TYPES } from '@inkwell-ui/spec'
 import { useStore } from 'zustand'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import type { GraphStore } from '../state/graphStore'
 
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/

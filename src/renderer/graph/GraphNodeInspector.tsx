@@ -10,7 +10,7 @@ import { fieldRows, inspectorText, layerOptions, nodePins } from '../model/graph
 import { useComponentGraphs } from '../state/componentGraphs'
 import { functionChoices, pinName, pointCall } from '../state/graphStore'
 import { useSelectionStore } from '../state/selectionStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { isFunctionEntry, isFunctionExit } from '../../shared/graphValidate'
 import { LogIn, LogOut } from 'lucide-react'
 import { InspCard, InspFoot, InspHeader } from '../ui/InspParts'

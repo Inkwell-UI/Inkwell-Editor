@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 /** Modal dialog: focus moves in, Escape or the close button closes it, focus returns to where it was. Used for the stub dialogs. */
 export function Dialog({ title, onClose, children, wide }: { title: string; onClose(): void; children: ReactNode; wide?: boolean }) {

@@ -6,7 +6,7 @@ import { PreviewPanel } from './panels/PreviewPanel'
 import { AppShell } from './shell/AppShell'
 import { startBridge } from './state/bridge'
 import { isPreviewWindow } from './state/popoutStore'
-import { strings } from './strings'
+import { strings } from '../shared/strings'
 
 startBridge()
 const preview = isPreviewWindow() // `?panel=preview`: the popped-out preview window shows only the stage (with its toolbar)

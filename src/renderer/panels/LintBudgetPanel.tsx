@@ -9,7 +9,7 @@ import { openGraphNode } from '../state/graphReveal'
 import { useLintStore } from '../state/lintStore'
 import { useProjectStore } from '../state/projectStore'
 import { useSelectionStore } from '../state/selectionStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { Panel } from './Panel'
 

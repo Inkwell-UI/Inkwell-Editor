@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { checksForSetting, mergeResults, type BenchmarkResult, type BuildCacheResult, type CheckId, type CheckResult, type Fix, type ResolvedSettings, type SetSettingResult, type SettingKey } from '../../shared/doctor'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { inkwell } from './api'
 
 export interface DoctorHook {

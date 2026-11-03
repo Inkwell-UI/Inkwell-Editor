@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { fontAlias, KNOWN_ALIASES } from './text'
+import { fontAlias, KNOWN_ALIASES } from '../../shared/textMapping'
 
 // docs/starter-kit.md must not promise a font name the compiler does not map.
 const doc = readFileSync(resolve(__dirname, '../../../docs/starter-kit.md'), 'utf8')

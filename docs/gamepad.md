@@ -9,7 +9,7 @@ Custom menus only. Spike S-A (owner, 2026-10-27): with `inputContext` menuMode t
 ## Lint
 | Code | Severity | Where |
 |---|---|---|
-| `focus-unreachable`, `focus-dead-end`, `focus-target-missing` | error | build (`src/main/lint/focus.ts`, Spec `focusGraph`) |
+| `focus-unreachable`, `focus-dead-end`, `focus-target-missing` | error | build (`src/shared/focusLint.ts`, Spec `focusGraph`) |
 | `focus-node-missing`, `focus-direction-unknown`, `focus-not-compiled`, `focus-not-menu` | warning | build |
 | `prompt-invalid`, `prompt-not-frame` | error | build |
 | `prompt-layer-missing` | warning | build (the chosen icon or text layer is gone; the default is used) |
