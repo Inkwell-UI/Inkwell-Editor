@@ -1,5 +1,6 @@
 import { FOCUS_DIRS, type FocusGraph, type Graph, type MergedContract, type Node, type PromptDevice, type Swf } from '@inkwell-ui/spec'
 import { glyphId, glyphOwner, isGlyphNode, PROMPT_DEVICE_ORDER, withPromptGlyphs } from './promptGlyphs'
+import { artFor, promptArtEnabled } from './promptArt'
 import { ddsRel, isAssetHash, type ImageMode } from '../images/assets'
 import type { Rgba } from '../images/png'
 import { ident } from '../../shared/overlay'
@@ -74,6 +75,8 @@ export interface GenerateOptions {
   focus?: Pick<FocusGraph, 'order' | 'moves'>
   /** Custom menu: role-`prompt` frames (W4) and their glyph per device (Spec `resolvePrompt`); the glyphs are compiled in and the menu class shows the active device's. */
   prompts?: Record<string, Partial<Record<PromptDevice, string>>>
+  /** The designer's choice of icon and label layer per prompt (absolute ids); unset = a layer named `promptIcon`, the first text layer. */
+  promptLayers?: Record<string, { icon?: string; label?: string }>
 }
 
 export interface Generated {
@@ -407,7 +410,7 @@ function imagesClass(modId: string, cls: string, swfId: string, loads: ImageLoad
 export function generate(source: Swf, opts: GenerateOptions): Generated {
   const lint: LintIssue[] = []
   // W4: prompt glyphs are compiled from synthetic layers added to this build's copy of the IR (never saved); their lint is reported on the prompt
-  const withGlyphs = source.target.kind === 'customMenu' && !opts.widget && opts.prompts && Object.keys(opts.prompts).length ? withPromptGlyphs(source, opts.prompts) : undefined
+  const withGlyphs = source.target.kind === 'customMenu' && !opts.widget && opts.prompts && Object.keys(opts.prompts).length ? withPromptGlyphs(source, opts.prompts, opts.promptLayers) : undefined
   const ir0 = withGlyphs?.ir ?? source
   // the components' own layers are looked up like any other layer: Figma ids are unique across the file, so their nodes join this build's copy of the IR (never saved); they win over a stale copy the SWF's IR may still hold of the same component
   const ir = opts.components?.length ? { ...ir0, nodes: { ...ir0.nodes, ...Object.fromEntries(opts.components.flatMap((c) => Object.entries(c.nodes))) } } : ir0
@@ -829,7 +832,14 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       const ps = PROMPT_DEVICE_ORDER.map((d) => (opts.prompts![pid]![d] ? pathOf(glyphId(pid, d)) ?? null : null))
       return ps.some((x) => x) ? [ps] : []
     })
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, stage: ir.stage, graphs: gen?.classes.filter((c) => !c.fn && !c.component).map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(scrollInfos.length ? { scrollClass: scrollClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
+    // the game's own prompt art per glyph clip (promptArt.ts); a glyph with no sprite (D-pad, Share) keeps the compiled one
+    const artGlue = !promptArtEnabled() ? [] : Object.keys(opts.prompts ?? {}).flatMap((pid) => PROMPT_DEVICE_ORDER.flatMap((d) => {
+      const g = opts.prompts![pid]![d]
+      const a = g ? artFor(d, g) : undefined
+      const clip = a ? pathOf(glyphId(pid, d)) : undefined
+      return a && clip ? [{ clip, file: a.file, sprite: a.sprite, h: Math.round(ir.nodes[glyphId(pid, d)]?.transform.height ?? 0) }] : []
+    })).filter((a) => a.h > 0)
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, stage: ir.stage, ...(artGlue.length ? { art: artGlue, ...(opts.preview ? { previewArt: true } : {}) } : {}), graphs: gen?.classes.filter((c) => !c.fn && !c.component).map((c) => ({ cls: c.cls, id: c.graphId })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(scrollInfos.length ? { scrollClass: scrollClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
       frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, [...listInfos.map((l) => listAttachCode(mod, l, '_root')), ...scrollInfos.map((x) => scrollAttachCode(mod, x, '_root')), ...flowInfos.map((f) => flowAttachCode(mod, f, '_root'))]))
