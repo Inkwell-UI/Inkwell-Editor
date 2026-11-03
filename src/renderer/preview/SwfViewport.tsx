@@ -9,13 +9,15 @@ export interface SwfViewportProps {
   backend: PreviewBackend
   /** Design size of the movie in px. */
   stage: Size
+  /** No black fill of its own, so the screen's background shows behind the movie (Preview settings). */
+  clear?: boolean
 }
 
 /**
  * Fills its container with black and draws the backend's element at the stage's aspect ratio, as large as fits (showAll, letterboxed):
  * the bars are the black the container shows. The element is sized in real pixels (not CSS-scaled), so the player renders at screen resolution.
  */
-export function SwfViewport({ backend, stage }: SwfViewportProps) {
+export function SwfViewport({ backend, stage, clear }: SwfViewportProps) {
   const [ref, box] = useElementSize<HTMLDivElement>()
   const fit = fitStage(box, stage)
   useEffect(() => {
@@ -32,5 +34,5 @@ export function SwfViewport({ backend, stage }: SwfViewportProps) {
     s.width = `${fit.width}px`
     s.height = `${fit.height}px`
   }, [backend, fit.x, fit.y, fit.width, fit.height])
-  return <div ref={ref} className="swf-viewport" />
+  return <div ref={ref} className={`swf-viewport${clear ? ' is-clear' : ''}`} />
 }

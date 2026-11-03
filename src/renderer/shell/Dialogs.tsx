@@ -84,7 +84,7 @@ function StubDialog() {
   const kind = useActiveSwf()?.ir.target.kind
   if (open === 'configOwnership' && kind === 'customMenu')
     return (
-      <Dialog title={strings.dialogs.config.title} onClose={close} wide>
+      <Dialog title={strings.dialogs.config.menuTitle} onClose={close}>
         <MenuSettingsForm />
       </Dialog>
     )

@@ -24,6 +24,8 @@ export interface PreviewBackend {
   call(fn: string, ...args: unknown[]): boolean
   /** Freezes (true) or continues (false) the running movie: timers, tweens and the timeline. A new `load` always starts playing. */
   setPaused(paused: boolean): void
+  /** Draws the movie without its stage color, so what is behind the player shows (applies from the next `load`). */
+  setTransparent?(on: boolean): void
   /** Stops the movie and releases everything; the backend is unusable afterwards. */
   dispose(): void
 }

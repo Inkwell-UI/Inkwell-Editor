@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Ellipsis, Languages, MousePointer2, MousePointerClick, Pause, PictureInPicture2, Play, RefreshCw, ScanLine, Waypoints, ZoomIn, ZoomOut } from 'lucide-react'
+import { Ellipsis, Languages, MousePointer2, MousePointerClick, Pause, PictureInPicture2, Play, RefreshCw, Waypoints, ZoomIn, ZoomOut } from 'lucide-react'
 import { ASPECTS, type AspectId } from '../../shared/preview'
 import { useElementSize } from '../hooks/useElementSize'
 import { strings } from '../strings'
@@ -8,6 +8,7 @@ import { LocaleControls } from './locale'
 import { UiScaleButton } from './uiScale'
 import { ThemeControl } from './ThemeControl'
 import { PromptsControl } from './prompts'
+import { PreviewSettingsControl, type PreviewSettings } from './previewSettings'
 
 export type StageMode = 'inspect' | 'play'
 
@@ -20,8 +21,9 @@ export interface StageToolbarProps {
   onPaused(paused: boolean): void
   aspect: AspectId
   onAspect(a: AspectId): void
-  safeZones: boolean
-  onSafeZones(on: boolean): void
+  /** Preview-only overlays and background (a popout at the end of the row). */
+  previewSettings: PreviewSettings
+  onPreviewSettings(next: PreviewSettings): void
   onReload(): void
   /** The popped-out window shows "Dock" instead of "Pop out". */
   detached: boolean
@@ -56,7 +58,7 @@ function ModeSwitch({ p, iconOnly }: { p: StageToolbarProps; iconOnly: boolean }
 
 /**
  * The stage toolbar of UX 4.3. Wide layout: playback (Pause, Reload) | what a click does (Inspect, Interact, Focus) | the player (language, theme, input device) | the screen
- * (SWF, aspect, zoom, UI scale, safe zones, pop out). The compact layout keeps the essentials and puts the rest in one More panel.
+ * (SWF, aspect, zoom, UI scale, pop out, preview settings). The compact layout keeps the essentials and puts the rest in one More panel.
  */
 /** Below this width the toolbar keeps the essentials and puts the rest in its More panel (the preview panel's own compact layout does the same in a small slot). */
 const TIGHT_BELOW = 1000
@@ -80,7 +82,7 @@ export function StageToolbar(p: StageToolbarProps) {
       <Btn icon={ZoomIn} label={strings.stage.zoomIn} onClick={() => p.onZoom(1)} />
     </span>
   )
-  const safe = <Btn icon={ScanLine} label={strings.stage.safeZones} pressed={p.safeZones} onClick={() => p.onSafeZones(!p.safeZones)} testId="stage-safe" />
+  const settings = <PreviewSettingsControl value={p.previewSettings} onChange={p.onPreviewSettings} />
   const aspect = (
     <label className="inline">
       <span className="sr-only">{strings.stage.aspect}</span>
@@ -102,13 +104,14 @@ export function StageToolbar(p: StageToolbarProps) {
         <>
           {aspect}
           {popout}
+          {settings}
           <Btn icon={Ellipsis} label={strings.stage.more} pressed={more} onClick={() => setMore(!more)} testId="stage-more" />
           {more && (
             <div className="stage-more" role="group" aria-label={strings.stage.more}>
               <span className="stage-more-head">{strings.stage.groupPlayer}</span>
               {player}
               <span className="stage-more-head">{strings.stage.groupScreen}</span>
-              {zoom}{uiScale}{safe}
+              {zoom}{uiScale}
             </div>
           )}
         </>
@@ -120,8 +123,8 @@ export function StageToolbar(p: StageToolbarProps) {
           {aspect}
           {zoom}
           {uiScale}
-          {safe}
           {popout}
+          {settings}
         </>
       )}
     </div>

@@ -25,17 +25,17 @@ const loadFonts = (): Promise<string[]> =>
  * page ran the timers of the seconds the first one had been up in one burst: a timer node fired many times at once and a Tween never finished after a Reload. A fresh page starts the clock at zero.
  * Ruffle's files are copied next to index.html (see electron.vite.config.ts), so they are found relative to the page. No network is used; the frame has no inline script (the page's CSP).
  */
-async function openFrame(host: HTMLElement): Promise<{ frame: HTMLIFrameElement; ruffle: { createPlayer(): RufflePlayerElement } }> {
+async function openFrame(host: HTMLElement, transparent: boolean): Promise<{ frame: HTMLIFrameElement; ruffle: { createPlayer(): RufflePlayerElement } }> {
   const fonts = await loadFonts()
   const frame = document.createElement('iframe')
-  frame.style.cssText = 'width:100%;height:100%;border:0;display:block;outline:none' // no focus ring around the stage (the global :focus-visible one drew a white frame after keyboard use)
-  frame.srcdoc = '<!doctype html><html style="height:100%"><body style="margin:0;height:100%;overflow:hidden;background:#000"></body></html>' // the player takes the whole frame: it needs a body with a height
+  frame.style.cssText = 'width:100%;height:100%;border:0;display:block;outline:none;color-scheme:light' // color-scheme: the frame's document is light; a mismatch with the dark app makes the browser paint an opaque white backdrop, which hid the Preview settings background. No focus ring around the stage (the global :focus-visible one drew a white frame after keyboard use)
+  frame.srcdoc = `<!doctype html><html style="height:100%"><body style="margin:0;height:100%;overflow:hidden;background:${transparent ? 'transparent' : '#000'}"></body></html>` // the player takes the whole frame: it needs a body with a height
   host.appendChild(frame)
   await new Promise<void>((resolve) => (frame.onload = () => resolve()))
   const win = frame.contentWindow as unknown as (Window & RuffleGlobal) | null
   if (!win) throw new Error('Could not open the preview frame')
   const RUFFLE_DIR = new URL('./', document.baseURI).href
-  win.RufflePlayer = { config: { publicPath: RUFFLE_DIR, polyfills: false, autoplay: 'on', unmuteOverlay: 'hidden', splashScreen: false, contextMenu: 'off', letterbox: 'on', logLevel: 'info', fontSources: fonts } }
+  win.RufflePlayer = { config: { publicPath: RUFFLE_DIR, polyfills: false, autoplay: 'on', unmuteOverlay: 'hidden', splashScreen: false, contextMenu: 'off', letterbox: 'on', logLevel: 'info', fontSources: fonts, wmode: transparent ? 'transparent' : 'window' } }
   tapConsole((win as unknown as { console: Console }).console) // Ruffle writes the movie's trace() output to this frame's console
   await new Promise<void>((resolve, reject) => {
     const sc = win.document.createElement('script')
@@ -60,6 +60,7 @@ export class RuffleBackend implements PreviewBackend {
   private frame: HTMLIFrameElement | undefined
   private readonly subs: { [E in keyof PreviewBackendEvents]: Set<(v: PreviewBackendEvents[E]) => void> } = { loaded: new Set(), error: new Set(), firstFrame: new Set(), trace: new Set() }
   private disposed = false
+  private transparent = false
   private offTap: (() => void) | undefined
 
   constructor() {
@@ -72,6 +73,10 @@ export class RuffleBackend implements PreviewBackend {
     const f = (this.player as unknown as Record<string, unknown> | undefined)?.[fn]
     if (typeof f !== 'function') return false
     return f.apply(this.player, args) !== false // the shim's callbacks answer false only for "no such method"
+  }
+
+  setTransparent(on: boolean): void {
+    this.transparent = on
   }
 
   setPaused(paused: boolean): void {
@@ -96,7 +101,7 @@ export class RuffleBackend implements PreviewBackend {
     if (!build.bytes) throw new Error('No SWF bytes')
     this.frame?.remove() // the old movie goes with its frame
     this.frame = this.player = undefined
-    const { frame, ruffle } = await openFrame(this.element)
+    const { frame, ruffle } = await openFrame(this.element, this.transparent)
     if (this.disposed) return frame.remove()
     this.frame = frame
     const player = (this.player = ruffle.createPlayer())

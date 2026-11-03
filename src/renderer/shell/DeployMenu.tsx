@@ -10,20 +10,12 @@ import { useSyncState } from '../hooks/useSyncState'
 import { useDeployStore } from '../state/deployStore'
 import { useDialogStore } from '../state/dialogStore'
 import { useDevStore } from '../state/devStore'
+import { useWorkspaceStore } from '../state/workspaceStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Dialog } from '../ui/Dialog'
 import { Popover } from '../ui/Popover'
 import { Tip } from '../ui/Tip'
-
-function TargetGroup({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="deploy-group" role="group" aria-label={title}>
-      <div className="deploy-group-h">{title}</div>
-      {children}
-    </div>
-  )
-}
 
 function TargetRow({ t, label, tip, onPick }: { t: DeployTargetInfo; label?: string; tip?: string; onPick(id: DeployTargetInfo['id']): void }) {
   const off = t.disabledReason
@@ -38,7 +30,8 @@ function TargetRow({ t, label, tip, onPick }: { t: DeployTargetInfo; label?: str
         onClick={() => !off && onPick(t.id)}
       >
         <span className="deploy-target-name">{label ?? t.label}</span>
-        <span className="deploy-target-path mono">{t.path ?? off}</span>
+        {/* rtl + bdi: a long path is cut at its start, so the mod folder name at the end stays visible */}
+        <span className="deploy-target-path mono"><bdi>{t.path ?? off}</bdi></span>
       </button>
       {tip && <Tip text={tip} />}
     </div>
@@ -66,34 +59,34 @@ function Targets({ close }: { close(): void }) {
   const zip = targets?.find((t) => t.id === 'package') // 'vortex' saves the same zip; the menu offers it once
   return (
     <div className="details deploy-menu">
-      <div className="deploy-head">
-        <h3>{strings.deploy.targetsTitle}</h3>
-        <Btn icon={FolderCog} variant="quiet" label={strings.deploy.setFolders} onClick={() => { close(); show('settings') }} testId="deploy-folders" />
-      </div>
       {(lint.errors > 0 || lint.warnings > 0) && (
-        <p className={lint.errors ? 'tone-error' : 'tone-warn'} data-testid="deploy-lint-summary">
-          {strings.deploy.lintLine(lint.errors, lint.warnings)}
-          {!lint.errors && `. ${project?.strictMode ? strings.deploy.strictOn : strings.deploy.strictOff}`}
-        </p>
+        <button type="button" className={`deploy-status ${lint.errors ? 'tone-error' : 'tone-warn'}`} title={strings.deploy.openIssues} onClick={() => { close(); useWorkspaceStore.getState().showDockTab('lintBudget') }} data-testid="deploy-lint-summary">
+          <i aria-hidden="true" />
+          <span>
+            {strings.deploy.lintLine(lint.errors, lint.warnings)}
+            {!lint.errors && `. ${project?.strictMode ? strings.deploy.strictOn : strings.deploy.strictOff}`}
+          </span>
+        </button>
       )}
-      <div className="deploy-scope" role="radiogroup" aria-label={strings.deploy.scopeLabel}>
-        <label className={scope === 'all' ? 'on' : undefined}><input type="radio" className="sr-only" name="deploy-scope" checked={scope === 'all'} onChange={() => setScope('all')} />{strings.deploy.scopeAll}</label>
-        <label className={scope === 'active' ? 'on' : undefined} title={swf?.name}><input type="radio" className="sr-only" name="deploy-scope" checked={scope === 'active'} disabled={!swf} onChange={() => setScope('active')} />{strings.deploy.scopeActive(swf?.name)}</label>
-      </div>
-      <TargetGroup title={strings.deploy.folderGroup}>
+      <div className="deploy-list">
         {folders?.map((t) => <TargetRow key={t.id} t={t} label={strings.deploy.shortLabels[t.id]} onPick={pick} />)}
-        {hasCustom && (
-          <label className="check deploy-dev" title={strings.deploy.devToggleTip} data-testid="dev-deploy">
-            <input type="checkbox" checked={devDeploy} onChange={(e) => void inkwell?.devSetDeploy(e.target.checked)} data-testid="dev-deploy-toggle" /> {strings.deploy.devToggle}
-            <Tip text={strings.deploy.devToggleTip} />
-          </label>
-        )}
-      </TargetGroup>
-      {zip && (
-        <TargetGroup title={strings.deploy.zipGroup}>
-          <TargetRow t={zip} label={strings.deploy.zipLabel} tip={strings.deploy.zipTip} onPick={pick} />
-        </TargetGroup>
-      )}
+        {zip && <TargetRow t={zip} label={strings.deploy.zipLabel} tip={strings.deploy.zipTip} onPick={pick} />}
+      </div>
+      <div className="deploy-foot">
+        <div className="seg deploy-scope" role="group" aria-label={strings.deploy.scopeLabel}>
+          <Btn className="btn-seg" pressed={scope === 'all'} onClick={() => setScope('all')} testId="deploy-scope-all">{strings.deploy.scopeAll}</Btn>
+          <Btn className="btn-seg" pressed={scope === 'active'} reason={swf ? undefined : strings.deploy.noActiveSwf} onClick={() => setScope('active')} testId="deploy-scope-active">{strings.deploy.scopeActive(swf?.name)}</Btn>
+        </div>
+        <div className="deploy-foot-row">
+          {hasCustom ? (
+            <label className="check deploy-dev" title={strings.deploy.devToggleTip} data-testid="dev-deploy">
+              <input type="checkbox" checked={devDeploy} onChange={(e) => void inkwell?.devSetDeploy(e.target.checked)} data-testid="dev-deploy-toggle" /> {strings.deploy.devToggle}
+              <Tip text={strings.deploy.devToggleTip} />
+            </label>
+          ) : <span />}
+          <Btn icon={FolderCog} variant="quiet" label={strings.deploy.setFolders} onClick={() => { close(); show('settings') }} testId="deploy-folders" />
+        </div>
+      </div>
     </div>
   )
 }

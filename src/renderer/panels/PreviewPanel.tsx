@@ -20,7 +20,7 @@ import { FocusGraphOverlay } from '../preview/FocusGraphOverlay'
 import { promptPreviewStore } from '../preview/prompts'
 import { hasFocusGraph } from '../../main/lint/focus'
 import { RuffleBackend } from '../preview/RuffleBackend'
-import { SafeZoneOverlay } from '../preview/SafeZoneOverlay'
+import { DEFAULT_PREVIEW_SETTINGS, PreviewBackgroundLayer, PreviewOverlays, hasBackground, type PreviewSettings } from '../preview/previewSettings'
 import { StageToolbar, type StageMode } from '../preview/StageToolbar'
 import { uiScaleStore } from '../preview/uiScale'
 import { localeStore } from '../preview/locale'
@@ -63,11 +63,12 @@ export function PreviewPanel() {
   const select = useSelectionStore((s) => s.selectComponent)
   const [mode, setMode] = useState<StageMode>('inspect')
   const [aspect, setAspect] = useState<AspectId>('16:9')
-  const [safe, setSafe] = useState(true)
+  const [pv, setPv] = useState<PreviewSettings>(DEFAULT_PREVIEW_SETTINGS)
   const [zoom, setZoom] = useState(1)
   const [paused, setPaused] = useState(false)
   const [focusOn, setFocusOn] = useState(false)
   const [ctl, setCtl] = useState<PreviewController>()
+  const bgOn = hasBackground(pv)
   const [rootRef, rootSize] = useElementSize<HTMLDivElement>()
 
   useEffect(() => {
@@ -77,6 +78,13 @@ export function PreviewPanel() {
     const offs = [c.backend.on('trace', (raw) => useTraceStore.getState().push(raw)), previewBus.attach(c.backend)]
     return () => (offs.forEach((off) => off()), c.dispose())
   }, [])
+
+  // a background shows only if the movie is drawn without its stage color: Ruffle has to be loaded that way, so a change reloads the movie
+  useEffect(() => {
+    if (!ctl) return
+    ctl.backend.setTransparent?.(bgOn)
+    void ctl.reload()
+  }, [ctl, bgOn])
 
   // the preview SWF is laid out again for the chosen screen (main rebuilds only on a change)
   useEffect(() => {
@@ -186,8 +194,8 @@ export function PreviewPanel() {
           onPaused={(v) => (ctl?.backend.setPaused(v), setPaused(v))}
           aspect={aspect}
           onAspect={setAspect}
-          safeZones={safe}
-          onSafeZones={setSafe}
+          previewSettings={pv}
+          onPreviewSettings={setPv}
           onReload={() => void ctl?.reload()}
           detached={inWindow}
           onPopout={() => void inkwell?.setPreviewDetached(!inWindow && !detached)}
@@ -204,10 +212,11 @@ export function PreviewPanel() {
             <div className="stage-zoom" style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}>
               {ctl && build?.bytes ? (
                 <AspectFrame aspect={shownAspect}>
-                  <SwfViewport backend={ctl.backend} stage={build.stage} />
+                  <PreviewBackgroundLayer settings={pv} />
+                  <SwfViewport backend={ctl.backend} stage={build.stage} clear={bgOn} />
                   {swf && shownIr && <InspectOverlay ir={shownIr}stage={build.stage} active={mode === 'inspect' && !(isMenu && focusOn)} selected={selected} extraBounds={runtimeBounds} onSelect={(id) => select(id, 'stage')} />}
                   {swf && shownIr && isMenu && focusOn && <FocusGraphOverlay ir={shownIr}swfId={swf.id} swfName={swf.name} stage={build.stage} active={mode === 'inspect'} onSelect={(id) => select(id, 'stage')} />}
-                  <SafeZoneOverlay visible={safe} />
+                  <PreviewOverlays settings={pv} stage={build.stage} />
                 </AspectFrame>
               ) : (
                 <p className="preview-message stage-empty">{emptyMessage}</p>
