@@ -102,7 +102,8 @@ function Review({ c, onCancel, onInstalled }: { c: PackCandidate; onCancel(): vo
     void navigator.clipboard?.writeText(c.sha256).then(done, () => undefined)
   }
   return (
-    <div className="pm-detail" data-testid="pack-candidate">
+    <div className="pm-detail pm-detail-fixed" data-testid="pack-candidate">
+      <div className="pm-detail-scroll">
       <div className="pm-head">
         <div>
           <h3 className="pm-title">{c.id}</h3>
@@ -129,6 +130,7 @@ function Review({ c, onCancel, onInstalled }: { c: PackCandidate; onCancel(): vo
       </div>
       <div className="pm-note" role="note"><Info size={14} aria-hidden="true" />{PM.trust}</div>
       {error && <p className="tone-error" role="alert">{error}</p>}
+      </div>
       <div className="pm-acts pm-acts-end">
         <Btn onClick={onCancel}>{PM.cancel}</Btn>
         <Btn variant="primary" reason={busy ? PM.working : undefined} onClick={() => void install()} testId="pack-install">{c.current ? PM.update : PM.install}</Btn>
@@ -344,7 +346,7 @@ export function PackManager({ onClose }: { onClose(): void }) {
   }
 
   const detail = (e: Entry) => (
-    <div className="pm-detail" data-testid="pack-detail">
+    <div className="pm-detail pm-detail-fixed" data-testid="pack-detail">
       <div className="pm-head">
         <div>
           <h3 className="pm-title">{e.id}</h3>
@@ -377,7 +379,7 @@ export function PackManager({ onClose }: { onClose(): void }) {
       <div className="pm-tabs" role="tablist">
         {tabsOf(e).map((x) => <button key={x.id} type="button" role="tab" className="tab" aria-selected={(tabsOf(e).some((y) => y.id === tab) ? tab : 'overview') === x.id} onClick={() => setTab(x.id)} data-testid={`pack-tab-${x.id}`}>{x.label}</button>)}
       </div>
-      {tabBody(e)}
+      <div className="pm-detail-scroll">{tabBody(e)}</div>
     </div>
   )
 

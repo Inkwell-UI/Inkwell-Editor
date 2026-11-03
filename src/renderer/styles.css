@@ -785,6 +785,10 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .pm-flag.is-missing { color: var(--warn); }
 .pm-empty { padding: 12px; margin: 0; }
 .pm-detail { display: flex; flex-direction: column; gap: 12px; min-width: 0; overflow: auto; padding: 2px 4px 2px 8px; }
+/* Review and pack detail: the header (and the Cancel / Install buttons) stay in view, only the content scrolls. */
+.pm-detail-fixed { overflow: hidden; padding: 2px 0 0 8px; }
+.pm-detail-fixed > .pm-detail-scroll { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; }
+.pm-detail-fixed > .pm-acts { padding: 0 4px 2px 0; }
 .pm-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .pm-title { margin: 0; font-size: 14px; font-weight: 600; }
 .pm-sub, .pm-hint { font-size: 11px; color: var(--fg-dim); }
