@@ -189,7 +189,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     const contract = contractFor(ir, contractLayers)
     // W3/W4: the focus graph and prompts of a custom menu (overlay), with their lint
     const fo = focusOptions(ir, overlayNodes)
-    const inputOpts = { ...(fo.focus ? { focus: fo.focus } : {}), ...(fo.prompts ? { prompts: fo.prompts } : {}) }
+    const inputOpts = { ...(fo.focus ? { focus: fo.focus } : {}), ...(fo.prompts ? { prompts: fo.prompts } : {}), ...(fo.promptLayers ? { promptLayers: fo.promptLayers } : {}) }
     const gameOpts = { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings } : {}), ...(components.length ? { components } : {}), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) }
     const r = await compileSwf(gameIr, { ...gameOpts, buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`) })
     // a custom menu ships one game SWF per other screen shape (Spec `variants`): the design laid out again for that screen; the runtime opens the nearest one

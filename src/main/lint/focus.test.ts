@@ -64,12 +64,12 @@ describe('samples/menu-gamepad', () => {
 })
 
 describe('prompt glyphs', () => {
-  it('need a frame with a text label', async () => {
+  it('need a frame or an instance; the text label is optional', async () => {
     const { ir } = await load()
     expect(withPromptGlyphs(ir, { '2:5': { xbox: 'A' } }).lint.map((l) => l.code)).toEqual(['prompt-not-frame'])
     expect(withPromptGlyphs(ir, { '2:11': { xbox: 'A' } }).lint).toEqual([]) // a button frame has a label
     const bare = { ...ir, nodes: { ...ir.nodes, '2:7': { ...ir.nodes['2:7']!, children: [] } } } as Swf
-    expect(withPromptGlyphs(bare, { '2:7': { xbox: 'A' } }).lint.map((l) => l.code)).toEqual(['prompt-no-label'])
+    expect(withPromptGlyphs(bare, { '2:7': { xbox: 'A' } }).lint).toEqual([]) // no text layer: the key caps use the default text font
   })
   it('vector set (INKWELL_VECTOR_GLYPHS=1): every glyph in the box height; key caps and pills widen with the name', () => {
     process.env['INKWELL_VECTOR_GLYPHS'] = '1'

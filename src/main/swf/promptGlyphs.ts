@@ -8,6 +8,8 @@ import { issue, type LintIssue } from './lint'
 export const PROMPT_DEVICE_ORDER: readonly PromptDevice[] = ['keyboard', 'xbox', 'playstation']
 /** Synthetic node id of a prompt's glyph frame; lint on it and its children is reported on the prompt. */
 export const glyphId = (promptId: string, d: PromptDevice): string => `${promptId}#${d}`
+/** The designer's placeholder layer inside a prompt frame: where the glyph goes (position and height). */
+export const ICON_LAYER = 'promptIcon'
 export const isGlyphNode = (id: string): boolean => id.includes('#')
 export const glyphOwner = (id: string): string => id.slice(0, id.indexOf('#'))
 
@@ -30,40 +32,57 @@ const FACE: Record<string, number> = { A: 0x6bbf3a, B: 0xe0443a, X: 0x3a7be0, Y:
 /** Text width estimate of a glyph label: wide enough for "Enter"/"Options" at the glyph's font size. */
 const labelWidth = (text: string, s: number): number => Math.max(s, Math.round(text.length * s * 0.38 + s * 0.5))
 
-export function withPromptGlyphs(ir: Swf, prompts: Record<string, Partial<Record<PromptDevice, string>>>): { ir: Swf; lint: LintIssue[] } {
+export function withPromptGlyphs(ir: Swf, prompts: Record<string, Partial<Record<PromptDevice, string>>>, layers: Record<string, { icon?: string; label?: string }> = {}): { ir: Swf; lint: LintIssue[] } {
   const lint: LintIssue[] = []
   const nodes: Record<string, Node> = { ...ir.nodes }
   for (const [pid, glyphs] of Object.entries(prompts)) {
     const p = nodes[pid]
     if (!p) continue
-    if (p.type !== 'frame') {
-      lint.push(issue('error', 'prompt-not-frame', pid, 'A prompt must be a frame (its glyph is drawn inside it, at the top left).'))
+    if (p.type !== 'frame' && p.type !== 'instance') {
+      lint.push(issue('error', 'prompt-not-frame', pid, 'A prompt must be a frame or a Figma instance (its glyph is drawn inside it).'))
       continue
     }
-    const label = firstText(nodes, pid)
-    if (!label) {
-      lint.push(issue('error', 'prompt-no-label', pid, 'A prompt needs a text layer inside it (the label, e.g. "Select"); its font is used for the glyph letters too.'))
-      continue
-    }
-    const s = Math.max(8, p.transform.height)
-    const font = label.runs[0]!.font
+    // the label is optional: the chosen text layer, else the first text layer; without one the drawn key caps use the default text font
+    const chosen = layers[pid]?.label ? nodes[layers[pid]!.label!] : undefined
+    const label = chosen?.type === 'text' ? chosen : firstText(nodes, pid)
+    // a layer named `promptIcon` directly inside the prompt is the icon's place (the designer's placeholder): the glyph takes its position and height; the placeholder stays in the auto layout, transparent
+    const iconId = layers[pid]?.icon && nodes[layers[pid]!.icon!] ? layers[pid]!.icon! : p.children.find((c) => nodes[c]?.name === ICON_LAYER)
+    const icon = iconId ? nodes[iconId] : undefined
+    if (iconId && icon) nodes[iconId] = { ...icon, opacity: 0 } // transparent, not hidden: a hidden layer leaves the auto layout and the text would slide into its place
+    const s = Math.max(8, icon ? icon.transform.height : p.transform.height)
+    const at = icon ? offsetIn(nodes, iconId!, pid) : { x: 0, y: 0 }
+    const font = label?.runs[0]?.font ?? ({ kind: 'alias', name: '$EverywhereMediumFont' } as Extract<Node, { type: 'text' }>['runs'][number]['font'])
     const added: string[] = []
     for (const d of PROMPT_DEVICE_ORDER) {
       const g = glyphs[d]
       if (!g) continue
       const id = glyphId(pid, d)
       const parts = glyphParts(d, g, s)
+      // the drawn parts sit in one child clip `drawn` (shapes cannot be addressed one by one), so the menu class can hide them all when the game's own art loads
+      const did = `${id}/d`
       const kids = parts.items.map((it, k) => {
         const cid = `${id}/${k}`
-        nodes[cid] = it.text !== undefined ? textNode(cid, id, it, font) : shapeNode(cid, id, it)
+        nodes[cid] = it.text !== undefined ? textNode(cid, did, it, font, k) : shapeNode(cid, did, it, k)
         return cid
       })
-      nodes[id] = { ...base(id, `glyph_${d}`, pid, { x: 0, y: 0, width: parts.w, height: s }), type: 'frame', clipContent: false, children: kids } as Node // all compiled visible (a hidden layer is not compiled); the menu class shows one
+      nodes[did] = { ...base(did, 'drawn', id, { x: 0, y: 0, width: parts.w, height: s }), type: 'frame', clipContent: false, children: kids } as Node
+      nodes[id] = { ...base(id, `glyph_${d}`, pid, { x: at.x, y: at.y, width: parts.w, height: s }), type: 'frame', clipContent: false, layout: { h: 'fixed', v: 'fixed', absolute: true }, children: [did] } as Node // all compiled visible (a hidden layer is not compiled); the menu class shows one
       added.push(id)
     }
     nodes[pid] = { ...p, children: [...p.children, ...added] }
   }
   return { ir: { ...ir, nodes }, lint }
+}
+
+/** Position of a layer inside the prompt: its own x,y plus those of the layers between it and the prompt (a chosen icon may sit in a sub-frame). */
+function offsetIn(nodes: Record<string, Node>, id: string, pid: string): { x: number; y: number } {
+  let x = 0
+  let y = 0
+  for (let cur: Node | undefined = nodes[id]; cur && cur.id !== pid; cur = nodes[cur.parent ?? '']) {
+    x += cur.transform.x
+    y += cur.transform.y
+  }
+  return { x, y }
 }
 
 function firstText(nodes: Record<string, Node>, id: string): Extract<Node, { type: 'text' }> | undefined {
@@ -145,18 +164,18 @@ const base = (id: string, name: string, parent: string, t: { x: number; y: numbe
 })
 const r2 = (n: number): number => Math.round(n * 100) / 100
 
-function shapeNode(id: string, parent: string, it: Item): Node {
+function shapeNode(id: string, parent: string, it: Item, k: number): Node {
   const pts = it.poly ?? rect(0, 0, it.w, it.h)
   const path = [{ op: 'M' as const, x: r2(pts[0]![0]), y: r2(pts[0]![1]) }, ...pts.slice(1).map(([x, y]) => ({ op: 'L' as const, x: r2(x), y: r2(y) })), { op: 'Z' as const }]
   const paint = { type: 'solid' as const, color: hex(it.color) }
-  return { ...base(id, 'part', parent, { x: it.x, y: it.y, width: it.w, height: it.h }), type: 'shape', paths: [path], fills: it.stroke ? [] : [paint], strokes: it.stroke ? [{ fill: paint, weight: it.stroke, alignment: 'center' as const }] : [] } as Node
+  return { ...base(id, `part${k}`, parent, { x: it.x, y: it.y, width: it.w, height: it.h }), type: 'shape', paths: [path], fills: it.stroke ? [] : [paint], strokes: it.stroke ? [{ fill: paint, weight: it.stroke, alignment: 'center' as const }] : [] } as Node
 }
 
-function textNode(id: string, parent: string, it: Item, labelFont: Extract<Node, { type: 'text' }>['runs'][number]['font']): Node {
+function textNode(id: string, parent: string, it: Item, labelFont: Extract<Node, { type: 'text' }>['runs'][number]['font'], k: number): Node {
   const text = it.text!
   const font = it.font ? ({ kind: 'alias', name: it.font } as typeof labelFont) : labelFont
   return {
-    ...base(id, 'key', parent, { x: it.x, y: it.y, width: it.w, height: it.h }), type: 'text', content: text,
+    ...base(id, `key${k}`, parent, { x: it.x, y: it.y, width: it.w, height: it.h }), type: 'text', content: text,
     runs: [{ start: 0, end: text.length, font, size: it.size!, fill: { type: 'solid', color: hex(it.color) } }],
     sizing: 'fixed', align: 'center', verticalAlign: 'top', lineHeight: { unit: 'auto' }, letterSpacing: { unit: 'px', value: 0 }, textFit: 'none', truncate: false
   } as Node
