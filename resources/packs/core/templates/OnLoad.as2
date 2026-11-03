@@ -1,4 +1,8 @@
 // [{{node.id}}] core/OnLoad@1
-__g.onLoad = function() {
-    {{guarded.then}}
-};
+// shortcut: another OnLoad node of this graph runs first, in node order
+__g.onLoad = (function(prev) {
+    return function() {
+        if (prev != undefined) prev();
+        {{guarded.then}}
+    };
+})(__g.onLoad);

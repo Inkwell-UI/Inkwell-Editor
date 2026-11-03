@@ -143,3 +143,15 @@ describe('runtime-required and saved variables (S5, S7)', () => {
     expect(codes(graph([node('OnWidgetCall', { name: 'Go', params: [] }, 'e')], [], { variables: [sv('menuOnly', 'menu')] }), { target: 'menuReplacement' })).toEqual([])
   })
 })
+
+describe('events shared by several graphs', () => {
+  it('On Open may be hooked by several graphs and twice in one graph', async () => {
+    const core = defIndex(await loadPacks([resolve(__dirname, '../../resources/packs/core')]))
+    const open = (gid: string, ids: string[]) => ({ ...emptyGraph(gid, gid, 'menu'), nodes: ids.map((id) => node('OnOpen', {}, id)) })
+    const dups = (g: Graph, siblings: Graph[]) => validateGraph(g, { defs: core, siblings }).filter((i) => i.code === 'graph-duplicate-handler')
+    expect(dups(open('g1', ['a']), [open('g2', ['b']), open('g1', ['a'])])).toEqual([])
+    expect(dups(open('g1', ['a', 'c']), [])).toEqual([]) // Load/Open/Close chain in the template
+    const mod = ['a', 'b'].map((id) => node('OnModEvent', { name: 'x' }, id))
+    expect(dups({ ...emptyGraph('g', 'g', 'menu'), nodes: mod }, [])).toEqual([]) // a list event: both nodes run
+  })
+})

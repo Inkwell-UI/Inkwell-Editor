@@ -1,4 +1,8 @@
 // [{{node.id}}] core/OnOpen@1
-__g.onOpen = function() {
-    {{guarded.then}}
-};
+// shortcut: another OnOpen node of this graph runs first, in node order
+__g.onOpen = (function(prev) {
+    return function() {
+        if (prev != undefined) prev();
+        {{guarded.then}}
+    };
+})(__g.onOpen);

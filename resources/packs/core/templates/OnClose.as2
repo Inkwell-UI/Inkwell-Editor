@@ -1,4 +1,8 @@
 // [{{node.id}}] core/OnClose@1
-__g.onClose = function() {
-    {{guarded.then}}
-};
+// shortcut: another OnClose node of this graph runs first, in node order
+__g.onClose = (function(prev) {
+    return function() {
+        if (prev != undefined) prev();
+        {{guarded.then}}
+    };
+})(__g.onClose);

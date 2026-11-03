@@ -112,6 +112,14 @@ export function resolvePins(def: NodeDef, node: Pick<GraphNode, 'fields'>, vars:
 const kindOf = (n: GraphNode): string => n.kind.split('/')[1] ?? ''
 const widgetParams = (n: GraphNode): string => (Array.isArray(n.fields['params']) ? (n.fields['params'] as { type?: unknown }[]).map((p) => String(p?.type)).join(',') : '')
 
+/**
+ * Events that assign into one slot of a clip (`clip.onRelease = ...`) or of the base clip (the widget method): a second graph would silently replace the first, so only these stay an
+ * error. Every other event runs in each graph (the menu glue calls them all) and several nodes of one graph chain or register side by side, so any number may hook into it.
+ * shortcut: matched by core node name; a pack's own clip-handler node is not caught, move this to a node-definition flag when a pack needs it.
+ */
+const SLOT_EVENT = /^(OnClick|OnHover|OnHoverEnd|OnFocus|OnBlur|OnWidgetCall)@/
+const takesSlot = (n: GraphNode): boolean => SLOT_EVENT.test(n.kind.split('/')[1] ?? '')
+
 /** Key that makes two entry nodes handle the same event: kind, handler name (On Widget Call) and target layer. */
 const handlerKey = (n: GraphNode, d: NodeDef): string => {
   const target = d.inputs.find((p) => component(p.type))?.name
@@ -207,7 +215,7 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
     if (s.id === g.id || s.scope === 'blueprint' || g.scope === 'blueprint') continue
     for (const n of s.nodes) {
       const d = ctx.defs.get(n.kind)
-      if (d && isEntry(d) && !isFunctionEntry(d) && !handlers.has(handlerKey(n, d))) handlers.set(handlerKey(n, d), s.name)
+      if (d && isEntry(d) && !isFunctionEntry(d) && takesSlot(n) && !handlers.has(handlerKey(n, d))) handlers.set(handlerKey(n, d), s.name)
     }
   }
   for (const n of g.nodes) {
@@ -226,7 +234,7 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
         add(n.id, 'graph-required-pin', 'error', `The "${p.name}" input needs a wire${component(p.type) ? ' or a target layer' : ''}.`, { pin: p.name })
       }
     }
-    if (isEntry(d) && !isFunctionEntry(d)) {
+    if (isEntry(d) && !isFunctionEntry(d) && takesSlot(n)) {
       const k = handlerKey(n, d)
       const first = handlers.get(k)
       if (first !== undefined) {
