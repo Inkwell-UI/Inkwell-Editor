@@ -858,8 +858,37 @@ export const strings = {
     noElectron: 'Needs the desktop app'
   },
 
+  /** First-run wizard (shell/FirstRunWizard.tsx): shown once, before the start screen. */
+  firstRun: {
+    label: 'Welcome to Inkwell',
+    skip: 'Skip setup',
+    back: 'Back',
+    next: 'Next',
+    finish: 'Finish',
+    stepOf: (n: number, total: number) => `Step ${n} of ${total}`,
+    steps: ['Welcome', 'Build tools', 'Skyrim', 'Figma'],
+    welcomeTitle: 'Welcome to Inkwell',
+    welcomeBody: 'Inkwell turns Figma designs into menus and HUD widgets for Skyrim. A few quick steps set up the tools it builds with. You can skip them and come back any time through View > Setup Guide.',
+    welcomePoints: ['Design in Figma and see it update here.', 'Add behavior with a visual graph, no code.', 'Preview, then install into your mod folder.'],
+    toolsTitle: 'Build tools',
+    toolsBody: 'Java and FFDec build the preview. The Papyrus compiler is needed to package a mod for the game. Inkwell does not ship any of them.',
+    skyrimTitle: 'Skyrim',
+    skyrimBody: 'Where the game is, and the mods folder of your mod manager, so Inkwell can install into it.',
+    figmaTitle: 'Figma',
+    figmaBody: 'Designs arrive through the Inkwell plugin in Figma. When the plugin first connects, a prompt here asks you to allow it.',
+    figmaOptional: 'Optional. The example project needs no Figma.',
+    checking: 'Checking...',
+    /** Short text for a tool that is not set up; any other problem shows the check's own sentence. */
+    notSet: {
+      java: 'Not found. Needed to build the preview.',
+      ffdec: 'Not found. Needed to build the preview.',
+      papyrus: 'Not set. Needed to package a mod; HUD widgets deploy as a SWF only without it.'
+    } as Record<string, string>,
+    status: { pass: 'Ready', warn: 'Needs attention', fail: 'Not ready', skipped: 'Skipped' } as Record<string, string>
+  },
+
   /** The application menu (built in the main process). */
-  menu: { file: 'File', edit: 'Edit', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All', quit: 'Exit', label: 'Application menu', settings: 'Settings...', projectSettings: 'Project Settings...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project' },
+  menu: { file: 'File', edit: 'Edit', view: 'View', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All', quit: 'Exit', label: 'Application menu', settings: 'Settings...', projectSettings: 'Project Settings...', setupGuide: 'Setup Guide...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project' },
 
   settings: {
     title: 'Settings',

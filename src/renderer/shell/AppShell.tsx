@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useActiveSwf, useProject } from '../hooks/useProject'
 import { redoSwf, undoSwf } from '../state/overlayStore'
 import { useProjectStore } from '../state/projectStore'
@@ -18,6 +18,7 @@ import { Toasts } from '../ui/Toasts'
 import { Dialogs } from './Dialogs'
 import { DockStrip } from './DockStrip'
 import { SettingsView } from './SettingsView'
+import { FirstRunWizard } from './FirstRunWizard'
 import { StartScreen } from './StartScreen'
 import { StatusBar } from './StatusBar'
 import { TitleBar } from './TitleBar'
@@ -86,14 +87,17 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // first launch: the Settings view opens by itself when a check fails (main marks it as seen either way)
+  // first launch: the setup wizard shows once (main marks it as seen)
+  const [wizard, setWizard] = useState(false)
   useEffect(() => {
     if (isPreviewWindow()) return
-    void inkwell?.doctorFirstLaunch().then((show) => show && useDialogStore.getState().show('settings'))
+    void inkwell?.doctorFirstLaunch().then(setWizard)
   }, [])
 
   // Edit > Settings in the application menu
   useEffect(() => inkwell?.onOpenSettings(() => useDialogStore.getState().show('settings')), [])
+  // View > Setup Guide: the first-run wizard again, with or without a project
+  useEffect(() => inkwell?.onOpenSetup(() => setWizard(true)), [])
   // Edit > Project Settings (no project open: nothing to show)
   useEffect(() => inkwell?.onOpenProjectSettings(() => useDialogStore.getState().show('projectSettings')), [])
   // Edit > Undo / Redo of the title bar menu: a field being edited keeps its own undo, anything else is the active SWF's history
@@ -119,17 +123,18 @@ export function AppShell() {
     return (
       <>
         <TitleBar />
-        {settingsOpen ? <SettingsView /> : <StartScreen />}
+        {settingsOpen ? <SettingsView /> : wizard ? <FirstRunWizard onDone={() => setWizard(false)} /> : <StartScreen />}
         <Dialogs />
         <Toasts />
       </>
     )
+  const setupView = wizard && !settingsOpen && !projectSettingsOpen // the setup guide is a view of its own: no top bar, no status bar
   return (
     <div className="shell">
       <TitleBar />
-      <TopBar />
-      <main className="shell-main">{settingsOpen ? <SettingsView key="settings" /> : projectSettingsOpen ? <SettingsView key="project" initial="project" /> : <WorkspaceView />}</main>
-      <StatusBar />
+      {!setupView && <TopBar />}
+      <main className="shell-main">{settingsOpen ? <SettingsView key="settings" /> : wizard ? <FirstRunWizard onDone={() => setWizard(false)} /> : projectSettingsOpen ? <SettingsView key="project" initial="project" /> : <WorkspaceView />}</main>
+      {!setupView && <StatusBar />}
       <Dialogs />
       <Toasts />
     </div>

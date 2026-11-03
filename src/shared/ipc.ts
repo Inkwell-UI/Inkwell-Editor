@@ -59,6 +59,7 @@ export const IPC = {
   uiEvent: 'ui:event',
   figmaSelection: 'figma:selection',
   menuSettings: 'menu:settings',
+  menuSetup: 'menu:setup',
   menuProjectSettings: 'menu:projectSettings',
   menuSaveNow: 'menu:save-now',
   menuUndo: 'menu:undo',
@@ -223,6 +224,8 @@ export interface InkwellApi {
   onFigmaSelection(cb: (ids: string[]) => void): () => void
   /** Edit > Settings in the application menu. */
   onOpenSettings(cb: () => void): () => void
+  /** View > Setup Guide in the application menu: opens the first-run wizard again. */
+  onOpenSetup(cb: () => void): () => void
   /** Edit > Project Settings in the application menu. */
   onOpenProjectSettings(cb: () => void): () => void
   /** File > Save in the application menu: writes the edits still waiting for their debounce. */

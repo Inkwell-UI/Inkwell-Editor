@@ -1,6 +1,6 @@
 # Setup Doctor and Settings (`src/main/doctor`, `src/renderer/doctor/SetupDoctorPanel.tsx`, `src/renderer/shell/SettingsView.tsx`)
 
-UX spec 5.3. Inkwell bundles no Java, FFDec, Papyrus compiler, Creation Kit or game file; the Doctor shows what it found on this computer and offers a fix for every row. It lives in the Settings view: open it with Edit > Settings (Ctrl+,), the Deploy menu's folders button, or the status bar link `FFDec: not found`. It opens by itself once, on the first launch where a check **fails** (`doctorSeen` in `settings.json`; warnings alone do not open it).
+UX spec 5.3. Inkwell bundles no Java, FFDec, Papyrus compiler, Creation Kit or game file; the Doctor shows what it found on this computer and offers a fix for every row. It lives in the Settings view: open it with Edit > Settings (Ctrl+,), the Deploy menu's folders button, or the status bar link `FFDec: not found`. On the very first launch (`doctorSeen` in `settings.json`) a four-step wizard shows before the start screen instead (`shell/FirstRunWizard.tsx`: Welcome, Build tools, Skyrim, Figma). It reuses `useSetupDoctor`, `SettingField` and `FixButton`, can be skipped, and shows once; View > Setup Guide... opens it again at any time (also with a project open, where it replaces the workspace like Settings does); Settings stays the other way back.
 
 ## Checks (`doctor/checks.ts`, run in parallel by `runDoctor`, never throw)
 

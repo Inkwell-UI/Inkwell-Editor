@@ -629,14 +629,13 @@ export function createSession(deps: SessionDeps) {
     runDoctor: async (only?: CheckId[]): Promise<CheckResult[]> => (await settingsReady, runDoctor(doctorCtx(), only)),
     runBenchmark: async (): Promise<BenchmarkResult> => (await settingsReady, runBenchmark(doctorCtx())),
     buildVanillaCache: async (): Promise<BuildCacheResult> => (await settingsReady, buildCacheAction(doctorCtx())),
-    /** True once: the first launch where a check fails. */
+    /** True once: the very first launch, which shows the first-run wizard (docs/setup-doctor.md). */
     async doctorFirstLaunch(): Promise<boolean> {
       await settingsReady
       if (stored.doctorSeen) return false
-      const failed = (await runDoctor(doctorCtx())).some((c) => c.status === 'fail')
       stored = { ...stored, doctorSeen: true }
       await saveSettings(settingsFile, stored).catch(() => undefined)
-      return failed
+      return true
     },
     deployTargets: (): DeployTargetInfo[] => deploy.targets(),
     deployPrepare: (id: DeployTargetId, scope: DeployScope, active?: string): Promise<PrepareResult> => deploy.prepare(id, scope, active),

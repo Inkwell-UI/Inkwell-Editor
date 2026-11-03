@@ -361,6 +361,10 @@ async function buildMenu(): Promise<void> {
         { label: strings.menu.settings, accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) },
         { label: strings.menu.projectSettings, accelerator: 'CmdOrCtrl+Shift+,', click: () => win?.webContents.send(IPC.menuProjectSettings) }
       ]
+    },
+    {
+      label: strings.menu.view,
+      submenu: [{ label: strings.menu.setupGuide, click: () => win?.webContents.send(IPC.menuSetup) }]
     }
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))

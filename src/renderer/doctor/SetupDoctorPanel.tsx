@@ -1,4 +1,4 @@
-import { CircleAlert, FolderOpen, Loader, X } from 'lucide-react'
+import { Check, CircleAlert, Copy, Download, FolderOpen, Loader, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { ROW_SETTINGS, type CheckResult, type Fix, type SettingKey } from '../../shared/doctor'
 import { useSetupDoctor, type DoctorHook } from '../hooks/useSetupDoctor'
@@ -9,7 +9,7 @@ import { SettingItem, type ItemTone } from '../ui/SettingItem'
 
 const TONE: Record<string, ItemTone> = { pass: 'ok', warn: 'warn', fail: 'error', skipped: 'none' }
 
-function FixButton({ row, fix, d, primary, extra }: { row: CheckResult; fix: Fix; d: DoctorHook; primary?: boolean; extra?: boolean }) {
+export function FixButton({ row, fix, d, primary, extra }: { row: CheckResult; fix: Fix; d: DoctorHook; primary?: boolean; extra?: boolean }) {
   const a = fix.action
   const busy = a.kind === 'run' && d.busy === a.task
   const label = a.kind === 'copy' && d.copied === row.id ? strings.doctor.copied : busy ? strings.doctor.working : fix.label
@@ -27,7 +27,7 @@ function FixButton({ row, fix, d, primary, extra }: { row: CheckResult; fix: Fix
 }
 
 /** One path (or text) setting of a row: editable input, Browse, Clear, where the value comes from, a busy state, and every problem or error inline. Enter, blur and Browse all save and re-run only the affected checks. */
-function SettingField({ name, folder, row, d }: { name: SettingKey; folder: boolean; row: CheckResult; d: DoctorHook }) {
+export function SettingField({ name, folder, row, d, download, copy }: { name: SettingKey; folder: boolean; row: CheckResult; d: DoctorHook; /** A copy action shown as an icon button inside the field, at its right. */ copy?: Fix; /** A "Get ..." action that takes the place of Clear while the setting has no saved value. */ download?: Fix }) {
   const s = d.settings as unknown as (Record<string, string | undefined> & { source: Record<string, string>; problems?: Record<string, string> }) | undefined
   const src = s?.source[name]
   const env = src === 'env'
@@ -65,6 +65,7 @@ function SettingField({ name, folder, row, d }: { name: SettingKey; folder: bool
         )}
       </div>
       <div className="field-row">
+        <div className={copy ? 'setting-copy' : 'setting-plain'}>
         <input
           id={id}
           data-testid={id}
@@ -79,10 +80,16 @@ function SettingField({ name, folder, row, d }: { name: SettingKey; folder: bool
           onBlur={(e) => commit(e.currentTarget)}
           onKeyDown={(e) => e.key === 'Enter' && commit(e.currentTarget)}
         />
+        {copy && <Btn variant="quiet" icon={d.copied === row.id ? Check : Copy} label={d.copied === row.id ? strings.doctor.copied : copy.label} onClick={() => d.runFix(row.id, copy)} className="setting-copy-btn" testId={`copy-${name}`} />}
+        </div>
         {name !== 'mo2ModName' && (
           <Btn icon={FolderOpen} onClick={() => d.browse(name, folder)} reason={env ? strings.doctor.fromEnv(envName) : undefined} label={strings.doctor.browseTip(label)} testId={`browse-${name}`}>{strings.doctor.browse}</Btn>
         )}
-        <Btn icon={X} label={strings.doctor.clearTip(label)} onClick={() => d.setSetting(name, null)} reason={env ? strings.doctor.fromEnv(envName) : !stored ? strings.doctor.nothingToClear : undefined} testId={`clear-${name}`} />
+        {download && !stored ? (
+          <Btn icon={Download} label={download.label} onClick={() => d.runFix(row.id, download)} testId={`download-${name}`} />
+        ) : (
+          <Btn icon={X} label={strings.doctor.clearTip(label)} onClick={() => d.setSetting(name, null)} reason={env ? strings.doctor.fromEnv(envName) : !stored ? strings.doctor.nothingToClear : undefined} testId={`clear-${name}`} />
+        )}
       </div>
       <div id={`${id}-msg`}>
         {problem && <p className="field-msg tone-error" role="alert" data-testid={`problem-${name}`}><CircleAlert size={14} aria-label={strings.doctor.problemLabel(label)} role="img" />{problem}</p>}

@@ -849,3 +849,40 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .bp-link { all: unset; color: var(--fg-dim); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; font-size: 12px; }
 .bp-link:hover { color: var(--fg); }
 .bp-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* First-run wizard (shell/FirstRunWizard.tsx): step rail on the left, the step centred in the rest. Classes are prefixed wiz-. */
+.wiz { flex: 1; display: grid; grid-template-columns: 170px minmax(0, 1fr); min-height: 0; }
+.wiz-rail { background: var(--surface-1); padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
+.wiz-step { display: flex; align-items: center; gap: 8px; width: 100%; height: var(--ctl-h); padding: 0 8px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--fg-dim); font: inherit; text-align: left; cursor: pointer; }
+.wiz-step:hover { background: var(--hover); }
+.wiz-step:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--accent); }
+.wiz-step[aria-current='step'] { background: var(--surface-3); color: var(--fg); }
+.wiz-num { width: 18px; height: 18px; border-radius: 50%; background: var(--surface-3); display: grid; place-items: center; font-size: 11px; }
+.wiz-step[aria-current='step'] .wiz-num { background: var(--accent); color: var(--on-accent); }
+.wiz-step[data-state='ok'] .wiz-num { background: var(--ok-bg); color: var(--ok); }
+.wiz-step[data-state='warn'] .wiz-num { background: var(--warn-bg); color: var(--warn); }
+.wiz-step[data-state='fail'] .wiz-num { background: var(--err-bg); color: var(--err); }
+.wiz-stage { display: grid; place-items: center; padding: 24px; overflow: auto; min-height: 0; }
+.wiz-pane { width: min(760px, 100%); display: flex; flex-direction: column; gap: 14px; }
+.wiz-pane h1 { font-size: 16px; margin: 0; }
+.wiz-pane p { margin: 0; }
+.wiz-points { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.wiz-foot { display: flex; gap: 8px; align-items: center; padding-top: 8px; }
+.wiz-foot-gap { flex: 1; }
+.wiz-check { background: var(--surface-1); border-radius: var(--radius); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.wiz-check-head { display: flex; align-items: center; gap: 8px; }
+.wiz-gap { flex: 1; }
+.wiz-check-head b { white-space: nowrap; }
+.wiz-detail { margin: 0; overflow-wrap: anywhere; }
+.wiz-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--off); flex: none; }
+.wiz-dot[data-status='pass'] { background: var(--ok); }
+.wiz-dot[data-status='warn'] { background: var(--warn); }
+.wiz-dot[data-status='fail'] { background: var(--err); }
+.wiz-check .field { margin: 0; }
+@media (max-width: 640px) { .wiz { grid-template-columns: minmax(0, 1fr); } .wiz-rail { display: none; } }
+/* A field with an icon button inside it at the right (SettingField `copy`). The input fills the wrapper. */
+.setting-copy, .setting-plain { position: relative; flex: 1; min-width: 0; display: flex; }
+.setting-copy .input, .setting-plain .input { flex: 1; min-width: 0; }
+.setting-copy .input { padding-right: 34px; }
+.setting-copy-btn { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); height: var(--ctl-h-sm); width: var(--ctl-h-sm); opacity: 0; }
+.setting-copy:hover .setting-copy-btn, .setting-copy:focus-within .setting-copy-btn { opacity: 1; } /* only on hover; focus keeps it reachable by keyboard */
