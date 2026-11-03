@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { ProjectState, SwfDoc } from '../../shared/projectState'
 import { resetGraphDocs } from './graphDocs'
 import { resetOverlays } from './overlayStore'
+import { resetMenus } from './menuStore'
 
 /**
  * The open project and the active SWF. API: `project` (undefined = main has not answered yet, null = none open: start screen),
@@ -24,7 +25,7 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   project: undefined,
   activeSwfId: undefined,
   setProject: (project) => {
-    if (get().project?.dir !== project?.dir) (resetOverlays(), resetGraphDocs())
+    if (get().project?.dir !== project?.dir) (resetOverlays(), resetMenus(), resetGraphDocs())
     set({ project, activeSwfId: resolveActiveSwf(project?.swfs ?? [], get().activeSwfId) })
   },
   setActiveSwf: (id) => set({ activeSwfId: resolveActiveSwf(get().project?.swfs ?? [], id) })

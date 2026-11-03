@@ -3,10 +3,11 @@ import { Check as Check2, CircleX, Copy, TriangleAlert } from 'lucide-react'
 import { DEPTH_RANGE, HOTKEY_RANGE, INPUT_CONTEXTS, MENU_NAME, MenuSettings, OFFSET_X_RANGE, OFFSET_Y_RANGE, SYSTEM_MENU_LABEL, UI_SCALE_RANGE, effectiveInputContext, themeModes, type UserDefaults } from '@inkwell-ui/spec'
 import { defaultMenuSettings, menuLint, minRuntimeOf, modIniPath, resolveMenuNames, type MenuSource } from '../../shared/menu'
 import { SCAN_KEYS } from '../../shared/scanCodes'
-import { inkwell } from '../hooks/api'
+import { create, useStore } from 'zustand'
+import { getMenuStore, editMenu, type MenuStore } from '../state/menuStore'
 import { useActiveOverlay, useActiveSwf, useProject } from '../hooks/useProject'
-import { hasFocusGraph } from '../../main/lint/focus'
-import { strings } from '../strings'
+import { hasFocusGraph } from '../../shared/focusLint'
+import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { Fold } from '../ui/Fold'
 
@@ -53,14 +54,17 @@ function Check({ label, checked, onChange, testId, disabled, help }: { label: st
  * writes `userDefaults` and the default `<modId>.ini` text. Every edit is validated against the Spec schema and saved at once (IPC `saveMenuSettings`); an invalid value is
  * shown and not saved. Used by the Menu panel and by the Target pill's dialog.
  */
+const EMPTY_STORE = create(() => ({ doc: defaultMenuSettings() })) as unknown as MenuStore
+
 export function MenuSettingsForm() {
   const swf = useActiveSwf()
   const project = useProject()
   const stored = swf?.menu
-  const [doc, setDoc] = useState<MenuSettings>(stored ?? defaultMenuSettings())
+  // the SWF's menu.json lives in a store of its own so Undo (the SWF's one history) reaches it
+  const store = useMemo(() => (swf ? getMenuStore(swf.id, swf.name, stored ?? defaultMenuSettings()) : undefined), [swf?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const doc = useStore(store ?? EMPTY_STORE, (s) => s.doc)
   const [msg, setMsg] = useState<{ ok: boolean; text: string }>()
   const [otherKey, setOtherKey] = useState(false) // "Other code…" chosen: the scan code field shows until a listed key is picked
-  useEffect(() => void setDoc(stored ?? defaultMenuSettings()), [swf?.id, stored])
   useEffect(() => setOtherKey(false), [swf?.id])
   const modId = project?.modId ?? ''
 
@@ -82,9 +86,8 @@ export function MenuSettingsForm() {
   const edit = (f: (d: MenuSettings) => MenuSettings): void => {
     const p = MenuSettings.safeParse(f(doc))
     if (!p.success) return setMsg({ ok: false, text: S.invalid(p.error.issues[0]?.message ?? 'invalid') })
-    setDoc(p.data)
     setMsg(undefined)
-    void inkwell?.saveMenuSettings(swf.name, p.data).then((r) => setMsg(r.ok ? { ok: true, text: S.saved } : { ok: false, text: S.saveError(r.error) }))
+    void editMenu(swf.id, p.data).then((r) => setMsg(r.ok ? { ok: true, text: S.saved } : { ok: false, text: S.saveError(r.error) }))
   }
   const flag = (k: 'pausesGame' | 'cursor' | 'modal' | 'closeOnEscape' | 'blur' | 'hideHud') => (v: boolean) => edit((d) => ({ ...d, flags: { ...d.flags, [k]: v } }))
   const user = (k: keyof UserDefaults, v: number | string | undefined) =>
