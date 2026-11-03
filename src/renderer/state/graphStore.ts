@@ -156,6 +156,14 @@ function withNodeData(s: Pick<GraphState, 'nodes'>, g: Graph): Pick<GraphState, 
 const docKey = (p: Doc): string =>
   JSON.stringify([p.name, p.nodes.map((n) => [n.id, n.position, n.data]), p.edges.map((e) => [e.id, e.source, e.target, e.sourceHandle, e.targetHandle, e.data]), p.variables, p.comments, p.groups, p.signature, p.props])
 
+const docKeys = new WeakMap<object, string>()
+/** `docKey` of a store state, computed once per state object: the edit listener and the AS2 view share it, so one update stringifies the graph at most once (zustand states are immutable). */
+export const docKeyOf = (s: Doc): string => {
+  let k = docKeys.get(s)
+  if (k === undefined) docKeys.set(s, (k = docKey(s)))
+  return k
+}
+
 interface Entry {
   swfName: string
   store: GraphStore
@@ -331,7 +339,7 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph): G
   registerHistory(swfId, `graph:${initial.id}`, store.temporal)
   store.subscribe((s, prev) => {
     if (s.signature !== prev.signature && s.meta.scope === 'function') syncCallers(swfId, initial.id, toGraph(s))
-    if (docKey(s) === docKey(prev)) return // selection and measuring are not edits
+    if (docKeyOf(s) === docKeyOf(prev)) return // selection and measuring are not edits
     onEdit?.()
     clearTimeout(entry.timer)
     entry.timer = setTimeout(() => save(entry), SAVE_DELAY)

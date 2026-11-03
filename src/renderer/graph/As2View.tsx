@@ -3,7 +3,7 @@ import { useStore } from 'zustand'
 import type { GraphAs2 } from '../../shared/graphs'
 import { inkwell } from '../hooks/api'
 import { highlightAs2, linesOfNode, nodeOfLine, sourceLines } from '../model/as2View'
-import { toGraph, type GraphStore } from '../state/graphStore'
+import { docKeyOf, toGraph, type GraphStore } from '../state/graphStore'
 import { strings } from '../strings'
 
 const DEBOUNCE_MS = 250
@@ -16,7 +16,16 @@ const DEBOUNCE_MS = 250
  */
 export function As2View({ swfName, store, selectedNode, onPick }: { swfName: string; store: GraphStore; selectedNode: string | undefined; onPick(nodeId: string): void }) {
   // a string key: selection changes (which replace the nodes array) must not regenerate the code
-  const key = useStore(store, (s) => JSON.stringify(toGraph(s)))
+  // the graph is serialized only when the document changed (docKeyOf is cached per state), not on every selection, measure or drag frame
+  const select = useMemo(() => {
+    let doc = '', out = ''
+    return (s: Parameters<typeof toGraph>[0] & Parameters<typeof docKeyOf>[0]): string => {
+      const d = docKeyOf(s)
+      if (d !== doc) (doc = d, out = JSON.stringify(toGraph(s)))
+      return out
+    }
+  }, [])
+  const key = useStore(store, select)
   const [as2, setAs2] = useState<GraphAs2>()
   const [error, setError] = useState<string>()
   const seq = useRef(0)
