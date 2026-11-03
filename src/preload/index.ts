@@ -13,6 +13,7 @@ const api: InkwellApi = {
   getPreviewBuilds: () => ipcRenderer.invoke(IPC.previewGet),
   onPreviewBuild: (cb) => on(IPC.previewBuild, cb),
   getPreviewFonts: () => ipcRenderer.invoke(IPC.previewFonts),
+  getPreviewArt: () => ipcRenderer.invoke(IPC.previewArt),
   reportPreviewRendered: (r) => ipcRenderer.send(IPC.previewRendered, r),
   getProject: () => ipcRenderer.invoke(IPC.projectGet),
   onProject: (cb) => on(IPC.projectUpdate, cb),

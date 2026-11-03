@@ -10,6 +10,12 @@ export interface PreviewNotes {
   ddsImages?: number
 }
 
+/** One of the game's own menu SWFs (read from the user's vanilla cache) that the preview loads for the prompt art; `name` is the file stem (`textentry`). */
+export interface PreviewArtBlob {
+  name: string
+  bytes: ArrayBuffer
+}
+
 /** A font file for the Ruffle preview; `name` is what the preview SWF refers to. */
 export interface PreviewFontBlob {
   name: string

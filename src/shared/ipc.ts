@@ -7,7 +7,7 @@ import type { Graph, Localization, MenuSettings } from '@inkwell-ui/spec'
 import type { GraphAs2, GraphResult, GraphSummary, PackSet } from './graphs'
 import type { OverlayDoc } from './overlay'
 import type { PackCandidate, PackIndexEntry, PackResult, PacksState } from './packs'
-import type { PreviewBuild, PreviewFontBlob, PreviewRendered } from './preview'
+import type { PreviewBuild, PreviewArtBlob, PreviewFontBlob, PreviewRendered } from './preview'
 import type { OpenResult, ProjectState, RecentProject, UiEvent } from './projectState'
 import type { SyncUiState } from './syncState'
 
@@ -19,6 +19,7 @@ export const IPC = {
   previewBuild: 'preview:build',
   previewRendered: 'preview:rendered',
   previewFonts: 'preview:fonts',
+  previewArt: 'preview:art',
   projectGet: 'project:get',
   projectUpdate: 'project:update',
   projectNew: 'project:new',
@@ -136,6 +137,8 @@ export interface InkwellApi {
   onPreviewBuild(cb: (b: PreviewBuild) => void): () => void
   /** Font files for the preview text (device fonts by name); the only place font bytes leave the main process. */
   getPreviewFonts(): Promise<PreviewFontBlob[]>
+  /** The game's own prompt art files from the vanilla cache, for the preview only; empty when the cache is not built. */
+  getPreviewArt(): Promise<PreviewArtBlob[]>
   /** Tells main how long the preview took (build received -> first frame). */
   reportPreviewRendered(r: PreviewRendered): void
 

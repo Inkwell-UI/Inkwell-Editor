@@ -8,6 +8,8 @@ import type { DeployScope, DeployTargetId } from '../shared/deploy'
 import type { CheckId, PathSettingKey, SetSettingResult, SettingKey } from '../shared/doctor'
 import type { OverlayDoc } from '../shared/overlay'
 import type { PreviewFontBlob, PreviewRendered } from '../shared/preview'
+import { readPreviewArt } from './swf/previewArt'
+import { vanillaCacheRoot } from './vanilla/cache'
 import type { OpenResult, UiEvent } from '../shared/projectState'
 import { PRODUCT_NAME } from '../shared/product'
 import { strings } from '../renderer/strings'
@@ -120,6 +122,7 @@ ipcMain.handle(IPC.syncGet, () => session.getSync())
 ipcMain.handle(IPC.previewFonts, (): PreviewFontBlob[] =>
   session.getPreviewFonts().map((f) => ({ name: f.family, bytes: f.bytes.buffer.slice(f.bytes.byteOffset, f.bytes.byteOffset + f.bytes.byteLength) as ArrayBuffer }))
 )
+ipcMain.handle(IPC.previewArt, () => readPreviewArt(vanillaCacheRoot(app.getPath('userData'))))
 ipcMain.handle(IPC.previewGet, () => session.getPreviews())
 ipcMain.handle(IPC.projectGet, () => session.getProject())
 ipcMain.handle(IPC.projectRecent, () => session.recent())

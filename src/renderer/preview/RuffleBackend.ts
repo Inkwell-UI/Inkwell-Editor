@@ -21,6 +21,19 @@ const loadFonts = (): Promise<string[]> =>
     .then((fonts) => fonts.map((f) => URL.createObjectURL(new Blob([f.bytes], { type: 'font/ttf' })))))
 
 /**
+ * The game's own prompt art (read by main from the user's vanilla cache): each file becomes a blob URL, given to the movie as the Flash variable `inkwellArt_<file>` that the menu class loads instead of
+ * `../_vanilla/<file>.swf`. Only files that were found are used; nothing here is exported or saved. An empty answer is not remembered, so building the cache later takes effect on the next load.
+ */
+let artUrls: Record<string, string> | undefined
+async function loadArt(): Promise<Record<string, string>> {
+  if (artUrls) return artUrls
+  const files = await (inkwell?.getPreviewArt() ?? Promise.resolve([])).catch(() => [])
+  const urls = Object.fromEntries(files.map((f) => [`inkwellArt_${f.name}`, URL.createObjectURL(new Blob([f.bytes], { type: 'application/x-shockwave-flash' }))]))
+  if (files.length) artUrls = urls
+  return urls
+}
+
+/**
  * Every load runs in a frame of its own with its own copy of Ruffle. Ruffle times a movie's timers (setInterval, so Delay, On Timer and Tween) from when its page started, so a second movie in the same
  * page ran the timers of the seconds the first one had been up in one burst: a timer node fired many times at once and a Tween never finished after a Reload. A fresh page starts the clock at zero.
  * Ruffle's files are copied next to index.html (see electron.vite.config.ts), so they are found relative to the page. No network is used; the frame has no inline script (the page's CSP).
@@ -116,7 +129,7 @@ export class RuffleBackend implements PreviewBackend {
       { once: true }
     )
     try {
-      await player.ruffle().load({ data: build.bytes, swfFileName: `${build.name}.preview.swf`, allowScriptAccess: true })
+      await player.ruffle().load({ data: build.bytes, swfFileName: `${build.name}.preview.swf`, allowScriptAccess: true, parameters: await loadArt() })
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       this.emit('error', msg)
