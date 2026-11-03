@@ -1,6 +1,7 @@
+import { writeAtomic } from './deploy/write'
 import { execFile } from 'node:child_process'
 import { existsSync, watch } from 'node:fs'
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { Graph, Swf, type Localization, type MenuSettings } from '@inkwell-ui/spec'
@@ -843,7 +844,7 @@ export function createSession(deps: SessionDeps) {
       const fnId = g.id.startsWith(`${packId}/`) ? g.id.slice(packId.length + 1) : g.id
       if (!pack || !dir || pack.origin !== 'library' || !isGraphId(fnId) || g.scope !== 'function') return { ok: false, error: `The library "${packId}" cannot be edited.` }
       try {
-        await writeFile(join(dir, 'functions', `${fnId}.json`), JSON.stringify({ ...g, id: fnId }, null, 2) + '\n')
+        await writeAtomic(join(dir, 'functions', `${fnId}.json`), JSON.stringify({ ...g, id: fnId }, null, 2) + '\n')
       } catch (e) {
         return { ok: false, error: e instanceof Error ? e.message : String(e) }
       }
@@ -860,6 +861,10 @@ export function createSession(deps: SessionDeps) {
     async packsInstall(token: string): Promise<PackResult> {
       if (!projectDir) return { ok: false, error: 'No project is open.' }
       return afterPackChange(await packManager.install(projectDir, token))
+    },
+    async packsRemove(id: string): Promise<PackResult> {
+      if (!projectDir) return { ok: false, error: 'No project is open.' }
+      return afterPackChange(await packManager.remove(projectDir, id))
     },
     async packsRestore(): Promise<PackResult<{ restored: string[]; errors: string[] }>> {
       if (!projectDir) return { ok: false, error: 'No project is open.' }

@@ -62,7 +62,7 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
           children: [
             { kind: 'split', direction: 'row', size: 5, children: [{ kind: 'panel', panel: 'graph', size: 5 }, { kind: 'split', direction: 'column', size: 1.7, edge: 'right', children: [{ ...preview, fixed: BEHAVIOUR_PREVIEW_HEIGHT }, { ...inspector, size: 1 }] }] },
             // folded to its tab strip until a tab is chosen: the trace is empty most of the time and the graph needs the height
-            { ...tabs(['trace', 'mockData', 'dataBinding', 'library', 'lintBudget'], 'trace', 1.4, 'folded'), edge: 'bottom' }
+            { ...tabs(['trace', 'mockData', 'dataBinding', 'lintBudget'], 'trace', 1.4, 'folded'), edge: 'bottom' }
           ]
         }
       ]

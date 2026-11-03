@@ -69,7 +69,7 @@ async function download(fetch: Fetch, url: string): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer())
 }
 
-interface Fetched { bytes: Buffer; files: Map<string, Buffer>; manifest: PackManifest; nodes: number; changelog: string }
+interface Fetched { bytes: Buffer; files: Map<string, Buffer>; manifest: PackManifest; nodes: number; nodeList: { title: string; category: string }[]; functionNames: string[]; changelog: string }
 
 /** Unzips a downloaded asset and checks that it is a pack: `manifest.json` at the root (Spec schema) and node files that parse. */
 function inspect(bytes: Buffer): Fetched {
@@ -77,14 +77,20 @@ function inspect(bytes: Buffer): Fetched {
   const raw = files.get('manifest.json')
   if (!raw) throw new Error('The download is not a pack: pack.zip has no manifest.json at its root.')
   const manifest = PackManifest.parse(JSON.parse(raw.toString('utf8')))
-  let nodes = 0
+  const nodeList: Fetched['nodeList'] = []
+  const functionNames: string[] = []
   for (const [name, data] of files) {
+    if (/^functions\/[^/]+\.json$/.test(name)) {
+      // a preview only: the pack loader validates the function when the pack is installed
+      try { functionNames.push(String((JSON.parse(data.toString('utf8')) as { name?: unknown }).name ?? name.slice(10, -5))) } catch { functionNames.push(name.slice(10, -5)) }
+      continue
+    }
     if (!/^nodes\/[^/]+\.json$/.test(name)) continue
     const r = NodeDef.safeParse(JSON.parse(data.toString('utf8')))
     if (!r.success) throw new Error(`${name}: ${r.error.issues[0]?.message ?? 'invalid node definition'}`)
-    nodes++
+    nodeList.push({ title: r.data.title, category: r.data.category })
   }
-  return { bytes, files, manifest, nodes, changelog: files.get('CHANGELOG.md')?.toString('utf8') ?? '' }
+  return { bytes, files, manifest, nodes: nodeList.length, nodeList, functionNames, changelog: files.get('CHANGELOG.md')?.toString('utf8') ?? '' }
 }
 
 export interface PackManagerDeps {
@@ -127,7 +133,7 @@ export function createPackManager(deps: PackManagerDeps) {
       const old = lock.packs.find((p) => p.id === fetched.manifest.id)
       const token = randomUUID()
       pending.set(token, { fetched, entry: { id: fetched.manifest.id, version, source, sha256: hash } })
-      return { ok: true, candidate: { token, id: fetched.manifest.id, version, repo: ref.repo, source, sha256: hash, changelog: fetched.changelog, nodes: fetched.nodes, ...(old ? { current: old.version } : {}) } }
+      return { ok: true, candidate: { token, id: fetched.manifest.id, version, repo: ref.repo, source, sha256: hash, changelog: fetched.changelog, nodes: fetched.nodes, nodeList: fetched.nodeList, functionNames: fetched.functionNames, ...(old ? { current: old.version } : {}) } }
     } catch (e) {
       return { ok: false, error: message(e) }
     }
@@ -195,12 +201,27 @@ export function createPackManager(deps: PackManagerDeps) {
     return { ok: true, updates, errors }
   }
 
+  /** Drops an installed pack: its packs.lock entry and its cache folder and zip. A lockfile that does not parse is never overwritten. */
+  async function remove(projectDir: string, id: string): Promise<PackResult> {
+    const { lock, error } = await readLock(projectDir)
+    if (error) return { ok: false, error }
+    const gone = lock.packs.filter((e) => e.id === id)
+    if (!gone.length) return { ok: false, error: `${id} is not an installed pack of this project.` }
+    try {
+      await writeAtomic(join(projectDir, 'packs.lock'), writePacksLock({ ...lock, packs: lock.packs.filter((e) => e.id !== id) }))
+      for (const e of gone) await Promise.all([rm(entryDir(projectDir, e), { recursive: true, force: true }), rm(`${entryDir(projectDir, e)}.zip`, { force: true })])
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: message(e) }
+    }
+  }
+
   async function state(projectDir: string): Promise<PacksState> {
     const { lock, error } = await readLock(projectDir)
     return { locked: (await lockedPacks(projectDir, lock)).locked, ...(error ? { lockError: error } : {}) }
   }
 
-  return { index, resolve, install, restore, checkUpdates, state, clear: (): void => pending.clear() }
+  return { index, resolve, install, remove, restore, checkUpdates, state, clear: (): void => pending.clear() }
 }
 
 /** `<cache>/<id>@<version>.zip` plus the extracted folder, written to a temp folder first so a failed write never leaves half a pack. */
@@ -214,5 +235,5 @@ async function writeCache(projectDir: string, e: { id: string; version: string }
   }
   await rm(dir, { recursive: true, force: true })
   await rename(tmp, dir)
-  await writeFile(`${dir}.zip`, f.bytes)
+  await writeAtomic(`${dir}.zip`, f.bytes)
 }

@@ -12,7 +12,7 @@ import { readPreviewArt } from './swf/previewArt'
 import { vanillaCacheRoot } from './vanilla/cache'
 import type { OpenResult, UiEvent } from '../shared/projectState'
 import { PRODUCT_NAME } from '../shared/product'
-import { strings } from '../renderer/strings'
+import { strings } from '../shared/strings'
 import type { AddFontOutcome } from '../shared/fonts'
 import type { LocFileResult } from '../shared/ipc'
 import { readPreviewImage } from './previewImage'
@@ -242,6 +242,7 @@ ipcMain.handle(IPC.packsState, () => session.packsState())
 ipcMain.handle(IPC.packsIndex, () => session.packsIndex())
 ipcMain.handle(IPC.packsResolve, (_e, input: unknown) => session.packsResolve(String(input)))
 ipcMain.handle(IPC.packsInstall, (_e, token: unknown) => session.packsInstall(String(token)))
+ipcMain.handle(IPC.packsRemove, (_e, id: unknown) => session.packsRemove(String(id)))
 ipcMain.handle(IPC.packsRestore, () => session.packsRestore())
 ipcMain.handle(IPC.packsUpdates, () => session.packsCheckUpdates())
 ipcMain.handle(IPC.strictSet, (_e, on: boolean) => session.setStrictMode(on))
@@ -370,7 +371,10 @@ async function buildMenu(): Promise<void> {
     },
     {
       label: strings.menu.view,
-      submenu: [{ label: strings.menu.setupGuide, click: () => win?.webContents.send(IPC.menuSetup) }]
+      submenu: [
+        { label: strings.menu.packageManager, click: () => win?.webContents.send(IPC.menuPackages) },
+        { label: strings.menu.setupGuide, click: () => win?.webContents.send(IPC.menuSetup) }
+      ]
     }
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))

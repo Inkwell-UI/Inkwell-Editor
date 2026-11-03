@@ -22,7 +22,7 @@ The new nodes appear in the graph editor's Add menu like any other.
 ## Update and restore
 
 - **Check Updates** (only on request) shows the newer release's changelog first; nothing changes until you accept.
-- On another computer: open the project and use **Download** in the Library tab to restore everything `packs.lock` lists. A pack removed from the index still restores from the source in its lock entry, with the same hash.
+- On another computer: open the project and use **Download** in the pack manager (the Library panel says when a pack is missing) to restore everything `packs.lock` lists. A pack removed from the index still restores from the source in its lock entry, with the same hash.
 
 ## Writing your own pack
 

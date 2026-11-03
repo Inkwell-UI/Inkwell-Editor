@@ -4,7 +4,6 @@ import { ContractsPanel, useContractsTab } from '../panels/ContractsPanel'
 import { GraphPanel } from '../panels/GraphPanel'
 import { InspectorPanel } from '../panels/InspectorPanel'
 import { LintBudgetPanel, useLintTab } from '../panels/LintBudgetPanel'
-import { LibraryPanel } from '../panels/LibraryPanel'
 import { LogicPanel } from '../panels/LogicPanel'
 import { LocalizationPanel } from '../panels/LocalizationPanel'
 import { MockDataPanel } from '../panels/MockDataPanel'
@@ -12,7 +11,7 @@ import { NavigatorPanel } from '../panels/NavigatorPanel'
 import { PreviewPanel } from '../panels/PreviewPanel'
 import { TracePanel } from '../panels/TracePanel'
 import { DataBindingPanel, useBindingTab } from '../panels/DataBindingPanel'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 
 /** What a panel adds to its tab when it sits in a tab group (a hook, so it can read stores). */
 export interface TabInfo {
@@ -39,7 +38,6 @@ export interface PanelDef {
 /** Panel id (what layouts refer to) -> definition. Add a panel here, then place its id in every workspace layout (workspaces.ts). */
 export const panelRegistry = {
   navigator: { title: strings.nav.title, component: NavigatorPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
-  library: { title: strings.lib.title, component: LibraryPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
   logic: { title: strings.logic.title, component: LogicPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
   contracts: { title: strings.contracts.title, component: ContractsPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 }, useTabInfo: useContractsTab },
   assets: { title: strings.assets.title, component: AssetsPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },

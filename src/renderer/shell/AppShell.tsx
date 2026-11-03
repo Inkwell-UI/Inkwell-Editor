@@ -7,13 +7,14 @@ import { useSelectionStore } from '../state/selectionStore'
 import { useTraceStore } from '../state/traceStore'
 import { runtimeRowId } from '../model/layerTree'
 import { useWorkspaceStore } from '../state/workspaceStore'
-import { strings } from '../strings'
+import { strings } from '../../shared/strings'
 import { Workspace } from '../workspace/Workspace'
 import { applyOverrides, removePanel } from '../workspace/layout'
 import { WORKSPACE_IDS, WORKSPACES } from '../workspace/workspaces'
 import { inkwell } from '../hooks/api'
 import { useDialogStore } from '../state/dialogStore'
 import { flushGraphSaves } from '../state/graphStore'
+import { PackManager } from '../packs/PacksSection'
 import { Toasts } from '../ui/Toasts'
 import { Dialogs } from './Dialogs'
 import { DockStrip } from './DockStrip'
@@ -99,6 +100,8 @@ export function AppShell() {
   useEffect(() => inkwell?.onOpenSetup(() => setWizard(true)), [])
   // Edit > Project Settings (no project open: nothing to show)
   useEffect(() => inkwell?.onOpenProjectSettings(() => useDialogStore.getState().show('projectSettings')), [])
+  // View > Package Manager (no project open: nothing to show)
+  useEffect(() => inkwell?.onOpenPackages(() => useDialogStore.getState().show('packages')), [])
   // Edit > Undo / Redo of the title bar menu: a field being edited keeps its own undo, anything else is the active SWF's history
   useEffect(() => {
     const run = (name: 'undo' | 'redo'): void => {
@@ -134,6 +137,7 @@ export function AppShell() {
       {!setupView && <TopBar />}
       <main className="shell-main">{settingsOpen ? <SettingsView key="settings" /> : wizard ? <FirstRunWizard onDone={() => setWizard(false)} /> : projectSettingsOpen ? <SettingsView key="project" initial="project" /> : <WorkspaceView />}</main>
       {!setupView && <StatusBar />}
+      {open === 'packages' && <PackManager onClose={() => useDialogStore.getState().close()} />}
       <Dialogs />
       <Toasts />
     </div>

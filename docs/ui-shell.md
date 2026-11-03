@@ -6,7 +6,7 @@ Implements phases 1 and 2 of the UI/UX architecture spec (phase 2: the Settings 
 
 ```
 Zone 1  TopBar            shell/TopBar.tsx       project, SWF switcher, target pill, mode switcher, Build All, Deploy (shell/DeployMenu.tsx: MO2 folders, Vortex and Package Mod = zip; docs/deploy.md)
-Zone 2  left tabs         navigator (the layers) | contracts | assets | menu settings (custom menus); Behaviour also `logic` under it (graphs, functions, components); the node packs are the Library tab of Behaviour's dock
+Zone 2  left tabs         navigator (the layers) | contracts | assets | menu settings (custom menus); Behaviour also `logic` under it (the Library: functions, with the packs' functions, and components); the pack manager is a dialog (View > Package Manager) are the Library tab of Behaviour's dock
 Zone 3  preview           PreviewPanel           stage toolbar, aspect frame, Inspect overlay, banners (build failed; Figma not connected: snapshot / no snapshot), the last-good-build indicator moved to the status bar; no GFx note (removed 2026-10-26, the owner: users know it is a preview)
 Zone 4  graph             GraphPanel             breadcrumb, event jump list, Knotwork canvas (docs/graphs.md, Graph UI), AS2 split view (docs/debugging.md)
 Zone 5  inspector         InspectorPanel
@@ -35,7 +35,7 @@ Layout (default), Behaviour, Localization: three layouts as data, Blender-style 
 | `devStore` | the game dev connection state, the game's trace lines, variable watch and last pin values, the Trace & Watch source (`docs/dev-mode.md`); fed by the bridge from `IPC.devState` / `IPC.devEvents` | no |
 | `projectStore` | open project (IR + overlays), active SWF | no (main owns it) |
 | `overlayStore` | one zundo-backed overlay store per SWF; saves every change to `swfs/<name>/overlay.json` through main | disk, via IPC |
-| `graphDocs` | per SWF: graph ids and the open graph (`[+ Graph]`, delete, rename attach/detach the id in the overlay `scripts`) | no (the files are) |
+| `graphDocs` | per SWF: graph ids and the open graph (a layer's graph is attached and detached by what it holds, `openLayerGraph`; function delete and rename stay) | no (the files are) |
 | `graphStore` / `swfHistory` | one zundo store per graph (Knotwork `createHistory`), ordered with the overlay store into the SWF's one undo history; saves to `swfs/<name>/graphs/<id>.json` (`docs/graphs.md`) | disk, via IPC |
 | `syncStore` | latest `SyncUiState` | no |
 | `timingStore` | last 50 builds in memory | no |
@@ -62,9 +62,9 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 
 ## Data flow
 
-- **Main owns the project** (`main/session.ts`): sync server, build pipeline, latest reports and previews, overlays. `open(dir)` restarts the server on the same port (the Figma plugin only reconnects) and pushes `ProjectState` (IR + overlay of every SWF) after swfs change, statuses and builds.
+- **Who owns what.** Main (`main/session.ts`) owns the IR, the sync server, the build pipeline, latest reports and previews, and everything on disk. The renderer's stores are the live master of the overlay, graphs and menu settings while the project is open; main only persists them (validated, serialized) and builds from them, so a push from main never overwrites an edit. `src/main`, `src/renderer` and `src/shared` follow one direction: renderer and main import `shared`, never each other (`shared/layers.test.ts`). `open(dir)` restarts the server on the same port (the Figma plugin only reconnects) and pushes `ProjectState` (IR + overlay of every SWF) after swfs change, statuses and builds.
 - **Overlay edits** (Inspector role and instance name) go through `overlayStore.editNode` (one history entry), are saved by `saveOverlay` (validated against the spec's `Overlay` schema and identifier rules, unknown keys kept, serialized with the project's other writes by `project/lock.ts`) and trigger a rebuild of that SWF (instance names feed the compiler). The pipeline re-reads `overlay.json` before it saves, so a build never writes back an older overlay. The renderer's overlay store is the source of truth while the project is open; later pushes do not overwrite it.
-- **Undo** (UX 5.5): one history per SWF (`Ctrl+Z`, `Ctrl+Shift+Z`/`Ctrl+Y`, or the Inspector buttons; not while typing in a field). The status bar shows `Undo: SWF`. Figma edits never enter it and the visual IR is never touched.
+- **Undo** (UX 5.5): one history per SWF, holding the overlay, every graph and the SWF's `menu.json` (`state/menuStore.ts`); project-wide files (`localization.json`, `project.json` settings such as the mod id, which renames deployed files, and Strict Mode) are outside it on purpose, because they span every SWF. One history per SWF (`Ctrl+Z`, `Ctrl+Shift+Z`/`Ctrl+Y`, or the Inspector buttons; not while typing in a field). The status bar shows `Undo: SWF`. Figma edits never enter it and the visual IR is never touched.
 - **Strict Mode** (`project.json` `strictMode`): the lint dock promotes warnings to errors for display (`shared/lint.ts` `promoteStrict`), the sync server promotes them in the build status (status `error`), and Deploy's export gate promotes them so they block (`docs/deploy.md`, Export gate).
 - **One validation source:** the dock, the Navigator badges and the Inspector's issues all read `useDockRows()` (compiler lint rows + unreachable layers + a synthetic `build-failed` row when a build threw).
 - **Build failure:** the stage keeps the last good SWF (`usePreviewBuilds`), shows `Build failed - showing last good build` and its `Show error` button opens the Lint dock on the first error. If FFDec/Java is missing, Build All is disabled and the status bar says `FFDec: not found` (opens the Settings view).
@@ -73,7 +73,7 @@ Figma -> Inkwell: the plugin's `selection` message reaches the server, main forw
 ## Navigator, Inspector details
 
 - LAYERS: `model/layerTree.ts` walks the IR (root down, children in order). Badges: lint error/warning counts, `$` only when the text content starts with `$`, script/link/pad from the overlay. Orphans: `model/orphans.ts` (orphaned SWFs, and overlay entries whose node id is not in the IR; unknown keys are listed). Relink to Selected and Discard work for overlay orphans of the active SWF (`state/orphanActions.ts`: one overlay edit, graph nodes targeting the old layer are retargeted; Relink refuses a target that already has behavior); for an orphaned SWF Discard moves `swfs/<name>/` to `<project>/.trash/` (IPC `discardSwf`, `session.discardSwf`, sync server `forget`) and Relink stays disabled (a SWF is keyed by its Figma frame id, so relinking would orphan every layer inside).
-- Inspector GFx MAPPING uses `describeTextMapping` from `src/main/swf/text.ts`, the same `sizingFlags` the compiler uses for the TextField. FONT RESOLUTION shows the design spec's order: (1) text style name alias-shaped, (2) font family/style, (3) fallback table (warning `font-fallback`), (4) `font-unmapped`.
+- Inspector GFx MAPPING uses `describeTextMapping` from `src/shared/textMapping.ts`, the same `sizingFlags` the compiler uses for the TextField. FONT RESOLUTION shows the design spec's order: (1) text style name alias-shaped, (2) font family/style, (3) fallback table (warning `font-fallback`), (4) `font-unmapped`.
 - There are no transform or colour inputs anywhere (Figma owns visuals). The `Figma Source` card is read-only text.
 
 ## Adding a tab, panel, workspace

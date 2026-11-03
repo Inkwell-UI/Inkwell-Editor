@@ -161,6 +161,20 @@ describe('pack manager', () => {
     expect(await issues()).toEqual([])
   })
 
+  it('removes an installed pack: lock entry and cache go, other packs stay, an unknown id changes nothing', async () => {
+    const dir = await project()
+    const m = createPackManager(github({ '1.0.0': pack('1.0.0') }, { latest: '1.0.0' }))
+    const r = await m.resolve(dir, { repo: REPO })
+    if (!r.ok) throw new Error(r.error)
+    await m.install(dir, r.candidate.token)
+    expect(await m.remove(dir, 'nope')).toMatchObject({ ok: false })
+    expect((await readLock(dir)).lock.packs).toHaveLength(1)
+    expect(await m.remove(dir, 'hello')).toEqual({ ok: true })
+    expect((await readLock(dir)).lock.packs).toEqual([])
+    expect((await lockedPacks(dir, (await readLock(dir)).lock)).locked).toEqual([])
+    await expect(readFile(join(packCacheDir(dir), 'hello@1.0.0.zip'))).rejects.toThrow()
+  })
+
   it('parses what users paste', () => {
     expect(parseGitHubRef('me/inkwell-hello')).toEqual({ repo: REPO })
     expect(parseGitHubRef('https://github.com/me/inkwell-hello.git')).toEqual({ repo: REPO })

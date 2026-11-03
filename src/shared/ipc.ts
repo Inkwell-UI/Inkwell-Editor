@@ -44,6 +44,7 @@ export const IPC = {
   packsIndex: 'packs:index',
   packsResolve: 'packs:resolve',
   packsInstall: 'packs:install',
+  packsRemove: 'packs:remove',
   packsRestore: 'packs:restore',
   packsUpdates: 'packs:updates',
   libraryCreate: 'library:create',
@@ -62,6 +63,7 @@ export const IPC = {
   figmaSelection: 'figma:selection',
   menuSettings: 'menu:settings',
   menuSetup: 'menu:setup',
+  menuPackages: 'menu:packages',
   menuProjectSettings: 'menu:projectSettings',
   menuSaveNow: 'menu:save-now',
   menuUndo: 'menu:undo',
@@ -215,6 +217,8 @@ export interface InkwellApi {
   getPacksIndex(): Promise<PackResult<{ index: PackIndexEntry[] }>>
   resolvePack(input: string): Promise<PackResult<{ candidate: PackCandidate }>>
   installPack(token: string): Promise<PackResult>
+  /** Removes an installed pack (its packs.lock entry and cache). */
+  removePack(id: string): Promise<PackResult>
   restorePacks(): Promise<PackResult<{ restored: string[]; errors: string[] }>>
   checkPackUpdates(): Promise<PackResult<{ updates: PackCandidate[]; errors: string[] }>>
   /** Strict Mode, stored in project.json; rebuilds every SWF so the build status follows. */
@@ -237,6 +241,8 @@ export interface InkwellApi {
   onOpenSettings(cb: () => void): () => void
   /** View > Setup Guide in the application menu: opens the first-run wizard again. */
   onOpenSetup(cb: () => void): () => void
+  /** View > Package Manager in the application menu: opens the pack manager (needs a project). */
+  onOpenPackages(cb: () => void): () => void
   /** Edit > Project Settings in the application menu. */
   onOpenProjectSettings(cb: () => void): () => void
   /** File > Save in the application menu: writes the edits still waiting for their debounce. */
