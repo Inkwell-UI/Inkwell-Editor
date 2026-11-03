@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { loadProject, saveProject } from './index'
 import { copyExample, createProject, PROJECT_GITIGNORE } from './lifecycle'
 import { writeOverlay } from './overlayFile'
-import { addRecent, loadRecent, saveRecent } from './recent'
+import { addRecent, loadRecent, removeRecent, saveRecent } from './recent'
 import { writeProjectSetting } from './settings'
 
 const sample = resolve(__dirname, '../../../samples/hud-minimal')
@@ -84,6 +84,10 @@ describe('recent projects', () => {
     expect(l.map((x) => x.dir)).toEqual(['c:\\a\\', 'C:\\B'])
     for (let i = 0; i < 20; i++) l = addRecent(l, r(`D:\\${i}`))
     expect(l).toHaveLength(10)
+  })
+  it('removes one folder, case-insensitive', () => {
+    const l = [r('C:\\A'), r('C:\\B')]
+    expect(removeRecent(l, 'c:\\a\\').map((x) => x.dir)).toEqual(['C:\\B'])
   })
   it('round-trips through a file; a damaged file is an empty list', async () => {
     const f = join(await tmp(), 'recent.json')

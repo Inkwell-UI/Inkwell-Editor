@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
-import { CircleX, Link2Off, WifiOff } from 'lucide-react'
+import { CircleX, WifiOff } from 'lucide-react'
 import { ASPECTS, type AspectId } from '../../shared/preview'
 import { reflowIr } from '../../shared/reflow'
+import { defaultMenuSettings } from '../../shared/menu'
 import { inkwell } from '../hooks/api'
 import { useElementSize } from '../hooks/useElementSize'
 import { usePreviewBuilds } from '../hooks/usePreviewBuilds'
@@ -20,7 +21,7 @@ import { FocusGraphOverlay } from '../preview/FocusGraphOverlay'
 import { promptPreviewStore } from '../preview/prompts'
 import { hasFocusGraph } from '../../main/lint/focus'
 import { RuffleBackend } from '../preview/RuffleBackend'
-import { DEFAULT_PREVIEW_SETTINGS, PreviewBackgroundLayer, PreviewOverlays, hasBackground, type PreviewSettings } from '../preview/previewSettings'
+import { PreviewBackgroundLayer, PreviewOverlays, hasBackground, previewKey, usePreviewSettings } from '../preview/previewSettings'
 import { StageToolbar, type StageMode } from '../preview/StageToolbar'
 import { uiScaleStore } from '../preview/uiScale'
 import { localeStore } from '../preview/locale'
@@ -63,7 +64,7 @@ export function PreviewPanel() {
   const select = useSelectionStore((s) => s.selectComponent)
   const [mode, setMode] = useState<StageMode>('inspect')
   const [aspect, setAspect] = useState<AspectId>('16:9')
-  const [pv, setPv] = useState<PreviewSettings>(DEFAULT_PREVIEW_SETTINGS)
+  const [pv, setPv] = usePreviewSettings(previewKey(project?.dir ?? '', swf?.id ?? ''))
   const [zoom, setZoom] = useState(1)
   const [paused, setPaused] = useState(false)
   const [focusOn, setFocusOn] = useState(false)
@@ -179,7 +180,6 @@ export function PreviewPanel() {
         <div className="banner banner-info" data-testid="snapshot-banner" data-snapshot={usableSnapshot(project.snapshot) ? 'yes' : 'no'} title={usableSnapshot(project.snapshot) ? strings.stage.snapshot : strings.stage.noSnapshot}>
           <WifiOff size={14} aria-hidden="true" />
           {usableSnapshot(project.snapshot) ? <span title={strings.stage.snapshot}>{strings.stage.snapshot}</span> : <span title={strings.stage.noSnapshot}>{strings.stage.noSnapshot}</span>}
-          <Btn icon={Link2Off} reason={strings.stage.setupGuideReason}>{strings.stage.setupGuide}</Btn>
         </div>
       )}
     </>
@@ -212,7 +212,7 @@ export function PreviewPanel() {
             <div className="stage-zoom" style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}>
               {ctl && build?.bytes ? (
                 <AspectFrame aspect={shownAspect}>
-                  <PreviewBackgroundLayer settings={pv} />
+                  <PreviewBackgroundLayer settings={pv} blur={isMenu && (swf?.menu ?? defaultMenuSettings()).flags.blur} />
                   <SwfViewport backend={ctl.backend} stage={build.stage} clear={bgOn} />
                   {swf && shownIr && <InspectOverlay ir={shownIr}stage={build.stage} active={mode === 'inspect' && !(isMenu && focusOn)} selected={selected} extraBounds={runtimeBounds} onSelect={(id) => select(id, 'stage')} />}
                   {swf && shownIr && isMenu && focusOn && <FocusGraphOverlay ir={shownIr}swfId={swf.id} swfName={swf.name} stage={build.stage} active={mode === 'inspect'} onSelect={(id) => select(id, 'stage')} />}

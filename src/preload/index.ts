@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { IPC, type InkwellApi } from '../shared/ipc'
 
 const on = <T>(channel: string, cb: (v: T) => void): (() => void) => {
@@ -20,10 +20,13 @@ const api: InkwellApi = {
   openProject: (dir, t) => ipcRenderer.invoke(IPC.projectOpen, dir, t),
   openExample: (t) => ipcRenderer.invoke(IPC.projectExample, t),
   getRecentProjects: () => ipcRenderer.invoke(IPC.projectRecent),
+  forgetRecentProject: (dir) => ipcRenderer.invoke(IPC.projectForgetRecent, dir),
   saveOverlay: (swfName, overlay) => ipcRenderer.invoke(IPC.overlaySave, swfName, overlay),
   saveMenuSettings: (swfName, settings) => ipcRenderer.invoke(IPC.menuSave, swfName, settings),
   setPreviewTheme: (swfName, mode) => ipcRenderer.invoke(IPC.previewTheme, swfName, mode),
   setPreviewAspect: (swfName, aspect) => ipcRenderer.invoke(IPC.previewAspect, swfName, aspect),
+  pathOfFile: (file) => webUtils.getPathForFile(file),
+  readPreviewImage: (path) => ipcRenderer.invoke(IPC.previewImage, path),
   setSwfTarget: (swfName, kind, more) => ipcRenderer.invoke(IPC.swfTarget, swfName, kind, more),
   listContracts: () => ipcRenderer.invoke(IPC.contractsList),
   getProjectFonts: () => ipcRenderer.invoke(IPC.projectFonts),

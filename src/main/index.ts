@@ -13,6 +13,7 @@ import { PRODUCT_NAME } from '../shared/product'
 import { strings } from '../renderer/strings'
 import type { AddFontOutcome } from '../shared/fonts'
 import type { LocFileResult } from '../shared/ipc'
+import { readPreviewImage } from './previewImage'
 import { exportCsvFile, exportTranslationFiles, readCsvImport } from './localizationIo'
 import { appMenuModel, type RoleEntry } from './appMenuModel'
 import { copyExample, createProject } from './project/lifecycle'
@@ -122,6 +123,7 @@ ipcMain.handle(IPC.previewFonts, (): PreviewFontBlob[] =>
 ipcMain.handle(IPC.previewGet, () => session.getPreviews())
 ipcMain.handle(IPC.projectGet, () => session.getProject())
 ipcMain.handle(IPC.projectRecent, () => session.recent())
+ipcMain.handle(IPC.projectForgetRecent, (_e, dir: unknown) => (typeof dir === 'string' ? session.forgetRecent(dir) : session.recent()))
 ipcMain.handle(IPC.projectOpen, (_e, dir: string | undefined, title: string | undefined) =>
   attempt(async () => {
     const d = dir ?? (await pickFolder(title ?? 'Open project'))
@@ -146,6 +148,7 @@ ipcMain.handle(IPC.projectExample, (_e, title: string) =>
 )
 ipcMain.handle(IPC.overlaySave, (_e, swfName: string, doc: OverlayDoc) => session.saveOverlay(swfName, doc))
 ipcMain.handle(IPC.previewAspect, (_e, swfName: string, aspect: unknown) => session.setPreviewAspect(swfName, aspect))
+ipcMain.handle(IPC.previewImage, (_e, path: unknown) => readPreviewImage(path))
 ipcMain.handle(IPC.previewTheme,(_e, swfName: string, mode: string) => session.setPreviewTheme(swfName, mode))
 ipcMain.handle(IPC.swfTarget, (_e, swfName: string, kind: unknown, more: { contract?: unknown; layers?: unknown } | undefined) => session.setTarget(swfName, kind, more ?? {}))
 ipcMain.handle(IPC.contractsList, () => session.listContracts())

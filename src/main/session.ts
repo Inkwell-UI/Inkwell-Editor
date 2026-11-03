@@ -47,7 +47,7 @@ import { readComponentTrees, writeComponentTrees } from './project/componentTree
 import { componentGraphExists, deleteComponentGraph, readComponentGraphs, writeComponentGraph } from './project/componentFiles'
 import { loadComponentSources } from './project/componentSources'
 import { writeOverlay } from './project/overlayFile'
-import { addRecent, loadRecent, saveRecent } from './project/recent'
+import { addRecent, loadRecent, removeRecent, saveRecent } from './project/recent'
 import { writeProjectSetting } from './project/settings'
 import { MOD_ID, modIdProblem } from '../shared/modId'
 import { readSnapshot, staleSwfs, type FigmaSnapshot, type SnapshotSource } from './project/snapshot'
@@ -699,6 +699,11 @@ export function createSession(deps: SessionDeps) {
     getPreviews: (): PreviewBuild[] => [...previews.values()],
     getPreviewFonts: () => fonts().fonts,
     recent: (): Promise<RecentProject[]> => loadRecent(recentFile),
+    async forgetRecent(dir: string): Promise<RecentProject[]> {
+      const list = removeRecent(await loadRecent(recentFile), dir)
+      await saveRecent(recentFile, list).catch(() => undefined)
+      return list
+    },
     onPreviewRendered(r: PreviewRendered): void {
       if (r.seq === latestSeq) update({ previewMs: r.ms })
     },

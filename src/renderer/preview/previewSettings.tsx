@@ -1,6 +1,11 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
+import { safeStorage } from '../state/safeStorage'
+import { BlurredImage } from './BlurredImage'
 import { Crosshair, Frame, Grid2x2, Grid3x3, Ruler, ScanLine, SlidersHorizontal, type LucideIcon } from 'lucide-react'
 import { useElementSize } from '../hooks/useElementSize'
+import { inkwell } from '../hooks/api'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
@@ -20,16 +25,80 @@ export interface PreviewSettings {
   /** An object URL of the chosen file; the parent revokes it when it is replaced. */
   image?: string
   imageName?: string
+  /** Where the picked file is on disk: the saved part. The image is read again from it when a SWF opens. */
+  imagePath?: string
+  /** The saved path could not be read (moved, deleted). Not saved: the next session tries again. */
+  imageMissing?: boolean
   /** Brightness of the background image: 1 as it is, 0 fully dimmed. */
   brightness: number
 }
 
 export const DEFAULT_PREVIEW_SETTINGS: PreviewSettings = {
-  overlays: { thirds: false, grid: false, center: false, safe: true, margins: false, rulers: false },
+  overlays: { thirds: false, grid: false, center: false, safe: false, margins: false, rulers: false },
   marginPx: 48,
   background: 'none',
   color: '#2b3a4a',
   brightness: 1
+}
+
+const HEX = /^#[0-9a-f]{6}$/i
+const MARGIN_MAX = 500
+const OVERLAY_IDS = Object.keys(DEFAULT_PREVIEW_SETTINGS.overlays) as OverlayId[]
+
+/** Whatever storage held, cut down to valid fields. The image URL is never stored (it dies with the session); its path is. */
+function restore(raw: unknown): PreviewSettings {
+  const d = DEFAULT_PREVIEW_SETTINGS
+  const s = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const o = (s.overlays ?? {}) as Record<string, unknown>
+  const path = typeof s.imagePath === 'string' && s.imagePath ? s.imagePath : undefined
+  return {
+    ...(path ? { imagePath: path, ...(typeof s.imageName === 'string' ? { imageName: s.imageName } : {}) } : {}),
+    overlays: Object.fromEntries(OVERLAY_IDS.map((id) => [id, typeof o[id] === 'boolean' ? o[id] : d.overlays[id]])) as Record<OverlayId, boolean>,
+    marginPx: typeof s.marginPx === 'number' && s.marginPx >= 0 && s.marginPx <= MARGIN_MAX ? Math.round(s.marginPx) : d.marginPx,
+    background: s.background === 'color' ? 'color' : s.background === 'image' && path ? 'image' : 'none',
+    color: typeof s.color === 'string' && HEX.test(s.color) ? s.color : d.color,
+    brightness: typeof s.brightness === 'number' && s.brightness >= 0 && s.brightness <= 1 ? s.brightness : d.brightness
+  }
+}
+
+/** The key of one SWF's settings: its project folder plus its Figma frame id. */
+export const previewKey = (projectDir: string, swfId: string): string => `${projectDir}|${swfId}`
+
+interface PreviewSettingsStore {
+  bySwf: Record<string, PreviewSettings>
+  set(key: string, next: PreviewSettings): void
+}
+
+/** Per-user and per SWF (localStorage behind `safeStorage`, like `settingsStore`), outside the panel so a remount keeps it. A SWF with no entry has the defaults. */
+export const usePreviewSettingsStore = create<PreviewSettingsStore>()(
+  persist((set) => ({ bySwf: {}, set: (key, next) => set((s) => ({ bySwf: { ...s.bySwf, [key]: next } })) }), {
+    name: 'inkwell.previewSettings.v2',
+    storage: createJSONStorage(() => safeStorage),
+    partialize: (s) => ({ bySwf: Object.fromEntries(Object.entries(s.bySwf).map(([k, { image, imageMissing, ...rest }]) => [k, rest])) }),
+    merge: (p, cur) => {
+      const saved = (p as { bySwf?: unknown } | null)?.bySwf
+      return { ...cur, bySwf: saved && typeof saved === 'object' ? Object.fromEntries(Object.entries(saved).map(([k, v]) => [k, restore(v)])) : {} }
+    }
+  })
+)
+
+/** One SWF's preview settings and their setter. Reads the saved background image from its path once (and again when the path changes). */
+export function usePreviewSettings(key: string): [PreviewSettings, (next: PreviewSettings) => void] {
+  const settings = usePreviewSettingsStore((s) => s.bySwf[key]) ?? DEFAULT_PREVIEW_SETTINGS
+  const set = usePreviewSettingsStore((s) => s.set)
+  const { imagePath, image, imageMissing } = settings
+  useEffect(() => {
+    if (!imagePath || image || imageMissing || !inkwell) return
+    let alive = true
+    // patch the latest entry, not the one this effect saw, and only if the path is still the one asked for
+    const patch = (p: Partial<PreviewSettings>): void => {
+      const cur = usePreviewSettingsStore.getState().bySwf[key]
+      if (alive && cur?.imagePath === imagePath) set(key, { ...cur, ...p })
+    }
+    void inkwell.readPreviewImage(imagePath).then((r) => patch(r.ok ? { image: URL.createObjectURL(new Blob([new Uint8Array(r.bytes)], { type: r.mime })) } : { imageMissing: true }))
+    return () => void (alive = false)
+  }, [key, imagePath, image, imageMissing, set])
+  return [settings, (next) => set(key, next)]
 }
 
 const OVERLAYS: readonly { id: OverlayId; icon: LucideIcon }[] = [
@@ -41,8 +110,6 @@ const OVERLAYS: readonly { id: OverlayId; icon: LucideIcon }[] = [
   { id: 'rulers', icon: Ruler }
 ]
 const PRESETS = ['#000000', '#808080', '#2b3a4a'] as const
-const HEX = /^#[0-9a-f]{6}$/i
-const MARGIN_MAX = 500
 
 /** True when a background shows (it needs the movie drawn without its own stage color). */
 export const hasBackground = (s: PreviewSettings): boolean => s.background === 'color' || (s.background === 'image' && !!s.image)
@@ -57,7 +124,9 @@ export function PreviewSettingsControl({ value, onChange }: { value: PreviewSett
   const pickImage = (f: File | undefined): void => {
     if (!f) return
     if (value.image) URL.revokeObjectURL(value.image)
-    set({ image: URL.createObjectURL(f), imageName: f.name, background: 'image' })
+    const path = inkwell?.pathOfFile(f)
+    const { imagePath: _old, imageMissing: _missing, ...rest } = value
+    onChange({ ...rest, image: URL.createObjectURL(f), imageName: f.name, background: 'image', ...(path ? { imagePath: path } : {}) })
   }
   return (
     <Popover
@@ -112,7 +181,7 @@ export function PreviewSettingsControl({ value, onChange }: { value: PreviewSett
           )}
           {value.background === 'image' && (
             <div className="pv-settings-row">
-              <span className="pv-hex"><span className="pv-file">{value.imageName ?? ''}</span></span>
+              <span className="pv-hex"><span className="pv-file" title={value.imagePath}>{value.imageMissing ? strings.stage.backgroundMissing(value.imageName ?? '') : value.imageName ?? ''}</span></span>
               <Btn onClick={() => file.current?.click()} testId="bg-choose">{strings.stage.backgroundChoose}</Btn>
               <input ref={file} type="file" accept="image/*" hidden onChange={(e) => (pickImage(e.target.files?.[0]), (e.target.value = ''))} />
             </div>
@@ -132,11 +201,20 @@ export function PreviewSettingsControl({ value, onChange }: { value: PreviewSett
   )
 }
 
-/** The picked background, behind the movie (which is drawn transparent while this shows). */
-export function PreviewBackgroundLayer({ settings }: { settings: PreviewSettings }) {
+/**
+ * The picked background, behind the movie (which is drawn transparent while this shows). `blur` is the menu's "Blur the background" flag:
+ * the game blurs the world behind such a menu, so the image is drawn blurred the same way (`menuBlur.ts`). A color has nothing to blur.
+ */
+export function PreviewBackgroundLayer({ settings, blur = false }: { settings: PreviewSettings; blur?: boolean }) {
   if (!hasBackground(settings)) return null
-  const style = settings.background === 'image' ? { backgroundImage: `url("${settings.image}")`, filter: `brightness(${settings.brightness})` } : { background: HEX.test(settings.color) ? settings.color : DEFAULT_PREVIEW_SETTINGS.color }
-  return <div className="pv-background" style={style} aria-hidden="true" />
+  if (settings.background !== 'image') return <div className="pv-background" style={{ background: HEX.test(settings.color) ? settings.color : DEFAULT_PREVIEW_SETTINGS.color }} aria-hidden="true" />
+  return (
+    <div className="pv-background pv-background-clip" aria-hidden="true">
+      {blur && settings.image
+        ? <BlurredImage src={settings.image} brightness={settings.brightness} />
+        : <div className="pv-background" style={{ backgroundImage: `url("${settings.image}")`, filter: `brightness(${settings.brightness})` }} />}
+    </div>
+  )
 }
 
 const line = (cls: string, style: React.CSSProperties) => <div className={`pv-line ${cls}`} style={style} />

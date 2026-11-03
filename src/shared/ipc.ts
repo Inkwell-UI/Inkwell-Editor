@@ -25,6 +25,7 @@ export const IPC = {
   projectOpen: 'project:open',
   projectExample: 'project:example',
   projectRecent: 'project:recent',
+  projectForgetRecent: 'project:forget-recent',
   overlaySave: 'overlay:save',
   graphsList: 'graphs:list',
   graphsLoad: 'graphs:load',
@@ -72,6 +73,7 @@ export const IPC = {
   contractsList: 'contracts:list',
   previewTheme: 'preview:theme',
   previewAspect: 'preview:aspect',
+  previewImage: 'preview:image',
   locLoad: 'loc:load',
   projectFonts: 'fonts:project',
   projectFontAdd: 'fonts:projectAdd',
@@ -147,6 +149,8 @@ export interface InkwellApi {
   /** Native folder dialog, copies the sample project (samples/hud-minimal) there and opens it. */
   openExample(dialogTitle: string): Promise<OpenResult>
   getRecentProjects(): Promise<RecentProject[]>
+  /** Removes one folder from the recent list (the folder itself is untouched); returns the new list. */
+  forgetRecentProject(dir: string): Promise<RecentProject[]>
   /** Writes `swfs/<swfName>/overlay.json` (validated; unknown keys kept as sent). */
   saveOverlay(swfName: string, overlay: OverlayDoc): Promise<SaveOverlayResult>
   /** Writes `swfs/<swfName>/menu.json` (the Spec's MenuSettings; validated, unknown keys kept as sent). The project state follows. */
@@ -154,6 +158,10 @@ export interface InkwellApi {
   setPreviewTheme(swfName: string, mode: string): Promise<{ ok: boolean }>
   /** Aspect ratio (width / height) the preview SWF is laid out for; rebuilds it. */
   setPreviewAspect(swfName: string, aspect: number): Promise<{ ok: boolean }>
+  /** The disk path of a file the user picked in the renderer ('' when it has none). */
+  pathOfFile(file: File): string
+  /** Reads a preview background image by path (png, jpg, gif, webp, bmp, up to 20 MB). `ok: false` when it is gone, too big or not an image. */
+  readPreviewImage(path: string): Promise<{ ok: true; mime: string; bytes: Uint8Array } | { ok: false }>
   /** Target of a SWF; a menu replacement also takes `contract` and `layers` (W5; empty removes them). */
   setSwfTarget(swfName: string, kind: 'hudWidget' | 'customMenu' | 'menuReplacement', more?: { contract?: string; layers?: string[] }): Promise<{ ok: true } | { ok: false; error: string }>
   /** The shipped contracts (menu name, layer names). */

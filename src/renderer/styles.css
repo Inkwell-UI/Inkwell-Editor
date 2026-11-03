@@ -393,6 +393,8 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .pv-dim-value { min-width: 32px; text-align: right; font-size: 11px; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
 .pv-preset { width: 22px; height: 22px; cursor: pointer; }
 .pv-background { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.pv-background-clip { overflow: hidden; }
+.pv-blur-canvas { position: absolute; left: -3%; top: -3%; width: 106%; height: 106%; }
 .pv-line { position: absolute; background: var(--safe-label-fg); pointer-events: none; }
 .pv-thirds { opacity: .55; }
 .pv-grid { opacity: .25; }
@@ -405,13 +407,29 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 
 /* start screen, dialogs */
 .start { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; overflow: auto; }
-.start-card { width: min(640px, 100%); background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
-.start-card h1 { display: flex; align-items: center; gap: 10px; font-size: 24px; }
-.start-card h2 { font-size: 12px; color: var(--fg-dim); margin: 20px 0 6px; }
-.start-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 6px; }
-.recent { list-style: none; margin: 0; padding: 0; }
-.recent-item { display: flex; flex-direction: column; width: 100%; text-align: left; font: inherit; color: var(--fg); background: transparent; border: 1px solid transparent; border-radius: var(--radius); padding: 6px 8px; cursor: pointer; }
-.recent-item:hover { background: var(--hover); border-color: var(--line); }
+.start-grid { width: min(900px, 100%); display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 48px; align-items: start; }
+.start-intro { display: flex; flex-direction: column; gap: 16px; padding-top: 6px; }
+.start-intro h1 { display: flex; align-items: center; gap: 10px; font-size: 24px; margin: 0; }
+.start-intro p { margin: -8px 0 0; font-size: 12px; }
+.start-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.start-actions .btn { justify-content: flex-start; }
+.start-recent-panel { background: var(--surface-1); border-radius: var(--radius); padding: 14px 8px 8px; min-width: 0; }
+.start-recent-panel h2 { font-size: 12px; font-weight: 600; color: var(--fg-dim); margin: 0; padding: 0 10px 8px; }
+.start-recent-panel .empty { padding: 0 10px 8px; }
+.start-recent { list-style: none; margin: 0; padding: 0; }
+.start-recent > li { position: relative; }
+.start-recent-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: center; width: 100%; min-height: 44px; text-align: left; font: inherit; color: var(--fg); background: transparent; border: 1px solid transparent; border-radius: var(--radius); padding: 4px 10px; cursor: pointer; }
+.start-recent-item:hover { background: var(--hover); }
+.start-recent-name { grid-column: 1; font-size: 13px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.start-recent-path { grid-column: 1; font-size: 11px; color: var(--fg-dim); font-family: ui-monospace, Consolas, monospace; direction: rtl; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.start-recent-when { grid-column: 2; grid-row: 1 / span 2; font-size: 11px; color: var(--fg-dim); }
+.start-recent-forget { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); opacity: 0; transition: opacity 0.15s ease; }
+.start-recent > li:hover .start-recent-forget, .start-recent-forget:focus-visible { opacity: 1; }
+.start-recent-when { transition: opacity 0.15s ease; }
+.start-recent > li:hover .start-recent-when { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .start-recent-forget, .start-recent-when { transition: none; } }
+.start-recent-more { margin: 4px 0 0 2px; }
+@media (max-width: 760px) { .start-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
 .dialog-backdrop { position: fixed; inset: 0; background: var(--backdrop); display: flex; align-items: center; justify-content: center; z-index: 50; }
 .dialog { width: min(560px, 92vw); max-height: 85vh; overflow: auto; background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: 0 16px 48px var(--shadow); }
 .dialog-title { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--line); }

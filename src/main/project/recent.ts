@@ -12,6 +12,9 @@ export function addRecent(list: readonly RecentProject[], entry: RecentProject, 
   return [entry, ...list.filter((r) => !same(r.dir, entry.dir))].slice(0, keep)
 }
 
+/** The list without the entry for `dir`. */
+export const removeRecent = (list: readonly RecentProject[], dir: string): RecentProject[] => list.filter((r) => !same(r.dir, dir))
+
 /** Reads the list; a missing or damaged file is an empty list (it is only a convenience). Entries of the wrong shape are dropped. */
 export async function loadRecent(file: string): Promise<RecentProject[]> {
   try {
