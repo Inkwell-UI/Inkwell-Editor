@@ -42,13 +42,15 @@ export function InspCard({ title, icon: Icon, actions, testId, children }: { tit
 const memory = new Map<string, boolean>()
 
 /** A card that folds. Closed, its summary line shows the state of what is inside. */
-export function InspFold({ id, title, summary, defaultOpen, children }: { id: string; title: string; summary: string; defaultOpen?: boolean; children: ReactNode }) {
+export function InspFold({ id, title, summary, defaultOpen, actions, children }: { id: string; title: string; summary: string; defaultOpen?: boolean; actions?: ReactNode; children: ReactNode }) {
   return (
     <details className="insp-fold" open={memory.get(id) ?? !!defaultOpen} onToggle={(e) => memory.set(id, e.currentTarget.open)} data-testid={`fold-${id}`}>
       <summary>
         <ChevronRight size={12} aria-hidden="true" className="fold-chev" />
         <span className="fold-title">{title}</span>
         <span className="fold-sum">{summary}</span>
+        {/* a click on a button here must not fold the card */}
+        {actions && <span className="insp-fold-actions" onClick={(e) => e.preventDefault()}>{actions}</span>}
       </summary>
       <div className="insp-fold-body">{children}</div>
     </details>

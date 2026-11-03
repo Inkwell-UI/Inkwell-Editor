@@ -8,6 +8,7 @@ import { figmaSelectReason } from '../model/connection'
 import { useToastStore } from '../state/toastStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { InspFold } from '../ui/InspParts'
 
 /** The Logic panel's Components section: every component the project has (designed in Figma, kept inside a frame or away from the design); a click opens its graph. Hidden while there are none. */
 export function ComponentsSection() {
@@ -22,8 +23,7 @@ export function ComponentsSection() {
   }
   if (rows.length === 0) return null
   return (
-        <section aria-labelledby="comp-list" data-testid="components-section">
-          <header className="section-title"><h3 id="comp-list">{strings.comp.heading}</h3></header>
+        <InspFold id="logic-components" title={`${strings.comp.heading} (${rows.length})`} summary={rows.map((r) => r.name).join(', ')}>
           <ul className="graph-list" role="list">
             {rows.map((r) => {
               const g = graphs[r.id]
@@ -44,6 +44,6 @@ export function ComponentsSection() {
               )
             })}
           </ul>
-        </section>
+        </InspFold>
   )
 }

@@ -114,7 +114,8 @@
 .lib-form { display: flex; flex-direction: column; gap: 6px; padding: 4px 0 8px; }
 .graph-row[draggable="true"] { cursor: grab; }
 .section-title.library-heading { margin-top: 0; } /* the first thing in the panel: the panel's own padding is the gap above it */
-.logic-nav > section:first-child > .section-title { margin-top: 0; } /* Graphs is the first thing in the Logic panel: same as the Library heading */
+.logic-nav { display: flex; flex-direction: column; gap: 8px; }
+.logic-nav > .insp-fold { margin-top: 0; } /* the three cards of the Logic panel sit 8px apart; the panel's own padding is the gap above the first */
 .graph-list.library-children, .empty.library-children { margin-left: 16px; } /* the functions of a group sit under its name */
 .btn.row-confirm-delete { color: var(--err); } /* the quiet button style, in the error colour, for "Delete ..." */
 .btn.row-confirm-delete:hover { background: var(--err-bg); }

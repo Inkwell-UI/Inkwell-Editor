@@ -1,8 +1,10 @@
 import { Plus } from 'lucide-react'
-import { FunctionRows, GraphsList } from '../graph/GraphsList'
+import { FunctionRows, GraphsList, graphNames, useFunctionIds } from '../graph/GraphsList'
 import { useGraphActions } from '../graph/useGraphActions'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { useActiveSwf } from '../hooks/useProject'
+import { InspFold } from '../ui/InspParts'
 import { ComponentsSection } from './ComponentsSection'
 import { Panel } from './Panel'
 
@@ -12,17 +14,20 @@ import { Panel } from './Panel'
  */
 export function LogicPanel() {
   const actions = useGraphActions()
+  const swf = useActiveSwf()
+  const fnIds = useFunctionIds()
   return (
     <Panel title={strings.logic.title}>
       <div className="nav logic-nav">
         <GraphsList />
-        <section aria-labelledby="logic-functions" data-testid="functions-section">
-          <header className="section-title">
-            <h3 id="logic-functions">{strings.logic.functions}</h3>
-            <Btn icon={Plus} variant="quiet" label={strings.lib.newFunction} reason={actions.canAdd} onClick={() => void actions.addFn()} testId="function-add" />
-          </header>
+        <InspFold
+          id="logic-functions"
+          title={`${strings.logic.functions} (${fnIds.length})`}
+          summary={graphNames(swf?.id, fnIds)}
+          actions={<Btn icon={Plus} variant="quiet" label={strings.lib.newFunction} reason={actions.canAdd} onClick={() => void actions.addFn()} testId="function-add" />}
+        >
           <FunctionRows actions={actions} />
-        </section>
+        </InspFold>
         <ComponentsSection />
       </div>
     </Panel>

@@ -9,6 +9,7 @@ import { setActiveGraph } from '../state/graphDocs'
 import { findGraphStore } from '../state/graphStore'
 import { strings } from '../strings'
 import { Btn } from '../ui/Btn'
+import { InspFold } from '../ui/InspParts'
 import { RowMenu } from '../ui/RowMenu'
 import { useGraphActions } from './useGraphActions'
 
@@ -23,20 +24,29 @@ export function GraphsList() {
   const swf = useActiveSwf()
   const { ids, activeId, loaded } = useSwfGraphs()
   const actions = useGraphActions()
-  const mine = swf ? ids.filter((id) => findGraphStore(swf.id, id)?.getState().meta.scope !== 'function') : []
+  const scopeOf = (id: string): unknown => (swf ? findGraphStore(swf.id, id)?.getState().meta.scope : undefined)
+  // the menu graph always first; the rest keep their order (Array.sort is stable)
+  const mine = swf ? ids.filter((id) => scopeOf(id) !== 'function').sort((a, b) => Number(scopeOf(b) === 'menu') - Number(scopeOf(a) === 'menu')) : []
   return (
-    <section aria-labelledby="nav-graphs" data-testid="graphs-section">
-      <header className="section-title">
-        <h3 id="nav-graphs">{strings.nav.graphs}</h3>
-        <Btn icon={Plus} variant="quiet" label={strings.nav.addGraph} testId="graph-add-nav" onClick={() => void actions.add()} reason={actions.canAdd} />
-      </header>
+    <InspFold
+      id="logic-graphs"
+      title={`${strings.nav.graphs} (${mine.length})`}
+      summary={graphNames(swf?.id, mine)}
+      defaultOpen
+      actions={<Btn icon={Plus} variant="quiet" label={strings.nav.addGraph} testId="graph-add-nav" onClick={() => void actions.add()} reason={actions.canAdd} />}
+    >
       {actions.error && <p className="tone-error">{actions.error}</p>}
       {swf && loaded && mine.length === 0 && <p className="empty">{strings.nav.graphsEmpty}</p>}
       <ul className="graph-list" role="list">
         {swf && mine.map((id) => <GraphRow key={id} swfId={swf.id} id={id} active={id === activeId} actions={actions} />)}
       </ul>
-    </section>
+    </InspFold>
   )
+}
+
+/** The graphs' names for a closed card's summary; read once per render, which is enough because a closed card has no rename. */
+export function graphNames(swfId: string | undefined, ids: string[]): string {
+  return swfId ? ids.map((id) => findGraphStore(swfId, id)?.getState().name ?? '').filter(Boolean).join(', ') : ''
 }
 
 /** The SWF's own functions as rows (the Logic panel's Functions section); the empty state says how to make one. */
@@ -55,11 +65,16 @@ export function FunctionRows({ actions }: { actions: ReturnType<typeof useGraphA
   )
 }
 
-/** How many functions the SWF has (the group's summary). */
-export function useFunctionCount(): number {
+/** The ids of the SWF's functions. */
+export function useFunctionIds(): string[] {
   const swf = useActiveSwf()
   const { ids } = useSwfGraphs()
-  return swf ? ids.filter((id) => findGraphStore(swf.id, id)?.getState().meta.scope === 'function').length : 0
+  return swf ? ids.filter((id) => findGraphStore(swf.id, id)?.getState().meta.scope === 'function') : []
+}
+
+/** How many functions the SWF has. */
+export function useFunctionCount(): number {
+  return useFunctionIds().length
 }
 
 function GraphRow({ swfId, id, active, actions }: { swfId: string; id: string; active: boolean; actions: ReturnType<typeof useGraphActions> }) {
