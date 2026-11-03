@@ -1,3 +1,4 @@
+import { writeAtomic } from '../deploy/write'
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
@@ -39,7 +40,7 @@ export function sandboxFontSystem(dir: string): FontSystem {
   const load = (): Promise<Record<string, string>> => readFile(file, 'utf8').then((t) => JSON.parse(t) as Record<string, string>, () => ({}))
   const save = async (r: Record<string, string>): Promise<void> => {
     await mkdir(dir, { recursive: true })
-    await writeFile(file, JSON.stringify(r, null, 2))
+    await writeAtomic(file, JSON.stringify(r, null, 2))
   }
   return {
     fontsDir: join(dir, 'Fonts'),
