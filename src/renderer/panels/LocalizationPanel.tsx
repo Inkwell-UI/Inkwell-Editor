@@ -9,10 +9,12 @@ import { loadSwfGraphs, useGraphDocs } from '../state/graphDocs'
 import { findGraphStore, toGraph } from '../state/graphStore'
 import { useLocalizationStore } from '../state/localizationStore'
 import { useToastStore } from '../state/toastStore'
+import { matchesQuery } from '../../shared/filter'
 import { strings } from '../../shared/strings'
 import { ChevronDown, Trash2 } from 'lucide-react'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
+import { SearchBox } from '../ui/SearchBox'
 import { TextCell } from '../ui/TextCell'
 import { Panel } from './Panel'
 
@@ -64,8 +66,7 @@ export function LocalizationPanel() {
     if (m.length) missingRows++
     for (const l of m) missingByLang[l] = (missingByLang[l] ?? 0) + 1
   }
-  const q = query.trim().toLowerCase()
-  const matches = (r: { key: string; layer: string; text: string }): boolean => !q || [r.key, r.layer, r.text, ...langs.map((l) => cell(r.key, l))].some((t) => t.toLowerCase().includes(q))
+  const matches = (r: { key: string; layer: string; text: string }): boolean => matchesQuery(query, r.key, r.layer, r.text, ...langs.map((l) => cell(r.key, l)))
   const shown = [...rows.values()].filter((r) => (!missingOnly || isMissing(r).length > 0) && matches(r))
   // keys read better without the project prefix; the full key stays in the tooltip and in every export
   const shortKey = (k: string): string => (k.startsWith(`$${localization.namespace}_`) ? k.slice(localization.namespace.length + 2) : k)
@@ -84,7 +85,7 @@ export function LocalizationPanel() {
         <Btn pressed={missingOnly} onClick={() => setMissingOnly(!missingOnly)} testId="loc-missing-only">
           {strings.loc.missingFilter} <span className={`chip ${missingRows ? 'chip-warn' : ''}`}>{missingRows}</span>
         </Btn>
-        <input className="loc-filter" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={strings.loc.filter} aria-label={strings.loc.filter} data-testid="loc-filter" />
+        <SearchBox className="loc-filter" value={query} onChange={setQuery} label={strings.loc.filter} testId="loc-filter" />
         <span className="push-right row-actions">
           <select value="" onChange={(e) => { if (e.target.value) set(addLanguage(localization, e.target.value)) }} aria-label={strings.loc.addLanguage} data-testid="loc-lang-select">
             <option value="">{strings.loc.addLanguage}</option>

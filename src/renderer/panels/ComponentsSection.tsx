@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Component, Crosshair } from 'lucide-react'
 import { inkwell } from '../hooks/api'
 import { useActiveSwf } from '../hooks/useProject'
@@ -6,15 +7,18 @@ import { COMPONENT_DRAG } from '../state/componentGraphs'
 import { useSyncState } from '../hooks/useSyncState'
 import { figmaSelectReason } from '../model/connection'
 import { useToastStore } from '../state/toastStore'
+import { matchesQuery } from '../../shared/filter'
 import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { InspFold } from '../ui/InspParts'
+import { SearchBox } from '../ui/SearchBox'
 
 /** The Logic panel's Components section: every component the project has (designed in Figma, kept inside a frame or away from the design); a click opens its graph. Hidden while there are none. */
 export function ComponentsSection() {
   const swf = useActiveSwf()
   const sync = useSyncState()
   const { rows, graphs, activeId, openGraph } = useOpenComponent()
+  const [query, setQuery] = useState('')
   const reason = figmaSelectReason(sync, { notConnected: strings.selectInFigmaReason, pending: strings.selectInFigmaPending })
   const select = (id: string): void => {
     void inkwell?.selectInFigma(id, true).then((r) => {
@@ -22,10 +26,13 @@ export function ComponentsSection() {
     })
   }
   if (rows.length === 0) return null
+  const shown = rows.filter((r) => matchesQuery(query, r.name))
   return (
         <InspFold id="logic-components" title={`${strings.comp.heading} (${rows.length})`} summary={rows.map((r) => r.name).join(', ')}>
+          <SearchBox value={query} onChange={setQuery} label={strings.comp.search} testId="component-filter" />
+          {shown.length === 0 && <p className="empty">{strings.comp.noMatch}</p>}
           <ul className="graph-list" role="list">
-            {rows.map((r) => {
+            {shown.map((r) => {
               const g = graphs[r.id]
               const active = !!g && g.id === activeId
               return (
