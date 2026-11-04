@@ -103,10 +103,12 @@ describe('samples/menu-nodes', async () => {
     for (const c of ['inkwellModEvent', 'inkwellMessage', 'inkwellInput', 'inkwellMenuReopen']) expect(frame).toContain(`"${c}"`)
     expect(frame).toContain('mods.InkwellMenuNodes.InkwellList.attach(_root, "list"')
   })
-  it('a list without a frame template is an error; a missing configured template falls back with a warning', () => {
+  it('a list with no children is a component list (no template needed); a missing configured template falls back with a warning', () => {
     const ir = structuredClone(s.ir)
     ir.nodes['2:3'] = { ...ir.nodes['2:3']!, children: [] } as never
-    expect(generate(ir, { modId: 'M', roles: s.roles, lists: s.lists }).lint.map((l) => l.code)).toContain('list-template-invalid')
+    const g = generate(ir, { modId: 'M', roles: s.roles, lists: s.lists })
+    expect(g.lint.map((l) => l.code)).not.toContain('list-template-invalid')
+    expect(g.as2.find((f) => f.path === 'frame_1/DoAction.as')!.source).toContain('M.InkwellList.attach(this, "list", "", ')
     const w = generate(s.ir, { modId: 'M', roles: s.roles, lists: { '2:3': { itemTemplate: 'nope' } } }).lint
     expect(w.find((l) => l.code === 'list-template-invalid')?.severity).toBe('warning')
   })

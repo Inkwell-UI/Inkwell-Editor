@@ -7,6 +7,8 @@ class mods.InkwellMenuNodes.InkwellList {
     static var active;
     static var hooked;
     static var runtimeInput;
+    static var gated;
+    static var focusPath;
     var clip;
     var tpl;
     var w;
@@ -25,6 +27,8 @@ class mods.InkwellMenuNodes.InkwellList {
     var has;
     var full;
     var listeners;
+    var comp;
+    var owner;
 
     function InkwellList(clip, tpl, w, h, tx, ty, tw, th, spacing, names, paths) {
         this.clip = clip;
@@ -54,14 +58,15 @@ class mods.InkwellMenuNodes.InkwellList {
         var a = path.split(".");
         for (var k = 0; k < a.length; k++) clip = clip[a[k]];
         var t = clip[tplName];
-        if (clip == undefined || t == undefined) {
+        if (clip == undefined || (tplName != "" && t == undefined)) {
             trace("[Inkwell] list " + path + ": clip or item template " + tplName + " not found");
             return;
         }
         for (var j = mods.InkwellMenuNodes.InkwellList.lists.length - 1; j >= 0; j--) if (mods.InkwellMenuNodes.InkwellList.lists[j].clip == clip) mods.InkwellMenuNodes.InkwellList.lists.splice(j, 1);
         if (mods.InkwellMenuNodes.InkwellList.active.clip == clip) mods.InkwellMenuNodes.InkwellList.active = undefined;
         var self = new mods.InkwellMenuNodes.InkwellList(clip, t, w, h, tx, ty, tw, th, spacing, names, paths);
-        t._visible = false;
+        if (t != undefined) t._visible = false;
+        self.comp = tplName == "";
         var m = clip.createEmptyMovieClip("listMask__", 9998);
         m.beginFill(0, 100);
         m.moveTo(0, 0);
@@ -72,8 +77,11 @@ class mods.InkwellMenuNodes.InkwellList {
         m.endFill();
         clip.setMask(m);
         clip.value = -1;
-        clip.setItems = function(items) {
-            self.setItems(items);
+        clip.setItems = function(items, owner) {
+            self.setItems(items, owner);
+        };
+        clip.addItem = function(item, owner) {
+            self.addItem(item, owner);
         };
         clip.refresh = function() {
             self.refresh();
@@ -129,7 +137,7 @@ class mods.InkwellMenuNodes.InkwellList {
 
     // AS2 key events: used until the runtime forwards user events (input)
     static function key(code) {
-        if (mods.InkwellMenuNodes.InkwellList.runtimeInput == true) return;
+        if (mods.InkwellMenuNodes.InkwellList.runtimeInput == true || mods.InkwellMenuNodes.InkwellList.gated == true) return;
         var l = mods.InkwellMenuNodes.InkwellList.pick();
         if (code == 38) l.move(-1);
         else if (code == 40) l.move(1);
@@ -161,8 +169,9 @@ class mods.InkwellMenuNodes.InkwellList {
         return f == p || f.substr(0, p.length + 1) == p + ".";
     }
 
+    // the menu with a focus graph keeps the current member in focusPath (GFx's own focus can move on its own); without it the game's focus is used
     static function focused() {
-        var f = Selection.getFocus();
+        var f = mods.InkwellMenuNodes.InkwellList.focusPath != undefined ? mods.InkwellMenuNodes.InkwellList.focusPath : Selection.getFocus();
         for (var k = 0; k < mods.InkwellMenuNodes.InkwellList.lists.length; k++) {
             if (mods.InkwellMenuNodes.InkwellList.lists[k].owns(f)) return mods.InkwellMenuNodes.InkwellList.lists[k];
         }
@@ -171,7 +180,7 @@ class mods.InkwellMenuNodes.InkwellList {
 
     // the menu class calls this after every focus move of the focus graph: only the focused list shows its highlight, and a list that gains focus without one highlights its first item
     static function sync() {
-        var f = Selection.getFocus();
+        var f = mods.InkwellMenuNodes.InkwellList.focusPath != undefined ? mods.InkwellMenuNodes.InkwellList.focusPath : Selection.getFocus();
         for (var k = 0; k < mods.InkwellMenuNodes.InkwellList.lists.length; k++) {
             var l = mods.InkwellMenuNodes.InkwellList.lists[k];
             var h = l.owns(f);
@@ -188,12 +197,43 @@ class mods.InkwellMenuNodes.InkwellList {
         return this.clip._visible && x >= 0 && y >= 0 && x <= this.w && y <= this.h;
     }
 
-    function setItems(items) {
+    function setItems(items, owner) {
+        if (owner != undefined) this.owner = owner;
         this.items = items instanceof Array ? items : [];
         this.hl = -1;
         this.clip.value = -1;
         this.top = 0;
         this.refresh();
+    }
+
+    function addItem(item, owner) {
+        if (owner != undefined) this.owner = owner;
+        if (item == undefined) return;
+        this.items.push(item);
+        this.refresh();
+    }
+
+    // a component list: row size from the first recipe (Make Component gives its design size), 40 when it has none
+    function measure() {
+        var s = this.items[0].size;
+        this.tw = s != undefined ? s[0] : this.w;
+        this.rowH = (s != undefined ? s[1] : 40) + this.spacing;
+    }
+
+    // a component row: (re)builds the component from its recipe only when the row shows another item
+    function build(row, item) {
+        if (row.built === item) return;
+        row.built = item;
+        row.body.removeMovieClip();
+        if (typeof (item) != "object" || item.symbol == undefined) return;
+        var b = row.attachMovie(item.symbol, "body", 1);
+        b.tabEnabled = false;
+        var c = item.cls;
+        try {
+            (new c(b, item.props == undefined ? {} : item.props, this.owner)).init();
+        } catch (x) {
+            trace("[Inkwell] list row: " + x);
+        }
     }
 
     function move(d) {
@@ -224,6 +264,7 @@ class mods.InkwellMenuNodes.InkwellList {
     function click(i) {
         if (i < 0 || i >= this.items.length) return;
         mods.InkwellMenuNodes.InkwellList.active = this;
+        if (mods.InkwellMenuNodes.InkwellList.focusPath != undefined) mods.InkwellMenuNodes.InkwellList.focusPath = targetPath(this.clip);
         this.highlight(i);
         this.fire("itemClick", { index: i, data: this.items[i] });
     }
@@ -263,8 +304,10 @@ class mods.InkwellMenuNodes.InkwellList {
 
     function makeRow(r) {
         var self = this;
-        this.tpl.duplicateMovieClip("row" + r, 1000 + r);
+        if (this.comp) this.clip.createEmptyMovieClip("row" + r, 1000 + r);
+        else this.tpl.duplicateMovieClip("row" + r, 1000 + r);
         var row = this.clip["row" + r];
+        row.tabEnabled = false; // a row is not a focus target: the list is (GFx would move focus from one to the other by position)
         var hit = row.createEmptyMovieClip("hit__", 9999);
         hit.beginFill(0, 0);
         hit.moveTo(0, 0);
@@ -282,6 +325,7 @@ class mods.InkwellMenuNodes.InkwellList {
     // redraws the rows from the current items: the visible rows plus one, recycled; the highlighted row is kept in view
     function refresh() {
         var n = this.items.length;
+        if (this.comp && n > 0) this.measure();
         this.full = Math.max(1, Math.floor((this.h + this.spacing) / this.rowH));
         if (this.hl >= 0) {
             if (this.hl < this.top) this.top = this.hl;
@@ -307,7 +351,8 @@ class mods.InkwellMenuNodes.InkwellList {
             row._y = this.ty + r * this.rowH;
             row.itemIndex = i;
             row._alpha = i == this.hl && this.has != false ? 100 : 60;
-            this.fill(row, this.items[i]);
+            if (this.comp) this.build(row, this.items[i]);
+            else this.fill(row, this.items[i]);
         }
     }
 }

@@ -18,6 +18,26 @@ exports[`golden AS2 per node kind > core/Add@1 1`] = `
         };"
 `;
 
+exports[`golden AS2 per node kind > core/AddToList@1 1`] = `
+"        var __g = this;
+        __g.v_count = 0;
+        // [e] core/OnWidgetCall@1
+        __g.Run = function(e_title:String, e_hold:Number) {
+            try {
+                // [n1] core/AddToList@1
+                __g.base.title.addItem({}, __g);
+                // [l_then] core/Log@1
+                trace("[Inkwell] info l_then: " + "");
+            } catch (e) {
+                __g.fail("e", e);
+            }
+        };
+        __g.base.Run = function(a) {
+            if (!(a instanceof Array)) a = arguments; // Skyrim spreads UI.InvokeStringA into separate arguments; Ruffle passes one array
+            __g.Run((a[0] == undefined ? "" : String(a[0])), (Number(a[1]) || 0));
+        };"
+`;
+
 exports[`golden AS2 per node kind > core/And@1 1`] = `
 "        var __g = this;
         __g.v_count = 0;
@@ -1562,7 +1582,7 @@ exports[`golden AS2 per node kind > core/SetItems@1 1`] = `
         __g.Run = function(e_title:String, e_hold:Number) {
             try {
                 // [n1] core/SetItems@1
-                __g.base.title.setItems([] instanceof Array ? [] : []);
+                __g.base.title.setItems([] instanceof Array ? [] : [], __g);
                 // [l_then] core/Log@1
                 trace("[Inkwell] info l_then: " + "");
             } catch (e) {

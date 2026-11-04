@@ -662,7 +662,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '    function mb(name) {' }, { t: '        var m = this.menuGraph();' }, { t: '        if (m["b_" + name] != undefined) m["b_" + name]();' }, { t: '    }' }
         ]
       : []),
-    ...(g.nodes.some((n) => /^[^/]+\/(CreateComponent|RemoveComponent|ClearChildComponents)@/.test(n.kind)) ? stackMethods(i.preview === true, i.componentSizes).map((t) => ({ t })) : []),
+    ...(g.nodes.some((n) => /^[^/]+\/(CreateComponent|RemoveComponent|ClearChildComponents|MakeComponent)@/.test(n.kind)) ? stackMethods(i.preview === true, i.componentSizes).map((t) => ({ t })) : []),
     { t: '    // logs the failing node id; e is a string or a plain object {node, message} (GFx has no Error class)' },
     { t: '    function fail(nodeId, e) {' },
     { t: '        var msg = "";' },

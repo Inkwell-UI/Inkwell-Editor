@@ -596,6 +596,7 @@ export const strings = {
     roleNone: '(none)',
     listTemplate: 'List item template',
     listTemplateFirst: '(first child)',
+    listComponentNote: 'None: rows are components from Make Component',
     listSpacing: 'List row spacing (px)',
     roleNames: { button: 'Button', list: 'List', progress: 'Progress', text: 'Text', image: 'Image', clip: 'Clip', prompt: 'Prompt' } as Record<string, string>,
     instanceName: 'Script name',
@@ -638,6 +639,7 @@ export const strings = {
       dirs: { up: 'Up', down: 'Down', left: 'Left', right: 'Right' } as Record<string, string>,
       dflt: (name: string) => `Auto \u00b7 ${name}`,
       none: 'Not focusable',
+      stay: 'None (focus stays)',
       orderSummary: (n: number) => `Order ${n}`,
       help: 'Lower order comes first and gets focus when the menu opens. Without an override, Down/Right go to the next and Up/Left to the previous component (wrapping). Custom menus need Input Context MenuMode for the pad.'
     },

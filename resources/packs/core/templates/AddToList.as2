@@ -1,0 +1,3 @@
+// [{{node.id}}] core/AddToList@1
+{{in.target}}.addItem({{in.recipe}}, __g);
+{{next.then}}

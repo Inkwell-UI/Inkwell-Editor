@@ -141,3 +141,26 @@ describe('global menu variables in a layer graph', () => {
     expect(r.issues.map((x) => x.message)).toEqual(['Set Variable: field "variable" names a variable that does not exist.'])
   })
 })
+
+describe('component list (Make Component, Add to List)', () => {
+  it('a recipe carries the symbol, the class, the design size and the props; Add to List and Set Items pass the graph as owner', async () => {
+    const { generate } = await import('../swf/generate')
+    const { frame, rectShape, swf } = await import('../swf/ir.testutil')
+    const comp = { ...frame('5:1', ['5:2']), type: 'component', variants: [{ name: 'Default', node: '5:1' }] }
+    const ir = swf([frame('l', []), rectShape('s')])
+    const menu = graph(
+      'main',
+      [node('ol', 'core/OnLoad@1'), node('si', 'core/SetItems@1', { target: 'l' }), node('mc', 'core/MakeComponent@1', { component: '5:1' }), node('al', 'core/AddToList@1', { target: 'l' })],
+      [wire('ol', 'then', 'si', 'in'), wire('si', 'then', 'al', 'in'), wire('mc', 'recipe', 'al', 'recipe')]
+    )
+    const g = generate(ir, { modId: 'M', roles: { l: 'list' }, graphs: { graphs: [menu, compGraph() as never], packs }, components: [{ id: '5:1', name: 'ListItem', nodes: { '5:1': comp as never, '5:2': { ...rectShape('5:2'), parent: '5:1' } } }] })
+    expect(g.lint.filter((l) => l.severity === 'error')).toEqual([])
+    const src = g.graphClasses.find((c) => c.graphId === 'main')!.source
+    expect(src).toContain('symbol: "inkwell_component_5_1"')
+    expect(src).toMatch(/cls: mods\.M\.\w+_5_1,/)
+    expect(src).toContain('size: __g.stackSize("5:1")')
+    expect(src).toContain('.addItem(')
+    expect(src).toContain(', __g);')
+    expect(src).toContain('function stackSize(')
+  })
+})

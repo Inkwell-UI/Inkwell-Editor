@@ -1,0 +1,37 @@
+{
+  "kind": "MakeComponent",
+  "major": 1,
+  "title": "Make Component",
+  "category": "Components",
+  "milestone": "0.6",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "props",
+      "type": "Object",
+      "default": {},
+      "description": "The values of the component's props by prop name (a prop not given has its default); build it with Make Object"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "recipe",
+      "type": "Object",
+      "default": {}
+    }
+  ],
+  "fields": {
+    "component": {
+      "type": "string",
+      "default": "",
+      "description": "Id of the component to make (the Figma component that has a graph)"
+    }
+  },
+  "as2Template": "templates/MakeComponent.as2",
+  "extra": {
+    "createsComponent": "component",
+    "inspector": {
+      "description": "Describes a component and its props without creating it. Give the result to Add to List or Set Items."
+    }
+  }
+}

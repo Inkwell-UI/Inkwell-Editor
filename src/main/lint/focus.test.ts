@@ -52,6 +52,16 @@ describe('samples/menu-gamepad', () => {
     expect(ir.nodes['2:7']!.children).toEqual(['2:7t'])
   })
 
+  it('an override of none keeps focus on the same component (its own index in the move table)', async () => {
+    const { ir, nodes } = await load()
+    const n2 = structuredClone(nodes) as typeof nodes
+    const f = n2['2:11']!['focus'] as { overrides?: Record<string, string> }
+    f.overrides = { ...f.overrides, down: 'none' }
+    const fo = focusOptions(ir, n2)
+    expect(fo.lint.filter((l) => l.severity === 'error')).toEqual([])
+    const g = generate(ir, { modId: 'InkwellMenuGamepad', focus: fo.focus!, roles: {}, instanceNames: {} })
+    expect(g.as2.find((a) => a.path.endsWith('MenuMenu.as'))!.source).toContain('this.focusMoves = [[3, 0, 3, 1],')
+  })
   it('menuMode is enforced: a focus graph with Input Context None is an error', () => {
     const s = defaultMenuSettings()
     const none = { ...s, inputContext: 'none' as const }

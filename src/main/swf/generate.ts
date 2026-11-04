@@ -667,6 +667,13 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   /** The list component of frame `n` (already placed): item template, its text layers, geometry. Lint and undefined when it cannot work. */
   const listInfo = (n: Extract<Swf['nodes'][string], { type: 'frame' }>): ListInfo | undefined => {
     const cfg = opts.lists?.[n.id]
+    // no children: a component list, its rows come from Make Component recipes (Add to List, Set Items), sized by the first one
+    if (!n.children.length) {
+      // the frame's own auto layout (padding, item spacing) places the rows, as it did the instances of Create Component; the list setting wins for the spacing
+      const al = n.autoLayout
+      const [pt, pr, , pl] = al?.padding ?? [0, 0, 0, 0]
+      return { path: layerPaths.get(n.id)!.slice('root.'.length), template: '', w: n.transform.width, h: n.transform.height, tx: pl ?? 0, ty: pt ?? 0, tw: n.transform.width - (pl ?? 0) - (pr ?? 0), th: 0, spacing: cfg?.spacing ?? al?.spacing ?? 0, fields: [] }
+    }
     if (cfg?.itemTemplate && !n.children.includes(cfg.itemTemplate)) lint.push(issue('warning', 'list-template-invalid', n.id, `The item template ${cfg.itemTemplate} is not a child of the list "${n.name}"; the first child is used.`))
     const tid = cfg?.itemTemplate && n.children.includes(cfg.itemTemplate) ? cfg.itemTemplate : n.children[0]
     const t = tid ? ir.nodes[tid] : undefined

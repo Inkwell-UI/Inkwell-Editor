@@ -1,0 +1,38 @@
+{
+  "kind": "AddToList",
+  "major": 1,
+  "title": "Add to List",
+  "category": "List",
+  "milestone": "0.6",
+  "pure": false,
+  "requiresRuntime": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "List"
+    },
+    {
+      "name": "recipe",
+      "type": "Object",
+      "default": {},
+      "description": "What to add: the output of Make Component, a string or an object"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/AddToList.as2",
+  "extra": {
+    "inspector": {
+      "description": "Adds one item to the end of a list. A Make Component recipe becomes a row of that component."
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import { CircleX, Focus, Lock, TriangleAlert, Info } from 'lucide-react'
-import { FOCUS_DIRS, focusGraph, type Localization, isThemeBindingKey, KEY_LABEL, LOC_KEY, PROMPT_ACTIONS, PROMPT_DEFAULTS, PS_GLYPHS, suggestKey, uniqueKey, XBOX_GLYPHS, type Node } from '@inkwell-ui/spec'
+import { FOCUS_DIRS, FOCUS_NONE, focusGraph, type Localization, isThemeBindingKey, KEY_LABEL, LOC_KEY, PROMPT_ACTIONS, PROMPT_DEFAULTS, PS_GLYPHS, suggestKey, uniqueKey, XBOX_GLYPHS, type Node } from '@inkwell-ui/spec'
 import { bindingMode, themeVariable } from '../../shared/theme'
 import { describeTextMapping } from '../../shared/textMapping'
 import { CHARSETS, EMBEDDED_FONTS_UI } from '../../shared/fonts'
@@ -243,6 +243,12 @@ function ListField({ swfId, nodeId, value, children }: { swfId: string; nodeId: 
   }
   return (
     <>
+      {!children.length ? (
+        <div className="field" data-testid="list-component-note">
+          <span className="field-label">{strings.insp.listTemplate}</span>
+          <span>{strings.insp.listComponentNote}</span>
+        </div>
+      ) : (
       <label className="field">
         <span className="field-label">{strings.insp.listTemplate}</span>
         <select value={value?.itemTemplate ?? ''} onChange={(e) => set({ itemTemplate: e.target.value })} data-testid="list-template">
@@ -250,6 +256,7 @@ function ListField({ swfId, nodeId, value, children }: { swfId: string; nodeId: 
           {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </label>
+      )}
       <label className="field">
         <span className="field-label">{strings.insp.listSpacing}</span>
         <input className="gn-input" type="number" min={0} value={value?.spacing ?? 0} onChange={(e) => set({ spacing: Number(e.target.value) })} data-testid="list-spacing" />
@@ -596,7 +603,8 @@ function FocusField({ swfId, nodeId, value }: { swfId: string; nodeId: string; v
           <span className="sr-only">{t.dirs[d]}</span>
           <select value={value.overrides?.[d] ?? ''} onChange={(e) => setOverride(d, e.target.value)} data-testid={`focus-${d}`}>
             <option value="">{t.dflt(name(g.moves[nodeId]?.[d] ?? nodeId))}</option>
-            {value.overrides?.[d] && !g.order.includes(value.overrides[d]!) && <option value={value.overrides[d]}>{name(value.overrides[d]!)}</option>}
+            <option value={FOCUS_NONE}>{t.stay}</option>
+            {value.overrides?.[d] && value.overrides[d] !== FOCUS_NONE && !g.order.includes(value.overrides[d]!) && <option value={value.overrides[d]}>{name(value.overrides[d]!)}</option>}
             {g.order.filter((id) => id !== nodeId).map((id) => <option key={id} value={id}>{name(id)}</option>)}
           </select>
         </label>

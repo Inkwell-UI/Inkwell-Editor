@@ -1,0 +1,2 @@
+// [{{node.id}}] core/MakeComponent@1
+({ id: {{field.component}}, symbol: {{symbol.component}}, cls: {{comp.component}}, size: __g.stackSize({{field.component}}), props: {{in.props}} })

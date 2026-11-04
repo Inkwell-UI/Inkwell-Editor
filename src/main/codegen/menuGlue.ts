@@ -129,7 +129,7 @@ export function menuClassSource(i: MenuGlueInput): string {
     '    var graphs;',
     '    var timer;',
     '    var polls;',
-    ...(fg ? ['    var focusPaths;', '    var focusMoves;'] : []),
+    ...(fg ? ['    var focusPaths;', '    var focusMoves;', '    var lastInput;', '    var curPath;'] : []),
     ...(pr ? ['    var prompts;', '    var promptShown;', '    var promptPad;', '    var promptTimer;'] : []),
     ...(art ? ['    var art;', '    var artLoaders;'] : []),
     `    function ${cls}(base) {`,
@@ -184,11 +184,18 @@ export function menuClassSource(i: MenuGlueInput): string {
           '        // W3: the focus graph moves focus on On Input; the arrow-key moves of GFx itself are switched off so they do not move it a second time',
           '        _global.gfxExtensions = true;',
           '        Selection.disableFocusKeys = true;',
-          '        for (var f = 0; f < this.focusPaths.length; f++) {',
-          '            var fc = this.clip(this.focusPaths[f]);',
-          '            fc.tabEnabled = true;',
-          '            fc.focusEnabled = true;',
-          '        }'
+          // GFx also moves focus to the clip under the mouse (a list row is a button): the menu cursor moving would take focus from the focus graph
+          '        Selection.disableFocusRolloverEvent = true;',
+          // only the current member is focusable (setCur): GFx's own geometric moves, which the pad's key events still trigger, then have nowhere to go
+          '        this.setCur(0);',
+          // the keyboard reaches the menu as AS2 key events only (the runtime's On Input is the pad), and GFx's own arrow focus is off above: the key events go through the same handler
+          ...(i.listClass ? [`        ${i.listClass}.gated = true;`] : []),
+          '        var keyMe = this;',
+          '        var keyL = new Object();',
+          '        keyL.onKeyDown = function() {',
+          '            keyMe.keyInput(Key.getCode());',
+          '        };',
+          '        Key.addListener(keyL);'
         ]
       : []),
     ...(pr
@@ -212,6 +219,24 @@ export function menuClassSource(i: MenuGlueInput): string {
     ...(fg || pr ? ['    function clip(path) {', '        var o = this.base;', '        var p = path.split(".");', '        for (var k = 0; k < p.length; k++) o = o[p[k]];', '        return o;', '    }'] : []),
     ...(fg
       ? [
+          // the menu keeps the current member itself (curPath, shared with the lists): GFx may still move its own focus, and what we decide never depends on where it says the focus is
+          '    function setCur(k) {',
+          '        for (var i = 0; i < this.focusPaths.length; i++) {',
+          '            var fc = this.clip(this.focusPaths[i]);',
+          '            fc.tabEnabled = i == k;',
+          '            fc.focusEnabled = i == k;',
+          '        }',
+          '        this.curPath = targetPath(this.clip(this.focusPaths[k]));',
+          ...(i.listClass ? [`        ${i.listClass}.focusPath = this.curPath;`] : []),
+          '    }',
+          '    function curIndex() {',
+          `        var cp = ${i.listClass ? `${i.listClass}.focusPath` : 'this.curPath'};`,
+          '        for (var i = 0; i < this.focusPaths.length; i++) {',
+          '            var fp = targetPath(this.clip(this.focusPaths[i]));',
+          '            if (cp == fp || cp.substr(0, fp.length + 1) == fp + ".") return i;',
+          '        }',
+          '        return -1;',
+          '    }',
           '    // W3: Up/Down/Left/Right go to the configured target of the focused clip (the first one when none of the graph has focus); Accept is left to GFx (onPress/onRelease of the focused clip)',
           '    function moveFocus(action) {',
           '        var d = -1;',
@@ -227,11 +252,10 @@ export function menuClassSource(i: MenuGlueInput): string {
           '            Selection.setFocus(lk);',
           '            return;',
           '        }',
-          '        var k = -1;',
-          '        for (var i = 0; i < this.focusPaths.length; i++) {',
-          '            if (f == targetPath(this.clip(this.focusPaths[i]))) k = i;',
-          '        }',
-          '        Selection.setFocus(this.clip(this.focusPaths[k < 0 ? 0 : this.focusMoves[k][d]]));',
+          '        var k = this.curIndex();',
+          '        var t = k < 0 ? 0 : this.focusMoves[k][d];',
+          '        this.setCur(t);',
+          '        Selection.setFocus(this.clip(this.focusPaths[t]));',
           '    }'
         ]
       : []),
@@ -299,12 +323,26 @@ export function menuClassSource(i: MenuGlueInput): string {
           '    }'
         ]
       : []),
+    ...(fg
+      ? [
+          '    // is the focus on a member of the focus graph (or inside one, a list row)?',
+          '    function inGraph(f) {',
+          '        for (var i = 0; i < this.focusPaths.length; i++) {',
+          '            var p = targetPath(this.clip(this.focusPaths[i]));',
+          '            if (f == p || f.substr(0, p.length + 1) == p + ".") return true;',
+          '        }',
+          '        return false;',
+          '    }'
+        ]
+      : []),
     '    function onOpen() {',
     ...(fg ? ['        Selection.setFocus(this.clip(this.focusPaths[0]));', ...(i.listClass ? [`        ${i.listClass}.sync();`] : [])] : []),
     '        for (var k = 0; k < this.graphs.length; k++) {',
     '            var g = this.graphs[k];',
     '            if (g.onOpen != undefined) g.onOpen();',
     '        }',
+    // an On Open graph fills lists and the first set-focus above found them empty (GFx may refuse an empty clip): if the focus is not in the graph now, take the first member again
+    ...(fg ? ['        if (!this.inGraph(Selection.getFocus())) Selection.setFocus(this.clip(this.focusPaths[0]));', ...(i.listClass ? [`        ${i.listClass}.sync();`] : [])] : []),
     '    }',
     '    function onClose() {',
     ...(pr ? ['        clearInterval(this.promptTimer);'] : []),
@@ -313,7 +351,28 @@ export function menuClassSource(i: MenuGlueInput): string {
     '            if (g.onClose != undefined) g.onClose();',
     '        }',
     '    }',
-    '    function onInput(action) {',
+    ...(fg
+      ? [
+          '    function onInput(action) {',
+          '        this.lastInput = getTimer();',
+          '        this.handle(action);',
+          '    }',
+          // arrows and Enter as AS2 key codes (Flash codes, and the DirectInput scan codes the runtime traces); the pad also sends key events right after On Input: those are ignored for 150 ms
+          '    function keyInput(code) {',
+          '        if (getTimer() - this.lastInput < 150) return;',
+          '        var a = "";',
+          '        if (code == 38 || code == 200) a = "Up";',
+          '        else if (code == 40 || code == 208) a = "Down";',
+          '        else if (code == 37 || code == 203) a = "Left";',
+          '        else if (code == 39 || code == 205) a = "Right";',
+          '        else if (code == 13 || code == 28 || code == 69 || code == 18) a = "Accept";',
+          '        if (a != "") this.handle(a);',
+          '    }'
+        ]
+      : []),
+    `    function ${fg ? 'handle' : 'onInput'}(action) {`,
+    // GFx may have moved its own focus since the last press: put it back on the member we are in (Accept presses the focused clip)
+    ...(fg ? ['        var ck = this.curIndex();', '        if (ck >= 0) Selection.setFocus(this.clip(this.focusPaths[ck]));'] : []),
     ...(pr ? ['        this.updatePrompts();'] : []),
     ...(fg && i.listClass
       ? [`        if (!${i.listClass}.input(action, true)) this.moveFocus(action);`, `        ${i.listClass}.sync();`]
