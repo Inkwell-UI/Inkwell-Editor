@@ -32,6 +32,12 @@ export interface WidgetResult {
   timings: BuildTiming
 }
 
+/** The mod's one plugin: a quest with the Instance script of every widget. One widget keeps its own quest name (`<Mod>_<Widget>Quest`); several share `<Mod>_WidgetsQuest`. */
+export function widgetPlugin(modId: string, widgetNames: string[]): Buffer {
+  const questEdid = widgetNames.length === 1 ? `${widgetScriptName(modId, widgetNames[0]!)}Quest` : `${modId}_WidgetsQuest`
+  return buildEsp({ questEdid, scriptNames: widgetNames.map((w) => instanceScriptName(modId, w)) })
+}
+
 /** HUD widget output: SWF + generated Papyrus (+ compiled .pex) + plugin, as a mod folder in memory (`writeModFolder` writes it out). */
 export async function compileWidget(ir: Swf, opts: WidgetOptions): Promise<WidgetResult> {
   if (ir.target.kind !== 'hudWidget') throw new Error(`compileWidget needs a hudWidget target, got "${ir.target.kind}".`)
@@ -59,7 +65,7 @@ export async function compileWidget(ir: Swf, opts: WidgetOptions): Promise<Widge
   timer.end('papyrus')
 
   timer.start('esp')
-  files[`${opts.modId}.esp`] = buildEsp({ questEdid: `${widgetScriptName(opts.modId, widgetName)}Quest`, scriptName: instanceScriptName(opts.modId, widgetName) })
+  files[`${opts.modId}.esp`] = widgetPlugin(opts.modId, [widgetName])
   timer.end('esp')
 
   const t = timer.finishBuild() // papyrus + esp only; the SWF stages come from compileSwf

@@ -27,7 +27,7 @@ function parse(buf: Buffer): { tes4: Rec; grup: { label: string; records: Rec[] 
 }
 
 describe('buildEsp', () => {
-  const buf = buildEsp({ questEdid: 'Mod_HudQuest', scriptName: 'Mod_HudInstance' })
+  const buf = buildEsp({ questEdid: 'Mod_HudQuest', scriptNames: ['Mod_HudInstance'] })
   const { tes4, grup } = parse(buf)
   const sub = (r: Rec, t: string): Buffer => r.subs.find((s) => s.type === t)!.data
 
@@ -69,5 +69,12 @@ describe('buildEsp', () => {
     expect(v.equals(expected)).toBe(true)
   })
 
-  it('is deterministic', () => expect(buildEsp({ questEdid: 'Mod_HudQuest', scriptName: 'Mod_HudInstance' }).equals(buf)).toBe(true))
+  it('is deterministic', () => expect(buildEsp({ questEdid: 'Mod_HudQuest', scriptNames: ['Mod_HudInstance'] }).equals(buf)).toBe(true))
+
+  it('several widgets: one quest, every Instance script attached in order', () => {
+    const two = parse(buildEsp({ questEdid: 'Mod_WidgetsQuest', scriptNames: ['Mod_AInstance', 'Mod_BInstance'] }))
+    const v = sub(two.grup.records[0]!, 'VMAD')
+    const script = (n: string): Buffer => Buffer.concat([Buffer.from([n.length, 0]), Buffer.from(n), Buffer.from([0, 0, 0])])
+    expect(v.equals(Buffer.concat([Buffer.from([5, 0, 2, 0, 2, 0]), script('Mod_AInstance'), script('Mod_BInstance'), Buffer.from([2, 0, 0, 0, 0, 0, 0])]))).toBe(true)
+  })
 })

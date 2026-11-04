@@ -112,7 +112,7 @@ export const runtimeCheckNote = (esp: string): string => `${esp}: a small plugin
 export const projectMinRuntime = (swfs: readonly SwfLike[]): string =>
   maxVersion(swfs.filter((s) => !s.orphaned && s.kind === 'customMenu').map((s) => minRuntimeOf({ swf: s.name, settings: s.menu ?? defaultMenuSettings(), ...(s.features ? { features: s.features } : {}) })))
 
-const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
+export const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
 
 /**
  * project + settings -> the files a deploy writes. Layout (design spec "Menus, contracts and SkyUI"):
@@ -148,9 +148,9 @@ export function planDeploy(o: { modId: string; swfs: SwfLike[]; root: string; ga
         add(`Scripts/${o.modId}_${w}Instance.pex`)
       } else plan.lint.push({ severity: 'warning', code: 'papyrus-compiler-missing', message: `No Papyrus compiler is set: "${s.name}" is deployed as a SWF only, without scripts or plugin. Set INKWELL_PAPYRUS or the compiler path in Settings.` })
       if (!espDone && o.hasPapyrus) {
-        add(`${o.modId}.esp`)
+        add(`${o.modId}.esp`) // one plugin for all widgets (its quest carries every Instance script)
         espDone = true
-      } else if (espDone) plan.lint.push({ severity: 'warning', code: 'widget-esp-shared', message: `"${s.name}" shares ${o.modId}.esp with the first widget; only one plugin quest is generated per mod today.` })
+      }
     } else if (s.kind === 'customMenu') {
       const m = resolveMenuNames(o.modId, { swf: s.name, settings: s.menu ?? defaultMenuSettings() })
       add(m.swf)

@@ -69,10 +69,10 @@ describe('planDeploy', () => {
     expect(planDeploy({ ...base, swfs: [hud], modId: '../x' }).errors.join()).toMatch(/mod id/)
     expect(planDeploy({ ...base, swfs: [{ name: 'my hud', orphaned: false, kind: 'hudWidget' }] }).errors.join()).toMatch(/widget script/)
   })
-  it('a second widget shares the plugin (warned); no SWFs is an error', () => {
+  it('a second widget shares the one plugin without a warning; no SWFs is an error', () => {
     const p = planDeploy({ ...base, swfs: [hud, { name: 'hud2', orphaned: false, kind: 'hudWidget' }] })
     expect(p.files.filter((f) => f.rel.endsWith('.esp'))).toHaveLength(1)
-    expect(p.lint.map((l) => l.code)).toContain('widget-esp-shared')
+    expect(p.lint.map((l) => l.code)).not.toContain('widget-esp-shared')
     expect(planDeploy({ ...base, swfs: [] }).errors[0]).toMatch(/no SWF/)
   })
 })

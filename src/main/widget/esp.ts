@@ -35,11 +35,11 @@ export const ESL_FLAG = 0x200
 export const QUEST_FORM_ID = 0x01000800
 export const MASTER = 'SkyUI_SE.esp'
 
-/** ESL-flagged ESP with master SkyUI_SE.esp and one start-game-enabled quest that has `scriptName` attached. */
-export function buildEsp(o: { questEdid: string; scriptName: string; author?: string }): Buffer {
+/** ESL-flagged ESP with master SkyUI_SE.esp and one start-game-enabled quest that has every script in `scriptNames` attached (one per HUD widget). */
+export function buildEsp(o: { questEdid: string; scriptNames: string[]; author?: string }): Buffer {
   const vmad = Buffer.concat([
-    i16(5), i16(2), u16(1),
-    wstr(o.scriptName), Buffer.from([0]), u16(0), // one script, status 0, no properties
+    i16(5), i16(2), u16(o.scriptNames.length),
+    ...o.scriptNames.map((n) => Buffer.concat([wstr(n), Buffer.from([0]), u16(0)])), // each script: status 0, no properties
     Buffer.from([2]), u16(0), wstr(''), u16(0) // no fragments, no aliases
   ])
   const dnam = Buffer.concat([u16(0x0001), Buffer.from([50, 0]), u32(0), u32(0)])

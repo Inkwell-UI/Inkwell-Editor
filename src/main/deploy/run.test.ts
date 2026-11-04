@@ -290,6 +290,30 @@ describe.skipIf(!can)('real deploy of samples/hud-widget into a temp folder', ()
       ffdec.stop()
     }
   }, 120000)
+
+  it.skipIf(!papyrusExe)('two widgets ship one plugin whose quest has both Instance scripts; a scoped deploy keeps the other one', async () => {
+    const project = await loadProject(join(appPath, 'samples/hud-widget'))
+    const ir = Swf.parse(project.swfs['hud']!.ir)
+    const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
+    try {
+      const input: DeployInput = {
+        modId: project.meta.modId, swfs: [{ name: 'hud', orphaned: false, kind: 'hudWidget', ir }, { name: 'hud2', orphaned: false, kind: 'hudWidget', ir }], root: join(mkdtempSync(join(tmpdir(), 'inkwell-real-')), 'Two'), gameDirs: [],
+        buildDir: mkdtempSync(join(tmpdir(), 'inkwell-rb-')), ffdec, papyrusExe: papyrusExe!, stubsDir: join(appPath, 'resources/papyrus-stubs'), vanillaHashes: new Set()
+      }
+      const esp = (r: Awaited<ReturnType<typeof prepareDeploy>>): string => {
+        if (!r.ok) throw new Error(r.error)
+        return r.prepared.files.get(`${project.meta.modId}.esp`)!.data.toString('latin1')
+      }
+      const both = esp(await prepareDeploy(input))
+      expect(both).toContain(`${project.meta.modId}_HudInstance`)
+      expect(both).toContain(`${project.meta.modId}_Hud2Instance`)
+      const scoped = esp(await prepareDeploy({ ...input, only: 'hud2' }))
+      expect(scoped).toContain(`${project.meta.modId}_HudInstance`)
+      expect(scoped).toContain(`${project.meta.modId}_Hud2Instance`)
+    } finally {
+      ffdec.stop()
+    }
+  }, 120000)
 })
 
 describe.skipIf(!can)('deploy of samples/hud-graph (graph-driven widget)', () => {

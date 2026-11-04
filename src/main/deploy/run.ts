@@ -12,12 +12,13 @@ import { writeDds } from '../images/dds'
 import { decodePng } from '../images/png'
 import { unreachableNodes, UNREACHABLE_MESSAGE } from '../sync/syncServer'
 import { isUnmodifiedVanilla } from '../vanilla/cache'
-import { compileWidget, type WidgetOptions } from '../widget/compileWidget'
+import { compileWidget, widgetPlugin, type WidgetOptions } from '../widget/compileWidget'
+import { isPapyrusName } from '../widget/papyrus'
 import { compileRuntimeCheck } from '../runtime/runtimeCheck'
 import { devIniText, devReloadPaths, RUNTIME_INI_REL } from '../runtime/devIni'
 import { hasFocusGraph } from '../../shared/focusLint'
 import { keyedTexts, localizationLint, type LocSwf } from '../../shared/localizationLint'
-import { planDeploy, projectMinRuntime, safeJoin, translationFilePath, type DeployPlan, type SwfLike } from './plan'
+import { cap, planDeploy, projectMinRuntime, safeJoin, translationFilePath, type DeployPlan, type SwfLike } from './plan'
 import type { ContractLayer } from '@inkwell-ui/spec'
 import { readManifest, staleFiles, writeDeploy } from './write'
 
@@ -121,6 +122,7 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
   const files = new Map<string, { data: Buffer; swf: string; createOnly?: boolean; untracked?: boolean }>()
   const devMenus: string[] = []
   let checkDone = false
+  const deployedWidgets = new Set<string>()
   const allowed = new Set(plan.files.map((f) => f.rel))
   // custom menus (S9): the project's menus decide the slot lint and the INI; a scoped deploy still lints the whole project's count
   const menuSources: MenuSource[] = i.swfs.filter((x) => !x.orphaned && x.kind === 'customMenu').map((x) => ({ swf: x.name, settings: x.menu ?? defaultMenuSettings(), ...(x.features ? { features: x.features } : {}) }))
@@ -164,6 +166,7 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
           if (!allowed.has(rel)) continue // compile output the plan does not list (no compiler: scripts and plugin) is not deployed
           files.set(rel, { data, swf: s.name })
         }
+        deployedWidgets.add(s.name)
       } else if (s.kind === 'customMenu') {
         const data = s.build?.state === 'done' ? await readFile(join(i.buildDir, i.dev ? `${s.name}.dev.swf` : `${s.name}.swf`)).catch(() => undefined) : undefined
         if (!data) {
@@ -213,6 +216,13 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
     return { ok: false, error: e instanceof Error ? e.message : String(e), lint }
   } finally {
     timer.end('compile')
+  }
+  // one plugin quest carries every widget's Instance script. Each widget's compile wrote a single-widget ESP (the last one won), so build the combined one:
+  // widgets of this deploy that passed the gate, plus (scoped deploy) the project's other widgets, so a scoped deploy never drops them from the quest
+  const espRel = `${i.modId}.esp`
+  if (files.has(espRel)) {
+    const names = i.swfs.filter((x) => !x.orphaned && x.kind === 'hudWidget' && (deployedWidgets.has(x.name) || (i.only && x.name !== i.only && isPapyrusName(cap(x.name))))).map((x) => cap(x.name))
+    if (names.length > 1) files.set(espRel, { data: widgetPlugin(i.modId, names), swf: plan.files.find((f) => f.rel === espRel)!.swf })
   }
   // V13.2: the translation files; a language without a text for a key carries the source language's text (the player never sees a raw key)
   if (i.localization && !issues.some((l) => l.severity === 'error')) {
