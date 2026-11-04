@@ -727,7 +727,7 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .as2-foot { margin: 0; font-size: 11px; }
 
 /* Runtime trace, Play panel */
-.trace-lines { list-style: none; margin: 0; padding: 0; font-size: 12px; }
+.trace-lines { list-style: none; margin: 0; padding: 0; font-size: 12px; user-select: text; }
 .trace-line { padding: 1px 4px; border-left: 3px solid transparent; overflow-wrap: anywhere; }
 .trace-line.is-link { cursor: pointer; }
 .trace-line.is-link:hover { background: var(--hover); border-left-color: var(--inspect-selected); }
@@ -783,7 +783,8 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .watch-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .watch-table th { text-align: left; color: var(--fg-dim); font-weight: 600; padding: 1px 6px 3px 0; }
 .watch-table td { padding: 1px 6px 1px 0; overflow-wrap: anywhere; border-top: 1px solid var(--line); }
-.trace-toolbar { position: sticky; top: 0; z-index: 2; background: var(--surface-1, var(--bg)); padding: 4px 0; }
+/* top -8px / padding-top 12px: the sticky bar covers the panel-body's 8px padding, or scrolled lines show above it */
+.trace-toolbar { position: sticky; top: -8px; z-index: 2; background: var(--surface-1, var(--bg)); padding: 10px 0 4px; margin-top: -8px; }
 
 /* Pack manager (renderer/packs/PacksSection.tsx, ui-style rule 22): a toolbar, a list at the left, the selected pack at the right. Tone steps, no borders. */
 .pack-add { display: flex; flex-direction: column; gap: 12px; }
