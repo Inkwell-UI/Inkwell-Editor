@@ -10,7 +10,7 @@ import { findGraphStore } from '../state/graphStore'
 import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { InspFold } from '../ui/InspParts'
-import { RowMenu } from '../ui/RowMenu'
+import { RowContextMenu, RowMenu, type RowMenuItem } from '../ui/RowMenu'
 import { moveToPack, useLocalPacks } from './packMove'
 import { useGraphActions } from './useGraphActions'
 
@@ -95,7 +95,10 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
 }) {
   const [editing, setEditing] = useState<string>()
   const [confirm, setConfirm] = useState(false)
+  const [at, setAt] = useState<{ x: number; y: number }>()
   const fn = scope === 'function'
+  // right-click: the same actions as the "..." menu
+  const actions: RowMenuItem[] = [{ label: strings.lib.rename, onClick: () => setEditing(name) }, ...(moves ?? []), { label: strings.lib.delete, danger: true, onClick: () => setConfirm(true) }]
   const confirmButtons = (
     <>
       <Btn variant="quiet" className="row-confirm-delete" onClick={() => (setConfirm(false), onDelete())} testId="graph-delete-confirm">{strings.nav.deleteConfirm}</Btn>
@@ -108,7 +111,8 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
     setEditing(undefined)
   }
   return (
-    <li className={`graph-row graph-row-grid${active ? ' is-selected' : ''}`} data-testid={`graph-row-${id}`} draggable={scope === 'function'} onDragStart={(e) => e.dataTransfer.setData(FUNCTION_DRAG, id)}>
+    <li className={`graph-row graph-row-grid${active ? ' is-selected' : ''}`} data-testid={`graph-row-${id}`} draggable={scope === 'function'} onDragStart={(e) => e.dataTransfer.setData(FUNCTION_DRAG, id)} onContextMenu={locked ? undefined : (e) => { e.preventDefault(); setAt({ x: e.clientX, y: e.clientY }) }}>
+      {at && <RowContextMenu key={`${at.x},${at.y}`} label={strings.lib.more} at={at} items={actions} onClose={() => setAt(undefined)} />}
       <div className="graph-row-main">
         {editing !== undefined ? (
           <>
@@ -128,7 +132,7 @@ export function GraphRowView({ id, name, scope, sig, events = [], active, locked
                   // a function row stays quiet until it is hovered or focused: its extra action, then "..." with rename and delete
                   <span className="row-reveal">
                     {extra}
-                    <RowMenu label={strings.lib.more} testId="graph-more" items={[{ label: strings.lib.rename, onClick: () => setEditing(name) }, ...(moves ?? []), { label: strings.lib.delete, danger: true, onClick: () => setConfirm(true) }]} />
+                    <RowMenu label={strings.lib.more} testId="graph-more" items={actions} />
                   </span>
                 )
               ) : (

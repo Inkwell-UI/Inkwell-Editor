@@ -1,6 +1,6 @@
 import { useGraphFollow } from '../state/graphFollow'
 import { useMemo, useState } from 'react'
-import { ChevronDown, ChevronRight, CircleX, Component, Sparkles, DollarSign, FileCode, Frame, Gamepad2, Image as ImageIcon, Link2, Search, Shapes, TriangleAlert, Type, Workflow, type LucideIcon } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleX, Component, Sparkles, DollarSign, FileCode, Frame, Gamepad2, Image as ImageIcon, Link2, Shapes, TriangleAlert, Type, Workflow, type LucideIcon } from 'lucide-react'
 import { useComponentIr } from '../hooks/useComponentIr'
 import { useOpenComponent } from '../hooks/useOpenComponent'
 import { useSwfGraphs } from '../hooks/useGraphs'
@@ -9,12 +9,16 @@ import { useSyncState } from '../hooks/useSyncState'
 import { buildLayerTree, filterTree, flattenTree, runtimeMatches, withRuntimeRows, type Badge, type LayerRow } from '../model/layerTree'
 import { computeOrphans } from '../model/orphans'
 import { inkwell } from '../hooks/api'
+import { openLayerGraph } from '../state/graphDocs'
+import { figmaSelectReason } from '../model/connection'
 import { discardOrphanSwf, discardOverlayOrphan, relinkOverlayOrphan } from '../state/orphanActions'
 import { useSelectionStore } from '../state/selectionStore'
 import { useToastStore } from '../state/toastStore'
 import { useTraceStore } from '../state/traceStore'
 import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
+import { RowContextMenu, type RowMenuItem } from '../ui/RowMenu'
+import { SearchBox } from '../ui/SearchBox'
 import { FigmaSelectBtn } from '../ui/FigmaSelectBtn'
 import { Panel } from './Panel'
 
@@ -62,6 +66,7 @@ export function NavigatorPanel() {
   const selected = useSelectionStore((s) => s.component)
   const select = useSelectionStore((s) => s.selectComponent)
   const [query, setQuery] = useState('')
+  const [menu, setMenu] = useState<{ x: number; y: number; id: string; name: string }>()
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
 
   const lint = useMemo(() => rows.filter((r) => swf && r.swfName === swf.name && r.nodeId).map((r) => ({ nodeId: r.nodeId!, severity: r.severity })), [rows, swf])
@@ -86,6 +91,13 @@ export function NavigatorPanel() {
   const orphans = useMemo(() => computeOrphans((project?.swfs ?? []).map((s) => (s.id === swf?.id && overlay ? { ...s, overlay } : s)), pageIds), [project, swf, overlay, pageIds])
   const unreachable = [...(sync?.looseLayers ?? []).map((l) => ({ ...l, note: strings.nav.unreachableLoose })), ...(sync?.unreachableNodes ?? []).map((l) => ({ id: l.id, name: l.name, note: strings.nav.unreachableInSwf(l.swfName) }))]
 
+  // right-click on a layer: its graph, its name, and Figma (only while a plugin can be reached; the Inspector's button says why when it cannot)
+  const figmaReason = figmaSelectReason(sync, { notConnected: strings.selectInFigmaReason, pending: strings.selectInFigmaPending })
+  const menuItems = (id: string, name: string): RowMenuItem[] => [
+    ...(swf ? [{ label: strings.nav.openGraph, ...(comp ? { disabled: strings.nav.openGraphComponent } : {}), onClick: () => void openLayerGraph({ id: swf.id, name: swf.name, root: swf.ir.root }, id, name) }] : []),
+    { label: strings.nav.copyName, onClick: () => void navigator.clipboard.writeText(name).catch(() => undefined) },
+    { label: strings.selectInFigma, ...(figmaReason ? { disabled: figmaReason } : {}), onClick: () => void inkwell?.selectInFigma(id, true).then((r) => { if (!r.ok) useToastStore.getState().push({ tone: 'error', title: strings.selectInFigmaFailed(r.error) }) }) }
+  ]
   const toggle = (id: string): void => setCollapsed((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const onKey = (e: React.KeyboardEvent<HTMLUListElement>): void => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
@@ -109,10 +121,7 @@ export function NavigatorPanel() {
             {compRows.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
         )}
-        <label className="search">
-          <Search size={14} aria-hidden="true" />
-          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={strings.nav.search} aria-label={strings.nav.search} />
-        </label>
+        <SearchBox value={query} onChange={setQuery} label={strings.nav.search} />
 
         <section aria-label={strings.nav.layers}>
           {comp === 'unavailable' ? (
@@ -138,7 +147,7 @@ export function NavigatorPanel() {
                   )
                 return (
                   <li key={r.id} role="none">
-                    <div className={`layer-row${selected === r.id ? ' is-selected' : ''}`} role="treeitem" aria-level={r.depth + 1} aria-selected={selected === r.id} aria-expanded={r.hasChildren ? r.expanded : undefined} style={{ paddingLeft: 4 + r.depth * 14 }}>
+                    <div className={`layer-row${selected === r.id ? ' is-selected' : ''}`} role="treeitem" aria-level={r.depth + 1} aria-selected={selected === r.id} aria-expanded={r.hasChildren ? r.expanded : undefined} style={{ paddingLeft: 4 + r.depth * 14 }} onContextMenu={(e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, id: r.id, name: r.name }) }}>
                       {r.hasChildren ? (
                         <button type="button" className="twisty" onClick={() => toggle(r.id)} aria-label={r.expanded ? strings.nav.collapse(r.name) : strings.nav.expand(r.name)} title={r.expanded ? strings.nav.collapse(r.name) : strings.nav.expand(r.name)} tabIndex={-1}>
                           {r.expanded ? <ChevronDown size={12} aria-hidden="true" /> : <ChevronRight size={12} aria-hidden="true" />}
@@ -160,6 +169,7 @@ export function NavigatorPanel() {
           )}
         </section>
 
+        {menu && <RowContextMenu key={`${menu.x},${menu.y}`} label={strings.nav.menuLabel} at={menu} items={menuItems(menu.id, menu.name)} onClose={() => setMenu(undefined)} />}
         {orphans.length > 0 && <section aria-labelledby="nav-orphans">
           <header className="section-title"><h3 id="nav-orphans">{strings.nav.orphans(orphans.length)}</h3></header>
           {orphans.map((o) => {

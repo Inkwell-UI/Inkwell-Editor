@@ -32,6 +32,7 @@ import { useSelectionStore } from '../state/selectionStore'
 import { useTraceStore } from '../state/traceStore'
 import { strings } from '../../shared/strings'
 import { functionOfOption, functionOption } from '../model/functionSpawn'
+import { RowContextMenu } from '../ui/RowMenu'
 import { FUNCTION_DRAG } from './GraphsList'
 import { BendEdge } from './BendEdge'
 import { GraphContext, InkwellNode, type GraphCtx } from './NodeView'
@@ -333,6 +334,14 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     toast(r.ok ? { tone: 'ok', title: strings.graph.madeFunction } : { tone: 'error', title: strings.graph.makeFunctionFailed, text: r.error })
   }
 
+  // right-click on a node: Duplicate and Delete act on the selection (the node is selected first when it is not part of it), through the same store actions as the keys
+  const [nodeMenu, setNodeMenu] = useState<{ x: number; y: number }>()
+  const deleteSelected = (): void => {
+    const st = store.getState()
+    const ids = new Set(st.nodes.filter((n) => n.selected).map((n) => n.id))
+    st.deleteSelection([...ids], st.edges.filter((ed) => ids.has(ed.source) || ids.has(ed.target)).map((ed) => ed.id))
+  }
+
   const onKeyDown = (e: React.KeyboardEvent): void => {
     const native = e.nativeEvent
     if (isTyping(native)) return
@@ -343,10 +352,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
     if (mod && k === 'x') {
       e.preventDefault()
       if (readOnly || !clipboard.copy()) return
-      const st = store.getState()
-      const ids = new Set(st.nodes.filter((n) => n.selected).map((n) => n.id))
-      st.deleteSelection([...ids], st.edges.filter((ed) => ids.has(ed.source) || ids.has(ed.target)).map((ed) => ed.id))
-      return
+      return deleteSelected()
     }
     if (mod && k === 'v') return void (e.preventDefault(), clipboard.paste())
     if (mod && k === 'a') return void (e.preventDefault(), store.getState().setSelection(store.getState().nodes.map((n) => n.id)))
@@ -420,6 +426,15 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
   return (
     <GraphContext.Provider value={ctx}>
       <div className="graph-flow" ref={wrap} tabIndex={0} onKeyDown={onKeyDown} onPointerDownCapture={focusCanvas} onDragOver={onVarDragOver} onDrop={onVarDrop} onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && graphEditorBlurred()} data-testid="graph-canvas">
+        {nodeMenu && (
+          <RowContextMenu
+            key={`${nodeMenu.x},${nodeMenu.y}`}
+            label={strings.graph.nodeMenu}
+            at={nodeMenu}
+            items={[{ label: strings.graph.duplicateNode, keys: 'Ctrl+D', onClick: () => clipboard.duplicate() }, { label: strings.graph.deleteNode, keys: 'Del', danger: true, onClick: deleteSelected }]}
+            onClose={() => setNodeMenu(undefined)}
+          />
+        )}
         <ReactFlow<FlowNode, FlowEdge>
           {...NAVIGATION_PROPS}
           deleteKeyCode={readOnly ? null : 'Delete'}
@@ -435,6 +450,12 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
           onConnectEnd={onConnectEnd}
           onPaneClick={onPaneClick}
           isValidConnection={isValidConnection}
+          onNodeContextMenu={(e, n) => {
+            e.preventDefault()
+            if (readOnly) return
+            if (!store.getState().nodes.find((x) => x.id === n.id)?.selected) store.getState().setSelection([n.id])
+            setNodeMenu({ x: e.clientX, y: e.clientY })
+          }}
           onNodeDoubleClick={(_, n) => {
             const s = store.getState().nodes.find((x) => x.id === n.id)
             // Create Component: opens the graph of the component it creates (its field is named by the definition's `createsComponent`)

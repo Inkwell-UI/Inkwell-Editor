@@ -11,18 +11,25 @@ export interface PopoverProps {
   up?: boolean
   label: string
   className?: string
+  /** Opens at this point instead of next to the trigger (a context menu): starts open, and `onClose` tells the caller to drop it. */
+  anchor?: { x: number; y: number }
+  onClose?(): void
 }
 
 /** A small anchored panel: closes on Escape and on a click outside. Portaled to <body> and placed with `position: fixed` next to its trigger, so no panel's clipping or stacking context can hide it. */
-export function Popover({ trigger, children, align = 'start', up, label, className }: PopoverProps) {
-  const [open, setOpen] = useState(false)
+export function Popover({ trigger, children, align = 'start', up, label, className, anchor, onClose }: PopoverProps) {
+  const [open, setOpen_] = useState(!!anchor)
+  const setOpen = (v: boolean): void => {
+    setOpen_(v)
+    if (!v) onClose?.()
+  }
   const id = useId()
   const root = useRef<HTMLDivElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   // align to the trigger's edge, open on the requested side or the other when it does not fit, then keep it inside the window
   const place = (): void => {
     const el = panel.current
-    const t = root.current?.getBoundingClientRect()
+    const t = anchor ? { left: anchor.x, right: anchor.x, top: anchor.y, bottom: anchor.y } : root.current?.getBoundingClientRect()
     if (!el || !t) return
     const { width, height } = el.getBoundingClientRect()
     const gap = 4
