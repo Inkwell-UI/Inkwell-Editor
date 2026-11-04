@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { CircleX, Focus, Lock, TriangleAlert, Info } from 'lucide-react'
+import { CircleX, Focus, Lock, TriangleAlert, Info, X } from 'lucide-react'
 import { FOCUS_DIRS, FOCUS_NONE, focusGraph, type Localization, isThemeBindingKey, KEY_LABEL, LOC_KEY, PROMPT_ACTIONS, PROMPT_DEFAULTS, PS_GLYPHS, suggestKey, uniqueKey, XBOX_GLYPHS, type Node } from '@inkwell-ui/spec'
 import { bindingMode, themeVariable } from '../../shared/theme'
 import { describeTextMapping } from '../../shared/textMapping'
@@ -159,7 +159,8 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
           </InspFold>
         )}
         {swf?.ir.target.kind === 'customMenu' && (
-          <InspFold id="focus" title={strings.insp.focus.label} summary={typeof (entry as { focus?: FocusValue }).focus?.order === 'number' ? strings.insp.focus.orderSummary((entry as { focus?: FocusValue }).focus!.order!) : strings.insp.focus.none} defaultOpen>
+          <InspFold id="focus" title={strings.insp.focus.label} summary={typeof (entry as { focus?: FocusValue }).focus?.order === 'number' ? strings.insp.focus.orderSummary((entry as { focus?: FocusValue }).focus!.order!) : strings.insp.focus.none} defaultOpen
+            actions={typeof (entry as { focus?: FocusValue }).focus?.order === 'number' ? <Btn icon={X} label={strings.insp.focus.remove} variant="quiet" className="btn-hover-err" onClick={() => removeFocus(swfId, node.id, (entry as { focus?: FocusValue }).focus!)} testId="focus-remove" /> : undefined}>
             <FocusField swfId={swfId} nodeId={node.id} value={(entry as { focus?: FocusValue }).focus} />
           </InspFold>
         )}
@@ -557,6 +558,12 @@ type FocusValue = { order?: number; overrides?: Record<string, string> } & Recor
 /** Overlay `focus` (W3): the order and the four overrides; the default target of each direction comes from the Spec's `focusGraph`. Lint shows on the layer (Issues above). */
 const DIR_ARROWS: Record<string, string> = { up: '\u2191', down: '\u2193', left: '\u2190', right: '\u2192' }
 
+/** Takes the layer out of the focus order and drops its overrides; other keys of `focus` stay. */
+function removeFocus(swfId: string, nodeId: string, value: FocusValue): void {
+  const { order: _a, overrides: _b, ...rest } = value
+  editNode(swfId, nodeId, { focus: Object.keys(rest).length ? rest : null })
+}
+
 function FocusField({ swfId, nodeId, value }: { swfId: string; nodeId: string; value: FocusValue | undefined }) {
   const overlay = useActiveOverlay()
   const swf = useActiveSwf()
@@ -581,35 +588,26 @@ function FocusField({ swfId, nodeId, value }: { swfId: string; nodeId: string; v
     const { overrides: _o, ...rest } = value
     set(Object.keys(o).length ? { ...rest, overrides: o } : rest)
   }
-  const remove = (): void => {
-    const { order: _a, overrides: _b, ...rest } = value
-    set(Object.keys(rest).length ? rest : null)
-  }
   return (
     <div className="field" data-testid="focus-field">
-      <div className="field-row">
-        <label className="field-label">
-          {t.order}<Tip text={t.help} />
+      <div className="focus-moves">
+        <label className="focus-move">
+          <span className="focus-dir">{t.order}<Tip text={t.help} /></span>
           <input key={value.order} type="number" defaultValue={value.order} data-testid="focus-order"
             onBlur={(e) => { const n = Number(e.target.value); if (e.target.value.trim() !== '' && Number.isFinite(n) && n !== value.order) set({ ...value, order: n }) }}
             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
         </label>
-        <Btn onClick={remove} testId="focus-remove">{t.remove}</Btn>
-      </div>
-      <div className="dpad">
-      {FOCUS_DIRS.map((d) => (
-        <label key={d} className={`dpad-${d}`} title={t.dirs[d]}>
-          <span className="dpad-arrow" aria-hidden="true">{DIR_ARROWS[d]}</span>
-          <span className="sr-only">{t.dirs[d]}</span>
-          <select value={value.overrides?.[d] ?? ''} onChange={(e) => setOverride(d, e.target.value)} data-testid={`focus-${d}`}>
-            <option value="">{t.dflt(name(g.moves[nodeId]?.[d] ?? nodeId))}</option>
-            <option value={FOCUS_NONE}>{t.stay}</option>
-            {value.overrides?.[d] && value.overrides[d] !== FOCUS_NONE && !g.order.includes(value.overrides[d]!) && <option value={value.overrides[d]}>{name(value.overrides[d]!)}</option>}
-            {g.order.filter((id) => id !== nodeId).map((id) => <option key={id} value={id}>{name(id)}</option>)}
-          </select>
-        </label>
-      ))}
-      <span className="dpad-mid mono" title={name(nodeId)}>{name(nodeId)}</span>
+        {FOCUS_DIRS.map((d) => (
+          <label key={d} className="focus-move">
+            <span className="focus-dir"><span aria-hidden="true">{DIR_ARROWS[d]}</span>{t.dirs[d]}</span>
+            <select className={value.overrides?.[d] ? undefined : 'focus-auto'} value={value.overrides?.[d] ?? ''} onChange={(e) => setOverride(d, e.target.value)} data-testid={`focus-${d}`}>
+              <option value="">{t.dflt(name(g.moves[nodeId]?.[d] ?? nodeId))}</option>
+              <option value={FOCUS_NONE}>{t.stay}</option>
+              {value.overrides?.[d] && value.overrides[d] !== FOCUS_NONE && !g.order.includes(value.overrides[d]!) && <option value={value.overrides[d]}>{name(value.overrides[d]!)}</option>}
+              {g.order.filter((id) => id !== nodeId).map((id) => <option key={id} value={id}>{name(id)}</option>)}
+            </select>
+          </label>
+        ))}
       </div>
     </div>
   )

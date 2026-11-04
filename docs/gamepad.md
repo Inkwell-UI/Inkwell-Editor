@@ -3,7 +3,7 @@
 Custom menus only. Spike S-A (owner, 2026-10-27): with `inputContext` menuMode the pad reaches the menu's AS2 as the runtime's `onInput` (`Up`, `Down`, `Left`, `Right`, `Accept`) followed by synthesised key events; GFx moves focus geometrically by itself and A fires onPress/onRelease of the focused clip; B (Cancel) closes the menu in the runtime. With `none` the pad does nothing.
 
 ## Data (overlay, Spec `focus` module)
-- `focus: {order, overrides?: {up?, down?, left?, right?}}` on a layer. A layer with a numeric `order` is focusable. Order: by `order`, then id; the first gets focus on open. Defaults: Down/Right = next, Up/Left = previous (wrapping); an override replaces one direction. The override value `none` (Inspector: "None (focus stays)") makes that direction go nowhere: focus stays on the component (a list still moves its own highlight first). `none` is not a target, so it does not count as a path for the lint.
+- `focus: {order, overrides?: {up?, down?, left?, right?}}` on a layer. A layer with a numeric `order` is focusable. Order: by `order`, then id; the first gets focus on open. Defaults: Down/Right = next, Up/Left = previous (wrapping); an override replaces one direction. The override value `none` (Inspector: "None") makes that direction go nowhere: focus stays on the component (a list still moves its own highlight first). `none` is not a target, so it does not count as a path for the lint.
 - `prompt: {action, keyboard?, xbox?, playstation?, icon?, label?}` on a frame or component instance with role `prompt`. Defaults per action and the glyph names: Spec `PROMPT_DEFAULTS`, `XBOX_GLYPHS`, `PS_GLYPHS`, `KEY_LABEL`. `icon` and `label` are the layers chosen as the icon place and the text (localize it with its translation key); see "A prompt component".
 
 ## Lint
@@ -23,7 +23,7 @@ Custom menus only. Spike S-A (owner, 2026-10-27): with `inputContext` menuMode t
 
 ## Editor
 - Stage toolbar **Focus Graph** (custom menus): badges with the position in the order (red with a focus error), one arrow per override. Inspect mode: click a component to add it (the nearest frame), Alt+click to remove, drag from one component to another to set the override of the drag direction.
-- Inspector **Gamepad focus** (custom menus): order, the four overrides (the default target is named), Remove. **Prompt** fields for role `prompt`: action, glyph per device.
+- Inspector **Focus** card (custom menus): Order and one row per direction (Up, Down, Left, Right) as a label and a dropdown, Remove as the card title action (an unset direction is dim and names its default target). **Prompt** fields for role `prompt`: action, glyph per device.
 - Stage toolbar **Prompts: Keyboard / Xbox / PlayStation**: sets the mock device and pad style and reopens the menu in the preview.
 - Play mode in a menu with a focus graph: arrow keys and Enter go to the menu as the d-pad and A (`inkwellPad` in the preview SWF), not to Ruffle.
 

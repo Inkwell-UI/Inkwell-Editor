@@ -864,16 +864,13 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .tip-text { display: none; position: absolute; z-index: 40; left: 50%; bottom: calc(100% + 6px); transform: translateX(-30%); width: 220px; padding: 7px 9px; background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 5px; color: var(--fg); font-size: 12px; font-weight: 400; line-height: 1.4; text-align: left; letter-spacing: 0; text-transform: none; box-shadow: 0 8px 24px var(--shadow); }
 .tip:hover > .tip-text, .tip:focus-visible > .tip-text { display: block; }
 
-/* gamepad focus: the four directions around the layer */
-.dpad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; align-items: end; margin-top: 4px; }
-.dpad label { display: flex; flex-direction: column; gap: 2px; margin: 0; }
-.dpad select { font-size: 12px; padding: 2px 4px; min-width: 0; }
-.dpad-arrow { text-align: center; color: var(--fg-faint); font-size: 11px; line-height: 1; }
-.dpad-up { grid-column: 2; grid-row: 1; }
-.dpad-left { grid-column: 1; grid-row: 2; }
-.dpad-right { grid-column: 3; grid-row: 2; }
-.dpad-down { grid-column: 2; grid-row: 3; }
-.dpad-mid { grid-column: 2; grid-row: 2; text-align: center; font-size: 11px; color: var(--fg-faint); border: 1px solid var(--line); border-radius: 4px; padding: 5px 2px; background: var(--surface-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: end; }
+/* focus card: Order and the four directions are rows of one grid (label left, control right); Remove is the fold's title action */
+.focus-moves { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 8px; align-items: center; }
+.focus-moves > .focus-move { display: contents; } /* beats `.field label { display: block }` */
+.focus-dir { display: flex; align-items: center; gap: 6px; color: var(--fg-dim); font-size: 12px; }
+.focus-dir > span:first-child:not(.tip) { width: 14px; text-align: center; }
+.focus-moves select { min-width: 0; }
+.focus-moves select.focus-auto { color: var(--fg-dim); } /* an unset direction: dim, the target it resolves to */
 
 /* Build popup */
 .bp { width: 360px; max-width: calc(100vw - 24px); }

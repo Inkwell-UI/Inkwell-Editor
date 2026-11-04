@@ -632,14 +632,14 @@ export const strings = {
       { label: 'Anchor override', value: 'Override Figma constraints', reason: `${BY} anchoring codegen` }
     ],
     focus: {
-      label: 'Gamepad focus',
+      label: 'Focus',
       order: 'Order',
       add: 'Add to focus order',
       remove: 'Remove',
       dirs: { up: 'Up', down: 'Down', left: 'Left', right: 'Right' } as Record<string, string>,
       dflt: (name: string) => `Auto \u00b7 ${name}`,
       none: 'Not focusable',
-      stay: 'None (focus stays)',
+      stay: 'None',
       orderSummary: (n: number) => `Order ${n}`,
       help: 'Lower order comes first and gets focus when the menu opens. Without an override, Down/Right go to the next and Up/Left to the previous component (wrapping). Custom menus need Input Context MenuMode for the pad.'
     },
