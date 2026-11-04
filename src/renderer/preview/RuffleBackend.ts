@@ -73,6 +73,7 @@ export class RuffleBackend implements PreviewBackend {
   private frame: HTMLIFrameElement | undefined
   private readonly subs: { [E in keyof PreviewBackendEvents]: Set<(v: PreviewBackendEvents[E]) => void> } = { loaded: new Set(), error: new Set(), firstFrame: new Set(), trace: new Set() }
   private disposed = false
+  private loadSeq = 0
   private transparent = false
   private offTap: (() => void) | undefined
 
@@ -114,8 +115,10 @@ export class RuffleBackend implements PreviewBackend {
     if (!build.bytes) throw new Error('No SWF bytes')
     this.frame?.remove() // the old movie goes with its frame
     this.frame = this.player = undefined
+    const mine = ++this.loadSeq
     const { frame, ruffle } = await openFrame(this.element, this.transparent)
-    if (this.disposed) return frame.remove()
+    // a newer load started while this frame opened: it must not survive as an orphan on top of the newer one
+    if (this.disposed || mine !== this.loadSeq) return frame.remove()
     this.frame = frame
     const player = (this.player = ruffle.createPlayer())
     player.style.width = '100%'
@@ -132,7 +135,7 @@ export class RuffleBackend implements PreviewBackend {
       await player.ruffle().load({ data: build.bytes, swfFileName: `${build.name}.preview.swf`, allowScriptAccess: true, parameters: await loadArt() })
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      this.emit('error', msg)
+      if (this.player === player) this.emit('error', msg) // a superseded load's failure says nothing about the movie now shown
       throw new Error(msg)
     }
   }
