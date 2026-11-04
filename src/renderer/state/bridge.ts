@@ -7,6 +7,7 @@ import { useGraphFollow } from './graphFollow'
 import { setGraphEditListener, setGraphSaver } from './graphStore'
 import { graphEdited } from './hotReload'
 import { setOverlaySaver } from './overlayStore'
+import { trackSave } from './saveState'
 import { setMenuSaver } from './menuStore'
 import { useSelectionStore } from './selectionStore'
 import { useTimingStore } from './timingStore'
@@ -63,15 +64,21 @@ export function startBridge(): () => void {
     })
   )
 
-  setOverlaySaver((name, doc) => void api.saveOverlay(name, doc))
-  setMenuSaver((name, doc) => api.saveMenuSettings(name, doc))
+  setOverlaySaver((name, doc) => trackSave(api.saveOverlay(name, doc)))
+  setMenuSaver((name, doc) => {
+    const p = api.saveMenuSettings(name, doc)
+    trackSave(p)
+    return p
+  })
   // a library function that is open for editing is saved back into its pack folder (its store is named `@lib:<packId>`), then the pack set is read again
   setGraphSaver((name, graph) =>
-    name.startsWith('@lib:')
-      ? void api.saveLibraryFunction(name.slice('@lib:'.length), graph).then((r) => r.ok && reloadPacks())
-      : name.startsWith('@comp:')
-        ? void api.saveComponentGraph(graph).then((r) => r.ok && setComponentGraph(graph))
-        : void api.saveGraph(name, graph)
+    trackSave(
+      name.startsWith('@lib:')
+        ? api.saveLibraryFunction(name.slice('@lib:'.length), graph).then((r) => r.ok && reloadPacks())
+        : name.startsWith('@comp:')
+          ? api.saveComponentGraph(graph).then((r) => r.ok && setComponentGraph(graph))
+          : api.saveGraph(name, graph)
+    )
   )
   setGraphEditListener(graphEdited)
 

@@ -6,6 +6,7 @@ import type { Graph, GraphNode } from '@inkwell-ui/spec'
 import { applySignature, callFields, refreshCall, refreshCalls, staleCalls } from '../../shared/functions'
 import { menuVariablesFor } from '../../shared/graphs'
 import { withPinMock } from '../../shared/pinMock'
+import { setQueuedSaves } from './saveState'
 import { registerHistory, unregisterHistory } from './swfHistory'
 
 /**
@@ -193,10 +194,12 @@ let onEdit: (() => void) | undefined
 /** Called after every real change of any graph (not selection or measuring). */
 export const setGraphEditListener = (fn: typeof onEdit): void => void (onEdit = fn)
 const SAVE_DELAY = 300
+const publishQueued = (): void => setQueuedSaves([...stores.values()].filter((e) => e.timer).length)
 
 function save(e: Entry): void {
   clearTimeout(e.timer)
   delete e.timer
+  publishQueued()
   const s = e.store.getState()
   if (!isBlankDoc(s)) {
     e.onDisk = true
@@ -368,6 +371,7 @@ export function getGraphStore(swfId: string, swfName: string, initial: Graph, dr
     onEdit?.()
     clearTimeout(entry.timer)
     entry.timer = setTimeout(() => save(entry), SAVE_DELAY)
+    publishQueued()
   })
   return store
 }
@@ -461,6 +465,7 @@ export function dropGraphStore(swfId: string, graphId: string): void {
   const key = `${swfId}/${graphId}`
   clearTimeout(stores.get(key)?.timer)
   stores.delete(key)
+  publishQueued()
   unregisterHistory(swfId, `graph:${graphId}`)
 }
 
@@ -468,6 +473,7 @@ export function dropGraphStore(swfId: string, graphId: string): void {
 export function resetGraphs(): void {
   stores.forEach((e) => clearTimeout(e.timer))
   stores.clear()
+  publishQueued()
 }
 
 /** Variables a graph can use: its own plus the menu graph's menu variables it may reach (`menuVariablesFor`: all for a component graph, the global ones for a layer graph). */

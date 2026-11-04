@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, screen, shell, type MenuItemConstructorOptions } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import type { Graph } from '@inkwell-ui/spec'
@@ -32,6 +32,9 @@ import { runInventoryShots } from './screenshotInventory'
 import { runMenuNodesShots } from './screenshotMenuNodes'
 import { runSetupShots } from './screenshotSetup'
 import { createSession } from './session'
+import { loadWindowState, saveWindowState } from './windowState'
+import { droppedProjectDir } from './project/dropped'
+import { acceleratorOf, COMMANDS } from '../shared/commands'
 
 let win: BrowserWindow | undefined
 let previewWin: BrowserWindow | undefined
@@ -56,25 +59,65 @@ function load(w: BrowserWindow, panel?: 'preview'): void {
   else void w.loadFile(join(__dirname, '../renderer/index.html'), panel ? { query: { panel } } : undefined)
 }
 
-function createWindow(): void {
-  win = new BrowserWindow({
+/** Waits for the renderer to write its pending saves before the window closes (3 s at most); set while a close is waiting. */
+let finishClose: (() => void) | undefined
+const MIN_SIZE = { width: 960, height: 600 }
+// screenshot and driver runs keep their fixed window size
+const keepWindowState = !(process.env['INKWELL_SHOTS_DIR'] || process.env['INKWELL_SCREENSHOT'] || process.env['INKWELL_DOCTOR_DRIVER'])
+
+async function createWindow(): Promise<void> {
+  const stateFile = join(app.getPath('userData'), 'window-state.json')
+  const saved = keepWindowState ? await loadWindowState(stateFile, screen.getAllDisplays().map((d) => d.workArea), MIN_SIZE) : undefined
+  const w = (win = new BrowserWindow({
     width: 1440,
     height: 900,
-    minWidth: 960,
-    minHeight: 600,
+    ...(saved ? { x: saved.x, y: saved.y, width: saved.width, height: saved.height } : {}),
+    minWidth: MIN_SIZE.width,
+    minHeight: MIN_SIZE.height,
     title: PRODUCT_NAME,
     backgroundColor: '#14161a',
     // the renderer draws the title bar (menus + title, `shell/TitleBar.tsx`); Windows paints the min/max/close buttons over it. Colors = theme.css --surface-1 / --fg, height = .titlebar
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: '#202024', symbolColor: '#e4e4e7', height: 36 },
     webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true }
+  }))
+  if (saved?.maximized) w.maximize()
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const remember = (): void => {
+    clearTimeout(timer)
+    timer = undefined
+    if (keepWindowState && !w.isDestroyed() && !w.isMinimized()) void saveWindowState(stateFile, { ...w.getNormalBounds(), maximized: w.isMaximized() })
+  }
+  const queue = (): void => {
+    clearTimeout(timer)
+    timer = setTimeout(remember, 500)
+  }
+  w.on('resize', queue)
+  w.on('move', queue)
+  w.on('maximize', queue)
+  w.on('unmaximize', queue)
+  let flushed = false
+  w.on('close', (e) => {
+    remember()
+    if (flushed || !session.getProject()) return
+    e.preventDefault()
+    if (finishClose) return // already waiting
+    const done = (): void => {
+      clearTimeout(t)
+      finishClose = undefined
+      flushed = true
+      if (!w.isDestroyed()) w.close()
+    }
+    const t = setTimeout(done, 3000)
+    finishClose = done
+    w.webContents.send(IPC.flushBeforeClose)
   })
-  win.setMenuBarVisibility(false) // the native menu stays set (its accelerators work) but is never drawn
-  win.on('closed', () => {
+  w.setMenuBarVisibility(false) // the native menu stays set (its accelerators work) but is never drawn
+  w.on('closed', () => {
     win = undefined
     previewWin?.close() // the popped-out preview does not outlive the editor
   })
-  load(win)
+  load(w)
 }
 
 /** Pop-out: the same renderer in its own window, fed by the same IPC (sync state, preview builds, project, UI events). Closing it re-docks. */
@@ -133,6 +176,13 @@ ipcMain.handle(IPC.projectOpen, (_e, dir: string | undefined, title: string | un
     return d ? session.open(d) : cancelled
   })
 )
+ipcMain.handle(IPC.projectOpenDropped, (_e, path: unknown) =>
+  attempt(async () => {
+    const d = await droppedProjectDir(path)
+    return d ? session.open(d) : ({ ok: false, error: strings.drop.notProject } as const) // the renderer shows it as a toast
+  })
+)
+ipcMain.on(IPC.flushDone, () => finishClose?.())
 ipcMain.handle(IPC.projectNew, (_e, title: string) =>
   attempt(async () => {
     const d = await pickFolder(title)
@@ -333,6 +383,14 @@ async function buildMenu(): Promise<void> {
     const d = dir ?? (await pickFolder(title))
     return d ? session.open(d) : cancelled
   })
+  // View and Help entries come from the shared command list (palette, shortcut dialog); the renderer runs them
+  const fromCommands = (menu: 'view' | 'help'): MenuItemConstructorOptions[] =>
+    COMMANDS.filter((c) => c.menu === menu).map((c) => ({
+      label: c.label,
+      ...(acceleratorOf(c) ? { accelerator: acceleratorOf(c)! } : {}),
+      enabled: !c.needsProject || session.getProject() !== null,
+      click: () => win?.webContents.send(IPC.command, c.id)
+    }))
   const template: MenuItemConstructorOptions[] = [
     {
       label: strings.menu.file,
@@ -374,10 +432,13 @@ async function buildMenu(): Promise<void> {
     {
       label: strings.menu.view,
       submenu: [
+        ...fromCommands('view'),
+        { type: 'separator' },
         { label: strings.menu.packageManager, click: () => win?.webContents.send(IPC.menuPackages) },
         { label: strings.menu.setupGuide, click: () => win?.webContents.send(IPC.menuSetup) }
       ]
-    }
+    },
+    { label: strings.menu.help, submenu: fromCommands('help') }
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
   menuActions.clear()
@@ -387,7 +448,7 @@ async function buildMenu(): Promise<void> {
 
 void app.whenReady().then(async () => {
   await buildMenu()
-  createWindow()
+  await createWindow()
   // INKWELL_PROJECT: open this project at start (otherwise the start screen shows)
   const dir = process.env['INKWELL_PROJECT']
   await session.open(dir)

@@ -72,6 +72,10 @@ export const IPC = {
   menuSave: 'menu:save',
   menuModel: 'menu:model',
   menuInvoke: 'menu:invoke',
+  command: 'menu:command',
+  flushBeforeClose: 'window:flush-before-close',
+  flushDone: 'window:flush-done',
+  projectOpenDropped: 'project:open-dropped',
   menuChanged: 'menu:changed',
   swfTarget: 'swf:target',
   contractsList: 'contracts:list',
@@ -153,6 +157,8 @@ export interface InkwellApi {
   newProject(dialogTitle: string): Promise<OpenResult>
   /** Opens `dir`, or asks with a native folder dialog when omitted. */
   openProject(dir: string | undefined, dialogTitle: string): Promise<OpenResult>
+  /** A folder dropped on the window: main resolves it and opens it only if it is a directory holding project.json. */
+  openDroppedProject(path: string): Promise<OpenResult>
   /** Native folder dialog, copies the sample project (samples/hud-minimal) there and opens it. */
   openExample(dialogTitle: string): Promise<OpenResult>
   getRecentProjects(): Promise<RecentProject[]>
@@ -257,6 +263,11 @@ export interface InkwellApi {
   getAppMenu(): Promise<AppMenu>
   onAppMenuChanged(cb: (menu: AppMenu) => void): () => void
   invokeAppMenu(id: string): Promise<void>
+  /** A menu entry built from `shared/commands.ts` was chosen (View, Help): the id of the command. */
+  onCommand(cb: (id: string) => void): () => void
+  /** The window is closing: write what is pending, then call `flushDone`. */
+  onFlushBeforeClose(cb: () => void): () => void
+  flushDone(): void
 
   /** Answers the pending Figma plugin prompt (`SyncUiState.approval.id`). */
   answerFigmaApproval(id: number, allow: boolean): Promise<void>

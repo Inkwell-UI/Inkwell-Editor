@@ -42,6 +42,10 @@ The top bar (Zone 1: `TopBar.tsx`) and the status bar (Zone 6B: `StatusBar.tsx`,
 
 `getSync/onSync`, `getPreviewBuilds/onPreviewBuild`, `graphAs2` (codegen of the open graph), `getPreviewFonts`, `reportPreviewRendered`, `getProject/onProject`, `saveMenuSettings` (menu.json), `newProject/openProject/openExample` (native dialogs in main), `getRecentProjects`, `saveOverlay`, `setStrictMode`, `buildAll`, `setPreviewDetached/getPreviewDetached/onPreviewDetached`, `sendUiEvent/onUiEvent` (selection and active SWF relayed to the other window), `onFigmaSelection`. The preload is typed `InkwellApi`; channel names are in `IPC`. The preview SWF travels as an `ArrayBuffer` in `PreviewBuild.bytes` (absent when the preview build failed; then `error` says why). Main broadcasts to every window, so the popped-out preview gets the same builds.
 
+## Filters
+
+Navigator, Logic's Components section and the Localization table use `ui/SearchBox.tsx` (`label.search`, as the Navigator's); the rule is `matchesQuery` in `shared/filter.ts` (every word in some text, case-insensitive). The Assets panel has no list yet (an empty stub), so it has no filter.
+
 ## Adding or moving a panel
 
 1. Write `panels/FooPanel.tsx`: `export function FooPanel() { ...; return <Panel title={...}>...</Panel> }`. A new data source gets a hook or store (and an IPC method in `shared/ipc.ts` + preload + main if it comes from main).

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { Localization, SPEC_VERSION } from '@inkwell-ui/spec'
 import { inkwell } from '../hooks/api'
 import { strings } from '../../shared/strings'
+import { trackSave } from './saveState'
 import { useToastStore } from './toastStore'
 
 /**
@@ -37,9 +38,10 @@ export const useLocalizationStore = create<LocalizationStore>()((set, get) => ({
   set(next) {
     if (get().error) return
     set({ localization: next })
-    void inkwell?.saveLocalization(next).then((r) => {
+    const saved = inkwell?.saveLocalization(next).then((r) => {
       if (!r.ok) useToastStore.getState().push({ tone: 'error', title: strings.loc.saveFailed(r.error) })
     })
+    trackSave(saved)
   },
   create() {
     if (get().localization || get().error) return

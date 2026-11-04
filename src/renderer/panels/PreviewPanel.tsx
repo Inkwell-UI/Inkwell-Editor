@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { CircleX, WifiOff } from 'lucide-react'
 import { ASPECTS, type AspectId } from '../../shared/preview'
 import { reflowIr } from '../../shared/reflow'
@@ -30,6 +30,7 @@ import { SwfViewport } from '../preview/SwfViewport'
 import { useLintStore } from '../state/lintStore'
 import { isPreviewWindow, usePopoutStore } from '../state/popoutStore'
 import { useProjectStore } from '../state/projectStore'
+import { registerCommand } from '../state/runCommand'
 import { useTraceStore } from '../state/traceStore'
 import { runtimeRowId } from '../model/layerTree'
 import { useSelectionStore } from '../state/selectionStore'
@@ -79,6 +80,18 @@ export function PreviewPanel() {
     const offs = [c.backend.on('trace', (raw) => useTraceStore.getState().push(raw)), previewBus.attach(c.backend)]
     return () => (offs.forEach((off) => off()), c.dispose())
   }, [])
+
+  // Play/Pause and Reload from the palette, the View menu and their shortcuts (state/runCommand.ts)
+  const pausedNow = useRef(paused)
+  pausedNow.current = paused
+  useEffect(() => {
+    if (!ctl) return
+    const offs = [
+      registerCommand('playPause', () => (ctl.backend.setPaused(!pausedNow.current), setPaused(!pausedNow.current))),
+      registerCommand('reloadPreview', () => void ctl.reload())
+    ]
+    return () => offs.forEach((off) => off())
+  }, [ctl])
 
   // a background shows only if the movie is drawn without its stage color: Ruffle has to be loaded that way, so a change reloads the movie
   useEffect(() => {

@@ -9,9 +9,9 @@ import { countSeverities } from '../model/lintRows'
 import { useSyncState } from '../hooks/useSyncState'
 import { specLabel, timingLine } from '../model/statusBar'
 import { useDialogStore } from '../state/dialogStore'
+import { useSaveState } from '../state/saveState'
 import { useTimingStore } from '../state/timingStore'
 import { useWorkspaceStore } from '../state/workspaceStore'
-import { formatMs } from '../model/statusBar'
 import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
@@ -97,16 +97,12 @@ export function FigmaDot() {
   )
 }
 
-/** Deploy progress and the last result with its stage timings (compile, vanilla check, write). */
-function DeployItem() {
-  const d = useSyncState()?.deploy
-  if (!d) return null
-  const parts = d.timing ? Object.entries(d.timing.stages).map(([n, v]) => `${strings.status.stage(n)} ${formatMs(v)}`) : []
+/** Saved / Saving... / Unsaved changes: edits waiting for their debounce, writes in flight (state/saveState.ts). */
+function SaveItem() {
+  const st = useSaveState()
   return (
-    <span className={`item${d.state === 'error' ? ' is-error' : ''}`} title={`${strings.status.deployTip} ${d.message}`} data-testid="deploy-status" role="status">
-      {strings.status.deploy}: {d.state === 'done' && d.timing ? <strong>{formatMs(d.timing.total)}</strong> : d.state === 'error' ? 'failed' : d.message}
-      {parts.length > 0 && <span className="mono"> [{parts.join(' · ')}]</span>}
-      {d.hotReload && <span data-testid="deploy-hot-reload"> · {d.hotReload}</span>}
+    <span className="item" title={`${strings.status.saveState[st]}. ${strings.status.saveTip}`} aria-label={strings.status.saveState[st]} role="status" data-testid="save-state" data-state={st}>
+      <Dot tone={st === 'saved' ? 'ok' : 'warn'} />{st !== 'saved' && ` ${strings.status.saveState[st]}`}
     </span>
   )
 }
@@ -153,7 +149,7 @@ export function StatusBar() {
       <button type="button" className={`item item-button${lint.errors ? ' is-error' : ''}`} onClick={() => useWorkspaceStore.getState().showDockTab('lintBudget')} title={strings.status.lintTip} data-testid="lint-counts">
         <Dot tone={lint.errors ? 'error' : lint.warnings ? 'warn' : 'ok'} /> {strings.status.lint(lint.errors, lint.warnings)}
       </button>
-      {sync?.deploy && <DeployItem />}
+      <SaveItem />
       <Popover
         up
         label={strings.status.environment}

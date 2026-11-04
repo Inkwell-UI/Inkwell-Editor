@@ -112,6 +112,10 @@ export const strings = {
 
   nav: {
     title: 'Layers',
+    menuLabel: 'Layer actions',
+    openGraph: 'Open graph',
+    openGraphComponent: 'Not available while a component\'s layers are listed.',
+    copyName: 'Copy layer name',
     search: 'Filter layers',
     graphs: 'Graphs',
     layerTip: 'Click opens its graph. Ctrl+Click selects it without opening the graph.',
@@ -239,6 +243,8 @@ export const strings = {
 
   comp: {
     title: 'Components',
+    search: 'Filter components',
+    noMatch: 'No component matches.',
     heading: 'Components',
     noSwf: 'Select a SWF first: the Graph panel shows the graph in it',
     graphFailed: 'Could not create the graph',
@@ -369,6 +375,9 @@ export const strings = {
 
   graph: {
     title: 'Graph',
+    nodeMenu: 'Node actions',
+    duplicateNode: 'Duplicate',
+    deleteNode: 'Delete',
     tidy: 'Tidy layout',
     fullscreen: 'Fullscreen graph (Enter)',
     fullscreenExit: 'Exit fullscreen (Enter)',
@@ -843,6 +852,8 @@ export const strings = {
 
   status: {
     label: 'Status bar',
+    saveState: { saved: 'Saved', saving: 'Saving...', unsaved: 'Unsaved changes' },
+    saveTip: 'Edits are written to the project as you make them. Ctrl+S writes the waiting ones now.',
     specTip: 'The inkwell-spec version this editor speaks. v1 is frozen at 0.5.',
     build: 'Build',
     lastGoodBuild: 'Last good build',
@@ -864,7 +875,6 @@ export const strings = {
     openDoctor: 'Open the settings',
     packs: (list: readonly { id: string; version: string }[]) => (list.length ? `Packs: ${list.map((p) => `${p.id} ${p.version}`).join(', ')}` : 'Packs: none'),
     deploy: 'Deploy',
-    deployTip: 'Last deploy. Stages: compile, vanilla check, write.',
     environment: 'Environment',
     lint: (e: number, w: number) => {
       const n = (c: number, word: string): string => `${c} ${word}${c === 1 ? '' : 's'}`
@@ -921,7 +931,58 @@ export const strings = {
   },
 
   /** The application menu (built in the main process). */
-  menu: { file: 'File', edit: 'Edit', view: 'View', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All', quit: 'Exit', label: 'Application menu', settings: 'Settings...', projectSettings: 'Project Settings...', setupGuide: 'Setup Guide...', packageManager: 'Package Manager...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project' },
+  /** Command palette and keyboard shortcut list (`shared/commands.ts` holds the data; the palette, the menus and the shortcut dialog read it). */
+  cmd: {
+    palette: 'Command palette',
+    placeholder: 'Type a command...',
+    empty: 'No command matches.',
+    list: 'Commands',
+    save: 'Save',
+    rebuild: 'Rebuild preview',
+    deploy: 'Deploy',
+    devDeploy: 'Dev deploy',
+    package: 'Package Mod',
+    packages: 'Open Package Manager',
+    setup: 'Setup Guide',
+    settings: 'Settings',
+    projectSettings: 'Project Settings',
+    workspace: (name: string) => `Switch to ${name} workspace`,
+    playPause: 'Play / Pause preview',
+    reloadPreview: 'Reload preview',
+    shortcuts: 'Keyboard shortcuts',
+    switchSwf: (name: string) => `Switch SWF: ${name}`,
+    goToGraph: (name: string) => `Go to graph: ${name}`,
+    noDeployTarget: 'No deploy folder is set. Set one in Settings.',
+    reasonNoProject: 'Open a project first'
+  },
+  shortcuts: {
+    title: 'Keyboard shortcuts',
+    app: 'Application',
+    graph: 'Graph',
+    hint: 'Press ? to open this list when you are not typing.',
+    graphRows: [
+      ['Add a node', 'Space'],
+      ['Zoom to all, or to the selection', 'F'],
+      ['Make a function from the selection', 'G'],
+      ['Hold while dragging a node to splice it into a wire', 'Ctrl+Drag'],
+      ['Find nodes', 'Ctrl+F'],
+      ['Copy', 'Ctrl+C'],
+      ['Cut', 'Ctrl+X'],
+      ['Paste', 'Ctrl+V'],
+      ['Duplicate', 'Ctrl+D'],
+      ['Select all', 'Ctrl+A'],
+      ['Delete the selection', 'Del'],
+      ['Fullscreen graph (Behaviour)', 'Enter']
+    ] as [string, string][]
+  },
+
+  drop: {
+    project: 'Drop a project folder here to open it',
+    openFailed: 'Could not open the dropped folder',
+    notProject: 'Not an Inkwell project: the folder has no project.json.'
+  },
+
+  menu: { file: 'File', edit: 'Edit', view: 'View', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All', quit: 'Exit', label: 'Application menu', settings: 'Settings...', projectSettings: 'Project Settings...', setupGuide: 'Setup Guide...', packageManager: 'Package Manager...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project', help: 'Help' },
 
   settings: {
     title: 'Settings',

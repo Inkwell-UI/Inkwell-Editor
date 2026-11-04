@@ -125,7 +125,9 @@
 .graph-row-main:hover .row-reveal, .graph-row-main:focus-within .row-reveal, .row-reveal:has([aria-expanded='true']) { opacity: 1; }
 .popover.row-menu-pop { min-width: 0; padding: 4px; } /* the menu is as wide as its items, so it fits inside a narrow panel instead of being clipped */
 .row-menu { list-style: none; margin: 0; padding: 0; min-width: 130px; }
-.row-menu-item { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 4px; padding: 6px 10px; color: var(--fg); font: inherit; cursor: pointer; }
+.row-menu-item:disabled { opacity: 0.45; cursor: not-allowed; background: none; } /* an action that cannot run now keeps its place; the reason is the tooltip */
+.row-menu-item kbd { margin-left: 16px; }
+.row-menu-item { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; background: none; border: 0; border-radius: 4px; padding: 6px 10px; color: var(--fg); font: inherit; cursor: pointer; }
 .row-menu-item:hover, .row-menu-item:focus-visible { background: var(--hover); }
 .row-menu-item.is-danger { color: var(--err); }
 .lib-fns { margin: 2px 0 0 14px; display: flex; flex-direction: column; gap: 2px; }
@@ -135,7 +137,7 @@
 .var-strip-title { font-size: 12px; font-weight: 600; color: var(--fg-dim); margin-right: 2px; }
 .var-chip { display: inline-flex; align-items: center; gap: 6px; height: var(--ctl-h-sm); padding: 0 8px; border: 1px solid transparent; border-radius: var(--radius); background: var(--btn-bg); color: var(--fg); font: inherit; font-size: 12px; cursor: grab; }
 .var-chip:hover { background: var(--btn-bg-hover); }
-.var-chip:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--accent); }
+.var-chip:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--focus-ring); }
 .var-chip-add { color: var(--fg-dim); cursor: pointer; }
 .var-chip-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .var-chip-type { font-size: 11px; color: var(--fg-dim); }

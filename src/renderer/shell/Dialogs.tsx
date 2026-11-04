@@ -6,6 +6,8 @@ import { strings } from '../../shared/strings'
 import { Btn } from '../ui/Btn'
 import { Dialog } from '../ui/Dialog'
 import { MenuSettingsForm } from '../menu/MenuSettingsForm'
+import { CommandPalette } from './CommandPalette'
+import { ShortcutsDialog } from './ShortcutsDialog'
 import { useActiveSwf } from '../hooks/useProject'
 
 /** Approve-on-connect (protocol 4): the plugin's version, Figma file and origin. Escape or closing = Deny. */
@@ -82,6 +84,8 @@ function StubDialog() {
   const open = useDialogStore((s) => s.open)
   const close = useDialogStore((s) => s.close)
   const kind = useActiveSwf()?.ir.target.kind
+  if (open === 'palette') return <CommandPalette />
+  if (open === 'shortcuts') return <ShortcutsDialog />
   if (open === 'configOwnership' && kind === 'customMenu')
     return (
       <Dialog title={strings.dialogs.config.menuTitle} onClose={close}>

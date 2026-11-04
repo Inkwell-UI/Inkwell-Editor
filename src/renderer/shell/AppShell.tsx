@@ -14,6 +14,9 @@ import { WORKSPACE_IDS, WORKSPACES } from '../workspace/workspaces'
 import { inkwell } from '../hooks/api'
 import { useDialogStore } from '../state/dialogStore'
 import { flushGraphSaves } from '../state/graphStore'
+import { registerCommand, runCommand } from '../state/runCommand'
+import { whenSaved } from '../state/saveState'
+import type { CommandId } from '../../shared/commands'
 import { PackManager } from '../packs/PacksSection'
 import { Toasts } from '../ui/Toasts'
 import { Dialogs } from './Dialogs'
@@ -47,7 +50,7 @@ function WorkspaceView() {
 
 /**
  * The window: start screen without a project, otherwise top bar (Zone 1), the workspace (Zones 2-6A) and the status bar (6B).
- * Global keys: Ctrl+1/2/3 switch workspace; Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y undo and redo the active SWF's overlay (not while typing in a field,
+ * Global keys: Ctrl+1/2/3 switch workspace; `?` shows the shortcut list (the menu accelerators in `shared/commands.ts` come from main); Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y undo and redo the active SWF's overlay (not while typing in a field,
  * which has its own undo).
  */
 export function AppShell() {
@@ -112,6 +115,19 @@ export function AppShell() {
     const offs = [inkwell?.onUndo(() => run('undo')), inkwell?.onRedo(() => run('redo'))]
     return () => offs.forEach((f) => f?.())
   }, [])
+  // View and Help entries built from shared/commands.ts; the setup guide is this component's state
+  useEffect(() => inkwell?.onCommand((id) => runCommand(id as CommandId)), [])
+  useEffect(() => registerCommand('setup', () => setWizard(true)), [])
+  // `?` lists the shortcuts (not while typing or with a dialog open)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey && !isTyping(e.target) && !useDialogStore.getState().open) (e.preventDefault(), runCommand('shortcuts'))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  // the window is closing: write what waits for its debounce, then tell main it may close
+  useEffect(() => inkwell?.onFlushBeforeClose(() => (flushGraphSaves(), void whenSaved().then(() => inkwell?.flushDone()))), [])
   // File > Save: only graph edits are debounced; everything else is written as it changes
   useEffect(() => inkwell?.onSaveNow(flushGraphSaves), [])
 
