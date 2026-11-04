@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/RadiansToDegrees.as2"
+  "as2Template": "templates/RadiansToDegrees.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns radians into degrees."
+    }
+  }
 }

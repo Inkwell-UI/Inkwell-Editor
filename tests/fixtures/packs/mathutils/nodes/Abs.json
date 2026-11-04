@@ -19,5 +19,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Abs.as2"
+  "as2Template": "templates/Abs.as2",
+  "extra": {
+    "inspector": {
+      "description": "Drops the minus sign from a number."
+    }
+  }
 }

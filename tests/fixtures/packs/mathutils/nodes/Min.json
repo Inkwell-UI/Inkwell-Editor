@@ -24,5 +24,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Min.as2"
+  "as2Template": "templates/Min.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the smaller of two numbers."
+    }
+  }
 }

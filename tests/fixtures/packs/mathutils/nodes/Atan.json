@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Atan.as2"
+  "as2Template": "templates/Atan.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the angle (in radians) whose tangent is the value."
+    }
+  }
 }

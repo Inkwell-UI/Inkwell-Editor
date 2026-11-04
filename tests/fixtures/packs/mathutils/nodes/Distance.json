@@ -34,5 +34,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Distance.as2"
+  "as2Template": "templates/Distance.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the distance between two points."
+    }
+  }
 }

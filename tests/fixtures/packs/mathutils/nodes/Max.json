@@ -24,5 +24,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Max.as2"
+  "as2Template": "templates/Max.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the larger of two numbers."
+    }
+  }
 }

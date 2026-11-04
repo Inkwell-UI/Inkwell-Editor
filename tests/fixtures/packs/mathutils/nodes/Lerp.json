@@ -29,5 +29,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Lerp.as2"
+  "as2Template": "templates/Lerp.as2",
+  "extra": {
+    "inspector": {
+      "description": "Blends between two numbers."
+    }
+  }
 }

@@ -41,5 +41,10 @@
       "description": "Which end eases: in (slow start), out (slow end) or both"
     }
   },
-  "as2Template": "templates/Ease.as2"
+  "as2Template": "templates/Ease.as2",
+  "extra": {
+    "inspector": {
+      "description": "Eases a 0 to 1 progress value along a curve."
+    }
+  }
 }

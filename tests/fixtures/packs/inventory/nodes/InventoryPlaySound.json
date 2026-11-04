@@ -24,5 +24,10 @@
   ],
   "fields": {},
   "contract": "InventoryMenu",
-  "as2Template": "templates/InventoryPlaySound.as2"
+  "as2Template": "templates/InventoryPlaySound.as2",
+  "extra": {
+    "inspector": {
+      "description": "Plays a menu sound by name."
+    }
+  }
 }

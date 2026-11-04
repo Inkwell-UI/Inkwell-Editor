@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Sign.as2"
+  "as2Template": "templates/Sign.as2",
+  "extra": {
+    "inspector": {
+      "description": "Tells whether a number is negative (-1), zero (0) or positive (1)."
+    }
+  }
 }

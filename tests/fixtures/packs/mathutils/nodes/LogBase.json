@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/LogBase.as2"
+  "as2Template": "templates/LogBase.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the logarithm of a number in a chosen base."
+    }
+  }
 }

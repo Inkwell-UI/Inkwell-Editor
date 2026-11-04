@@ -19,5 +19,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Floor.as2"
+  "as2Template": "templates/Floor.as2",
+  "extra": {
+    "inspector": {
+      "description": "Rounds a number down to the previous whole number."
+    }
+  }
 }

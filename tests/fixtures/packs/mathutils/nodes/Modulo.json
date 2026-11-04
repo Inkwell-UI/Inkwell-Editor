@@ -24,5 +24,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Modulo.as2"
+  "as2Template": "templates/Modulo.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the remainder after dividing one number by another."
+    }
+  }
 }

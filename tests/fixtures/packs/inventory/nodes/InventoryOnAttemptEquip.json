@@ -22,6 +22,9 @@
   "as2Template": "templates/InventoryOnAttemptEquip.as2",
   "extra": {
     "entry": true,
-    "contractCallback": "AttemptEquip"
+    "contractCallback": "AttemptEquip",
+    "inspector": {
+      "description": "Runs when the player tries to equip an item."
+    }
   }
 }

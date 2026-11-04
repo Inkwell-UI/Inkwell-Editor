@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Exp.as2"
+  "as2Template": "templates/Exp.as2",
+  "extra": {
+    "inspector": {
+      "description": "Raises e to the power of a number."
+    }
+  }
 }

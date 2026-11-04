@@ -29,5 +29,10 @@
   ],
   "fields": {},
   "contract": "InventoryMenu",
-  "as2Template": "templates/InventoryItemDrop.as2"
+  "as2Template": "templates/InventoryItemDrop.as2",
+  "extra": {
+    "inspector": {
+      "description": "Drops an amount of the item at an index."
+    }
+  }
 }

@@ -27,6 +27,9 @@
   "as2Template": "templates/InventoryOnInvalidateList.as2",
   "extra": {
     "entry": true,
-    "contractCallback": "InvalidateListData"
+    "contractCallback": "InvalidateListData",
+    "inspector": {
+      "description": "Runs when the item list changes and must be redrawn."
+    }
   }
 }

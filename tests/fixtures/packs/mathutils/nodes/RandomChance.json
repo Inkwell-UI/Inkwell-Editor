@@ -21,6 +21,9 @@
   "fields": {},
   "as2Template": "templates/RandomChance.as2",
   "extra": {
-    "volatile": true
+    "volatile": true,
+    "inspector": {
+      "description": "True with the given percent chance."
+    }
   }
 }

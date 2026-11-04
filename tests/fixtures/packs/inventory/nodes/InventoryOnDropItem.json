@@ -17,6 +17,9 @@
   "as2Template": "templates/InventoryOnDropItem.as2",
   "extra": {
     "entry": true,
-    "contractCallback": "DropItem"
+    "contractCallback": "DropItem",
+    "inspector": {
+      "description": "Runs when the player drops an item."
+    }
   }
 }

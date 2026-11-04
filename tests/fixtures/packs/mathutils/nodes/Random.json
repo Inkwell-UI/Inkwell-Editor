@@ -31,6 +31,9 @@
   "fields": {},
   "as2Template": "templates/Random.as2",
   "extra": {
-    "volatile": true
+    "volatile": true,
+    "inspector": {
+      "description": "Picks a random number between a minimum and a maximum."
+    }
   }
 }

@@ -24,5 +24,10 @@
   ],
   "fields": {},
   "contract": "InventoryMenu",
-  "as2Template": "templates/InventoryUpdateItem3D.as2"
+  "as2Template": "templates/InventoryUpdateItem3D.as2",
+  "extra": {
+    "inspector": {
+      "description": "Shows or hides the 3D preview of the item."
+    }
+  }
 }

@@ -22,6 +22,9 @@
   "as2Template": "templates/InventoryOnItemCard.as2",
   "extra": {
     "entry": true,
-    "contractCallback": "UpdateItemCardInfo"
+    "contractCallback": "UpdateItemCardInfo",
+    "inspector": {
+      "description": "Runs when the details of the highlighted item arrive."
+    }
   }
 }

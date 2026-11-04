@@ -22,6 +22,9 @@
   "as2Template": "templates/InventoryOnSetCategories.as2",
   "extra": {
     "entry": true,
-    "contractCallback": "SetCategoriesList"
+    "contractCallback": "SetCategoriesList",
+    "inspector": {
+      "description": "Runs when the list of item categories arrives."
+    }
   }
 }

@@ -22,6 +22,9 @@
   "as2Template": "templates/InventoryOnPlayerInfo.as2",
   "extra": {
     "entry": true,
-    "contractCallback": "UpdatePlayerInfo"
+    "contractCallback": "UpdatePlayerInfo",
+    "inspector": {
+      "description": "Runs when updated player info arrives."
+    }
   }
 }

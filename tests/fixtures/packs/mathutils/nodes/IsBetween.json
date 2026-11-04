@@ -35,5 +35,10 @@
       "description": "Count min and max themselves as inside"
     }
   },
-  "as2Template": "templates/IsBetween.as2"
+  "as2Template": "templates/IsBetween.as2",
+  "extra": {
+    "inspector": {
+      "description": "True when a number lies between a minimum and a maximum."
+    }
+  }
 }

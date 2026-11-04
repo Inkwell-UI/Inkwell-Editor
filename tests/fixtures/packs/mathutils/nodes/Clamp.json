@@ -29,5 +29,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Clamp.as2"
+  "as2Template": "templates/Clamp.as2",
+  "extra": {
+    "inspector": {
+      "description": "Keeps a number between a minimum and a maximum."
+    }
+  }
 }

@@ -25,5 +25,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Atan2.as2"
+  "as2Template": "templates/Atan2.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the angle (in radians) of the point at x and y."
+    }
+  }
 }

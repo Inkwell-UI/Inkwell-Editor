@@ -29,5 +29,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Wrap.as2"
+  "as2Template": "templates/Wrap.as2",
+  "extra": {
+    "inspector": {
+      "description": "Loops a number around so it stays between a minimum and a maximum."
+    }
+  }
 }

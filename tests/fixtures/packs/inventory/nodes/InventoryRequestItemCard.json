@@ -24,5 +24,10 @@
   ],
   "fields": {},
   "contract": "InventoryMenu",
-  "as2Template": "templates/InventoryRequestItemCard.as2"
+  "as2Template": "templates/InventoryRequestItemCard.as2",
+  "extra": {
+    "inspector": {
+      "description": "Asks the game for the details of the item at an index."
+    }
+  }
 }

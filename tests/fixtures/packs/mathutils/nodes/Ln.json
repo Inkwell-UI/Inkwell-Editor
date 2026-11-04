@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Ln.as2"
+  "as2Template": "templates/Ln.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the natural logarithm of a number."
+    }
+  }
 }

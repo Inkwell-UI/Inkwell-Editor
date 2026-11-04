@@ -24,5 +24,10 @@
   ],
   "fields": {},
   "contract": "InventoryMenu",
-  "as2Template": "templates/InventoryCloseMenu.as2"
+  "as2Template": "templates/InventoryCloseMenu.as2",
+  "extra": {
+    "inspector": {
+      "description": "Closes the inventory menu."
+    }
+  }
 }

@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Sin.as2"
+  "as2Template": "templates/Sin.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the sine of an angle in radians."
+    }
+  }
 }

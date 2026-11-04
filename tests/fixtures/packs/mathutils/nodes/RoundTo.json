@@ -24,5 +24,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/RoundTo.as2"
+  "as2Template": "templates/RoundTo.as2",
+  "extra": {
+    "inspector": {
+      "description": "Rounds a number to the nearest multiple of a step."
+    }
+  }
 }

@@ -22,6 +22,9 @@
   "as2Template": "templates/InventoryOnRestoreIndices.as2",
   "extra": {
     "entry": true,
-    "contractCallback": "RestoreIndices"
+    "contractCallback": "RestoreIndices",
+    "inspector": {
+      "description": "Runs when the saved list positions are handed back."
+    }
   }
 }

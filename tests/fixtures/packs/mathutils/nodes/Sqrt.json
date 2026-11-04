@@ -20,5 +20,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Sqrt.as2"
+  "as2Template": "templates/Sqrt.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the square root of a number."
+    }
+  }
 }

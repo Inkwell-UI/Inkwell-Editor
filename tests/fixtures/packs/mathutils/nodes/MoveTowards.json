@@ -29,5 +29,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/MoveTowards.as2"
+  "as2Template": "templates/MoveTowards.as2",
+  "extra": {
+    "inspector": {
+      "description": "Steps a number toward a target without overshooting it."
+    }
+  }
 }

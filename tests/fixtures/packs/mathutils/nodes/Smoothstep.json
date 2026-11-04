@@ -29,5 +29,10 @@
     }
   ],
   "fields": {},
-  "as2Template": "templates/Smoothstep.as2"
+  "as2Template": "templates/Smoothstep.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives a smooth 0 to 1 ramp as a number moves between two edges."
+    }
+  }
 }
