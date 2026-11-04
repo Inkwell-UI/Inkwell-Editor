@@ -44,6 +44,10 @@ export interface SyncUiState {
   approval?: { id: number; pluginVersion: string; fileName: string; origin: string }
   /** Why the last plugin connection attempt failed (cleared by the next successful hello). */
   connectionIssue?: { kind: 'version' | 'auth'; message: string }
+  /** The user paused Figma sync (Figma popover): what the plugin sends is held, not applied. */
+  paused?: boolean
+  /** Messages held while paused (patches, not selections). */
+  heldChanges?: number
 }
 
 export interface LayerRef {

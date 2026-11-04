@@ -1,9 +1,9 @@
-import { Check } from 'lucide-react'
+import { Check, Pause, Play } from 'lucide-react'
 import { useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
 import { usePackList } from '../hooks/usePacks'
 import { usePreviewBuilds } from '../hooks/usePreviewBuilds'
-import type { SnapshotInfo } from '../../shared/projectState'
-import { figmaConnection, type DotTone } from '../model/connection'
+import { figmaConnection, usableSnapshot, type DotTone } from '../model/connection'
+import { inkwell } from '../hooks/api'
 import { useSettingsStore } from '../state/settingsStore'
 import { countSeverities } from '../model/lintRows'
 import { useSyncState } from '../hooks/useSyncState'
@@ -13,6 +13,7 @@ import { useTimingStore } from '../state/timingStore'
 import { useWorkspaceStore } from '../state/workspaceStore'
 import { formatMs } from '../model/statusBar'
 import { strings } from '../../shared/strings'
+import { Btn } from '../ui/Btn'
 import { Popover } from '../ui/Popover'
 import { BuildPopup } from './BuildPopup'
 import { GameDot } from './GameDot'
@@ -29,49 +30,70 @@ export function FigmaDot() {
   const c = figmaConnection(sync, snap)
   const mirror = useSettingsStore((s) => s.mirrorFigma)
   const setMirror = useSettingsStore((s) => s.setMirrorFigma)
-  const label = strings.top.figmaStatus[c.status]
+  const t = strings.top
+  const label = t.figmaStatus[c.status]
+  const chip = c.status === 'snapshot' ? t.figmaStatus['disconnected'] : label // the Source row says "Snapshot"
+  const paused = !!sync?.paused
+  const held = sync?.heldChanges ?? 0
+  const live = (sync?.connections ?? 0) > 0
+  const usable = usableSnapshot(snap)
+  const showHint = c.status === 'snapshot' || c.status === 'disconnected'
   return (
     <Popover
-      label={strings.top.figmaDetails}
+      label={t.figmaDetails}
       align="end"
       up
       trigger={(p) => (
-        <button type="button" className="item item-fixed item-button" {...p} title={`${strings.top.figma}: ${label}`} aria-label={`${strings.top.figma}: ${label}`} data-testid="dot-figma" data-tone={c.tone}>
-          <Dot tone={c.tone} /> {strings.top.figma}
+        <button type="button" className="item item-fixed item-button" {...p} title={`${t.figma}: ${label}`} aria-label={`${t.figma}: ${label}`} data-testid="dot-figma" data-tone={c.tone}>
+          <Dot tone={c.tone} /> {t.figma}
         </button>
       )}
     >
-      <div className="details">
-        <p><strong>{label}</strong></p>
+      <div className="details conn">
+        <div className="conn-head">
+          <Dot tone={c.tone} />
+          <strong>{t.figma}</strong>
+          <span className="conn-status" data-testid="figma-status">{chip}</span>
+        </div>
         {sync?.connectionIssue && <p className={c.tone === 'error' ? 'tone-error' : 'tone-warn'}>{sync.connectionIssue.message}</p>}
-        {sync?.server === 'error' && <p className="tone-error">{strings.top.serverError(sync.error)}</p>}
-        {project && <SnapshotFacts snap={snap} />}
-        <dl className="facts">
-          <dt>{strings.syncPort}</dt><dd className="mono">{sync?.port ?? '-'}</dd>
-        </dl>
-        <p className="dim">{strings.top.approvalNote}</p>
-        <label className="check">
-          <input type="checkbox" checked={mirror} onChange={(e) => setMirror(e.target.checked)} data-testid="mirror-setting" /> {strings.top.mirror}
-        </label>
-        <p className="dim">{strings.top.mirrorNote}</p>
+        {sync?.server === 'error' && <p className="tone-error">{t.serverError(sync.error)}</p>}
+        {project && (
+          <dl className="conn-facts" data-testid="snapshot-facts">
+            <dt>{t.figmaSource}</dt>
+            <dd title={t.figmaSourceTip}>{live && usable ? t.figmaSourceLive(snap!.swfs) : usable ? t.figmaSourceSnapshot(snap!.swfs) : t.figmaSourceNone}</dd>
+            {usable && <><dt>{t.figmaLastSync}</dt><dd>{new Date(snap!.updatedAt).toLocaleString()}</dd></>}
+            {paused && held > 0 && <><dt>{t.figmaWaiting}</dt><dd>{t.figmaWaitingCount(held)}</dd></>}
+            {snap?.pluginVersion && <><dt>{t.figmaPlugin}</dt><dd>{snap.pluginVersion}</dd></>}
+            <dt>{strings.syncPort}</dt><dd className="mono">127.0.0.1:{sync?.port ?? '-'}</dd>
+          </dl>
+        )}
+        {project && snap?.error && <p className="tone-warn">{t.snapshotBroken(snap.error)}</p>}
+        {project && snap && snap.stale.length > 0 && <p className="tone-warn">{t.snapshotStale(snap.stale)}</p>}
+        {showHint && <p className="conn-hint"><strong>{t.connectHint}</strong> {t.connectHintMore}</p>}
+        <div className="conn-actions">
+          <Btn
+            icon={mirror ? Check : undefined}
+            pressed={mirror}
+            label={`${t.mirrorShort}: ${t.mirrorNote}`}
+            reason={paused ? t.mirrorPaused : undefined}
+            onClick={() => setMirror(!mirror)}
+            testId="mirror-setting"
+          >
+            {t.mirrorShort}
+          </Btn>
+          <Btn
+            icon={paused ? Play : Pause}
+            pressed={paused}
+            label={`${paused ? t.resume : t.pause}: ${paused ? t.resumeTip(held) : t.pauseTip}`}
+            onClick={() => void inkwell?.setFigmaPaused(!paused)}
+            testId="figma-pause"
+            className="icon-filled"
+          >
+            {paused ? t.resume : t.pause}
+          </Btn>
+        </div>
       </div>
     </Popover>
-  )
-}
-
-function SnapshotFacts({ snap }: { snap: SnapshotInfo | undefined }) {
-  return (
-    <div data-testid="snapshot-facts">
-      <h3>{strings.top.snapshotTitle}</h3>
-      {!snap ? <p className="dim">{strings.top.snapshotNone}</p>
-        : snap.error ? <p className="tone-warn">{strings.top.snapshotBroken(snap.error)}</p>
-          : (
-            <>
-              <p className="dim">{strings.top.snapshotSaved(new Date(snap.updatedAt).toLocaleString(), snap.swfs)}. {strings.top.snapshotFrom(snap.pluginVersion, snap.fileKey)}</p>
-              {snap.stale.length > 0 && <p className="tone-warn">{strings.top.snapshotStale(snap.stale)}</p>}
-            </>
-          )}
-    </div>
   )
 }
 

@@ -92,6 +92,7 @@ export const IPC = {
   figmaApproval: 'figma:approval',
   figmaForget: 'figma:forget',
   figmaSelect: 'figma:select',
+  figmaPause: 'figma:pause',
   figmaPluginCount: 'figma:pluginCount',
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
@@ -263,6 +264,8 @@ export interface InkwellApi {
   selectInFigma(nodeId: string, focus: boolean): Promise<{ ok: true } | { ok: false; error: string }>
   /** Settings > Forget all Figma plugins: removes every approved credential and disconnects the plugins. Returns the reason on failure. */
   forgetFigmaPlugins(): Promise<{ ok: true } | { ok: false; error: string }>
+  /** Figma popover: hold (true) or apply (false) what the plugin sends. The state comes back in `SyncUiState.paused` / `heldChanges`. */
+  setFigmaPaused(on: boolean): Promise<void>
 
   /** Setup Doctor (UX 5.3): every check (or only `only`), in parallel; never rejects. */
   runDoctor(only?: CheckId[]): Promise<CheckResult[]>

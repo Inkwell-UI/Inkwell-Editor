@@ -29,6 +29,11 @@ describe('figma connection dot', () => {
     expect(strings.top.figmaStatus['pending']).toBe('Waiting for approval')
     expect(figmaConnection(s({ connections: 1 }))).toEqual({ status: 'synced', tone: 'ok' })
   })
+  it('paused is amber with or without a plugin, and a server error still wins', () => {
+    expect(figmaConnection(s({ connections: 1, paused: true }))).toEqual({ status: 'paused', tone: 'warn' })
+    expect(figmaConnection(s({ paused: true }))).toEqual({ status: 'paused', tone: 'warn' })
+    expect(figmaConnection(s({ server: 'error', paused: true })).status).toBe('serverError')
+  })
   it('a dead server is red; before the first answer it is grey', () => {
     expect(figmaConnection(s({ server: 'error' })).tone).toBe('error')
     expect(figmaConnection(undefined).status).toBe('starting')

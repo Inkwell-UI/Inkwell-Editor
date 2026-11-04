@@ -142,6 +142,33 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .details p { margin: 4px 0; }
 .details .check, .check { display: flex; gap: 6px; align-items: center; margin-top: 6px; min-height: var(--ctl-h-sm); cursor: pointer; }
 .check:has(input:disabled) { cursor: default; color: var(--fg-faint); }
+/* connection popovers (Figma now, Game next): head row, facts grid, what applies, state buttons */
+.conn { display: flex; flex-direction: column; gap: 10px; min-width: 320px; }
+.conn p { margin: 0; }
+.conn-head { display: flex; align-items: center; gap: 8px; min-height: var(--ctl-h); }
+.conn-head strong { font-size: 13px; font-weight: 600; }
+.conn-status { margin-left: auto; font-size: 11px; height: 18px; display: inline-flex; align-items: center; padding: 0 8px; background: var(--btn-bg); border-radius: var(--radius-chip); }
+.conn-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; margin: 0; padding: 10px; background: var(--field-bg); border-radius: var(--radius); }
+.conn-facts dt { color: var(--fg-dim); }
+.conn-facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.conn-hint { padding: 8px 10px; background: var(--surface-1); border-radius: var(--radius); color: var(--fg-dim); }
+.conn-hint strong { color: var(--fg); font-weight: 600; }
+.conn-actions { display: flex; gap: 6px; }
+.conn-actions .btn { flex: 1; justify-content: center; }
+/* the popover pane is --surface-2, the same step as --btn-bg, so a plain button vanishes there: one step up in every popover (pressed keeps --accent-bg, quiet, primary, danger and the segmented buttons keep their own) */
+.popover .btn-default:not(.btn-seg):not([aria-pressed='true']):not(.is-disabled) { background: var(--surface-3); }
+.popover .btn-default:not(.btn-seg):not([aria-pressed='true']):not(.is-disabled):hover { background: color-mix(in srgb, var(--surface-3), var(--fg) 8%); }
+.conn-lbl { font-size: 11px; color: var(--fg-dim); }
+.conn-menus { display: flex; flex-direction: column; gap: 2px; }
+.conn-menu { display: flex; align-items: center; gap: 8px; min-height: var(--ctl-h-sm); }
+.conn-menu-state { margin-left: auto; color: var(--fg-dim); }
+.conn-field-row { display: flex; gap: 6px; align-items: center; }
+.conn-field-row .gn-input { flex: 1; min-width: 0; min-height: var(--ctl-h); }
+.conn-field-row .port-input { flex: none; width: 90px; }
+.conn .fold { background: var(--field-bg); border-radius: var(--radius); padding: 0 10px; } /* the same sunken card as .conn-facts */
+.conn .fold > summary { min-height: var(--ctl-h); padding: 0; }
+.conn .fold-body { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 10px; }
+.conn .fold .gn-input { background-color: var(--surface-2); } /* a field on a sunken card is one step up, or it vanishes */
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 4px 0; }
 .facts dt { color: var(--fg-dim); }
 .facts dd { margin: 0; }
@@ -750,10 +777,6 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 
 
 /* Game dot popover, Trace & Watch game source (docs/dev-mode.md) */
-.game-details { min-width: 340px; max-width: 440px; }
-.game-details h4 { margin: 8px 0 2px; font-size: 11px; color: var(--fg-dim); }
-.game-details .gn-input { min-width: 0; flex: 1 1 160px; }
-.game-details .port-input { width: 90px; flex: 0 0 90px; }
 .tone-ok { color: var(--ok); }
 .watch-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .watch-table th { text-align: left; color: var(--fg-dim); font-weight: 600; padding: 1px 6px 3px 0; }

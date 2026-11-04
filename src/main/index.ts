@@ -254,6 +254,7 @@ ipcMain.handle(IPC.figmaApproval, (_e, id: number, allow: boolean) => session.an
 ipcMain.handle(IPC.figmaPluginCount, () => session.figmaPluginCount())
 ipcMain.handle(IPC.figmaSelect, (_e, nodeId: string, focus: boolean) => session.selectInFigma(String(nodeId), focus === true))
 ipcMain.handle(IPC.figmaForget, () => session.forgetFigmaPlugins())
+ipcMain.handle(IPC.figmaPause, (_e, on: boolean) => session.setFigmaPaused(on === true))
 ipcMain.handle(IPC.doctorRun, (_e, only?: CheckId[]) => session.runDoctor(only))
 ipcMain.handle(IPC.doctorBenchmark, () => session.runBenchmark())
 ipcMain.handle(IPC.doctorBuildCache, () => session.buildVanillaCache())

@@ -345,6 +345,8 @@ export function createSession(deps: SessionDeps) {
     const srv = await (keep ? startSyncServer({ ...opts, ports: [keep.port] }).catch(() => startSyncServer(opts)) : startSyncServer(opts))
     server = srv
     srv.events.on('connections', (connections: number) => update({ connections, ...(connections > 0 ? { connectionIssue: undefined } : {}) }))
+    srv.events.on('held', (heldChanges: number) => update({ heldChanges }))
+    if (state.paused) srv.setPaused(true) // a pause outlives a project switch (the new server starts with the same choice)
     srv.events.on('handshakeFailed', (message: string) => update({ connectionIssue: { kind: 'version', message } }))
     srv.events.on('rejected', () =>
       update({ connectionIssue: { kind: 'auth', message: 'Connection from a disallowed origin was refused.' } })
@@ -398,7 +400,7 @@ export function createSession(deps: SessionDeps) {
       graphIssues.clear()
       unreachableBySwf.clear()
       looseCount = 0
-      update({ connections: 0, build: 'idle', buildError: undefined, lintCount: 0, fonts: [], lint: [], graphLint: [], timing: undefined, previewMs: undefined, unreachableNodes: [], connectionIssue: undefined })
+      update({ connections: 0, build: 'idle', buildError: undefined, lintCount: 0, fonts: [], lint: [], graphLint: [], timing: undefined, previewMs: undefined, unreachableNodes: [], connectionIssue: undefined, heldChanges: 0 })
       await start(dir, keep)
       devClient.stop()
       devFresh.clear()
@@ -576,6 +578,10 @@ export function createSession(deps: SessionDeps) {
     getSync: (): SyncUiState => state,
     answerFigmaApproval: (id: number, allow: boolean): void => {
       if (approval?.id === id) approval.resolve(allow)
+    },
+    setFigmaPaused: (on: boolean): void => {
+      update({ paused: on })
+      server?.setPaused(on)
     },
     figmaPluginCount: async (): Promise<number> => (await settingsReady, stored.figmaPlugins?.length ?? 0),
     /** Revokes every approved plugin and drops the open connections (they must ask again). */

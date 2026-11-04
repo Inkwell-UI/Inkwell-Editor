@@ -123,6 +123,32 @@ describe('syncServer', () => {
     expect(s.ir('hud')!.nodes['s']).toMatchObject({ opacity: 0.25, extra: { keep: 1 } })
   })
 
+  it('pause holds patches in order and drops selections; resume applies the patches once, in order', async () => {
+    const onChange = vi.fn()
+    const s = await start({ initial: { hud: sample() }, onChange })
+    const held: number[] = []
+    const selections: string[][] = []
+    s.events.on('held', (n: number) => held.push(n))
+    s.events.on('selection', (ids: string[]) => selections.push(ids))
+    const c = await ready(s)
+    const node = { ...s.ir('hud')!.nodes['s'], opacity: 0.5 }
+    s.setPaused(true)
+    expect(s.paused()).toBe(true)
+    c.ws.send(JSON.stringify(patchUpsert(node)))
+    c.ws.send(JSON.stringify({ type: 'selection', ids: ['s'] }))
+    c.ws.send(JSON.stringify(patchUpsert({ ...node, opacity: 0.25 })))
+    await sleep(150)
+    expect(onChange).not.toHaveBeenCalled()
+    expect(s.ir('hud')!.nodes['s']!.opacity).not.toBe(0.25)
+    expect(held).toEqual([0, 1, 2]) // 0 from the pause itself; the selection was not kept
+    s.setPaused(false)
+    await sleep(150)
+    expect(s.ir('hud')!.nodes['s']).toMatchObject({ opacity: 0.25 }) // the later patch won, so they ran in order
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(selections).toEqual([]) // never mirrored
+    expect(held.at(-1)).toBe(0)
+  })
+
   it('empty store: the first patch with swf metadata creates the swf with the frame as root and its stage size', async () => {
     const s = await start()
     const c = await ready(s)

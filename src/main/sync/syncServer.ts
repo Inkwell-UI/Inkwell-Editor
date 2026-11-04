@@ -321,12 +321,30 @@ export async function startSyncServer(opts: SyncServerOptions) {
     }
   }
 
+  // Pause (Figma popover): what an approved plugin sends is kept, in order, and handled on resume. Patches are diffs, so dropping one would corrupt the stored IR.
+  // A selection is dropped, not kept: it is stale by the time the user resumes. shortcut: the queue is unbounded; cap it (or ask the plugin for a full resend) if a long pause shows up.
+  let paused = false
+  let held: { ws: WebSocket; raw: string }[] = []
+  function hold(ws: WebSocket, raw: string): void {
+    let type: unknown
+    try {
+      type = (JSON.parse(raw) as { type?: unknown } | null)?.type
+    } catch {
+      /* not JSON: handle() answers it on resume */
+    }
+    if (type === 'selection') return
+    held.push({ ws, raw })
+    events.emit('held', held.length)
+  }
+
   const wss = await listen(opts.ports ?? SYNC_PORTS, (reason) => events.emit('rejected', reason))
   wss.on('connection', (ws, req) => {
     origins.set(ws, req.headers.origin ?? 'none')
     ws.on('message', (data) => {
       try {
-        handle(ws, data.toString())
+        const raw = data.toString()
+        if (paused && ready.has(ws)) return hold(ws, raw)
+        handle(ws, raw)
       } catch (e) {
         send(ws, { type: 'error', code: 'internal', message: e instanceof Error ? e.message : String(e) })
       }
@@ -386,6 +404,25 @@ export async function startSyncServer(opts: SyncServerOptions) {
       ids.forEach(schedule)
       return ids.length
     },
+    /** Pause or resume what the plugin sends. Resuming handles the held messages in order, then reports 0 held. */
+    setPaused: (on: boolean): void => {
+      if (on === paused) return
+      paused = on
+      if (!on) {
+        const queue = held
+        held = []
+        for (const h of queue) {
+          if (!ready.has(h.ws)) continue // its plugin left while paused
+          try {
+            handle(h.ws, h.raw)
+          } catch (e) {
+            send(h.ws, { type: 'error', code: 'internal', message: e instanceof Error ? e.message : String(e) })
+          }
+        }
+      }
+      events.emit('held', held.length)
+    },
+    paused: (): boolean => paused,
     /** Drops every connected plugin (after Settings forgot them): they must be approved again. */
     dropAll: (): void => {
       for (const ws of [...ready, ...waiting.keys()]) ws.close(1008, 'forgotten')
