@@ -34,6 +34,7 @@
   --accent: #e4e4e7;
   --accent-bg: #3f3f46;
   --focus: #ffffff;
+  --focus-ring: #71717a; /* keyboard focus on any control: a thin dim inset ring, never the near-white accent */
   --ok: #4cd694;
   --warn: #f59e0b;
   --err: #f87171;
