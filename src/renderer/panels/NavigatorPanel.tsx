@@ -156,7 +156,7 @@ export function NavigatorPanel() {
                       <button type="button" className="layer-main" data-layer-id={r.id} onClick={(e) => (e.ctrlKey || e.metaKey ? useGraphFollow.getState().skipNext() : undefined, select(r.id, 'navigator'))} title={strings.nav.layerTip}>
                         <Icon size={14} aria-hidden="true" className="type-icon" />
                         <span className="layer-name">{r.name}</span>
-                        <span className="layer-type">{strings.nav.typeNames[r.type] ?? r.type}</span>
+                        <span className="layer-type">{r.role ? strings.insp.roleNames[r.role] ?? r.role : strings.nav.typeNames[r.type] ?? r.type}</span>
                       </button>
                       <Badges badges={r.badges} />
                     </div>
