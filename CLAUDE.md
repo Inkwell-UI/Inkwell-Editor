@@ -85,3 +85,15 @@ Electron, React, React Flow, Knotwork (`@nicklaj/knotwork`, pinned to a GitHub t
 - **No frame counting (V13.4):** a custom menu runs `onEnterFrame` about 700 times a second while paused; time comes from `getTimer()` (Get Time) and periodic work from `setInterval` (On Timer, On Update with `delta`).
 - **Flow trace (0.4):** the preview and, in a Dev build, the game report which exec nodes ran and which timers are armed; the canvas lights nodes and wires and draws timer progress bars (`docs/debugging.md`, `docs/dev-mode.md`). Dev builds send the events as the reserved pins `$run` and `$timer` through `bridge.pin`, so the runtime has no extra message for them.
 - **Editor UI is English only in 1.0**, but all UI strings live in one module.
+
+## Agent logging (required for all agents and subagents, any model)
+Log your work in `d:\Mods\Inkwell\agents-logs\YYYY-MM-DD.md` (today's date).
+1. Log one entry per user request, including short follow-ups ("try this fix", "yes do it"). Write it before your first edit for that request, not after. Only log when you actually write something (files, code, config); if the request is research only, don't log. Before writing, open today's log; if it doesn't exist, create it with the heading `# Agent log — YYYY-MM-DD`.
+2. Append (never edit or delete) one entry:
+   ```
+   ## HH:MM · agent|subagent (model-id)[, spawned by agent HH:MM]
+   - **User request:** one-line summary
+   - **Doing:** one or two lines on how you're fulfilling it
+   ```
+3. Say `subagent` if another agent spawned you automatically, otherwise `agent`.
+4. The entry may be written by a haiku model.
