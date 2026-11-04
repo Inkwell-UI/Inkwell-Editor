@@ -1,13 +1,12 @@
 import { Check, Pause, Play } from 'lucide-react'
 import { useActiveSwf, useDockRows, useProject } from '../hooks/useProject'
-import { usePackList } from '../hooks/usePacks'
 import { usePreviewBuilds } from '../hooks/usePreviewBuilds'
 import { figmaConnection, usableSnapshot, type DotTone } from '../model/connection'
 import { inkwell } from '../hooks/api'
 import { useSettingsStore } from '../state/settingsStore'
 import { countSeverities } from '../model/lintRows'
 import { useSyncState } from '../hooks/useSyncState'
-import { specLabel, timingLine } from '../model/statusBar'
+import { timingLine } from '../model/statusBar'
 import { useDialogStore } from '../state/dialogStore'
 import { useSaveState } from '../state/saveState'
 import { useTimingStore } from '../state/timingStore'
@@ -118,7 +117,6 @@ export function StatusBar() {
   const line = last ? timingLine(last) : undefined
   const ffdec = sync?.ffdec
   const show = useDialogStore((s) => s.show)
-  const packs = usePackList()
   const lint = countSeverities(useDockRows())
   const swf = useActiveSwf()
   const entries = usePreviewBuilds()
@@ -150,21 +148,6 @@ export function StatusBar() {
         <Dot tone={lint.errors ? 'error' : lint.warnings ? 'warn' : 'ok'} /> {strings.status.lint(lint.errors, lint.warnings)}
       </button>
       <SaveItem />
-      <Popover
-        up
-        label={strings.status.environment}
-        trigger={(p) => (
-          <button type="button" className="item item-button" {...p} data-testid="environment">
-            <Check size={13} aria-hidden="true" /> {strings.status.environment}
-          </button>
-        )}
-      >
-        <div className="details">
-          <p title={strings.status.specTip}>{specLabel()}</p>
-          <p>{strings.status.ffdec(ffdec?.status)}</p>
-          <p>{strings.status.packs(packs)}</p>
-        </div>
-      </Popover>
       <span className="spacer" />
       <FigmaDot />
       <GameDot />
