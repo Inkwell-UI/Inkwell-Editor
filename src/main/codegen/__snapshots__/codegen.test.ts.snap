@@ -1539,7 +1539,10 @@ exports[`golden AS2 per node kind > core/SetImage@1 1`] = `
         __g.Run = function(e_title:String, e_hold:Number) {
             try {
                 // [n1] core/SetImage@1
-                __g.base.title.loadMovie("");
+                __g.base.title._visible = false;
+                __g.h_n1 = new MovieClipLoader();
+                __g.h_n1.onLoadInit = function(mc) { mc._visible = true; };
+                __g.h_n1.loadClip("", __g.base.title);
                 // [l_then] core/Log@1
                 trace("[Inkwell] info l_then: " + "");
             } catch (e) {

@@ -1,3 +1,6 @@
 // [{{node.id}}] core/SetImage@1
-{{in.target}}.loadMovie({{in.url}});
+{{in.target}}._visible = false;
+__g.h_{{node.uid}} = new MovieClipLoader();
+__g.h_{{node.uid}}.onLoadInit = function(mc) { mc._visible = true; };
+__g.h_{{node.uid}}.loadClip({{in.url}}, {{in.target}});
 {{next.then}}
