@@ -83,6 +83,8 @@ export interface StoredSettings extends Partial<Record<SettingKey, string>> {
   figmaPlugins?: string[]
   /** Project folder (lower case) -> dev connection settings. */
   devLinks?: Record<string, DevLinkSettings>
+  /** Project folder (lower case) -> id of the SWF that was active when the project was last used. */
+  lastSwf?: Record<string, string>
 }
 
 export type SettingSource = 'env' | 'settings' | 'default'

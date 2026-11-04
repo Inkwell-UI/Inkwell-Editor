@@ -55,6 +55,7 @@ export const IPC = {
   libraryRemoveFunction: 'library:removeFunction',
   librarySaveFunction: 'library:saveFunction',
   strictSet: 'project:strict',
+  lastSwfSet: 'project:lastSwf',
   modIdSet: 'project:modId',
   buildAll: 'build:all',
   previewDetach: 'preview:detach',
@@ -91,8 +92,8 @@ export const IPC = {
   doctorFirstLaunch: 'doctor:firstLaunch',
   figmaApproval: 'figma:approval',
   figmaForget: 'figma:forget',
-  figmaSelect: 'figma:select',
   figmaPause: 'figma:pause',
+  figmaSelect: 'figma:select',
   figmaPluginCount: 'figma:pluginCount',
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
@@ -223,6 +224,7 @@ export interface InkwellApi {
   restorePacks(): Promise<PackResult<{ restored: string[]; errors: string[] }>>
   checkPackUpdates(): Promise<PackResult<{ updates: PackCandidate[]; errors: string[] }>>
   /** Strict Mode, stored in project.json; rebuilds every SWF so the build status follows. */
+  setLastSwf(swfId: string): Promise<void>
   setStrictMode(on: boolean): Promise<void>
   /** The project's mod id (Settings > Project), stored in project.json; refused unless letters and digits starting with a letter. Rebuilds every SWF. */
   setModId(id: string): Promise<{ ok: true } | { ok: false; error: string }>
@@ -262,10 +264,10 @@ export interface InkwellApi {
   figmaPluginCount(): Promise<number>
   /** Select (`focus` false) or select and zoom to (`focus` true) a layer in Figma, through the approved connected plugin (protocol 5). */
   selectInFigma(nodeId: string, focus: boolean): Promise<{ ok: true } | { ok: false; error: string }>
-  /** Settings > Forget all Figma plugins: removes every approved credential and disconnects the plugins. Returns the reason on failure. */
-  forgetFigmaPlugins(): Promise<{ ok: true } | { ok: false; error: string }>
   /** Figma popover: hold (true) or apply (false) what the plugin sends. The state comes back in `SyncUiState.paused` / `heldChanges`. */
   setFigmaPaused(on: boolean): Promise<void>
+  /** Settings > Forget all Figma plugins: removes every approved credential and disconnects the plugins. Returns the reason on failure. */
+  forgetFigmaPlugins(): Promise<{ ok: true } | { ok: false; error: string }>
 
   /** Setup Doctor (UX 5.3): every check (or only `only`), in parallel; never rejects. */
   runDoctor(only?: CheckId[]): Promise<CheckResult[]>

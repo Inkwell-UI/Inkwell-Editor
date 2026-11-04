@@ -52,6 +52,11 @@ export function validateSettings(raw: unknown): StoredSettings {
     }
     if (Object.keys(m).length) out.devLinks = m
   }
+  const ls = r['lastSwf']
+  if (ls && typeof ls === 'object' && !Array.isArray(ls)) {
+    const m = Object.fromEntries(Object.entries(ls).filter(([, v]) => typeof v === 'string' && v))
+    if (Object.keys(m).length) out.lastSwf = m as Record<string, string>
+  }
   const dc = r['deployConfirmed']
   if (dc && typeof dc === 'object' && !Array.isArray(dc)) {
     const m: Record<string, string[]> = {}

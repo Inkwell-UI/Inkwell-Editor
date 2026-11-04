@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { nodeKeys, removePanel, tabsKeyOf } from '../workspace/layout'
 import { isWorkspaceId, WORKSPACE_IDS, WORKSPACES, type WorkspaceId } from '../workspace/workspaces'
+import { useProjectStore } from './projectStore'
 import { safeStorage } from './safeStorage'
 
 /**
@@ -55,6 +56,12 @@ export function sanitizePersisted(raw: unknown): Persisted {
   return out
 }
 
+/** Each project keeps its own workspace state: the storage key gets the open project's folder (none open = the shared key of the start screen). */
+const projectSuffix = () => {
+  const dir = useProjectStore.getState().project?.dir
+  return dir ? `:${dir}` : ''
+}
+
 export const useWorkspaceStore = create<WorkspaceStore>()(
   persist(
     (set, get) => ({
@@ -88,9 +95,21 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
     }),
     {
       name: 'inkwell.workspaces.v2',
-      storage: createJSONStorage(() => safeStorage),
+      storage: createJSONStorage(() => ({
+        getItem: (k) => safeStorage.getItem(k + projectSuffix()),
+        setItem: (k, v) => safeStorage.setItem(k + projectSuffix(), v),
+        removeItem: (k) => safeStorage.removeItem(k + projectSuffix())
+      })),
       partialize: (s): Persisted => ({ active: s.active, sizes: s.sizes, tabs: s.tabs }),
       merge: (persisted, current) => ({ ...current, ...sanitizePersisted(persisted) })
     }
   )
 )
+
+// Opening another project loads that project's saved workspace (or the defaults); rehydrate reads through `projectSuffix`, so the new folder is already in the key.
+let lastDir = useProjectStore.getState().project?.dir
+useProjectStore.subscribe((s) => {
+  if (s.project?.dir === lastDir) return
+  lastDir = s.project?.dir
+  void useWorkspaceStore.persist.rehydrate()
+})

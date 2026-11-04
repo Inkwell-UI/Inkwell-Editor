@@ -26,6 +26,8 @@ export interface ProjectState {
   modId: string
   /** Strict Mode (design spec): warnings count as errors. Stored in project.json. */
   strictMode: boolean
+  /** The SWF that was active when the project was last used (user settings); the renderer opens it first. */
+  lastSwfId?: string
   swfs: SwfDoc[]
   /** figma/snapshot.json (docs/sync-server.md, Figma snapshot); absent when the project has none (never synced, or older than the snapshot). */
   snapshot?: SnapshotInfo

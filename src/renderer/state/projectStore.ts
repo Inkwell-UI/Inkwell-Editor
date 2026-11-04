@@ -26,7 +26,8 @@ export const useProjectStore = create<ProjectStore>()((set, get) => ({
   activeSwfId: undefined,
   setProject: (project) => {
     if (get().project?.dir !== project?.dir) (resetOverlays(), resetMenus(), resetGraphDocs())
-    set({ project, activeSwfId: resolveActiveSwf(project?.swfs ?? [], get().activeSwfId) })
+    const fresh = get().project?.dir !== project?.dir
+    set({ project, activeSwfId: resolveActiveSwf(project?.swfs ?? [], fresh ? project?.lastSwfId ?? get().activeSwfId : get().activeSwfId) })
   },
   setActiveSwf: (id) => set({ activeSwfId: resolveActiveSwf(get().project?.swfs ?? [], id) })
 }))

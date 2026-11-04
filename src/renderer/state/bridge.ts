@@ -97,6 +97,7 @@ export function startBridge(): () => void {
       else if (!s.component && prev.component) api.sendUiEvent({ type: 'selectionCleared' })
     }),
     useProjectStore.subscribe((s, prev) => {
+      if (s.activeSwfId && s.activeSwfId !== prev.activeSwfId) void api.setLastSwf(s.activeSwfId)
       if (s.activeSwfId && s.activeSwfId !== prev.activeSwfId && !remoteActive) api.sendUiEvent({ type: 'activeSwf', swfId: s.activeSwfId })
     })
   )

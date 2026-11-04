@@ -200,7 +200,7 @@ export function createSession(deps: SessionDeps) {
         return ir ? [{ id: i.id, name: i.name, orphaned: i.orphaned, ir, overlay: overlays.get(i.id) ?? normalizeOverlay({}), ...(menus.get(i.name)?.settings ? { menu: menus.get(i.name)!.settings! } : {}), ...(menus.get(i.name)?.error ? { menuError: menus.get(i.name)!.error! } : {}), ...(previewThemes.has(i.id) ? { previewTheme: previewThemes.get(i.id)! } : {}) }] : []
       })
       .sort((a, b) => a.name.localeCompare(b.name))
-    return { dir: projectDir, name: meta.name, modId: meta.modId, strictMode: strict, swfs, ...(snapshot ? { snapshot } : {}) }
+    return { dir: projectDir, name: meta.name, modId: meta.modId, strictMode: strict, ...(stored.lastSwf?.[linkKey()!] ? { lastSwfId: stored.lastSwf[linkKey()!]! } : {}), swfs, ...(snapshot ? { snapshot } : {}) }
   }
   /** Graph issues of every built SWF as lint rows and deploy items: the single place graphs are validated for the Lint dock and the export gate. */
   const graphIssues = new Map<string, { row: LintRow; item: DeployLintItem }[]>() // swf name -> issues
@@ -1003,6 +1003,13 @@ export function createSession(deps: SessionDeps) {
       server?.rebuildAll()
       pushProjectNow()
       return { ok: true }
+    },
+    async setLastSwf(swfId: string): Promise<void> {
+      const k = linkKey()
+      if (!k || stored.lastSwf?.[k] === swfId) return
+      await settingsReady
+      stored = { ...stored, lastSwf: { ...stored.lastSwf, [k]: swfId } }
+      await saveSettings(settingsFile, stored) // no push: the renderer already shows it
     },
     async setStrictMode(on: boolean): Promise<void> {
       if (!projectDir) return
