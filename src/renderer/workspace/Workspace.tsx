@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, type ComponentType, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { Fragment, useEffect, useRef, useState, type ComponentType, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { strings } from '../../shared/strings'
 import { nodeKey, validateLayout, type LayoutNode, type SplitNode, type TabsNode } from './layout'
@@ -28,6 +28,7 @@ interface Ctx {
   onResize: (key: string, sizes: number[] | undefined) => void
   onTab: (key: string, panel: string) => void
   onFold: (key: string, folded: boolean) => void
+  overlay: boolean
 }
 
 /**
@@ -36,6 +37,14 @@ interface Ctx {
  * to replace if a docking library is adopted; layouts and panels stay as they are.
  */
 export function Workspace({ layout, registry = panelRegistry, onResize = () => undefined, onTab = () => undefined, onFold = () => undefined, stripExtras = {}, overlayEdges = false }: WorkspaceProps) {
+  // Edge panels may slide only after they have been placed: entering the overlay (a mode switch) must not animate them from the in-flow position, which left the dock drawn open until the first hover.
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    setArmed(false)
+    if (!overlayEdges) return
+    const t = setTimeout(() => setArmed(true), 100)
+    return () => clearTimeout(t)
+  }, [overlayEdges])
   useEffect(() => {
     if (!overlayEdges) return
     // a window that is not maximised: the cursor flicked out sideways ends :hover, so the side panel the cursor was heading for stays open (data-keep) until it comes back
@@ -74,8 +83,8 @@ export function Workspace({ layout, registry = panelRegistry, onResize = () => u
       </div>
     )
   return (
-    <div className="workspace" data-overlay={overlayEdges || undefined}>
-      <Node node={layout} ctx={{ registry, onResize, onTab, onFold, stripExtras }} axis="row" />
+    <div className="workspace" data-overlay={overlayEdges || undefined} data-armed={(overlayEdges && armed) || undefined}>
+      <Node node={layout} ctx={{ registry, onResize, onTab, onFold, stripExtras, overlay: overlayEdges }} axis="row" />
     </div>
   )
 }
@@ -186,6 +195,8 @@ function TabGroup({ node, ctx }: { node: TabsNode; ctx: Ctx }) {
   const Body = def.component
   const min = node.tabs.reduce((m, t) => ({ w: Math.max(m.w, ctx.registry[t.panel]!.minSize.width), h: Math.max(m.h, ctx.registry[t.panel]!.minSize.height) }), { w: 0, h: 0 })
   const folded = isFolded(node)
+  // Fullscreen graph, bottom dock: like the side panels it stays mounted and is only moved (CSS transform), so hovering it opens it without mounting anything.
+  const parked = ctx.overlay && node.edge === 'bottom'
   const move = (e: ReactKeyboardEvent, i: number): void => {
     const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
     if (!d) return
@@ -203,12 +214,12 @@ function TabGroup({ node, ctx }: { node: TabsNode; ctx: Ctx }) {
   const tablist = (
     <div className="tablist" role="tablist" aria-label={node.tabs.map((t) => ctx.registry[t.panel]!.title).join(', ')}>
       {node.tabs.map((t, i) => (
-        <TabButton key={t.panel} id={t.panel} def={ctx.registry[t.panel]!} selected={!folded && t.panel === active} onSelect={() => select(t.panel)} onKeyDown={(e) => move(e, i)} />
+        <TabButton key={t.panel} id={t.panel} def={ctx.registry[t.panel]!} selected={(!folded || parked) && t.panel === active} onSelect={() => select(t.panel)} onKeyDown={(e) => move(e, i)} />
       ))}
     </div>
   )
   // A folded group is only its tab strip; it keeps that height and the neighbour takes the rest.
-  const style = folded ? { flex: '0 0 auto', minWidth: min.w } : cellStyle(node, { minWidth: min.w, minHeight: min.h + 28 })
+  const style = folded && !parked ? { flex: '0 0 auto', minWidth: min.w } : cellStyle(node, { minWidth: min.w, minHeight: min.h + 28 })
   const label = folded ? strings.dockShow : strings.dockHide
   const Extra = folded ? node.tabs.map((t) => ctx.stripExtras[t.panel]).find(Boolean) : undefined
   return (
@@ -222,7 +233,7 @@ function TabGroup({ node, ctx }: { node: TabsNode; ctx: Ctx }) {
           </button>
         </div>
       ) : tablist}
-      {!folded && (
+      {(!folded || parked) && (
         <div className="tabbody" role="tabpanel" aria-labelledby={`tab-${active}`} data-panel={active}>
           <Body />
         </div>
