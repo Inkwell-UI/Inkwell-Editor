@@ -36,7 +36,7 @@ function project() {
 async function packed() {
   const { inner, outer } = project()
   const projectDir = tmp()
-  expect((await createLibrary(projectDir, { id: 'my-lib', version: '1.0.0', description: 'Helpers' }, '0.5.0')).ok).toBe(true)
+  expect((await createLibrary(projectDir, { id: 'my-lib', version: '1.0.0', description: 'Helpers' }, '0.6.0')).ok).toBe(true)
   const q = { ...outer, nodes: outer.nodes.map((x) => (x.id === 'c' ? { ...x, fields: { ...x.fields, function: 'my-lib/0' } } : x)) } as Graph
   expect((await addFunctionToLibrary(projectDir, 'my-lib', inner)).ok).toBe(true)
   expect((await addFunctionToLibrary(projectDir, 'my-lib', q)).ok).toBe(true)
@@ -44,25 +44,25 @@ async function packed() {
 }
 const exp = async (projectDir: string, over: Record<string, unknown> = {}) => {
   const { packs: cg } = await loadCodegenPacks([corePack, ...(await localLibraryDirs(projectDir))])
-  return exportPack({ projectDir, packId: 'my-lib', defs: packs.defs, library: cg.functions ?? new Map(), packVersions: new Map([['core', '0.5.5']]), toolVersion: '0.5.0', outDir: tmp(), ...over })
+  return exportPack({ projectDir, packId: 'my-lib', defs: packs.defs, library: cg.functions ?? new Map(), packVersions: new Map([['core', '0.5.5']]), toolVersion: '0.6.0', outDir: tmp(), ...over })
 }
 
 describe('createLibrary and addFunctionToLibrary', () => {
   it('makes an empty pack the loader accepts, refuses bad ids, versions and duplicates', async () => {
     const dir = tmp()
-    expect((await createLibrary(dir, { id: 'a-pack', version: '1.0.0' }, '0.5.0')).ok).toBe(true)
+    expect((await createLibrary(dir, { id: 'a-pack', version: '1.0.0' }, '0.6.0')).ok).toBe(true)
     const [d] = await localLibraryDirs(dir)
     expect((await loadPack(d!)).problems).toEqual([])
-    expect(((await createLibrary(dir, { id: 'a-pack', version: '1.0.0' }, '0.5.0')) as { error: string }).error).toContain('already')
-    expect(((await createLibrary(dir, { id: 'core', version: '1.0.0' }, '0.5.0')) as { error: string }).error).toContain('core')
-    expect(((await createLibrary(dir, { id: 'Bad Id', version: '1.0.0' }, '0.5.0')) as { error: string }).error).toContain('lower-case')
-    expect(((await createLibrary(dir, { id: 'x', version: '1.0' }, '0.5.0')) as { error: string }).error).toContain('1.0.0')
+    expect(((await createLibrary(dir, { id: 'a-pack', version: '1.0.0' }, '0.6.0')) as { error: string }).error).toContain('already')
+    expect(((await createLibrary(dir, { id: 'core', version: '1.0.0' }, '0.6.0')) as { error: string }).error).toContain('core')
+    expect(((await createLibrary(dir, { id: 'Bad Id', version: '1.0.0' }, '0.6.0')) as { error: string }).error).toContain('lower-case')
+    expect(((await createLibrary(dir, { id: 'x', version: '1.0' }, '0.6.0')) as { error: string }).error).toContain('1.0.0')
   })
 
   it('refuses a function that calls a project function, naming it, or the pack numbers its functions, so the same project id never clashes', async () => {
     const { outer } = project()
     const dir = tmp()
-    await createLibrary(dir, { id: 'my-lib', version: '1.0.0' }, '0.5.0')
+    await createLibrary(dir, { id: 'my-lib', version: '1.0.0' }, '0.6.0')
     expect(((await addFunctionToLibrary(dir, 'my-lib', outer)) as { error: string }).error).toContain('"inner"')
     const { inner } = project()
     expect(await addFunctionToLibrary(dir, 'my-lib', inner)).toEqual({ ok: true, id: '0' })
@@ -77,7 +77,7 @@ describe('exportPack', () => {
     if (!r.ok) throw new Error(r.error)
     expect(r.dependencies).toEqual({ core: '^0.5.5' })
     const manifest = JSON.parse(readFileSync(join(r.folder, 'manifest.json'), 'utf8'))
-    expect(manifest).toMatchObject({ id: 'my-lib', version: '1.1.0', compatible: { tool: '^0.5.0' }, extra: { description: 'Helpers' } })
+    expect(manifest).toMatchObject({ id: 'my-lib', version: '1.1.0', compatible: { tool: '^0.6.0' }, extra: { description: 'Helpers' } })
     expect(JSON.parse(readFileSync(join(projectDir, 'libraries/my-lib/manifest.json'), 'utf8')).version).toBe('1.1.0')
     expect(existsSync(join(r.folder, 'functions/1.json'))).toBe(true)
     expect(r.zip.endsWith('my-lib-1.1.0.zip')).toBe(true)
@@ -86,7 +86,7 @@ describe('exportPack', () => {
 
   it('refuses an empty pack, a bad version, an unknown pack and a function with errors', async () => {
     const dir = tmp()
-    await createLibrary(dir, { id: 'my-lib', version: '1.0.0' }, '0.5.0')
+    await createLibrary(dir, { id: 'my-lib', version: '1.0.0' }, '0.6.0')
     expect(((await exp(dir)) as { error: string }).error).toContain('empty')
     const { projectDir, inner } = await packed()
     expect(((await exp(projectDir, { version: '1.0' })) as { error: string }).error).toContain('1.0.0')

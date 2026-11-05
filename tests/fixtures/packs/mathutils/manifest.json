@@ -2,7 +2,7 @@
   "id": "mathutils",
   "version": "0.1.2",
   "compatible": {
-    "tool": "^0.5.0"
+    "tool": "^0.6.0"
   },
   "dependencies": {}
 }

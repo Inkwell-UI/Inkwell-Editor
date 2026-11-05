@@ -13,7 +13,7 @@ import { createPackManager, DEFAULT_INDEX_URL, lockedPacks, packCacheDir, parseG
 const node = { kind: 'Hello', major: 1, title: 'Hello', category: 'Text', pure: true, inputs: [{ name: 'name', type: 'String', default: 'World' }], outputs: [{ name: 'text', type: 'String' }], fields: {}, as2Template: 'templates/Hello.as2' }
 const pack = (version: string, changelog = `## ${version}\n- Hello node`): Buffer =>
   writeZip([
-    { name: 'manifest.json', data: Buffer.from(JSON.stringify({ id: 'hello', version, compatible: { tool: '^0.5.0' } })) },
+    { name: 'manifest.json', data: Buffer.from(JSON.stringify({ id: 'hello', version, compatible: { tool: '^0.6.0' } })) },
     { name: 'nodes/Hello.json', data: Buffer.from(JSON.stringify(node)) },
     { name: 'templates/Hello.as2', data: Buffer.from('// [{{node.id}}] hello/Hello@1\n"Hello, " + String({{in.name}})\n') },
     { name: 'CHANGELOG.md', data: Buffer.from(changelog) }
