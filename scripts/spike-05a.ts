@@ -17,7 +17,7 @@ const MOD = 'InkwellSpike05A'
 const MENU = `${MOD}_Menu`
 const dest = resolve(arg('--to') ?? 'C:\\Modding\\MO2\\mods\\Inkwell Spike 05A')
 if (!/[\\/]mods[\\/][^\\/]+$/i.test(dest) || /[\\/]data([\\/]|$)/i.test(dest)) throw new Error(`Refusing ${dest}: it must be one MO2 mod folder (...\\mods\\<name>).`)
-const dll = resolve(arg('--dll') ?? process.env['INKWELL_RUNTIME_DLL'] ?? 'D:/Mods/Inkwell/Inkwell-Runtime/build/Release/Inkwell.dll')
+const dll = resolve(arg('--dll') ?? process.env['INKWELL_RUNTIME_DLL'] ?? 'D:/Mods/Inkwell/Inkwell-Runtime/build/windows/x64/release/Inkwell.dll')
 if (!existsSync(dll)) throw new Error(`Runtime DLL not found: ${dll}`)
 const ctx = arg('--context') ?? 'menuMode'
 if (!['menuMode', 'none', 'absent'].includes(ctx)) throw new Error(`--context must be menuMode, none or absent, got ${ctx}`)

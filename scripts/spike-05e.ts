@@ -17,7 +17,7 @@ const MOD = 'InkwellSpike05E'
 const MENU = `${MOD}_Menu`
 const dest = resolve(arg('--to') ?? 'C:\\Modding\\MO2\\mods\\Inkwell Spike 05E')
 if (!/[\\/]mods[\\/][^\\/]+$/i.test(dest) || /[\\/]data([\\/]|$)/i.test(dest)) throw new Error(`Refusing ${dest}: it must be one MO2 mod folder (...\\mods\\<name>).`)
-const dll = resolve(arg('--dll') ?? process.env['INKWELL_RUNTIME_DLL'] ?? 'D:/Mods/Inkwell/Inkwell-Runtime/build/Release/Inkwell.dll')
+const dll = resolve(arg('--dll') ?? process.env['INKWELL_RUNTIME_DLL'] ?? 'D:/Mods/Inkwell/Inkwell-Runtime/build/windows/x64/release/Inkwell.dll')
 if (!existsSync(dll)) throw new Error(`Runtime DLL not found: ${dll}`)
 
 // Candidate art, round 2 (S-F, 2026-10-28): the real names in Skyrim - Interface.bsa are interface/exported/360_a.png.dds, ps3_a.png.dds, 360_start.png.dds, ... (round 1 guessed Controls/ paths and drew nothing). Relative paths are relative to this menu's SWF (Interface/Inkwell/<mod>/Menu.swf);

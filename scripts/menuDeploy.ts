@@ -52,7 +52,7 @@ export async function runMenuDeploy(o: MenuDeployOptions): Promise<void> {
 async function main(o: MenuDeployOptions): Promise<void> {
   const flat = process.argv.includes('--flat')
   const devDeploy = process.argv.includes('--dev')
-  const dll = resolve(arg('--dll') ?? process.env['INKWELL_RUNTIME_DLL'] ?? 'D:/Mods/Inkwell/Inkwell-Runtime/build/Release/Inkwell.dll')
+  const dll = resolve(arg('--dll') ?? process.env['INKWELL_RUNTIME_DLL'] ?? 'D:/Mods/Inkwell/Inkwell-Runtime/build/windows/x64/release/Inkwell.dll')
   if (!existsSync(dll)) throw new Error(`Runtime DLL not found: ${dll} (--dll or INKWELL_RUNTIME_DLL)`)
   let projectDir = resolve(root, 'samples', o.sample)
   if (o.prepare) {

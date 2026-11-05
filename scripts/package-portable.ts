@@ -63,13 +63,13 @@ const figma = resolve(root, '../Inkwell-Figma/plugin')
 mkdirSync(join(stage, 'Inkwell-Figma-Plugin'), { recursive: true })
 cpSync(need(join(figma, 'manifest.json'), 'the Inkwell-Figma checkout must sit next to this repo'), join(stage, 'Inkwell-Figma-Plugin/manifest.json'))
 cpSync(need(join(figma, 'dist'), 'run `yarn build` in Inkwell-Figma'), join(stage, 'Inkwell-Figma-Plugin/dist'), { recursive: true })
-const dll = resolve(root, '../Inkwell-Runtime/build/Release/Inkwell.dll')
+const dll = resolve(root, '../Inkwell-Runtime/build/windows/x64/release/Inkwell.dll')
 if (existsSync(dll)) {
   mkdirSync(join(stage, 'Inkwell-Runtime/SKSE/Plugins'), { recursive: true })
   cpSync(dll, join(stage, 'Inkwell-Runtime/SKSE/Plugins/Inkwell.dll'))
   const psc = resolve(root, '../Inkwell-Runtime/papyrus/Source/Scripts/Inkwell_API.psc')
   if (existsSync(psc)) cpSync(psc, join(stage, 'Inkwell-Runtime/Source/Scripts/Inkwell_API.psc'), { recursive: true })
-} else console.warn('warning: Inkwell-Runtime/build/Release/Inkwell.dll not found: the zip has no runtime (users must get it elsewhere)')
+} else console.warn('warning: Inkwell-Runtime/build/windows/x64/release/Inkwell.dll not found: the zip has no runtime (users must get it elsewhere)')
 
 writeFileSync(join(stage, 'README-FIRST.txt'), [
   `Inkwell ${pkg.version} (beta, portable)`,
