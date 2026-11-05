@@ -43,7 +43,7 @@ const badId = (id: string): string | undefined =>
   id === 'core' ? 'The id "core" belongs to the bundled core pack.' : PACK_ID.test(id) ? undefined : 'The pack id may use lower-case letters, digits, ".", "_" and "-", and starts with a letter or digit.'
 const toolRange = (toolVersion: string): string => {
   const t = /^(\d+)\.(\d+)/.exec(toolVersion)
-  return `^${t?.[1] ?? 0}.${t?.[2] ?? 0}.0`
+  return `>=${t?.[1] ?? 0}.${t?.[2] ?? 0}.0`
 }
 const extraOf = (p: { description?: string | undefined; credits?: string | undefined; license?: string | undefined }) =>
   p.description || p.credits || p.license ? { extra: { ...(p.description ? { description: p.description } : {}), ...(p.credits ? { credits: p.credits } : {}), ...(p.license ? { license: p.license } : {}) } } : {}

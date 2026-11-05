@@ -77,7 +77,7 @@ describe('exportPack', () => {
     if (!r.ok) throw new Error(r.error)
     expect(r.dependencies).toEqual({ core: '^0.5.5' })
     const manifest = JSON.parse(readFileSync(join(r.folder, 'manifest.json'), 'utf8'))
-    expect(manifest).toMatchObject({ id: 'my-lib', version: '1.1.0', compatible: { tool: '^0.6.0' }, extra: { description: 'Helpers' } })
+    expect(manifest).toMatchObject({ id: 'my-lib', version: '1.1.0', compatible: { tool: '>=0.6.0' }, extra: { description: 'Helpers' } })
     expect(JSON.parse(readFileSync(join(projectDir, 'libraries/my-lib/manifest.json'), 'utf8')).version).toBe('1.1.0')
     expect(existsSync(join(r.folder, 'functions/1.json'))).toBe(true)
     expect(r.zip.endsWith('my-lib-1.1.0.zip')).toBe(true)
