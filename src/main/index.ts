@@ -34,7 +34,7 @@ import { runSetupShots } from './screenshotSetup'
 import { createSession } from './session'
 import { loadWindowState, saveWindowState } from './windowState'
 import { droppedProjectDir } from './project/dropped'
-import { acceleratorOf, COMMANDS } from '../shared/commands'
+import { acceleratorOf, COMMANDS, MENU_LAYOUT, type CommandId } from '../shared/commands'
 
 let win: BrowserWindow | undefined
 let previewWin: BrowserWindow | undefined
@@ -376,21 +376,30 @@ const ROLES: Record<string, RoleEntry> = {
 ipcMain.handle(IPC.menuModel, () => appMenu)
 ipcMain.handle(IPC.menuInvoke, (_e, id: string) => void menuActions.get(String(id))?.())
 
-/** The default menu with project entries added to File and Settings to Edit; every other menu keeps its Electron role. */
+/** File, Edit, View, Build, Help (2026-11-05): project and settings entries in File, Edit keeps the Electron roles, the rest come from `MENU_LAYOUT`. */
 async function buildMenu(): Promise<void> {
   const recent = await session.recent().catch(() => [])
   const openDir = (dir: string | undefined, title: string): void => fromMenu(async () => {
     const d = dir ?? (await pickFolder(title))
     return d ? session.open(d) : cancelled
   })
-  // View and Help entries come from the shared command list (palette, shortcut dialog); the renderer runs them
-  const fromCommands = (menu: 'view' | 'help'): MenuItemConstructorOptions[] =>
-    COMMANDS.filter((c) => c.menu === menu).map((c) => ({
-      label: c.label,
-      ...(acceleratorOf(c) ? { accelerator: acceleratorOf(c)! } : {}),
-      enabled: !c.needsProject || session.getProject() !== null,
-      click: () => win?.webContents.send(IPC.command, c.id)
-    }))
+  // View, Build and Help entries come from the shared command list (MENU_LAYOUT); the renderer runs them. A menu says "Layout", the palette "Switch to Layout workspace".
+  const wsNames = strings.top.workspaceNames
+  const menuLabel: Partial<Record<CommandId, string>> = {
+    workspace1: wsNames['layout']!, workspace2: wsNames['behaviour']!, workspace3: wsNames['localization']!,
+    packages: strings.menu.packageManager, setup: strings.menu.setupGuide
+  }
+  const fromCommands = (menu: keyof typeof MENU_LAYOUT): MenuItemConstructorOptions[] =>
+    MENU_LAYOUT[menu].map((id): MenuItemConstructorOptions => {
+      if (id === '-') return { type: 'separator' }
+      const c = COMMANDS.find((x) => x.id === id)!
+      return {
+        label: menuLabel[id] ?? c.label,
+        ...(acceleratorOf(c) ? { accelerator: acceleratorOf(c)! } : {}),
+        enabled: !c.needsProject || session.getProject() !== null,
+        click: () => win?.webContents.send(IPC.command, c.id)
+      }
+    })
   const template: MenuItemConstructorOptions[] = [
     {
       label: strings.menu.file,
@@ -417,27 +426,18 @@ async function buildMenu(): Promise<void> {
           }
         },
         { type: 'separator' },
+        { label: strings.menu.settings, accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) },
+        { label: strings.menu.projectSettings, accelerator: 'CmdOrCtrl+Shift+,', enabled: session.getProject() !== null, click: () => win?.webContents.send(IPC.menuProjectSettings) },
+        { type: 'separator' },
         { role: 'quit' }
       ]
     },
     {
       label: strings.menu.edit,
-      submenu: [
-        { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
-        { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }, { type: 'separator' },
-        { label: strings.menu.settings, accelerator: 'CmdOrCtrl+,', click: () => win?.webContents.send(IPC.menuSettings) },
-        { label: strings.menu.projectSettings, accelerator: 'CmdOrCtrl+Shift+,', click: () => win?.webContents.send(IPC.menuProjectSettings) }
-      ]
+      submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }]
     },
-    {
-      label: strings.menu.view,
-      submenu: [
-        ...fromCommands('view'),
-        { type: 'separator' },
-        { label: strings.menu.packageManager, click: () => win?.webContents.send(IPC.menuPackages) },
-        { label: strings.menu.setupGuide, click: () => win?.webContents.send(IPC.menuSetup) }
-      ]
-    },
+    { label: strings.menu.view, submenu: fromCommands('view') },
+    { label: strings.menu.build, submenu: fromCommands('build') },
     { label: strings.menu.help, submenu: fromCommands('help') }
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
