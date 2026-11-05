@@ -596,7 +596,6 @@ export const strings = {
     roleNone: '(none)',
     listTemplate: 'List item template',
     listTemplateFirst: '(first child)',
-    listComponentNote: 'None: rows are components from Make Component',
     listSpacing: 'List row spacing (px)',
     roleNames: { button: 'Button', list: 'List', progress: 'Progress', text: 'Text', image: 'Image', clip: 'Clip', prompt: 'Prompt' } as Record<string, string>,
     instanceName: 'Script name',
@@ -984,7 +983,7 @@ export const strings = {
     notProject: 'Not an Inkwell project: the folder has no project.json.'
   },
 
-  menu: { file: 'File', edit: 'Edit', view: 'View', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All', quit: 'Exit', label: 'Application menu', settings: 'Settings...', projectSettings: 'Project Settings...', setupGuide: 'Setup Guide...', packageManager: 'Package Manager...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project', help: 'Help' },
+  menu: { file: 'File', edit: 'Edit', view: 'View', build: 'Build', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All', quit: 'Exit', label: 'Application menu', settings: 'Settings...', projectSettings: 'Project Settings...', setupGuide: 'Setup Guide...', packageManager: 'Package Manager...', save: 'Save', openRecent: 'Open Recent', showFolder: 'Show Project Folder', openFailed: 'Could not open the project', help: 'Help' },
 
   settings: {
     title: 'Settings',
@@ -994,20 +993,20 @@ export const strings = {
     searchPlaceholder: 'Search settings...',
     general: 'General',
     categoriesLabel: 'Settings categories',
-    groupComputer: 'This computer',
-    groupProject: 'This project',
     categories: {
-      general: { name: 'General', sub: 'How the editor behaves.' },
+      editor: { name: 'Editor', sub: 'How the editor behaves.' },
       tools: { name: 'Tools', sub: 'Programs Inkwell uses to build your mod. Inkwell does not include them.' },
       game: { name: 'Game and deploy', sub: 'Where Inkwell puts your mod, and what the game needs to run it.' },
-      figma: { name: 'Figma', sub: 'The plugin, the fonts and the file you design in.' },
-      advanced: { name: 'Advanced', sub: 'Build internals. You rarely need these.' }
+      figma: { name: 'Figma', sub: 'The plugin, the fonts and the file you design in.' }
     },
     mirrorTip: 'Selecting a layer in Figma selects it here. Selecting here cannot select it in Figma yet.',
     checkAgain: 'Check again',
     checkAgainTip: 'Run all checks again',
-    allReady: 'Everything here is ready.',
-    needAttention: (n: number) => `${n} ${n === 1 ? 'item needs' : 'items need'} attention.`,
+    gameRequirements: 'Game requirements',
+    allReadyShort: 'All ready',
+    readyCount: (n: number, total: number) => `${n} of ${total} ready`,
+    change: 'Change',
+    close: 'Close',
     needAttentionTip: (n: number) => `${n} to look at`,
     project: {
       title: 'Project',

@@ -108,36 +108,67 @@ export const attentionCount = (rows: CheckResult[] | undefined): number => rows?
 
 const settingValue = (d: DoctorHook, key: SettingKey): string | undefined => (d.settings as unknown as Record<string, string | undefined> | undefined)?.[key]
 
-function Row({ row, d }: { row: CheckResult; d: DoctorHook }) {
-  const checking = d.checking.includes(row.id)
-  const title = strings.doctor.titles[row.id] ?? row.label
-  const status = checking ? strings.doctor.checking : (strings.doctor.status[row.status] ?? row.status)
+/** What a check shows when opened: its detail, its settings, its fixes. */
+function RowBody({ row, d }: { row: CheckResult; d: DoctorHook }) {
   const fields = ROW_SETTINGS[row.id]
   // Browse fixes whose setting has an input in this row would only repeat that input's Browse button
   const own = (f: Fix): boolean => f.action.kind === 'browse' && !!fields?.some((x) => x.key === (f.action as { setting: string }).setting)
   const fix = row.fix && !own(row.fix) ? row.fix : undefined
   const extra = row.extra?.filter((f) => !own(f))
+  return (
+    <>
+      <p className="doctor-detail" data-testid={`doctor-detail-${row.id}`}>{row.detail}</p>
+      {fields && (
+        <div className="doctor-fields">
+          {fields.map((f) => <SettingField key={f.key} name={f.key} folder={f.folder} row={row} d={d} />)}
+        </div>
+      )}
+      {(fix || !!extra?.length) && (
+        <div className="row-actions">
+          {fix && <FixButton row={row} fix={fix} d={d} primary={row.status === 'fail'} />}
+          {extra?.map((f) => <FixButton key={f.label} row={row} fix={f} d={d} extra />)}
+        </div>
+      )}
+      {row.id === 'wrapper' && d.benchmark && <Benchmark d={d} />}
+      {row.id === 'vanilla' && d.cache && (
+        <p className={d.cache.ok ? 'tone-ok' : 'tone-error'}>{d.cache.ok ? strings.doctor.cacheDone(d.cache.entries ?? 0, ((d.cache.bytes ?? 0) / 1048576).toFixed(1)) : strings.doctor.cacheFailed(d.cache.error)}</p>
+      )}
+    </>
+  )
+}
+
+function Row({ row, d }: { row: CheckResult; d: DoctorHook }) {
+  const checking = d.checking.includes(row.id)
+  const title = strings.doctor.titles[row.id] ?? row.label
+  const status = checking ? strings.doctor.checking : (strings.doctor.status[row.status] ?? row.status)
+  const fields = ROW_SETTINGS[row.id]
   // the line shows the path a row points at, else what the check found
   const value = (fields?.[0] && (settingValue(d, fields[0].key) || row.found?.value)) || row.detail
   return (
     <li className="doctor-row" data-testid={`doctor-${row.id}`} data-status={checking ? 'checking' : row.status} aria-busy={checking || undefined}>
-      <SettingItem name={title} value={value} tone={checking ? 'busy' : (TONE[row.status] ?? 'none')} statusLabel={status} autoOpen={row.status === 'warn' || row.status === 'fail'}>
-        <p className="doctor-detail" data-testid={`doctor-detail-${row.id}`}>{row.detail}</p>
-        {fields && (
-          <div className="doctor-fields">
-            {fields.map((f) => <SettingField key={f.key} name={f.key} folder={f.folder} row={row} d={d} />)}
-          </div>
-        )}
-        {(fix || !!extra?.length) && (
-          <div className="row-actions">
-            {fix && <FixButton row={row} fix={fix} d={d} primary={row.status === 'fail'} />}
-            {extra?.map((f) => <FixButton key={f.label} row={row} fix={f} d={d} extra />)}
-          </div>
-        )}
-        {row.id === 'wrapper' && d.benchmark && <Benchmark d={d} />}
-        {row.id === 'vanilla' && d.cache && (
-          <p className={d.cache.ok ? 'tone-ok' : 'tone-error'}>{d.cache.ok ? strings.doctor.cacheDone(d.cache.entries ?? 0, ((d.cache.bytes ?? 0) / 1048576).toFixed(1)) : strings.doctor.cacheFailed(d.cache.error)}</p>
-        )}
+      <SettingItem name={title} value={value} path={!!fields && !!value && value !== row.detail} editable={!!fields} tone={checking ? 'busy' : (TONE[row.status] ?? 'none')} statusLabel={status} autoOpen={row.status === 'warn' || row.status === 'fail'}>
+        <RowBody row={row} d={d} />
+      </SettingItem>
+    </li>
+  )
+}
+
+/** Checks with nothing to decide (SKSE, SkyUI...) folded into one line; it opens itself when one needs a look. */
+function RowGroup({ name, rows, d }: { name: string; rows: CheckResult[]; d: DoctorHook }) {
+  const bad = attentionCount(rows)
+  const s = strings.settings
+  return (
+    <li className="doctor-row" data-testid="doctor-group" data-status={bad ? 'warn' : 'pass'}>
+      <SettingItem name={name} value={bad ? s.readyCount(rows.length - bad, rows.length) : s.allReadyShort} tone={bad ? 'warn' : 'ok'} statusLabel={bad ? strings.doctor.status.warn : strings.doctor.status.pass} autoOpen={bad > 0}>
+        {rows.map((row) => {
+          const checking = d.checking.includes(row.id)
+          return (
+            <div key={row.id} className="doctor-sub" data-testid={`doctor-${row.id}`} data-status={checking ? 'checking' : row.status} aria-busy={checking || undefined}>
+              <div className="doctor-sub-head"><span className={`dot dot-${TONE[row.status] === 'ok' ? 'ok' : TONE[row.status] === 'none' ? 'off' : 'warn'}`} aria-hidden="true" /><b>{strings.doctor.titles[row.id] ?? row.label}</b><span className="sr-only">: {strings.doctor.status[row.status] ?? row.status}</span></div>
+              <RowBody row={row} d={d} />
+            </div>
+          )
+        })}
       </SettingItem>
     </li>
   )
@@ -159,14 +190,17 @@ function Benchmark({ d }: { d: DoctorHook }) {
 }
 
 /** The checks of one Settings category (UX 5.3, the former Setup Doctor): one collapsed line per check, a problem opens itself. The Settings view owns the hook and says which rows belong where (`inCategory`) and what the search `query` is. */
-export function DoctorRows({ d, inCategory, query = '' }: { d: DoctorHook; inCategory: (r: CheckResult) => boolean; query?: string }) {
+export function DoctorRows({ d, inCategory, query = '', groupName }: { d: DoctorHook; inCategory: (r: CheckResult) => boolean; query?: string; /** Fold the checks that have no setting of their own into one line with this name (not while searching). */ groupName?: string }) {
   const q = query.trim().toLowerCase()
   const rows = d.results?.filter((r) => inCategory(r) && (!q || rowText(r).includes(q)))
+  const fold = !!groupName && !q ? rows?.filter((r) => !ROW_SETTINGS[r.id]) : undefined
+  const shown = fold && fold.length > 1 ? rows?.filter((r) => !fold.includes(r)) : rows
   return (
     <>
       {d.loadError && <p className="tone-error" role="alert" data-testid="doctor-load-error">{strings.doctor.loadFailed(d.loadError)}</p>}
       <ul className="plain checks" aria-label={strings.dialogs.doctor.title}>
-        {rows?.map((r) => <Row key={r.id} row={r} d={d} />)}
+        {shown?.map((r) => <Row key={r.id} row={r} d={d} />)}
+        {fold && fold.length > 1 && <RowGroup name={groupName!} rows={fold} d={d} />}
       </ul>
     </>
   )

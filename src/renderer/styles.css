@@ -177,11 +177,12 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 /* workspace */
 .workspace { flex: 1; display: flex; min-width: 0; min-height: 0; }
 .workspace { position: relative; }
-.split { display: flex; min-width: 0; min-height: 0; }
+.split { display: flex; min-width: 0; min-height: 0; overflow: clip; } /* a fixed slot (Behaviour preview) keeps its px minimum: clip it here so it never paints over the dock below */
 /* fullscreen graph: nodes with an edge leave the flow; the side ones slide in when the pointer reaches their hot strip (::after) or focus is inside, the dock stays as its strip and opens over the graph */
-.workspace[data-overlay] { --dock-strip-h: 34px; padding-bottom: var(--dock-strip-h); }
+.workspace[data-overlay] { --dock-strip-h: 34px; padding-bottom: var(--dock-strip-h); overflow: clip; } /* clips the parked dock at the window edge; clip, not hidden: a scrollIntoView in the parked Trace panel can scroll a hidden box and slid the whole UI */
 .workspace[data-overlay] .splitter { display: none; }
-.workspace[data-overlay] [data-edge] { position: absolute; z-index: 20; background: var(--surface-1); box-shadow: 0 0 16px var(--shadow); transition: transform 0.15s ease; }
+.workspace[data-overlay] [data-edge] { position: absolute; z-index: 20; background: var(--surface-1); box-shadow: 0 0 16px var(--shadow); }
+.workspace[data-armed] [data-edge] { transition: transform 0.15s ease; } /* only once placed (Workspace.tsx armed): no slide when a mode switch enters the overlay */
 .workspace[data-overlay] [data-edge='left'], .workspace[data-overlay] [data-edge='right'] { top: 0; bottom: var(--dock-strip-h); width: clamp(240px, 22vw, 340px); }
 .workspace[data-overlay] [data-edge='left'] { left: 0; transform: translateX(-100%); }
 .workspace[data-overlay] [data-edge='right'] { right: 0; transform: translateX(100%); }
@@ -190,7 +191,11 @@ select:disabled, input:disabled { color: var(--fg-faint); }
 .workspace[data-overlay] [data-edge='right']::after { right: 100%; }
 .workspace[data-overlay] [data-edge='left']:hover, .workspace[data-overlay] [data-edge='left']:focus-within, .workspace[data-overlay] [data-edge='right']:hover, .workspace[data-overlay] [data-edge='right']:focus-within, .workspace[data-overlay] [data-edge][data-keep], .workspace[data-overlay] [data-edge][data-hold] { transform: none; }
 .workspace[data-overlay] [data-edge='bottom'] { left: 0; right: 0; bottom: 0; }
-.workspace[data-overlay] [data-edge='bottom']:not([data-folded]) { height: 45%; }
+.workspace[data-overlay] [data-edge='bottom'] { height: 45%; } /* always mounted at full height; folded = parked below the workspace with only its strip showing */
+.workspace[data-overlay] [data-edge='bottom'][data-folded] { transform: translateY(calc(100% - var(--dock-strip-h))); }
+.workspace[data-overlay] [data-edge='bottom'][data-folded]:is(:hover, :has(:focus-visible), [data-keep]) { transform: none; } /* no :focus-within / data-hold here: a mouse click leaves focus inside and would pin the dock open; keyboard focus still holds it */
+/* hot strip above the parked dock: reaching it opens the dock, same as the side panels' strips */
+.workspace[data-overlay] [data-edge='bottom'][data-folded]::after { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 24px; }
 .slot { display: flex; min-width: 0; min-height: 0; background: var(--surface-1); border: 1px solid var(--line); }
 .splitter { flex: none; background: var(--bg); position: relative; }
 .splitter::after { content: ''; position: absolute; inset: 0; }
@@ -564,50 +569,49 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 .field-msg > svg { flex: none; margin-top: 2px; }
 
 .settings-view { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; height: 100%; background: var(--bg); }
-.settings-head { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface-1); }
-.settings-head h2 { margin: 0; font-size: 14px; }
+.settings-head { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--surface-1); }
+.settings-head h2 { margin: 0; font-size: 14px; font-weight: 600; }
 .settings-spacer { flex: 1; }
 .settings-search { display: flex; align-items: center; gap: 8px; width: min(260px, 40%); padding: 0 10px; min-height: var(--ctl-h); background: var(--field-bg); border: 1px solid transparent; border-radius: 4px; color: var(--fg-dim); }
 .settings-search:focus-within { border-color: var(--focus); }
 .settings-search input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0; min-height: 0; outline: none; }
 .settings-split { flex: 1; min-height: 0; display: grid; grid-template-columns: 200px minmax(0, 1fr); }
-.settings-rail { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; overflow-y: auto; border-right: 1px solid var(--line); background: var(--surface-1); }
-.rail-group { padding: 10px 8px 4px; font-size: 11px; color: var(--fg-faint); }
-.rail-group:first-child { padding-top: 0; }
-.rail-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border: 0; border-radius: 4px; background: transparent; color: var(--fg-dim); font: inherit; text-align: left; cursor: pointer; }
+.settings-rail { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; overflow-y: auto; background: var(--surface-1); }
+.rail-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: var(--ctl-h); padding: 0 8px; border: 0; border-radius: var(--radius); background: transparent; color: var(--fg-dim); font: inherit; text-align: left; cursor: pointer; }
 .rail-item > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rail-item:hover { background: var(--hover); color: var(--fg); }
 .rail-item[aria-current="page"] { background: var(--accent-bg); color: var(--fg); }
 .rail-item:focus-visible { outline: 1px solid var(--focus-ring); outline-offset: -1px; }
 .settings-body { overflow: auto; padding: 16px 24px; }
 .settings-col { max-width: 760px; margin: 0 auto; }
-.settings-body h3 { margin: 0 0 2px; font-size: 15px; }
+.settings-body h3 { margin: 0 0 2px; font-size: 14px; font-weight: 600; }
 .settings-body section + section { margin-top: 24px; }
 .settings-sub { margin: 0 0 14px; }
-.settingline { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.summary { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 8px 12px; border-radius: var(--radius); }
-.summary-ok { background: var(--ok-bg); color: var(--ok); }
-.summary-warn { background: var(--warn-bg); color: var(--warn); }
+.settings-group { display: flex; flex-direction: column; padding: 4px 12px; border-radius: var(--radius); background: var(--surface-1); }
+.settingline { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--ctl-h); padding: 6px 0; }
 .dot-ok { background: var(--ok); }
 .dot-warn { background: var(--warn); }
 .dot-error { background: var(--err); }
 /* one setting or check: a line that opens to its detail (ui/SettingItem.tsx) */
 .checks > li { display: block; padding: 0; border: 0; }
-.setting-item { margin-bottom: 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-1); }
-.setting-item-attn { border-color: var(--warn); }
-.item-line { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 7px 12px; border: 0; border-radius: var(--radius); background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.setting-item { margin-bottom: 2px; border-radius: var(--radius); background: var(--surface-1); }
+.item-line { display: flex; align-items: center; gap: 10px; width: 100%; min-height: calc(var(--ctl-h) + 8px); padding: 4px 8px 4px 12px; border: 0; border-radius: var(--radius); background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
 .item-line:hover { background: var(--hover); }
 .item-line:focus-visible { outline: 1px solid var(--focus-ring); outline-offset: -1px; }
 .item-line > .dot, .item-line > svg { flex: none; }
-.item-name { min-width: 140px; font-weight: 600; }
+.item-name { width: 150px; flex: none; font-weight: 600; }
 .item-value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg-dim); }
-.item-body { padding: 4px 12px 12px 31px; border-top: 1px solid var(--line); }
+.item-value-path { direction: rtl; text-align: left; font: 11px ui-monospace, Consolas, monospace; } /* path cut at the start: the folder name at the end stays */
+.item-value-path bdi { unicode-bidi: plaintext; }
+.item-act { flex: none; display: inline-flex; align-items: center; gap: 4px; color: var(--fg-dim); font-size: 12px; }
+.item-body { padding: 4px 12px 12px 30px; }
+.doctor-sub + .doctor-sub { margin-top: 12px; }
+.doctor-sub-head { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .item-body p { margin: 8px 0 0; }
 @media (max-width: 720px) {
   .settings-split { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
   .settings-rail { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--line); padding: 6px 8px; }
-  .rail-group { display: none; }
-  .item-name { min-width: 0; }
+  .item-name { width: auto; min-width: 0; }
 }
 .fonts-notice, .dialog .banner { align-items: flex-start; }
 .fonts-faces { margin: 4px 0 6px; columns: 2; }

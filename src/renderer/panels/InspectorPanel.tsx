@@ -244,12 +244,7 @@ function ListField({ swfId, nodeId, value, children }: { swfId: string; nodeId: 
   }
   return (
     <>
-      {!children.length ? (
-        <div className="field" data-testid="list-component-note">
-          <span className="field-label">{strings.insp.listTemplate}</span>
-          <span>{strings.insp.listComponentNote}</span>
-        </div>
-      ) : (
+      {children.length > 0 && (
       <label className="field">
         <span className="field-label">{strings.insp.listTemplate}</span>
         <select value={value?.itemTemplate ?? ''} onChange={(e) => set({ itemTemplate: e.target.value })} data-testid="list-template">
