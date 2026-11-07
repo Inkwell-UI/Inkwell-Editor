@@ -18,6 +18,7 @@ import { themeOps } from '../codegen/themeOps'
 import type { CodegenPacks } from '../codegen/packs'
 import { listAttachCode, listClassName, listClassSource, type ListInfo } from './listAs2'
 import { scrollAttachCode, scrollClassName, scrollClassSource, type ScrollInfo } from './scrollAs2'
+import { scrollbarAttachCode, scrollbarClassSource, type ScrollbarInfo } from './scrollbarAs2'
 import { flowAttachCode, flowClassName, flowClassSource, flowInfo, stackAttachCode, type FlowInfo } from './flowAs2'
 
 export interface GenerateOptions {
@@ -42,6 +43,8 @@ export interface GenerateOptions {
   locKeys?: Record<string, string>
   /** Overlay `list` settings (S8: item template layer, row spacing) by Figma layer id, for layers whose role is `list`. */
   lists?: Record<string, { itemTemplate?: string; spacing?: number }>
+  /** Overlay `scrollbar` settings by Figma layer id, for layers whose role is `scrollbar`: the list or scrolling frame it follows. Children named `thumb` and `track` (the frame itself when absent). */
+  scrollbars?: Record<string, { target: string; orientation?: 'vertical' | 'horizontal' }>
   /** Mod id: AS2 classes live under `mods.<modId>.*`. */
   modId: string
   /** Overlay instance names by node id; the default is the sanitized layer name. */
@@ -55,6 +58,10 @@ export interface GenerateOptions {
    * with the preview shims (skse, gfxExtensions, bridge stubs), and `widget` is ignored: the design frame shows at the design size.
    */
   preview?: boolean
+  /** Custom menu only: the theme mode `applyTheme` baked into this IR. The menu class applies it first at start, so a layer that is hidden in it but shown by another theme (compiled anyway) starts hidden. */
+  theme?: string
+  /** Custom menu only (menu.json `stripThemeLayers`): leave out a layer the baked theme hides even when another theme shows it, so the SWF holds only what `theme` shows. */
+  stripThemeLayers?: boolean
   /** Custom menu only: the dev flavour of the game SWF (graph `pin`/`watch` calls and `dumpVariables`, S6/S7); a dev deploy ships it, Package Mod never does. Ignored by the preview. */
   dev?: boolean
   /** Preview only: device font name per alias (a font Ruffle has loaded by name); default `previewDeviceFont` (_sans, _typewriter, _serif). */
@@ -442,7 +449,14 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   const wrapShape = new Set(tOps.filter((o) => o.target === 'self' && ir.nodes[o.nodeId]?.type === 'shape').map((o) => o.nodeId))
   // a bare shape cannot be addressed from AS2, so the shapes inside a scrolling frame are wrapped in a clip (its content moves by clip)
   for (const nd of Object.values(ir.nodes)) if ('overflow' in nd && nd.overflow && nd.overflow !== 'none') for (const k of nd.children) if (ir.nodes[k]?.type === 'shape') wrapShape.add(k)
+  // the thumb and track of a scrollbar are usually shapes: wrapped in a clip so the bar can move and resize the thumb
+  for (const id of Object.keys(opts.scrollbars ?? {})) for (const k of ir.nodes[id]?.children ?? []) if (ir.nodes[k]?.type === 'shape') wrapShape.add(k)
+  const themeVisible = new Set(opts.stripThemeLayers ? [] : tOps.filter((o) => o.kind === 'v' && Object.values(o.values).includes(true)).map((o) => o.nodeId))
   const wrapFill = new Set(tOps.filter((o) => o.target === 'fill').map((o) => o.nodeId))
+  // a tinted fill's alpha comes from the colour variable and is set at run time (themeOps, kind `a`): the clip draws it opaque and starts at the default mode's alpha
+  const tint = new Set(tOps.filter((o) => o.kind === 'c').map((o) => o.nodeId))
+  const paintAlpha = (f: { type: string; color?: { a?: number }; opacity?: number }): number => (f.type === 'solid' ? (f.color?.a ?? 1) * (f.opacity ?? 1) : 1)
+  const opaque = <F extends { type: string }>(f: F): F => (f.type === 'solid' ? ({ type: 'solid', color: { ...(f as unknown as { color: object }).color, a: undefined } } as unknown as F) : f)
   const inSprite = (shapeId: number): number => {
     const sid = alloc()
     defs.push(T.sprite(sid, [T.placeObject2({ depth: 1, charId: shapeId, x: 0, y: 0 })]))
@@ -486,8 +500,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   }
 
   /**
-   * A frame's fills as background clips under its children, bottom fill first: image fills are `imageFill`, `imageFill_2`...; solid fills (and a gradient, drawn as its
-   * first stop) are rectangle shapes named `fill`, `fill_2`... The root frame is the stage and stays transparent in game, so its solid and gradient fills are skipped.
+   * A frame's fills as background clips under its children, bottom fill first: image fills are `imageFill`, `imageFill_2`...; solid and gradient fills are rectangle shapes named `fill`, `fill_2`... The root frame is the stage and stays transparent in game, so its solid and gradient fills are skipped.
    * `skip` depths are left free below the first fill (the clip layer). Placements + their reserved names.
    */
   // frames a Create Component node names as its parent: they hold instances made at run time
@@ -504,14 +517,15 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
           lint.push(issue('info', 'frame-fill-root-skipped', n.id, 'The root frame is transparent in game, so its fills are not drawn. Use a rectangle for a background.'))
           continue
         }
-        const svg = rectSvg(n.transform.width, n.transform.height, f, n.id, lint)
+        const tinted = fills === 0 && wrapFill.has(n.id) && tint.has(n.id) && f.type === 'solid'
+        const svg = rectSvg(n.transform.width, n.transform.height, tinted ? opaque(f) : f, n.id, lint)
         if (!svg) continue
         const name = fills++ ? `fill_${fills}` : 'fill'
         const id = alloc()
         shapes.push({ charId: id, nodeId: n.id, svg })
         defs.push(T.defineShapePlaceholder(id, n.transform.width, n.transform.height))
         names.push(name)
-        bg.push(T.placeObject2({ depth, charId: name === 'fill' && wrapFill.has(n.id) ? inSprite(id) : id, name, x: 0, y: 0 }))
+        bg.push(T.placeObject2({ depth, charId: name === 'fill' && wrapFill.has(n.id) ? inSprite(id) : id, name, x: 0, y: 0, ...(tinted && paintAlpha(f) < 1 ? { alpha: paintAlpha(f) } : {}) }))
         continue
       }
       const name = images++ ? `imageFill_${images}` : 'imageFill'
@@ -549,7 +563,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
         continue
       }
       seen.add(cid)
-      if (!n.visible) {
+      if (!n.visible && !themeVisible.has(cid)) { // a layer another theme shows is compiled, and the menu class hides it again (`opts.theme`)
         lint.push(issue('info', 'node-hidden', cid, 'Hidden node not compiled.'))
         continue
       }
@@ -581,7 +595,8 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
           inner[0] = T.placeObject2({ depth: 1, charId: maskId, x: 0, y: 0, clipDepth: stackParents.has(cid) ? DYNAMIC_CLIP_DEPTH : inner.length }) // a parent of run-time instances also clips them (they sit above its layers, from depth 0 = 16384)
         }
         // a frame that scrolls in Figma: its content moves inside the clip (a frame that does not clip has nothing to scroll)
-        if (clip && n.overflow && n.overflow !== 'none' && here.startsWith('root.')) {
+        // a list scrolls itself (InkwellList); a second class on the same clip would take over its scrollTo, getScroll and barState
+        if (clip && n.overflow && n.overflow !== 'none' && here.startsWith('root.') && opts.roles?.[cid] !== 'list') {
           const names = n.children.flatMap((k) => { const p = layerPaths.get(k); return p?.startsWith(`${here}.`) ? [p.slice(here.length + 1)] : [] })
           const [, padRight, padBottom] = n.autoLayout?.padding ?? [0, 0, 0, 0]
           scrollInfos.push({ path: here.slice('root.'.length), w: n.transform.width, h: n.transform.height, dir: n.overflow === 'horizontal' ? 1 : n.overflow === 'vertical' ? 2 : 3, padX: padRight!, padY: padBottom!, names })
@@ -602,13 +617,16 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
         const { alpha: _nodeAlpha, ...at } = base
         out.push(T.placeObject2({ ...at, charId: id, ...(alpha < 1 ? { alpha } : {}) }))
       } else if (n.type === 'shape') {
-        const r = shapeToSvg(n)
+        const tinted = tint.has(cid) && n.fills.length === 1 && n.fills[0]!.type === 'solid'
+        const r = shapeToSvg(tinted ? { ...n, fills: [opaque(n.fills[0]!)] } : n)
         lint.push(...r.lint)
         if (!r.svg) continue
         const id = alloc()
         shapes.push({ charId: id, nodeId: cid, svg: r.svg })
         defs.push(T.defineShapePlaceholder(id, n.transform.width, n.transform.height))
-        out.push(T.placeObject2({ ...base, charId: wrapShape.has(cid) ? inSprite(id) : id }))
+        const { alpha: _a, ...at } = base
+        const alpha = tinted ? n.opacity * paintAlpha(n.fills[0]!) : n.opacity // the placement alpha carries the tint's alpha, see `tint`
+        out.push(T.placeObject2({ ...at, ...(alpha < 1 ? { alpha } : {}), charId: wrapShape.has(cid) ? inSprite(id) : id }))
       } else {
         const hash = opts.embeddedFonts?.byNode[cid]
         const face = hash ? opts.embeddedFonts?.fonts[hash] : undefined
@@ -817,6 +835,28 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
     addClass('InkwellFlow', flowClassSource(mod))
     frameCode.push(...flowInfos.map((f) => flowAttachCode(mod, f)))
   }
+  // scrollbars attach last: they ask their target (a list or scrolling frame, attached above) for its state
+  const scrollbarInfos: ScrollbarInfo[] = []
+  for (const [id, sb] of Object.entries(opts.scrollbars ?? {})) {
+    const n = ir.nodes[id]
+    const bp = layerPaths.get(id)
+    if (!n || !bp?.startsWith('root.')) continue // hidden or not compiled: already reported
+    if (n.type !== 'frame') { lint.push(issue('error', 'scrollbar-not-frame', id, `The scrollbar "${n.name}" must be a frame holding a "thumb" layer (and a "track" layer).`)); continue }
+    const tp = layerPaths.get(sb.target)?.slice('root.'.length)
+    if (!tp || !(listInfos.some((l) => l.path === tp) || scrollInfos.some((x) => x.path === tp))) { lint.push(issue('error', 'scrollbar-target-invalid', id, `The scrollbar "${n.name}" follows a layer that is not a list or a scrolling frame (or is not compiled).`)); continue }
+    const kid = (nm: string): string | undefined => n.children.find((k) => ir.nodes[k]?.name.toLowerCase() === nm)
+    const thumbId = kid('thumb')
+    const thumbPath = thumbId ? layerPaths.get(thumbId) : undefined
+    if (!thumbPath?.startsWith(`${bp}.`)) { lint.push(issue('error', 'scrollbar-no-thumb', id, `The scrollbar "${n.name}" has no visible layer named "thumb".`)); continue }
+    const track = kid('track')
+    const tt = track ? ir.nodes[track]?.transform : undefined
+    const box = tt ? { x: tt.x, y: tt.y, w: tt.width, h: tt.height } : { x: 0, y: 0, w: n.transform.width, h: n.transform.height }
+    scrollbarInfos.push({ path: bp.slice('root.'.length), target: tp, thumb: thumbPath.slice(bp.length + 1), vertical: sb.orientation ? sb.orientation === 'vertical' : box.h >= box.w, ...box })
+  }
+  if (scrollbarInfos.length) {
+    addClass('InkwellScrollbar', scrollbarClassSource(mod))
+    frameCode.push(...scrollbarInfos.map((x) => scrollbarAttachCode(mod, x, widget && wf ? 'this.widget' : 'this')))
+  }
   // auto-layout frames that a Create Component node names as its parent lay out the instances it adds (`stackAdd` in the graph class)
   for (const id of stackParents) {
     const f = asFrame(ir.nodes[id])
@@ -855,10 +895,10 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       const clip = a ? pathOf(glyphId(pid, d)) : undefined
       return a && clip ? [{ clip, file: a.file, sprite: a.sprite, h: Math.round(ir.nodes[glyphId(pid, d)]?.transform.height ?? 0) }] : []
     })).filter((a) => a.h > 0)
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, stage: ir.stage, ...(artGlue.length ? { art: artGlue, ...(opts.preview ? { previewArt: true } : {}) } : {}), graphs: gen?.classes.filter((c) => !c.fn && !c.component).sort((a, b) => depthOf(a.graphId) - depthOf(b.graphId)).map((c) => ({ cls: c.cls, id: c.graphId, ...(opts.graphs?.graphs.find((g) => g.id === c.graphId)?.scope === 'menu' ? { menu: true as const } : {}) })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(scrollInfos.length ? { scrollClass: scrollClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, stage: ir.stage, ...(artGlue.length ? { art: artGlue, ...(opts.preview ? { previewArt: true } : {}) } : {}), graphs: gen?.classes.filter((c) => !c.fn && !c.component).sort((a, b) => depthOf(a.graphId) - depthOf(b.graphId)).map((c) => ({ cls: c.cls, id: c.graphId, ...(opts.graphs?.graphs.find((g) => g.id === c.graphId)?.scope === 'menu' ? { menu: true as const } : {}) })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed, ...(opts.theme ? { baked: opts.theme } : {}) } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(scrollInfos.length ? { scrollClass: scrollClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
-      frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, [...listInfos.map((l) => listAttachCode(mod, l, '_root')), ...scrollInfos.map((x) => scrollAttachCode(mod, x, '_root')), ...flowInfos.map((f) => flowAttachCode(mod, f, '_root'))]))
+      frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, [...listInfos.map((l) => listAttachCode(mod, l, '_root')), ...scrollInfos.map((x) => scrollAttachCode(mod, x, '_root')), ...flowInfos.map((f) => flowAttachCode(mod, f, '_root')), ...scrollbarInfos.map((x) => scrollbarAttachCode(mod, x, '_root'))]))
     }
     frameCode.push(...menuFrameCode(mod, swfCls))
   }

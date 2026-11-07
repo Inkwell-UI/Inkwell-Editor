@@ -10,7 +10,7 @@ export const ident = (s: string): string => {
 export type OverlayDoc = Record<string, unknown> & { specVersion?: number; nodes?: Record<string, Record<string, unknown>> }
 
 /** Roles offered by the Inspector (design spec: "button, list, progress, text..."). An existing role outside the list is kept and shown. */
-export const ROLES = ['button', 'list', 'progress', 'text', 'image', 'clip', 'prompt'] as const
+export const ROLES = ['button', 'list', 'scrollbar', 'progress', 'text', 'image', 'clip', 'prompt'] as const
 
 /** Instance names must already be identifiers (what `ident` would produce). Returns an error id, or undefined when fine. */
 export function instanceNameError(name: string): 'empty' | 'invalid' | undefined {
@@ -70,6 +70,8 @@ export interface NodeOverlayPatch {
   dataBinding?: string | null
   /** `list` settings of a role-`list` frame (S8): item template layer and row spacing. */
   list?: { itemTemplate?: string; spacing?: number } | null
+  /** `scrollbar` of a role-`scrollbar` frame: the list or scrolling frame it follows (Spec overlay `scrollbar`). */
+  scrollbar?: { target: string; orientation?: 'vertical' | 'horizontal' } | null
   /** Hash of an embedded custom font of the project (V5.6); wins over the alias rules. */
   font?: string | null
   /** Translation key of a text layer (V2.1): `$` + letters, digits, `_`. */
@@ -125,6 +127,17 @@ export function overlayProblems(doc: unknown): string[] {
 /** Translation keys (V2.1) of the overlay nodes that have one, by Figma layer id; keys of the wrong shape are still returned (the lint reports them, the compiler only passes them on). */
 export function locKeysOf(nodes: Record<string, { locKey?: unknown }>): Record<string, string> {
   return Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (typeof o.locKey === 'string' && o.locKey ? [[id, o.locKey]] : [])))
+}
+
+/** `scrollbar` settings of the overlay nodes with role `scrollbar` and a target, by Figma layer id. */
+export function scrollbarSettings(nodes: Record<string, { role?: unknown; scrollbar?: unknown }>): Record<string, { target: string; orientation?: 'vertical' | 'horizontal' }> {
+  const out: Record<string, { target: string; orientation?: 'vertical' | 'horizontal' }> = {}
+  for (const [id, o] of Object.entries(nodes)) {
+    const b = o.scrollbar as { target?: unknown; orientation?: unknown } | undefined
+    if (o.role !== 'scrollbar' || !b || typeof b !== 'object' || typeof b.target !== 'string' || !b.target) continue
+    out[id] = { target: b.target, ...(b.orientation === 'vertical' || b.orientation === 'horizontal' ? { orientation: b.orientation } : {}) }
+  }
+  return out
 }
 
 /** `list` settings (S8) of the overlay nodes that have them, by Figma layer id: item template layer and row spacing; malformed members are ignored. */

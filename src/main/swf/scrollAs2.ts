@@ -83,6 +83,14 @@ class ${me} {
         clip.getScroll = function() {
             return self.state();
         };
+        // scrollbars (InkwellScrollbar): one axis, in design px
+        clip.barState = function(vertical) {
+            return self.barState(vertical);
+        };
+        clip.barTo = function(vertical, pos) {
+            if (vertical == false) self.to(pos, self.offY);
+            else self.to(self.offX, pos);
+        };
         ${me}.all.push(self);
         ${me}.hook();
     }
@@ -187,6 +195,13 @@ class ${me} {
             bottom = Math.max(bottom, c._y + this.offY + c._height);
         }
         return { x: this.offX, y: this.offY, maxX: Math.max(0, right + this.padX - this.w), maxY: Math.max(0, bottom + this.padY - this.h) };
+    }
+
+    // {pos, max, view} for a scrollbar; max is 0 on an axis the frame does not scroll
+    function barState(vertical) {
+        var s = this.state();
+        if (vertical == false) return { pos: s.x, max: (this.dir & 1) ? s.maxX : 0, view: this.w };
+        return { pos: s.y, max: (this.dir & 2) ? s.maxY : 0, view: this.h };
     }
 
     // moves to the offset (design px from the start), kept between 0 and the end of the content, on the axes that scroll

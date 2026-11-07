@@ -15,7 +15,7 @@ import { MENU_VARIANT_ASPECTS, aspectRatioOf, applyTheme, themeModes } from '@in
 import { defaultMenuSettings, hasBackgroundBlur, variantBuildName } from '../../shared/menu'
 import { readMenuSettings, writeMenuLocked } from '../project/menuFile'
 import { reflowIr, stageForAspect } from '../../shared/reflow'
-import { listSettings, locKeysOf } from '../../shared/overlay'
+import { listSettings, locKeysOf, scrollbarSettings } from '../../shared/overlay'
 import { embeddedFontsFor } from '../fonts/embedBuild'
 import { readGraphs } from '../project/graphFiles'
 import { exclusive } from '../project/lock'
@@ -54,7 +54,7 @@ export interface PipelineConfig {
   /** After a dev SWF was written. */
   onDevBuild?: (name: string) => void
   /** The theme names of one SWF: the menu's default (Menu settings, baked into the game SWF) and the one the stage toolbar previews. */
-  themeFor?: (name: string, swfId: string) => { default?: string; preview?: string }
+  themeFor?: (name: string, swfId: string) => { default?: string; preview?: string; strip?: boolean }
   /** The aspect ratio (width / height) the stage toolbar previews one SWF at; undefined = the design's own. */
   aspectFor?: (swfId: string) => number | undefined
   /** A sync wrote a custom menu's menu.json (flags.blur from a Figma background blur); the caller refreshes its cached copy. */
@@ -108,6 +108,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     let graphLayers: Record<string, string> = {}
     let roles: Record<string, string> = {}
     let lists: Record<string, { itemTemplate?: string; spacing?: number }> = {}
+    let scrollbars: ReturnType<typeof scrollbarSettings> = {}
     let locKeys: Record<string, string> = {}
     let overlayNodes: Record<string, Record<string, unknown>> = {}
     let modId = 'inkwell'
@@ -132,6 +133,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
         roles = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (typeof o.role === 'string' && o.role ? [[id, o.role]] : [])))
         instanceNames = Object.fromEntries(Object.entries(nodes).flatMap(([id, o]) => (o.instanceName ? [[id, o.instanceName]] : [])))
         lists = listSettings(nodes)
+        scrollbars = scrollbarSettings(nodes)
         locKeys = locKeysOf(nodes)
         overlayNodes = nodes as unknown as Record<string, Record<string, unknown>>
         // The editor never edits the visual IR: this stores exactly what Figma sent.
@@ -182,7 +184,8 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     const gameIr = applyTheme(ir, defaultMode)
     // the stage toolbar's aspect ratio: the preview SWF is the design laid out again for that screen (constraints, auto layout); the game SWF is not
     const aspect = cfg.aspectFor?.(swfId)
-    const themedIr = applyTheme(ir, want?.preview && modes.includes(want.preview) ? want.preview : defaultMode)
+    const previewMode = want?.preview && modes.includes(want.preview) ? want.preview : defaultMode
+    const themedIr = applyTheme(ir, previewMode)
     const previewIr = aspect ? reflowIr(themedIr, stageForAspect(ir.stage, aspect)) : themedIr
     const images = cfg.assets ? (h: string) => cfg.assets!.get(h) : undefined
     // embedded custom fonts (V5): the layers' fonts, the characters to embed and the licence/glyph/size findings
@@ -193,7 +196,8 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     // W3/W4: the focus graph and prompts of a custom menu (overlay), with their lint
     const fo = focusOptions(ir, overlayNodes)
     const inputOpts = { ...(fo.focus ? { focus: fo.focus } : {}), ...(fo.prompts ? { prompts: fo.prompts } : {}), ...(fo.promptLayers ? { promptLayers: fo.promptLayers } : {}) }
-    const gameOpts = { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings, graphLayers } : {}), ...(components.length ? { components } : {}), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) }
+    const stripOpt = want?.strip ? { stripThemeLayers: true } : {} // menu.json stripThemeLayers: layers only another theme shows are left out
+    const gameOpts = { ...stripOpt, ...(defaultMode ? { theme: defaultMode } : {}), ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...(Object.keys(scrollbars).length ? { scrollbars } : {}), ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings, graphLayers } : {}), ...(components.length ? { components } : {}), ffdec, imageMode, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) }
     const r = await compileSwf(gameIr, { ...gameOpts, buildDir: cfg.buildDir, outPath: join(cfg.buildDir, `${name}.swf`) })
     // a custom menu ships one game SWF per other screen shape (Spec `variants`): the design laid out again for that screen; the runtime opens the nearest one
     const vt = createStageTimer()
@@ -216,7 +220,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     if (cfg.devBuild?.() && ir.target.kind === 'customMenu') {
       devBuilt = true
       dt.start('dev-build')
-      await compileSwf(gameIr, { modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings, graphLayers } : {}), ...(components.length ? { components } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
+      await compileSwf(gameIr, { ...stripOpt, ...(defaultMode ? { theme: defaultMode } : {}), modId, instanceNames, roles, lists, ...(Object.keys(scrollbars).length ? { scrollbars } : {}), ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings, graphLayers } : {}), ...(components.length ? { components } : {}), buildDir: join(cfg.buildDir, 'dev'), outPath: join(cfg.buildDir, `${name}.dev.swf`), ffdec, imageMode, dev: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { glyphs: cfg.previewFonts.glyphsFor } : {}) })
       dt.end('dev-build')
       cfg.onDevBuild?.(name)
     }
@@ -226,7 +230,7 @@ export function createBuildPipeline(cfg: PipelineConfig) {
     pt.start('preview-build')
     const preview: Omit<PreviewBuild, 'seq'> = { swfId, name, stage: previewIr.stage, notes: { textExtensions: 0, textNodes: 0, approximated: [] } }
     try {
-      const pr = await compileSwf(previewIr, { ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings, graphLayers } : {}), ...(components.length ? { components } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
+      const pr = await compileSwf(previewIr, { ...stripOpt, ...(previewMode ? { theme: previewMode } : {}), ...(contract ? { contract } : {}), modId, instanceNames, roles, lists, ...(Object.keys(scrollbars).length ? { scrollbars } : {}), ...inputOpts, ...(Object.keys(locKeys).length ? { locKeys } : {}), ...fontOpts, ...(graphs ? { graphs, bindings, graphLayers } : {}), ...(components.length ? { components } : {}), buildDir: join(cfg.buildDir, 'preview'), outPath: join(cfg.buildDir, `${name}.preview.swf`), ffdec, preview: true, ...(images ? { images } : {}), ...(cfg.previewFonts ? { previewFont: cfg.previewFonts.nameFor, ...(process.env['INKWELL_PREVIEW_EMBED'] === '0' ? {} : { previewFontBytes: cfg.previewFonts.bytesFor }) } : {}) })
       const buf = await readFile(pr.swfPath)
       preview.bytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
       preview.notes = {

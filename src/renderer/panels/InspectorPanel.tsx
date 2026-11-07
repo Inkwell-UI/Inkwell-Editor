@@ -151,6 +151,7 @@ function ComponentInspector({ swfName, swfId, node, highlight }: { swfName: stri
         <InspFold id="identity" title={strings.insp.groupIdentity} summary={entry.role ? strings.insp.roleNames[entry.role] ?? entry.role : strings.insp.noRole} defaultOpen>
           <RoleField swfId={swfId} nodeId={node.id} role={entry.role} />
           {entry.role === 'list' && node.type === 'frame' && <ListField swfId={swfId} nodeId={node.id} value={(entry as { list?: { itemTemplate?: string; spacing?: number } }).list} children={node.children.flatMap((c) => swf?.ir.nodes[c] ?? [])} />}
+          {entry.role === 'scrollbar' && node.type === 'frame' && <ScrollbarField swfId={swfId} nodeId={node.id} value={(entry as { scrollbar?: { target?: string; orientation?: 'vertical' | 'horizontal' } }).scrollbar} targets={Object.values(swf?.ir.nodes ?? {}).filter((n) => n.type === 'frame' && (overlay?.nodes?.[n.id]?.role === 'list' || ('overflow' in n && n.overflow && n.overflow !== 'none')))} />}
           <InstanceNameField swfId={swfId} nodeId={node.id} layerName={node.name} value={entry.instanceName} />
         </InspFold>
         {isPrompt && (
@@ -257,6 +258,37 @@ function ListField({ swfId, nodeId, value, children }: { swfId: string; nodeId: 
         <span className="field-label">{strings.insp.listSpacing}</span>
         <input className="gn-input" type="number" min={0} value={value?.spacing ?? 0} onChange={(e) => set({ spacing: Number(e.target.value) })} data-testid="list-spacing" />
       </label>
+    </>
+  )
+}
+
+/** The list or scrolling frame a scrollbar follows, and its direction (Spec overlay `scrollbar`); the frame needs a `thumb` child and optionally a `track` child. */
+function ScrollbarField({ swfId, nodeId, value, targets }: { swfId: string; nodeId: string; value: { target?: string; orientation?: 'vertical' | 'horizontal' } | undefined; targets: { id: string; name: string }[] }) {
+  const set = (patch: { target?: string; orientation?: string }): void => {
+    const next = { ...value, ...patch } as { target?: string; orientation?: string }
+    if (!next.orientation) delete next.orientation
+    // the Spec requires a target, so without one the whole field goes
+    editNode(swfId, nodeId, { scrollbar: next.target ? (next as { target: string; orientation?: 'vertical' | 'horizontal' }) : null })
+  }
+  return (
+    <>
+      <label className="field">
+        <span className="field-label">{strings.insp.scrollbarTarget}</span>
+        <select value={value?.target ?? ''} onChange={(e) => set({ target: e.target.value })} data-testid="scrollbar-target">
+          <option value="">{strings.insp.scrollbarNoTarget}</option>
+          {value?.target && !targets.some((t) => t.id === value.target) && <option value={value.target}>{value.target}</option>}
+          {targets.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
+      </label>
+      <label className="field">
+        <span className="field-label">{strings.insp.scrollbarDirection}</span>
+        <select value={value?.orientation ?? ''} onChange={(e) => set({ orientation: e.target.value })} data-testid="scrollbar-orientation">
+          <option value="">{strings.insp.scrollbarAuto}</option>
+          <option value="vertical">{strings.insp.scrollbarVertical}</option>
+          <option value="horizontal">{strings.insp.scrollbarHorizontal}</option>
+        </select>
+      </label>
+      <p className="dim">{strings.insp.scrollbarHint}</p>
     </>
   )
 }

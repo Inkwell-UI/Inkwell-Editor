@@ -235,6 +235,31 @@ describe('generate', () => {
       expect(generate(ir({ overflow: 'vertical', clipContent: false }), { modId: 'MyMod' }).as2.some((f) => f.path.endsWith('InkwellScroll.as'))).toBe(false) // nothing to scroll without a clip
     })
 
+    it('a scrollbar frame follows a scrolling frame: attach code last, thumb wrapped as a clip; bad target, missing thumb and non-frame are errors', () => {
+      const box = (w: number, h: number) => ({ x: 4, y: 6, width: w, height: h, rotation: 0 })
+      const ir = (kids: string[]) => swf([frame('r', ['f', 'b']), frame('f', ['s'], { parent: 'r', clipContent: true, overflow: 'vertical', transform: box(300, 100) }), { ...rectShape('s'), parent: 'f' }, frame('b', kids, { parent: 'r', name: 'bar', transform: box(10, 100) }), { ...rectShape('t'), parent: 'b', name: 'thumb' }, { ...rectShape('k'), parent: 'b', name: 'Track', transform: box(10, 90) }])
+      const sb = (target: string) => ({ scrollbars: { b: { target } } })
+      const g = generate(ir(['t', 'k']), { modId: 'MyMod', ...sb('f') })
+      expect(g.lint.filter((l) => l.severity === 'error')).toEqual([])
+      const code = g.as2.find((f) => f.path === 'frame_1/DoAction.as')!.source
+      expect(code).toContain('mods.MyMod.InkwellScrollbar.attach(this, "bar", "frame_f", "thumb", true, 4, 6, 10, 90);')
+      expect(code.indexOf('InkwellScroll.attach')).toBeLessThan(code.indexOf('InkwellScrollbar.attach'))
+      expect(g.as2.find((f) => f.path.endsWith('InkwellScrollbar.as'))!.source).toContain('this.target.barState(this.vertical)')
+      const err = (o: ReturnType<typeof generate>) => o.lint.filter((l) => l.severity === 'error').map((l) => l.code)
+      expect(err(generate(ir(['t', 'k']), { modId: 'MyMod', ...sb('r') }))).toEqual(['scrollbar-target-invalid'])
+      expect(err(generate(ir(['k']), { modId: 'MyMod', ...sb('f') }))).toEqual(['scrollbar-no-thumb'])
+      expect(err(generate(ir(['t']), { modId: 'MyMod', scrollbars: { s: { target: 'f' } } }))).toEqual(['scrollbar-not-frame'])
+      expect(generate(ir(['t']), { modId: 'MyMod' }).as2.some((f) => f.path.endsWith('InkwellScrollbar.as'))).toBe(false)
+    })
+
+    it('a list frame that also scrolls in Figma gets the list class only (the scroll class would override its scroll and scrollbar members)', () => {
+      const ir = swf([frame('r', ['f']), frame('f', [], { parent: 'r', clipContent: true, overflow: 'vertical', transform: { x: 0, y: 0, width: 300, height: 100, rotation: 0 } })])
+      const code = (roles: Record<string, string>) => generate(ir, { modId: 'MyMod', roles }).as2.find((f) => f.path === 'frame_1/DoAction.as')!.source
+      expect(code({ f: 'list' })).toContain('InkwellList.attach(')
+      expect(code({ f: 'list' })).not.toContain('InkwellScroll.attach(')
+      expect(code({})).toContain('InkwellScroll.attach(')
+    })
+
     it('an image without its asset -> image-missing-asset; compile continues', () => {
       const img = { ...rectShape('i'), type: 'image', asset: 'h', scaleMode: 'fill' } as never
       const g = gen([frame('f', ['i', 's']), img, rectShape('s')])
@@ -262,9 +287,9 @@ describe('generate', () => {
       expect(g.shapes[0]!.svg).toContain('C0 10 10 10 20 0')
     })
 
-    it('missing child, hidden node, invalid root, gradient and image fills', () => {
+    it('missing child, hidden node, invalid root and image fills', () => {
       const g = gen([frame('f', ['ghost', 'h', 's']), rectShape('h', { visible: false }), rectShape('s', { fills: [{ type: 'image', asset: 'a' }, { type: 'linear', stops: [{ position: 0, color: { r: 0, g: 1, b: 0 } }] }] })])
-      expect(g.lint.map((l) => l.code).sort()).toEqual(['fill-gradient-approximated', 'fill-unsupported', 'node-hidden', 'node-missing'])
+      expect(g.lint.map((l) => l.code).sort()).toEqual(['fill-unsupported', 'node-hidden', 'node-missing'])
       const bad = gen([rectShape('r')])
       expect(bad.lint).toEqual([expect.objectContaining({ severity: 'error', code: 'root-invalid' })])
     })
