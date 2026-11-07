@@ -238,6 +238,16 @@ export function MenuSettingsForm() {
             </div>
             <NumField label={S.depth} value={doc.depth} min={DEPTH_RANGE.min} max={DEPTH_RANGE.max} int onCommit={(v) => edit((d) => ({ ...d, depth: v ?? 3 }))} testId="menu-depth" />
           </div>
+          {themes.length >= 2 && (
+            <div className="field">
+              <div className="menu-label-row"><label className="field-label" htmlFor="menu-theme-layers" title={S.themeLayersHelp}>{S.themeLayers}</label></div>
+              <select id="menu-theme-layers" value={doc.stripThemeLayers ? 'default' : 'all'} data-testid="menu-theme-layers"
+                onChange={(e) => edit((d) => { const { stripThemeLayers: _old, ...rest } = d; return (e.target.value === 'default' ? { ...rest, stripThemeLayers: true } : rest) as MenuSettings })}>
+                <option value="all">{S.themeLayersAll}</option>
+                <option value="default">{S.themeLayersDefault}</option>
+              </select>
+            </div>
+          )}
         </Fold>
       </fieldset>
       <div className="menu-foot">

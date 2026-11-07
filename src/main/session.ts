@@ -301,7 +301,7 @@ export function createSession(deps: SessionDeps) {
       ...cfg,
       assets,
       previewFonts: fonts(),
-      themeFor: (name, swfId) => ({ ...(menus.get(name)?.settings?.userDefaults?.theme ? { default: menus.get(name)!.settings!.userDefaults!.theme! } : {}), ...(previewThemes.has(swfId) ? { preview: previewThemes.get(swfId)! } : {}) }),
+      themeFor: (name, swfId) => ({ ...(menus.get(name)?.settings?.stripThemeLayers ? { strip: true } : {}), ...(menus.get(name)?.settings?.userDefaults?.theme ? { default: menus.get(name)!.settings!.userDefaults!.theme! } : {}), ...(previewThemes.has(swfId) ? { preview: previewThemes.get(swfId)! } : {}) }),
       aspectFor: (swfId) => previewAspects.get(swfId),
       onMenuSettings: (name, settings) => void menus.set(name, { settings }), // the build that follows pushes the project to the window
       devBuild: () => link().deploy === true,
@@ -770,7 +770,7 @@ export function createSession(deps: SessionDeps) {
       if (!r.ok) return r
       menus.set(swfName, { settings: r.settings })
       const info = server.swfs().find((i) => i.name === swfName)
-      if (info && prev?.settings?.userDefaults?.theme !== r.settings.userDefaults?.theme) server.rebuild(info.id) // the default theme is baked into the SWF
+      if (info && (prev?.settings?.userDefaults?.theme !== r.settings.userDefaults?.theme || !prev?.settings?.stripThemeLayers !== !r.settings.stripThemeLayers)) server.rebuild(info.id) // the default theme and the stripped layers are baked into the SWF
       pushProject()
       return { ok: true }
     },

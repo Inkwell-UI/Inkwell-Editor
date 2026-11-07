@@ -16,7 +16,7 @@ export interface MenuGlueInput {
   /** Keyed text layers (V13.2): clip paths from the base clip and their `$KEY`; `begin()` replaces the compiled source text with `bridge.translate(key)` when the runtime has an entry. */
   translated?: readonly { path: string; key: string }[]
   /** Runtime theming (V6.4): the modes of the themed collection and, per bound property, its clip path from the base clip, the kind of change and the value in every mode. `begin()` applies the mode the INI names. */
-  themed?: { themes: readonly string[]; ops: readonly { path: string; kind: ThemeKind; values: Record<string, number | boolean> }[] }
+  themed?: { themes: readonly string[]; baked?: string; ops: readonly { path: string; kind: ThemeKind; values: Record<string, number | boolean> }[] }
   /** Full name of the generated list class when the SWF has a list: `onInput` forwards the user events to its `input` (S8). */
   listClass?: string
   /** Full name of the generated auto-layout class when the SWF has frames that re-lay out: a translated text calls its `touch`. */
@@ -177,7 +177,7 @@ export function menuClassSource(i: MenuGlueInput): string {
     `            _root._y = ${(i.stage?.height ?? 1080) / 2} * (1 - s) + oy;`,
     '        }',
     ...(tx.length ? ['        // V13.2: the compiled text is the source language; the runtime answers with the game language, or with the key itself when it has no entry', ...tx] : []),
-    ...(i.themed ? ['        // V6.4: the INI Theme key names a mode of the Figma variable collection; empty keeps the theme baked into the SWF', '        this.applyTheme(bridge.theme);'] : []),
+    ...(i.themed ? ['        // V6.4: the INI Theme key names a mode of the Figma variable collection; empty keeps the theme baked into the SWF', ...(i.themed.baked ? [`        this.applyTheme(${safe(i.themed.baked)}); // the baked theme first: layers only another theme shows are compiled and start hidden`] : []), '        this.applyTheme(bridge.theme);'] : []),
     ...(focus.length ? ['        try {', ...focus, '        } catch (e) {', '        }'] : []),
     ...(fg
       ? [

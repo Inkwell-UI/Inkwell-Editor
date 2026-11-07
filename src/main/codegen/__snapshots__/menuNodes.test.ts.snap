@@ -31,6 +31,7 @@ class mods.InkwellMenuNodes.InkwellList {
     var listeners;
     var comp;
     var owner;
+    var follow;
 
     function InkwellList(clip, tpl, w, h, tx, ty, tw, th, spacing, names, paths) {
         this.clip = clip;
@@ -93,6 +94,13 @@ class mods.InkwellMenuNodes.InkwellList {
         };
         clip.refresh = function() {
             self.refresh();
+        };
+        // scrollbars (InkwellScrollbar): position in rows; a list only scrolls vertically
+        clip.barState = function(vertical) {
+            return self.barState(vertical);
+        };
+        clip.barTo = function(vertical, pos) {
+            self.barTo(vertical, pos);
         };
         clip.getSelectedIndex = function() {
             return self.hl;
@@ -261,6 +269,7 @@ class mods.InkwellMenuNodes.InkwellList {
         var changed = i != this.hl;
         this.hl = i;
         this.clip.value = i;
+        this.follow = true;
         this.refresh();
         if (changed) this.fire("change", {});
     }
@@ -347,15 +356,29 @@ class mods.InkwellMenuNodes.InkwellList {
         return row;
     }
 
-    // redraws the rows from the current items: the visible rows plus one, recycled; the highlighted row is kept in view
+    // {pos, max, view} in rows for a scrollbar; max is 0 when everything fits (or the bar is horizontal)
+    function barState(vertical) {
+        if (vertical == false) return { pos: 0, max: 0, view: this.full };
+        return { pos: this.top, max: Math.max(0, this.items.length - this.full), view: this.full };
+    }
+
+    // a scrollbar moves the rows only: the highlight stays where it is, even out of view
+    function barTo(vertical, pos) {
+        if (vertical == false) return;
+        this.top = Math.round(pos);
+        this.refresh();
+    }
+
+    // redraws the rows from the current items: the visible rows plus one, recycled; a highlight that just moved is kept in view (not after a scrollbar or hover redraw)
     function refresh() {
         var n = this.items.length;
         if (this.comp && n > 0) this.measure();
         this.full = Math.max(1, Math.floor((this.h + this.spacing) / this.rowH));
-        if (this.hl >= 0) {
+        if (this.hl >= 0 && this.follow == true) {
             if (this.hl < this.top) this.top = this.hl;
             if (this.hl >= this.top + this.full) this.top = this.hl - this.full + 1;
         }
+        this.follow = false;
         var maxTop = Math.max(0, n - this.full);
         if (this.top > maxTop) this.top = maxTop;
         if (this.top < 0) this.top = 0;

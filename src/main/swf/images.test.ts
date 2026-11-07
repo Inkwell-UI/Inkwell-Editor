@@ -172,3 +172,40 @@ describe('images, dds mode', () => {
     expect(g.as2.find((f) => f.path.endsWith('HudImages.as'))!.source).toContain('load(root.widget.img_i,')
   })
 })
+
+describe('a background image per theme', () => {
+  // two full-size image layers, each shown in one theme by a boolean variable bound to its Visible
+  const col = { name: 'Look', modes: ['Vanilla', 'Nordic'], variables: {
+    V: { name: 'vanilla', type: 'boolean', values: { Vanilla: true, Nordic: false } },
+    N: { name: 'nordic', type: 'boolean', values: { Vanilla: false, Nordic: true } }
+  } }
+  const ir = (mode: 'Vanilla' | 'Nordic') => {
+    const vis = (m: string, id: string) => (col.variables as Record<string, { values: Record<string, boolean> }>)[id]!.values[m]!
+    return swf([
+      frame('f', ['v', 'n']),
+      image('v', A.hash, { name: 'bgVanilla', visible: vis(mode, 'V'), bindings: { visible: { id: 'V' } } }),
+      image('n', B.hash, { name: 'bgNordic', visible: vis(mode, 'N'), bindings: { visible: { id: 'N' } } })
+    ], { id: 'imgs', target: { kind: 'customMenu' }, themes: [col] })
+  }
+  it('compiles both images, hides the other theme image at start and lists both in the theme tables', () => {
+    const g = generate(ir('Vanilla'), { modId: 'MyMod', images, theme: 'Vanilla' })
+    expect(g.lint.filter((l) => l.code === 'node-hidden')).toEqual([]) // bgNordic is hidden in Vanilla but shown by Nordic: compiled
+    expect(tagsOf(g).filter((t) => t.code === TAG.DefineBitsLossless2)).toHaveLength(2)
+    const cls = g.as2.find((f) => f.path.endsWith('Menu.as'))!.source
+    expect(cls.indexOf('this.applyTheme("Vanilla");')).toBeGreaterThan(0)
+    expect(cls.indexOf('this.applyTheme("Vanilla");')).toBeLessThan(cls.indexOf('this.applyTheme(bridge.theme);'))
+    expect(cls).toContain('if (name == "Nordic") return [["bgVanilla", "v", false], ["bgNordic", "v", true]];')
+  })
+  it('stripThemeLayers leaves out the layers the baked theme hides: one bitmap, node-hidden, and no table entry for the missing layer', () => {
+    const g = generate(ir('Vanilla'), { modId: 'MyMod', images, theme: 'Vanilla', stripThemeLayers: true })
+    expect(g.lint.filter((l) => l.code === 'node-hidden').map((l) => l.nodeId)).toEqual(['n'])
+    expect(tagsOf(g).filter((t) => t.code === TAG.DefineBitsLossless2)).toHaveLength(1)
+    const cls = g.as2.find((f) => f.path.endsWith('Menu.as'))!.source
+    expect(cls).toContain('if (name == "Nordic") return [["bgVanilla", "v", false]];')
+  })
+  it('a layer hidden in every theme is still not compiled', () => {
+    const only = swf([frame('f', ['v']), image('v', A.hash, { visible: false })], { id: 'imgs', target: { kind: 'customMenu' }, themes: [col] })
+    expect(generate(only, { modId: 'MyMod', images, theme: 'Vanilla' }).lint.map((l) => l.code)).toContain('node-hidden')
+  })
+})
+
