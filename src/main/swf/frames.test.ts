@@ -25,12 +25,12 @@ describe('nested frames: fills and clip content', () => {
     expect(names.indexOf('fill')).toBeLessThan(names.indexOf('text_t'))
   })
 
-  it('two fills stack as fill and fill_2; a gradient is its first stop with a warning', () => {
+  it('two fills stack as fill and fill_2; a gradient is a real SVG gradient', () => {
     const grad = { type: 'linear', stops: [{ position: 0, color: { r: 0, g: 1, b: 0 } }, { position: 1, color: { r: 0, g: 0, b: 1 } }] }
     const g = gen([frame('f', ['g']), frame('g', [], { fills: [red, grad] })])
     expect(g.shapes).toHaveLength(2)
-    expect(g.shapes[1]!.svg).toContain('fill="#00ff00"')
-    expect(codes(g.lint)).toEqual([['warning', 'fill-gradient-approximated', 'g']])
+    expect(g.shapes[1]!.svg).toMatch(/<linearGradient id="g0"[^>]*>.*<stop offset="0" stop-color="#00ff00" stop-opacity="1"\/><stop offset="1" stop-color="#0000ff" stop-opacity="1"\/>.*fill="url\(#g0\)"/)
+    expect(codes(g.lint)).toEqual([])
   })
 
   it('the root frame stays transparent: its solid fill is skipped with an info', () => {

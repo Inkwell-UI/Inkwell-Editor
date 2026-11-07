@@ -1,5 +1,5 @@
 import type { Node, Swf, Theme } from '@inkwell-ui/spec'
-import { themedCollection } from '@inkwell-ui/spec'
+import { variableIn } from '@inkwell-ui/spec'
 
 // Which theme bindings the INI can change in game (SPEC-CHANGES V6.4) and which only the compile-time default sets. One rule for the lint, the Inspector chips and the codegen.
 
@@ -25,7 +25,6 @@ export function bindingMode(key: string, node: Node): BindingMode {
 
 /** The themed collection of a SWF and the variable a binding points to. */
 export function themeVariable(ir: Pick<Swf, 'themes'>, id: string): { collection: Theme; name: string } | undefined {
-  const collection = themedCollection(ir.themes)
-  const v = collection?.variables?.[id]
-  return collection && v ? { collection, name: v.name } : undefined
+  const f = variableIn(ir.themes, id)
+  return f ? { collection: f.col, name: f.v.name } : undefined
 }

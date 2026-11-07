@@ -31,6 +31,28 @@ describe('bindingMode', () => {
   })
 })
 
+describe('gradient stop bindings', () => {
+  it('are known keys, compile time only, and checked against the collection', () => {
+    const g = { type: 'linear', stops: [{ position: 0, color: { r: 1, g: 1, b: 1 } }, { position: 1, color: { r: 0, g: 0, b: 0 } }] }
+    const base = ir('customMenu')
+    const one = { ...base.nodes['one']!, fills: [g], bindings: { 'fills/0/stops/0/color': { id: 'A' }, 'fills/0/stops/1/color': { id: 'DELETED' } } } as typeof base.nodes[string]
+    const l = themeLint({ ...base, nodes: { f: base.nodes['f']!, one } }, undefined)
+    expect(l.map((x) => `${x.code}:${x.nodeId}`).sort()).toEqual(['theme-binding-not-runtime:one', 'theme-variable-missing:one'])
+    expect(bindingMode('fills/0/stops/0/color', one)).toBe('compile')
+  })
+})
+
+describe('several collections', () => {
+  it('a variable of any local collection is found, and a mode of any multi-mode collection is a valid default theme', () => {
+    const base = ir('customMenu')
+    const dens: Theme = { name: 'Density', modes: ['Compact', 'Roomy'], variables: { G: { name: 'gap', type: 'number', values: { Compact: 4, Roomy: 12 } } } }
+    const one = { ...base.nodes['one']!, bindings: { opacity: { id: 'G' } } } as typeof base.nodes[string]
+    const l = themeLint({ ...base, themes: [col, dens], nodes: { f: base.nodes['f']!, one } }, 'Roomy')
+    expect(l.map((x) => x.code)).toEqual([])
+    expect(themeLint({ ...base, themes: [col, dens], nodes: { f: base.nodes['f']!, one } }, 'Nope').map((x) => x.code)).toEqual(['theme-default-unknown'])
+  })
+})
+
 describe('themeLint', () => {
   it('flags a missing variable and compile-time-only bindings of a custom menu; ignores keys it does not know', () => {
     const l = themeLint(ir('customMenu'), undefined)

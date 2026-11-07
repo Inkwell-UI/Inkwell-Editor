@@ -57,6 +57,24 @@ describe.skipIf(!can)('compileSwf (real FFDec)', () => {
     }
   }, 60_000)
 
+  it('linear and radial gradient fills compile to real SWF gradient fills', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
+    const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
+    const stops = [{ position: 0, color: { r: 1, g: 0, b: 0 } }, { position: 1, color: { r: 0, g: 0, b: 1, a: 0.5 } }]
+    try {
+      const ir = swf([frame('f', ['a', 'b']), rectShape('a', { fills: [{ type: 'linear', stops }] }), rectShape('b', { fills: [{ type: 'radial', stops }] })], { id: 'itest' })
+      const r = await compileSwf(ir, { modId: 'ItestMod', buildDir: dir, ffdec })
+      expect(r.lint).toEqual([])
+      const xmlPath = join(dir, 'out.xml')
+      execFileSync(javaPath, ['-jar', join(ffdecDir, 'ffdec-cli.jar'), '-swf2xml', r.swfPath, xmlPath], { stdio: 'ignore' })
+      const xml = readFileSync(xmlPath, 'utf8')
+      expect(xml).toContain('fillStyleType="16"') // linear gradient
+      expect(xml).toContain('fillStyleType="18"') // radial gradient
+    } finally {
+      ffdec.stop()
+    }
+  }, 60_000)
+
   it('preview: the vertical-align emulation (textHeight, _rotation) compiles with FFDec', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
     const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
@@ -85,6 +103,32 @@ describe.skipIf(!can)('compileSwf (real FFDec)', () => {
         const xmlPath = join(dir, 'out.xml')
         execFileSync(javaPath, ['-jar', join(ffdecDir, 'ffdec-cli.jar'), '-swf2xml', r.swfPath, xmlPath], { stdio: 'ignore' })
         expect(readFileSync(xmlPath, 'utf8')).toContain('__Packages.mods.ItestMod.InkwellFlow')
+      }
+    } finally {
+      ffdec.stop()
+    }
+  }, 60_000)
+
+  it('a scrollbar next to a scrolling frame: the scroll and scrollbar classes and the attach calls parse and compile with FFDec, in the game SWF and the preview', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'inkwell-swf-'))
+    const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
+    try {
+      const box = (w: number, h: number) => ({ x: 0, y: 0, width: w, height: h, rotation: 0 })
+      const nodes = () => [
+        frame('r', ['f', 'b']),
+        frame('f', ['s'], { parent: 'r', name: 'view', clipContent: true, overflow: 'vertical', transform: box(200, 100) }),
+        { ...rectShape('s'), parent: 'f', transform: box(200, 400) },
+        frame('b', ['t'], { parent: 'r', name: 'bar', transform: box(8, 100) }),
+        { ...rectShape('t'), parent: 'b', name: 'thumb', transform: box(8, 30) }
+      ]
+      for (const preview of [false, true]) {
+        const r = await compileSwf(swf(nodes(), { id: 'bar' }), { modId: 'ItestMod', buildDir: dir, ffdec, preview, scrollbars: { b: { target: 'f' } } })
+        expect(r.lint).toEqual([])
+        const xmlPath = join(dir, 'out.xml')
+        execFileSync(javaPath, ['-jar', join(ffdecDir, 'ffdec-cli.jar'), '-swf2xml', r.swfPath, xmlPath], { stdio: 'ignore' })
+        const xml = readFileSync(xmlPath, 'utf8')
+        expect(xml).toContain('__Packages.mods.ItestMod.InkwellScroll')
+        expect(xml).toContain('__Packages.mods.ItestMod.InkwellScrollbar')
       }
     } finally {
       ffdec.stop()

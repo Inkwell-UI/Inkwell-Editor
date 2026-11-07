@@ -29,10 +29,27 @@ const ir = (kind = 'customMenu') => swf([
 describe('themeOps', () => {
   it('lists the runtime bindings with a value per mode: colours as 0xRRGGBB, opacity as percent (a Figma opacity variable is 0 to 100); frame size, text size, strokes and a stroked shape fill are compile time only', () => {
     const ops = themeOps(ir()).map((o) => `${o.nodeId}.${o.target}.${o.kind}`).sort()
-    expect(ops).toEqual(['card.fill.c', 'label.self.t', 'panel.self.a', 'panel.self.c', 'panel.self.w'])
+    expect(ops).toEqual(['card.fill.a', 'card.fill.c', 'label.self.t', 'panel.self.a', 'panel.self.c', 'panel.self.w'])
     const panel = themeOps(ir()).filter((o) => o.nodeId === 'panel')
     expect(panel.find((o) => o.kind === 'c')!.values).toEqual({ Vanilla: 0xffffff, Nordic: 0x0000ff })
     expect(panel.find((o) => o.kind === 'a')!.values).toEqual({ Vanilla: 100, Nordic: 50 })
+  })
+  it("a colour variable's alpha is an `a` op: the fill clip's alpha, or a shape's opacity times it", () => {
+    const P: Theme = { name: 'Panel', modes: ['Vanilla', 'Nordic'], variables: { P: { name: 'p', type: 'color', values: { Vanilla: { r: 0, g: 0, b: 0, a: 0.7 }, Nordic: { r: 0.1, g: 0.1, b: 0.1, a: 0.95 } } }, O: { name: 'o', type: 'number', values: { Vanilla: 100, Nordic: 50 } } } }
+    const black = { type: 'solid', color: { r: 0, g: 0, b: 0 } }
+    const i = swf([
+      frame('f', ['bg', 'chip', 'plain']),
+      frame('bg', [], { name: 'bg', parent: 'f', fills: [black], bindings: { 'fills/0/color': { id: 'P' } } }),
+      rectShape('chip', { name: 'chip', parent: 'f', fills: [black], bindings: { 'fills/0/color': { id: 'P' }, opacity: { id: 'O' } } }),
+      rectShape('plain', { name: 'plain', parent: 'f', opacity: 0.5, fills: [black], bindings: { 'fills/0/color': { id: 'P' } } })
+    ], { target: { kind: 'customMenu' }, themes: [P] })
+    const by = (id: string, kind: string) => themeOps(i).find((o) => o.nodeId === id && o.kind === kind)!.values
+    expect(by('bg', 'a')).toEqual({ Vanilla: 70, Nordic: 95 })
+    expect(by('chip', 'a')).toEqual({ Vanilla: 70, Nordic: 48 }) // 100% and 50% opacity times 0.7 and 0.95 (47.5 rounds up)
+    expect(by('plain', 'a')).toEqual({ Vanilla: 35, Nordic: 48 }) // the shape's own opacity 0.5 times the alpha
+    // drawn opaque, the default mode's alpha is the clip's placement alpha: nothing is lost without an INI theme
+    const g = generate(i, { modId: 'M' })
+    expect(g.shapes.find((s) => s.nodeId === 'bg')!.svg).toContain('fill-opacity="1"')
   })
   it('is empty without a themed collection', () => expect(themeOps({ ...ir(), themes: undefined })).toEqual([]))
 })
@@ -42,7 +59,7 @@ describe('menu class theming', () => {
   const cls = g.as2.find((f) => f.path.endsWith('Menu.as'))!.source
   it('applies the INI theme in begin() and carries one table per mode', () => {
     expect(cls).toContain('this.applyTheme(bridge.theme);')
-    expect(cls).toContain('if (name == "Nordic") return [["panel", "c", 255], ["panel", "a", 50], ["panel", "w", 300], ["card.fill", "c", 255], ["label", "t", 255]];')
+    expect(cls).toContain('if (name == "Nordic") return [["panel", "c", 255], ["panel", "a", 50], ["panel", "w", 300], ["card.fill", "c", 255], ["label", "t", 255], ["card.fill", "a", 100]];')
     expect(cls).toContain("[Theme] unknown theme '")
   })
   it('wraps a themed shape and a themed frame background in sprites so AS2 can reach them', () => {
