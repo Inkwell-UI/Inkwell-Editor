@@ -1,10 +1,11 @@
 import { writeAtomic } from './deploy/write'
 import { execFile } from 'node:child_process'
 import { existsSync, watch } from 'node:fs'
-import { mkdir, readFile, rename } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rename } from 'node:fs/promises'
 import { homedir, release } from 'node:os'
 import { basename, join, resolve } from 'node:path'
-import { Graph, Swf, type Localization, type MenuSettings } from '@inkwell-ui/spec'
+import { Graph, imageHashes, Swf, type Localization, type MenuSettings, type Slices } from '@inkwell-ui/spec'
+import type { AssetInfo, AssetUse } from '../shared/assetsInfo'
 import { bindingsOf } from '../shared/graphBinding'
 import { newFunctionGraph } from '../shared/functions'
 import { defIndex, isGraphId, newComponentGraph, newGraph, newGraphId, summarize, type GraphAs2, type GraphResult, type GraphSummary, type LoadedPack, type PackSet } from '../shared/graphs'
@@ -39,6 +40,7 @@ import type { PackCandidate, PackResult, PacksState } from '../shared/packs'
 import { loadProject, type ProjectMeta } from './project'
 import { writeMenuSettings } from './project/menuFile'
 import { readLocalization, writeLocalization } from './project/localizationFile'
+import { readSlices, writeSlices } from './project/slicesFile'
 import { addFont, readFontBytes, readFonts, saveFontSettings, type ProjectFont } from './project/fontFiles'
 import { analyzeFont, isCharsetId, licenseVerdict } from './fonts/embed'
 import { fsTypeLabel } from './fonts/convert'
@@ -88,6 +90,7 @@ export function createSession(deps: SessionDeps) {
   let strict = false
   const overlays = new Map<string, OverlayDoc>() // swf id -> overlay (the renderer is the source of truth once it saves)
   const graphs = new Map<string, Map<string, Graph>>() // swf name -> graph id -> graph (the renderer saves; main validates)
+  let slicesDoc: { slices?: Slices; error?: string } = {} // slices.json (PLAN-SLICING.md): 9-slice insets by image hash; the Asset View is the writer
   let localization: { localization?: Localization; error?: string } = {} // localization.json (V2.3): the tab is the writer; main keeps the saved copy for deploy
   const previewThemes = new Map<string, string>() // swf id -> theme mode the stage toolbar previews (not saved)
   const previewAspects = new Map<string, number>() // swf id -> aspect ratio the stage toolbar previews (not saved); absent = the design's own
@@ -276,6 +279,7 @@ export function createSession(deps: SessionDeps) {
     graphs.clear()
     menus.clear()
     localization = dir ? await readLocalization(dir) : {}
+    slicesDoc = dir ? await readSlices(dir) : {}
     if (dir) {
       const p = await loadProject(dir)
       meta = p.meta
@@ -300,6 +304,7 @@ export function createSession(deps: SessionDeps) {
     pipeline = createBuildPipeline({
       ...cfg,
       assets,
+      slices: () => slicesDoc.slices,
       previewFonts: fonts(),
       themeFor: (name, swfId) => ({ ...(menus.get(name)?.settings?.stripThemeLayers ? { strip: true } : {}), ...(menus.get(name)?.settings?.userDefaults?.theme ? { default: menus.get(name)!.settings!.userDefaults!.theme! } : {}), ...(previewThemes.has(swfId) ? { preview: previewThemes.get(swfId)! } : {}) }),
       aspectFor: (swfId) => previewAspects.get(swfId),
@@ -514,7 +519,7 @@ export function createSession(deps: SessionDeps) {
       const p = projectState()
       if (!p || !meta) return undefined
       return {
-        dir: p.dir, name: p.name, version: meta.version, modId: p.modId, deploy: meta.deploy, imageMode: meta.imageMode ?? 'embedded', assets, strictMode: p.strictMode, ...(localization.localization ? { localization: localization.localization } : {}),
+        dir: p.dir, name: p.name, version: meta.version, modId: p.modId, deploy: meta.deploy, imageMode: meta.imageMode ?? 'embedded', assets, slices: (h: string) => slicesDoc.slices?.assets[h], strictMode: p.strictMode, ...(localization.localization ? { localization: localization.localization } : {}),
         swfs: p.swfs.map((s) => ({
           name: s.name, orphaned: s.orphaned, kind: s.ir.target.kind, ir: s.ir,
           ...(buildBySwf.has(s.id) ? { build: { state: buildBySwf.get(s.id)!, lint: (reports.get(s.id)?.lint ?? []).map(({ severity, code, message, nodeId, layerName }) => ({ severity, code, message, nodeId, layerName })) } } : {}),
@@ -803,6 +808,33 @@ export function createSession(deps: SessionDeps) {
       const r = await writeLocalization(projectDir, doc)
       if (!r.ok) return r
       localization = { localization: r.localization }
+      return { ok: true }
+    },
+    /** slices.json (Asset View): the insets by image hash, or the reason the file cannot be read. */
+    getSlices: (): { slices: Slices | null; error?: string } => ({ slices: slicesDoc.slices ?? null, ...(slicesDoc.error ? { error: slicesDoc.error } : {}) }),
+    /** The project's images (assets/<hash>.png plus any hash a layer uses) with thumbnails and the layers that use them, most used first. */
+    async getAssets(): Promise<AssetInfo[]> {
+      const used = new Map<string, AssetUse[]>()
+      for (const i of server?.swfs() ?? []) {
+        const ir = i.orphaned ? undefined : server?.ir(i.id)
+        for (const n of Object.values(ir?.nodes ?? {})) for (const h of imageHashes(n)) used.set(h, [...(used.get(h) ?? []), { swf: i.name, nodeId: n.id, name: n.name }])
+      }
+      const onDisk = projectDir ? (await readdir(join(projectDir, 'assets')).catch(() => [] as string[])).filter((f) => f.endsWith('.png')).map((f) => f.slice(0, -4)) : []
+      const out: AssetInfo[] = []
+      for (const h of new Set([...onDisk, ...used.keys()])) {
+        const png = assets.png(h), px = assets.get(h)
+        if (png && px) out.push({ hash: h, width: px.width, height: px.height, dataUrl: `data:image/png;base64,${png.toString('base64')}`, usedBy: used.get(h) ?? [] })
+      }
+      return out.sort((a, b) => b.usedBy.length - a.usedBy.length || a.hash.localeCompare(b.hash))
+    },
+    /** Saves the whole slices document and rebuilds every SWF (a sliced image is compiled as pieces). */
+    async saveSlices(doc: unknown): Promise<SaveOverlayResult> {
+      if (!projectDir) return { ok: false, error: 'No project is open' }
+      if (slicesDoc.error) return { ok: false, error: `slices.json could not be read (${slicesDoc.error}); fix or delete it first.` }
+      const r = await writeSlices(projectDir, doc)
+      if (!r.ok) return r
+      slicesDoc = { slices: r.slices }
+      server?.rebuildAll()
       return { ok: true }
     },
     getPacks,

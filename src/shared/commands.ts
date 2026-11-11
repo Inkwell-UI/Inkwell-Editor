@@ -6,7 +6,7 @@ import { strings } from './strings'
  */
 export type CommandId =
   | 'palette' | 'save' | 'rebuild' | 'deploy' | 'devDeploy' | 'package' | 'packages' | 'setup' | 'settings' | 'projectSettings'
-  | 'workspace1' | 'workspace2' | 'workspace3' | 'playPause' | 'reloadPreview' | 'shortcuts'
+  | 'workspace1' | 'workspace2' | 'workspace3' | 'workspace4' | 'playPause' | 'reloadPreview' | 'shortcuts'
 
 export interface CommandDef {
   id: CommandId
@@ -30,6 +30,7 @@ export const COMMANDS: readonly CommandDef[] = [
   { id: 'workspace1', label: strings.cmd.workspace(ws['layout']!), keys: 'Ctrl+1', needsProject: true },
   { id: 'workspace2', label: strings.cmd.workspace(ws['behaviour']!), keys: 'Ctrl+2', needsProject: true },
   { id: 'workspace3', label: strings.cmd.workspace(ws['localization']!), keys: 'Ctrl+3', needsProject: true },
+  { id: 'workspace4', label: strings.cmd.workspace(ws['assets']!), keys: 'Ctrl+4', needsProject: true },
   { id: 'packages', label: strings.cmd.packages, needsProject: true },
   { id: 'setup', label: strings.cmd.setup, needsProject: false },
   { id: 'settings', label: strings.cmd.settings, keys: 'Ctrl+,', needsProject: false },
@@ -39,7 +40,7 @@ export const COMMANDS: readonly CommandDef[] = [
 
 /** Which commands main puts in the View, Build and Help menus, in order ('-' is a separator). File and Edit are built by hand in main's template. */
 export const MENU_LAYOUT: Record<'view' | 'build' | 'help', readonly (CommandId | '-')[]> = {
-  view: ['palette', '-', 'workspace1', 'workspace2', 'workspace3', '-', 'playPause', 'reloadPreview'],
+  view: ['palette', '-', 'workspace1', 'workspace2', 'workspace3', 'workspace4', '-', 'playPause', 'reloadPreview'],
   build: ['rebuild', 'deploy', 'devDeploy', 'package', '-', 'packages'],
   help: ['shortcuts', 'setup']
 }

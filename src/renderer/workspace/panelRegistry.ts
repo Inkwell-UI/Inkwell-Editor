@@ -1,5 +1,8 @@
 import type { ComponentType } from 'react'
+import { AssetListPanel } from '../panels/AssetListPanel'
 import { AssetsPanel } from '../panels/AssetsPanel'
+import { SliceEditorPanel } from '../panels/SliceEditorPanel'
+import { SliceInspectorPanel } from '../panels/SliceInspectorPanel'
 import { ContractsPanel, useContractsTab } from '../panels/ContractsPanel'
 import { GraphPanel } from '../panels/GraphPanel'
 import { InspectorPanel } from '../panels/InspectorPanel'
@@ -41,6 +44,9 @@ export const panelRegistry = {
   logic: { title: strings.logic.title, component: LogicPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
   contracts: { title: strings.contracts.title, component: ContractsPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 }, useTabInfo: useContractsTab },
   assets: { title: strings.assets.title, component: AssetsPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
+  assetList: { title: strings.assetView.listTitle, component: AssetListPanel, defaultSize: { width: 280, height: 500 }, minSize: { width: 200, height: 120 } },
+  sliceInspector: { title: strings.assetView.inspectorTitle, component: SliceInspectorPanel, defaultSize: { width: 320, height: 500 }, minSize: { width: 240, height: 120 } },
+  sliceEditor: { title: strings.assetView.editorTitle, component: SliceEditorPanel, defaultSize: { width: 900, height: 600 }, minSize: { width: 420, height: 240 } },
   preview: { title: strings.panelPreview, component: PreviewPanel, defaultSize: { width: 640, height: 420 }, minSize: { width: 240, height: 150 } },
   graph: { title: strings.graph.title, component: GraphPanel, defaultSize: { width: 640, height: 320 }, minSize: { width: 320, height: 90 } },
   inspector: { title: strings.insp.title, component: InspectorPanel, defaultSize: { width: 320, height: 500 }, minSize: { width: 240, height: 120 } },

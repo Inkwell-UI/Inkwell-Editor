@@ -1,16 +1,17 @@
 import type { LayoutNode } from './layout'
 
 /**
- * The three modes of the editor as layout DATA (Blender-style: one job per mode, less on screen at a time). A mode shows only the panels
+ * The four modes of the editor as layout DATA (Blender-style: one job per mode, less on screen at a time). A mode shows only the panels
  * it needs, so a panel may be absent from a mode but is in at least one (checked by a test). Sizes are shares (flex-grow) along each split;
  * the user's own sizes are stored per mode by `state/workspaceStore.ts` and applied on top.
  *
  *   Layout:       [ left tabs (Navigator, Assets, Menu) | preview | inspector ] / dock (folds to its tab strip, starts folded; so does Behaviour's, Localization's starts open)
  *   Behaviour:    [ column [ left tabs (Navigator, Contracts) / logic ] | column [ [ graph | column [ preview (fixed size) / inspector ] ] / dock (Library = the packs) ] ]
  *   Localization: [ left tabs | preview | inspector ] / dock (Localization first and large)
+ *   Assets:       [ image list | slice editor ] (the images of the project and their 9-slice / 3-slice setup, PLAN-SLICING.md)
  *   Zone 1 (top bar) and Zone 6B (status bar) are shell chrome around the layout, not layout panels.
  */
-export type WorkspaceId = 'layout' | 'behaviour' | 'localization'
+export type WorkspaceId = 'layout' | 'behaviour' | 'localization' | 'assets'
 
 export interface WorkspaceDef {
   id: WorkspaceId
@@ -41,7 +42,7 @@ const preview: LayoutNode = { kind: 'panel', panel: 'preview' }
 /** px: title bar + compact toolbar + a 16:9 stage about the inspector column wide (~300 px) + the Ruffle notice. */
 export const BEHAVIOUR_PREVIEW_HEIGHT = 280
 
-export const WORKSPACE_IDS: readonly WorkspaceId[] = ['layout', 'behaviour', 'localization']
+export const WORKSPACE_IDS: readonly WorkspaceId[] = ['layout', 'behaviour', 'localization', 'assets']
 
 export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
   // Layout: the stage is the whole centre; assets and the lint dock support it.
@@ -69,6 +70,8 @@ export const WORKSPACES: Record<WorkspaceId, WorkspaceDef> = {
     }
   },
   // Localization: the string table gets the room; the preview next to it (Locale and Pseudo-Loc toggles) shows the effect.
+  // Assets: the image list on the left, the canvas (source and result) in the middle, the Inspector shape at the right (presets, used by).
+  assets: { id: 'assets', layout: { kind: 'split', direction: 'row', children: [{ kind: 'panel', panel: 'assetList', size: 1 }, { kind: 'panel', panel: 'sliceEditor', size: 4.6 }, { kind: 'panel', panel: 'sliceInspector', size: 1.2 }] } },
   localization: { id: 'localization', layout: frame(tabs(['navigator']), preview, tabs(['localization', 'lintBudget'], undefined, undefined, 'open'), { main: 3, dock: 3 }) }
 }
 

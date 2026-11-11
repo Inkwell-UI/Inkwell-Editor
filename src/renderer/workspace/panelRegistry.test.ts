@@ -15,8 +15,8 @@ describe('panel registry', () => {
     }
   })
 
-  it('the three modes are valid and together show every registered panel', () => {
-    expect(WORKSPACE_IDS).toEqual(['layout', 'behaviour', 'localization'])
+  it('the four modes are valid and together show every registered panel', () => {
+    expect(WORKSPACE_IDS).toEqual(['layout', 'behaviour', 'localization', 'assets'])
     const seen = new Set<string>()
     for (const id of WORKSPACE_IDS) {
       const ids = layoutPanelIds(WORKSPACES[id].layout)
@@ -31,7 +31,9 @@ describe('panel registry', () => {
     const has = (id: (typeof WORKSPACE_IDS)[number], p: string): boolean => layoutPanelIds(WORKSPACES[id].layout).includes(p)
     expect(WORKSPACE_IDS.filter((i) => has(i, 'graph'))).toEqual(['behaviour'])
     expect(WORKSPACE_IDS.filter((i) => has(i, 'localization'))).toEqual(['localization'])
-    expect(WORKSPACE_IDS.every((i) => has(i, 'preview') && has(i, 'inspector') && has(i, 'lintBudget'))).toBe(true)
+    expect(WORKSPACE_IDS.filter((i) => i !== 'assets').every((i) => has(i, 'preview') && has(i, 'inspector') && has(i, 'lintBudget'))).toBe(true)
+    // Assets mode is the image list, the slice canvas and its Inspector only (PLAN-SLICING.md)
+    expect(layoutPanelIds(WORKSPACES['assets'].layout)).toEqual(['assetList', 'sliceEditor', 'sliceInspector'])
   })
 
   it('the left tab groups of Layout and Behaviour have no Menu settings tab (the target pill opens that form in a dialog)', () => {

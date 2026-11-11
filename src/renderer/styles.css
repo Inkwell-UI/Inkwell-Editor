@@ -968,3 +968,36 @@ label.inline:has(.ui-scale-input) { white-space: nowrap; }
 /* drop hint while files are dragged over the window */
 .drop-veil { position: fixed; inset: 8px; z-index: 900; display: flex; align-items: center; justify-content: center; pointer-events: none; border: 2px dashed var(--accent); border-radius: var(--radius); background: var(--backdrop); color: var(--fg); }
 .popover-root:empty { display: none; } /* a context menu has no trigger */
+
+/* Asset View (Assets mode): the image list, the slice canvas and its Inspector (the shared .insp shape). */
+.asv-list { list-style: none; margin: 0; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.asv-thumb { width: 100%; display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--fg); cursor: pointer; text-align: left; }
+.asv-thumb:hover { background: var(--hover); }
+.asv-thumb.is-selected { background: var(--accent-bg); }
+.asv-thumb-img { flex: none; width: 56px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-chip); background: var(--sunken); overflow: hidden; }
+.asv-thumb-img img { max-width: 100%; max-height: 100%; }
+.asv-thumb-meta { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; font-size: 11px; color: var(--fg-dim); }
+.asv-thumb-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.panel-body:has(> .asv-wrap) { display: flex; flex-direction: column; overflow: hidden; padding: 0; } /* the canvas fills the panel and scrolls by itself */
+.asv-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.asv-canvas { flex: 1; min-height: 0; overflow: auto; background-color: var(--sunken); }
+.asv-views { box-sizing: border-box; min-width: min-content; min-height: 100%; display: flex; gap: 24px; align-items: center; justify-content: center; }
+.asv-fig { margin: 0; flex: none; display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: var(--fg-dim); }
+.asv-bar { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 8px; padding: 6px 8px; border-radius: var(--radius); background: var(--surface-2); box-shadow: 0 2px 10px var(--shadow); }
+.asv-stage { position: relative; flex: none; background-color: var(--sunken); background-image: conic-gradient(var(--surface-2) 25%, transparent 25% 50%, var(--surface-2) 50% 75%, transparent 75%); background-size: 16px 16px; user-select: none; }
+.asv-stage img { display: block; image-rendering: pixelated; }
+.asv-guide { position: absolute; background: var(--inspect-selected); touch-action: none; }
+.asv-guide-v { top: -6px; bottom: -6px; width: 1px; margin-left: -1px; cursor: ew-resize; }
+.asv-guide-h { left: -6px; right: -6px; height: 1px; margin-top: -1px; cursor: ns-resize; }
+.asv-guide::after { content: ''; position: absolute; }
+.asv-guide-v::after { top: 0; bottom: 0; left: -5px; right: -5px; }
+.asv-guide-h::after { left: 0; right: 0; top: -5px; bottom: -5px; }
+.asv-handle { position: absolute; right: -6px; bottom: -6px; width: 12px; height: 12px; border-radius: var(--radius-chip); background: var(--accent); cursor: nwse-resize; touch-action: none; }
+.asv-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--fg-dim); }
+.asv-field input { width: 72px; }
+.asv-presets { display: flex; gap: 6px; flex-wrap: wrap; }
+.asv-prev-piece { position: absolute; background-repeat: no-repeat; }
+.asv-used { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.asv-used-row { width: 100%; min-height: var(--ctl-h-sm); display: flex; justify-content: space-between; gap: 8px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--fg); font-size: 12px; cursor: pointer; text-align: left; }
+.asv-used-row:hover { background: var(--hover); }
+.asv-dim { color: var(--fg-dim); }

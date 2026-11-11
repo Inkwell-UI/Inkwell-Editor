@@ -22,6 +22,7 @@ import { copyExample, createProject } from './project/lifecycle'
 import { runDoctorDriver } from './screenshotDoctor'
 import { runFigmaShots } from './screenshotFigma'
 import { runFontShots } from './screenshotFonts'
+import { runAssetShots } from './screenshotAssets'
 import { runShots } from './screenshotDriver'
 import { runDebugShots, runGraphShots } from './screenshotGraph'
 import { runPopupShots } from './screenshotPopup'
@@ -215,6 +216,9 @@ ipcMain.handle(IPC.projectFontAdd, async (): Promise<AddFontOutcome> => {
 })
 ipcMain.handle(IPC.locLoad, () => session.getLocalization())
 ipcMain.handle(IPC.locSave, (_e, doc: unknown) => session.saveLocalization(doc))
+ipcMain.handle(IPC.slicesLoad, () => session.getSlices())
+ipcMain.handle(IPC.slicesSave, (_e, doc: unknown) => session.saveSlices(doc))
+ipcMain.handle(IPC.assetsList, () => session.getAssets())
 const locFail = (e: unknown): LocFileResult => ({ ok: false, error: e instanceof Error ? e.message : String(e) })
 ipcMain.handle(IPC.locCsvExport, async (): Promise<LocFileResult> => {
   const s = session.getLocalization()
@@ -386,7 +390,7 @@ async function buildMenu(): Promise<void> {
   // View, Build and Help entries come from the shared command list (MENU_LAYOUT); the renderer runs them. A menu says "Layout", the palette "Switch to Layout workspace".
   const wsNames = strings.top.workspaceNames
   const menuLabel: Partial<Record<CommandId, string>> = {
-    workspace1: wsNames['layout']!, workspace2: wsNames['behaviour']!, workspace3: wsNames['localization']!,
+    workspace1: wsNames['layout']!, workspace2: wsNames['behaviour']!, workspace3: wsNames['localization']!, workspace4: wsNames['assets']!,
     packages: strings.menu.packageManager, setup: strings.menu.setupGuide
   }
   const fromCommands = (menu: keyof typeof MENU_LAYOUT): MenuItemConstructorOptions[] =>
@@ -460,6 +464,8 @@ void app.whenReady().then(async () => {
     void runFigmaShots({ outDir: shotsDir, userData: app.getPath('userData'), projectDir: process.env['INKWELL_SHOTS_PROJECT'], win: () => win, session }).catch((e: unknown) => { console.error('[inkwell] figma screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_FONTS'])
     void runFontShots({ outDir: shotsDir, win: () => win }).then(() => app.exit(0), (e: unknown) => { console.error('[inkwell] font screenshots failed:', e); app.exit(1) })
+  else if (shotsDir && process.env['INKWELL_SHOTS_ASSETS'])
+    void runAssetShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).then((bad) => app.exit(bad ? 1 : 0), (e: unknown) => { console.error('[inkwell] asset screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_DEV'])
     void runDevShots({ outDir: shotsDir, projectDir: process.env['INKWELL_SHOTS_PROJECT']!, win: () => win, session }).then((bad) => app.exit(bad ? 1 : 0), (e: unknown) => { console.error('[inkwell] dev screenshots failed:', e); app.exit(1) })
   else if (shotsDir && process.env['INKWELL_SHOTS_GLYPHS'])

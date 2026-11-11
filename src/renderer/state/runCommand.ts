@@ -49,7 +49,8 @@ export function runCommand(id: CommandId): void {
     case 'package': return void useDeployStore.getState().start('package', activeSwfName())
     case 'workspace1':
     case 'workspace2':
-    case 'workspace3': return useWorkspaceStore.getState().setActive(WORKSPACE_IDS[Number(id.slice(-1)) - 1]!)
+    case 'workspace3':
+    case 'workspace4': return useWorkspaceStore.getState().setActive(WORKSPACE_IDS[Number(id.slice(-1)) - 1]!)
     default: // setup, playPause, reloadPreview: registered by their owner while it is mounted
   }
 }

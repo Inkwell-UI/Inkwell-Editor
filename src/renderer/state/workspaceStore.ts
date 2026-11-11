@@ -32,7 +32,7 @@ export interface WorkspaceStore {
 
 type Persisted = Pick<WorkspaceStore, 'active' | 'sizes' | 'tabs'>
 
-const empty = <T>(): Record<WorkspaceId, Record<string, T>> => ({ layout: {}, behaviour: {}, localization: {} })
+const empty = <T>(): Record<WorkspaceId, Record<string, T>> => ({ layout: {}, behaviour: {}, localization: {}, assets: {} })
 
 /** Split keys a workspace can have now (also with the preview detached, which collapses splits). Sizes filed under any other key come from an older layout and are dropped. */
 const valid = Object.fromEntries(

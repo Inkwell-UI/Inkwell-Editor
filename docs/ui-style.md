@@ -74,6 +74,8 @@ Use the tokens, never a literal height, radius or colour. Rare exceptions that s
 
 26. **Title bar menus** (2026-11-05, option A of three): File, Edit, View, Build, Help, each answering one question. File: project (New, Open, Open Recent, Save, Show Project Folder), then Settings and Project Settings, then Exit. Edit: only Undo/Redo and the clipboard. View: Command palette, the three workspaces (Ctrl+1 to 3), Play / Pause and Reload preview. Build: Rebuild preview, Deploy, Dev deploy, Package Mod, Package Manager. Help: Keyboard shortcuts, Setup Guide. View, Build and Help are listed in `MENU_LAYOUT` (`shared/commands.ts`), File and Edit are hand-built in `main/index.ts`. Put a new command in the menu that matches the question, not in the nearest one. Tried and not built: B (a Project menu instead of Build), C (Build and Deploy inside File).
 
+27. **Assets mode** (`panels/SliceEditorPanel.tsx`, `SliceInspectorPanel.tsx`, `AssetListPanel.tsx`, 2026-11-11, option C of three). Image list at the left, one large canvas in the middle, the shared Inspector shape at the right (rule 15): header, a Preset card, a Used by card, ID footer. The canvas header holds the view choice (`.seg` of `Btn.btn-seg`: Source / Result / Both) and quiet zoom buttons; the four edge numbers float in a bar over the bottom of the canvas (`.asv-bar`, `--surface-2`). Classes `asv-*` only. Drawn and not built: A (images as a filmstrip above the canvas, a rail at the right) and B (Source and Result with the edges in a bar under both; the "B with a rail" combination turned out to be C). See the artifact "Assets View Layouts".
+
 ## Docks fold
 
 The bottom dock of every workspace is one `TabGroup` in `workspace/Workspace.tsx` and can fold to its tab strip.

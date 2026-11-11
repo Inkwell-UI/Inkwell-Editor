@@ -3,7 +3,8 @@ import type { DevEvent, DevReloadResult, DevState } from './devLink'
 import type { DeployResult, DeployScope, DeployTargetId, DeployTargetInfo, PrepareResult } from './deploy'
 import type { BenchmarkResult, BuildCacheResult, CheckId, CheckResult, PathSettingKey, ResolvedSettings, SetSettingResult, SettingKey } from './doctor'
 import type { FontToolProgress, FontToolResult, FontToolStatus, AddFontOutcome, ProjectFontsState } from './fonts'
-import type { Graph, Localization, MenuSettings } from '@inkwell-ui/spec'
+import type { Graph, Localization, MenuSettings, Slices } from '@inkwell-ui/spec'
+import type { AssetInfo } from './assetsInfo'
 import type { GraphAs2, GraphResult, GraphSummary, PackSet } from './graphs'
 import type { OverlayDoc } from './overlay'
 import type { PackCandidate, PackIndexEntry, PackResult, PacksState } from './packs'
@@ -87,6 +88,9 @@ export const IPC = {
   projectFontAdd: 'fonts:projectAdd',
   projectFontSave: 'fonts:projectSave',
   locSave: 'loc:save',
+  slicesLoad: 'slices:load',
+  slicesSave: 'slices:save',
+  assetsList: 'assets:list',
   locCsvExport: 'loc:csvExport',
   locCsvImport: 'loc:csvImport',
   locTxtExport: 'loc:txtExport',
@@ -185,6 +189,11 @@ export interface InkwellApi {
   saveProjectFontSettings(hash: string, settings: { charsets: string[]; extraChars: string }): Promise<SaveOverlayResult>
   /** `localization.json` (Localization tab, Inspector key field). Never rejects. */
   getLocalization(): Promise<LocalizationState>
+  /** `slices.json` (Asset View): the 9-slice / 3-slice insets by image hash; a save rebuilds every SWF. Never rejects. */
+  getSlices(): Promise<{ slices: Slices | null; error?: string }>
+  saveSlices(doc: Slices): Promise<SaveOverlayResult>
+  /** The project's images with thumbnails and the layers that use them. */
+  getAssets(): Promise<AssetInfo[]>
   saveLocalization(doc: Localization): Promise<SaveOverlayResult>
   /** Dialogs and files: CSV export, CSV import (asks before it changes cells, saves, returns the new table), and the Skyrim translation files into a chosen folder. */
   exportLocalizationCsv(): Promise<LocFileResult>
