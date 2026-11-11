@@ -13,6 +13,8 @@ export interface ScrollbarInfo {
   h: number
 }
 
+import { sliceClassName } from './sliceAs2'
+
 export const scrollbarClassName = (modId: string): string => `mods.${modId}.InkwellScrollbar`
 
 const q = (s: string): string => JSON.stringify(s)
@@ -149,10 +151,12 @@ class ${me} {
         this.tl = Math.min(this.len, Math.max(${me}.MIN, this.len * s.view / (s.view + s.max)));
         var p = (this.len - this.tl) * Math.min(1, Math.max(0, s.pos / s.max));
         if (this.vertical) {
-            this.thumb._height = this.tl;
+            if (this.thumb.inkwellSlice != undefined) ${sliceClassName(modId)}.resize(this.thumb, undefined, this.tl);
+            else this.thumb._height = this.tl;
             this.thumb._y = this.y + p;
         } else {
-            this.thumb._width = this.tl;
+            if (this.thumb.inkwellSlice != undefined) ${sliceClassName(modId)}.resize(this.thumb, this.tl, undefined);
+            else this.thumb._width = this.tl;
             this.thumb._x = this.x + p;
         }
     }

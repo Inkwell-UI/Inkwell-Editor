@@ -71,6 +71,18 @@ describe('tag writer', () => {
     }
   })
 
+  it('scaling grid tag: sprite id, then the rectangle in twips', () => {
+    const b = T.defineScalingGrid(7, { x: 24, y: 8, w: 80, h: 112 })
+    expect(b.readUInt16LE(0) >> 6).toBe(T.TAG.DefineScalingGrid)
+    expect(b.readUInt16LE(2)).toBe(7)
+    expect(b.length).toBeGreaterThan(5)
+  })
+
+  it('non-uniform scale: x and y factors are placed separately', () => {
+    const p = readPlace({ code: T.TAG.PlaceObject2, body: T.placeObject2({ depth: 1, charId: 1, x: 0, y: 0, scale: 2, scaleY: 0.5 }).subarray(2) })
+    expect(p.matrix).toMatchObject({ scale: [2, 0.5] })
+  })
+
   it('sbits', () => {
     expect([0, 1, -1, 2, -2, 3, 127, -128, 128].map(T.sbits)).toEqual([1, 2, 1, 3, 2, 3, 8, 8, 9])
   })

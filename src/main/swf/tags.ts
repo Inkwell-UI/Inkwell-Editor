@@ -73,6 +73,7 @@ export const TAG = {
   DefineFont3: 75,
   DefineSprite: 39,
   ExportAssets: 56,
+  DefineScalingGrid: 78,
   DoInitAction: 59,
   ImportAssets2: 71
 } as const
@@ -92,6 +93,10 @@ export const doInitAction = (spriteId: number): Buffer => tag(TAG.DoInitAction, 
 export function sprite(id: number, controlTags: Buffer[] = []): Buffer {
   return tag(TAG.DefineSprite, cat(u16(id), u16(1), ...controlTags, showFrame(), endTag()))
 }
+
+/** DefineScalingGrid (SWF 8+): the 9-slice rectangle, in px of the sprite's own space, for sprite `charId`. Everything outside it keeps its size when the clip is scaled. */
+export const defineScalingGrid = (charId: number, g: { x: number; y: number; w: number; h: number }): Buffer =>
+  tag(TAG.DefineScalingGrid, cat(u16(charId), rect(twips(g.x), twips(g.x + g.w), twips(g.y), twips(g.y + g.h))))
 
 export const exportAssets = (items: { id: number; name: string }[]): Buffer =>
   tag(TAG.ExportAssets, cat(u16(items.length), ...items.flatMap((i) => [u16(i.id), str(i.name)])))
@@ -242,6 +247,8 @@ export interface Placement {
   alpha?: number
   /** Uniform scale factor (not combined with `rotation`). */
   scale?: number
+  /** Vertical factor when it differs from `scale` (not combined with `rotation`). */
+  scaleY?: number
   /** Makes this a clip layer: its shape masks every object from the next depth up to and including this one. */
   clipDepth?: number
 }
@@ -259,10 +266,11 @@ export function placeObject2(p: Placement): Buffer {
     const n = Math.max(sbits(c), sbits(s), sbits(-s)) // -s too: at exactly 90 deg, +65536 needs one bit more than -65536
     m.u(1, 1); m.u(n, 5); m.s(c, n); m.s(c, n) // scale x/y = cos
     m.u(1, 1); m.u(n, 5); m.s(s, n); m.s(-s, n) // rotateSkew0 = sin, rotateSkew1 = -sin
-  } else if (p.scale !== undefined && p.scale !== 1) {
-    const f = Math.round(p.scale * 65536)
-    const n = sbits(f)
-    m.u(1, 1); m.u(n, 5); m.s(f, n); m.s(f, n) // HasScale, no rotate/skew
+  } else if ((p.scale !== undefined && p.scale !== 1) || (p.scaleY !== undefined && p.scaleY !== 1)) {
+    const f = Math.round((p.scale ?? 1) * 65536)
+    const fy = Math.round((p.scaleY ?? p.scale ?? 1) * 65536)
+    const n = Math.max(sbits(f), sbits(fy))
+    m.u(1, 1); m.u(n, 5); m.s(f, n); m.s(fy, n) // HasScale, no rotate/skew
     m.u(0, 1)
   } else {
     m.u(0, 1); m.u(0, 1)

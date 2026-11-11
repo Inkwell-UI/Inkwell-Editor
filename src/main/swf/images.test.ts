@@ -209,3 +209,36 @@ describe('a background image per theme', () => {
   })
 })
 
+
+describe('sliced images (PLAN-SLICING.md)', () => {
+  const S = syntheticPng(128, 128)
+  const sl = { l: 24, t: 24, r: 24, b: 24, w: 128, h: 128 }
+  const sliceGen = (o: Partial<GenerateOptions> = {}, w = 200, h = 140) => generate(swf([frame('f', ['i']), image('i', S.hash, { transform: { x: 0, y: 0, width: w, height: h, rotation: 0 } })], { id: 'imgs' }), { modId: 'MyMod', images: (x) => (x === S.hash ? S.image : undefined), slices: (x) => (x === S.hash ? sl : undefined), ...o })
+
+  it('embedded: one clip of nine piece clips p0..p8, one shared bitmap, the slice record set by frame code', () => {
+    const g = sliceGen()
+    const tags = parseSwf(writeSwf({ widthPx: 1920, heightPx: 1080, tags: g.tags })).tags
+    expect(tags.filter((t) => t.code === TAG.DefineBitsLossless2)).toHaveLength(1)
+    const names = tags.filter((t) => t.code === TAG.DefineSprite).flatMap((t) => parseTags(t.body.subarray(4))).filter((t) => t.code === TAG.PlaceObject2).map(readPlace).map((p) => p.name).filter(Boolean)
+    expect(names).toEqual(Array.from({ length: 9 }, (_, i) => `p${i}`))
+    expect(g.as2.find((f) => f.path === 'frame_1/DoAction.as')!.source).toContain('InkwellSlice.mark(this, "img_i"')
+    expect(g.as2.some((f) => f.path.endsWith('InkwellSlice.as'))).toBe(true)
+    expect(g.lint.filter((l) => l.severity !== 'info')).toEqual([])
+  })
+
+  it('without a slice nothing changes: one clip, no helper class', () => {
+    const g = sliceGen({ slices: undefined })
+    expect(g.as2.some((f) => f.path.endsWith('InkwellSlice.as'))).toBe(false)
+  })
+
+  it('dds mode draws it stretched and says so; a changed image size also warns and draws it stretched', () => {
+    expect(codes(sliceGen({ imageMode: 'dds' }).lint)).toContainEqual(['warning', 'slice-dds', 'i'])
+    const g = sliceGen({ slices: () => ({ ...sl, w: 64, h: 64 }) })
+    expect(codes(g.lint)).toContainEqual(['warning', 'slice-size-changed', 'i'])
+    expect(g.as2.some((f) => f.path.endsWith('InkwellSlice.as'))).toBe(false)
+  })
+
+  it('a box smaller than the fixed parts is an info', () => {
+    expect(codes(sliceGen({}, 40, 40).lint)).toContainEqual(['info', 'slice-box-small', 'i'])
+  })
+})

@@ -3,6 +3,7 @@ import { glyphId, glyphOwner, isGlyphNode, PROMPT_DEVICE_ORDER, withPromptGlyphs
 import { artFor, promptArtEnabled } from './promptArt'
 import { ddsRel, isAssetHash, type ImageMode } from '../images/assets'
 import type { Rgba } from '../images/png'
+import type { SliceInsets } from '../../shared/slice'
 import { ident } from '../../shared/overlay'
 import { issue, type LintIssue } from '../../shared/swfLint'
 import { frameStrokeSvg, maskSvg, rectSvg, shapeToSvg } from './svg'
@@ -18,6 +19,8 @@ import { themeOps } from '../codegen/themeOps'
 import type { CodegenPacks } from '../codegen/packs'
 import { listAttachCode, listClassName, listClassSource, type ListInfo } from './listAs2'
 import { scrollAttachCode, scrollClassName, scrollClassSource, type ScrollInfo } from './scrollAs2'
+import { sliceCells } from '../../shared/slice'
+import { sliceClassSource, sliceMarkCode } from './sliceAs2'
 import { scrollbarAttachCode, scrollbarClassSource, type ScrollbarInfo } from './scrollbarAs2'
 import { flowAttachCode, flowClassName, flowClassSource, flowInfo, stackAttachCode, type FlowInfo } from './flowAs2'
 
@@ -78,6 +81,8 @@ export interface GenerateOptions {
   imageMode?: ImageMode
   /** Decoded pixels by image hash (the project's assets/<hash>.png); undefined = missing (lint `image-missing-asset`). */
   images?: (hash: string) => Rgba | undefined
+  /** 9-slice / 3-slice insets by image hash (the project's slices.json); embedded mode draws such an image as pieces that keep their corners at any box size (PLAN-SLICING.md). */
+  slices?: (hash: string) => SliceInsets | undefined
   /** Menu replacement only: the merged contract (`lint/contract.ts` `contractFor`); the SWF gets the engine glue built from it (`codegen/replacementGlue.ts`). */
   contract?: MergedContract
   /** Custom menu: the SWF's focus graph (Spec `focusGraph`, W3); the menu class moves focus on On Input Up/Down/Left/Right by it. Empty order = GFx's own focus handling. */
@@ -437,6 +442,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   const imageMode: ImageMode = opts.preview ? 'embedded' : (opts.imageMode ?? 'embedded')
   const bitmaps = new Map<string, number>() // hash -> DefineBitsLossless2 id (one per image, shared)
   const loads: ImageLoad[] = []
+  const sliceMarks: { path: string; s: SliceInsets; w: number; h: number }[] = [] // sliced image clips: their slice record is set by frame code (frameCode exists later)
   const settable: SettableText[] = []
   const keyed: { nodeId: string; here: string; key: string }[] = []
   const layerPaths = new Map<string, string>() // figma node id -> clip path from _root (graph targets)
@@ -481,6 +487,8 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
     }
     if (Math.max(img.width, img.height) > MAX_IMAGE_SIDE) lint.push(issue('error', 'image-too-large', nodeId, `Image is ${img.width}x${img.height} px; the limit is ${MAX_IMAGE_SIDE} px per side. Scale it down in Figma.`))
     if (imageMode === 'dds' && !(pot(img.width) && pot(img.height))) lint.push(issue('warning', 'image-not-power-of-two', nodeId, `Image is ${img.width}x${img.height} px; DDS textures should be a power of two per side (64, 128, 256...) or the game may not load them.`))
+    const slice = opts.slices?.(hash)
+    if (slice && imageMode === 'dds') lint.push(issue('warning', 'slice-dds', nodeId, 'This image has a 9-slice setting, but dds mode draws it stretched (slicing needs embedded mode).'))
     const id = alloc()
     if (imageMode === 'dds') {
       defs.push(T.sprite(id))
@@ -492,6 +500,20 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       bid = alloc()
       bitmaps.set(hash, bid)
       defs.push(T.defineBitsLossless2(bid, img))
+    }
+    if (slice && (slice.w !== img.width || slice.h !== img.height)) lint.push(issue('warning', 'slice-size-changed', nodeId, `The slice was set for a ${slice.w}x${slice.h} image, the image is now ${img.width}x${img.height}; drawn stretched. Set the slice again in the Asset View.`))
+    else if (slice) {
+      if (w < slice.l + slice.r || h < slice.t + slice.b) lint.push(issue('info', 'slice-box-small', nodeId, `The box (${Math.round(w)}x${Math.round(h)}) is smaller than the fixed parts (${slice.l + slice.r}x${slice.t + slice.b}); the corners shrink with it.`))
+      // one clip per piece (a bare shape cannot be addressed from AS2): a shape drawing the piece's cell with its top-left corner at the clip's origin, placed scaled onto its cell of the box
+      const pieces = sliceCells(slice, w, h).map((c) => {
+        const shape = alloc(), piece = alloc()
+        defs.push(T.defineBitmapShape({ id: shape, bitmapId: bid!, rect: { x: 0, y: 0, w: c.sw, h: c.sh }, scale: 1, tx: -c.sx, ty: -c.sy }), T.sprite(piece, [T.placeObject2({ depth: 1, charId: shape, x: 0, y: 0 })]))
+        // shortcut: an empty target gets a hair-thin scale here (a zero matrix is degenerate); the slice class hides it when the clip is marked
+        return T.placeObject2({ depth: c.index + 1, charId: piece, name: `p${c.index}`, x: c.dx, y: c.dy, scale: Math.max(c.dw / c.sw, 0.001), scaleY: Math.max(c.dh / c.sh, 0.001) })
+      })
+      defs.push(T.sprite(id, pieces))
+      sliceMarks.push({ path, s: slice, w, h })
+      return id
     }
     const shapeId = alloc()
     defs.push(T.defineBitmapShape({ id: shapeId, bitmapId: bid, ...fitImage(mode, img.width, img.height, w, h) }))
@@ -810,6 +832,10 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   if (scripts.length) {
     addClass(`${swfCls}Layout`, layoutClass(mod, `${swfCls}Layout`, ir.id, scripts))
     frameCode.push(`mods.${mod}.${swfCls}Layout.apply(this);`)
+  }
+  if (sliceMarks.length) {
+    addClass('InkwellSlice', sliceClassSource(mod))
+    frameCode.push(...sliceMarks.map((m) => sliceMarkCode(mod, widget && wf ? 'this.widget' : 'this', m.path.replace(/^root\.?/, ''), m.s, m.w, m.h)))
   }
   if (loads.length) {
     addClass(`${swfCls}Images`, imagesClass(mod, `${swfCls}Images`, ir.id, loads))

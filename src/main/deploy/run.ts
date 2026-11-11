@@ -7,6 +7,7 @@ import type { CodegenPacks } from '../codegen/packs'
 import type { DeployFileInfo, DeployLintItem, DeployResult } from '../../shared/deploy'
 import { createStageTimer } from '../../shared/timing'
 import { setCell } from '../../shared/localizationOps'
+import type { SliceInsets } from '../../shared/slice'
 import { ddsRel, type AssetStore, type ImageMode } from '../images/assets'
 import { writeDds } from '../images/dds'
 import { decodePng } from '../images/png'
@@ -61,6 +62,8 @@ export interface DeployInput {
   imageMode?: ImageMode
   /** The project's image assets (widget compiles read pixels; dds mode reads the PNGs). */
   assets?: Pick<AssetStore, 'get' | 'png'>
+  /** 9-slice / 3-slice insets by image hash (slices.json); widget compiles draw such images as pieces. */
+  slices?: (hash: string) => SliceInsets | undefined
   /** Node definitions and templates for compiling graphs; without them graphs are not compiled. */
   packs?: CodegenPacks
   /**
@@ -156,7 +159,7 @@ export async function prepareDeploy(input: DeployInput): Promise<PrepareOutcome>
             issues.push({ severity: 'warning', code: 'font-embedded-widget', message: `"${s.ir.nodes[id]!.name}": embedded fonts are used by custom menus; this HUD widget ships the layer with its Skyrim font alias.`, swf: s.name, nodeId: id, layerName: s.ir.nodes[id]!.name })
         const r = await compileWidget(s.ir, {
           modId: i.modId, widgetName: plan.widgets[s.name]!, ...(s.instanceNames ? { instanceNames: s.instanceNames } : {}), ...(s.overlay ? { overlay: s.overlay } : {}), ...(i.packs && s.graphs?.length ? { graphs: { graphs: s.graphs, packs: i.packs } } : {}), buildDir: join(i.buildDir, 'deploy', s.name), ffdec: i.ffdec,
-          ...(i.imageMode ? { imageMode: i.imageMode } : {}), ...(i.assets ? { images: (h: string) => i.assets!.get(h) } : {}),
+          ...(i.imageMode ? { imageMode: i.imageMode } : {}), ...(i.assets ? { images: (h: string) => i.assets!.get(h) } : {}), ...(i.slices ? { slices: i.slices } : {}),
           ...(i.papyrusExe ? { papyrusExe: i.papyrusExe } : {}), ...(i.stubsDir ? { stubsDir: i.stubsDir } : {})
         })
         for (const l of r.lint)

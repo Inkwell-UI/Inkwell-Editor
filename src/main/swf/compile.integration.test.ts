@@ -205,4 +205,22 @@ describe.skipIf(!can)('compileSwf (real FFDec)', () => {
       ffdec.stop()
     }
   }, 60_000)
+
+  it('a sliced image compiles: the InkwellSlice class parses in FFDec and the piece clips are in the SWF', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'inkwell-slice-'))
+    const ffdec = createFfdecWrapper({ javaPath, ffdecDir, jarPath })
+    try {
+      const S = syntheticPng(128, 128)
+      const img = { ...rectShape('i'), name: 'panel', type: 'image', asset: S.hash, scaleMode: 'fill', transform: { x: 0, y: 0, width: 200, height: 140, rotation: 0 } }
+      const r = await compileSwf(swf([frame('f', ['i']), img as never], { id: 'slice' }), { modId: 'SliceMod', buildDir: dir, ffdec, images: (h) => (h === S.hash ? S.image : undefined), slices: () => ({ l: 24, t: 24, r: 24, b: 24, w: 128, h: 128 }) })
+      expect(r.lint.filter((l) => l.severity !== 'info')).toEqual([])
+      const xmlPath = join(dir, 'out.xml')
+      execFileSync(javaPath, ['-jar', join(ffdecDir, 'ffdec-cli.jar'), '-swf2xml', r.swfPath, xmlPath], { stdio: 'ignore' })
+      const xml = readFileSync(xmlPath, 'utf8')
+      expect(xml).toContain('mods.SliceMod.InkwellSlice')
+      expect(xml).toContain('name="p8"')
+    } finally {
+      ffdec.stop()
+    }
+  }, 60000)
 })
