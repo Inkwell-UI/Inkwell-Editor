@@ -14,6 +14,8 @@ export interface CompileOptions extends GenerateOptions {
   outPath?: string
   /** Embedded custom fonts (V5): the TrueType bytes of a font asset hash; the glyph outlines of the planned characters are imported from them. */
   embeddedFontBytes?: (hash: string) => Buffer | undefined
+  /** Test hook: change what `generate` produced before it is written (the in-game slice test adds its own tags and AS2). */
+  extend?: (g: Generated) => Generated
   /** The resident FFDec wrapper (or anything with its `build`). */
   ffdec: { build(job: FfdecJob): Promise<FfdecResult> }
 }
@@ -46,7 +48,8 @@ export async function compileSwf(ir: Swf, opts: CompileOptions): Promise<Compile
   const swfPath = opts.outPath ?? join(opts.buildDir, `${key}.swf`)
 
   timer.start('codegen')
-  const g = generate(ir, opts)
+  const g0 = generate(ir, opts)
+  const g = opts.extend ? opts.extend(g0) : g0
   timer.end('codegen')
 
   timer.start('swf')

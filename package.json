@@ -19,6 +19,7 @@
     "compile:widget": "tsx scripts/compile-widget.ts",
     "compile:system-injector": "tsx scripts/compile-system-injector.ts",
     "compile:images": "tsx scripts/compile-images.ts",
+    "compile:slice": "tsx scripts/compile-slice-test.ts",
     "deploy:widget": "tsx scripts/deploy-widget.ts",
     "deploy:graph-popup": "tsx scripts/deploy-graph-popup.ts",
     "deploy:menu-slice": "tsx scripts/deploy-menu-slice.ts",
