@@ -90,6 +90,11 @@ export function createSession(deps: SessionDeps) {
   let strict = false
   const overlays = new Map<string, OverlayDoc>() // swf id -> overlay (the renderer is the source of truth once it saves)
   const graphs = new Map<string, Map<string, Graph>>() // swf name -> graph id -> graph (the renderer saves; main validates)
+  /** The SWF's graphs; a frame synced from Figma after the project opened has none loaded yet, so it starts empty (it has no graph file either). */
+  const graphsOf = (swf: string): Map<string, Graph> | undefined => {
+    if (!graphs.has(swf) && server?.swfs().some((i) => i.name === swf)) graphs.set(swf, new Map())
+    return graphs.get(swf)
+  }
   let slicesDoc: { slices?: Slices; error?: string } = {} // slices.json (PLAN-SLICING.md): 9-slice insets by image hash; the Asset View is the writer
   let localization: { localization?: Localization; error?: string } = {} // localization.json (V2.3): the tab is the writer; main keeps the saved copy for deploy
   const previewThemes = new Map<string, string>() // swf id -> theme mode the stage toolbar previews (not saved)
@@ -910,16 +915,16 @@ export function createSession(deps: SessionDeps) {
     },
     packsCheckUpdates: async (): Promise<PackResult<{ updates: PackCandidate[]; errors: string[] }>> => (projectDir ? packManager.checkUpdates(projectDir) : { ok: false, error: 'No project is open.' }),
     listGraphs(swf: string): GraphResult<{ graphs: GraphSummary[] }> {
-      const m = graphs.get(swf)
+      const m = graphsOf(swf)
       return m ? { ok: true, graphs: [...m.values()].map(summarize).sort((a, b) => a.id.localeCompare(b.id)) } : { ok: false, error: 'No such swf in the open project' }
     },
     async loadGraph(swf: string, id: string): Promise<GraphResult<{ graph: Graph }>> {
-      if (!projectDir || !graphs.has(swf)) return { ok: false, error: 'No such swf in the open project' }
+      if (!projectDir || !graphsOf(swf)) return { ok: false, error: 'No such swf in the open project' }
       return readGraph(projectDir, swf, id)
     },
     /** The renderer is the source of truth for open graphs (like overlays); main keeps the saved copy for validation. */
     async saveGraph(swf: string, doc: unknown): Promise<GraphResult> {
-      const m = graphs.get(swf)
+      const m = graphsOf(swf)
       if (!projectDir || !m) return { ok: false, error: 'No such swf in the open project' }
       const parsed = Graph.safeParse(doc)
       if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid graph' }
@@ -983,7 +988,7 @@ export function createSession(deps: SessionDeps) {
       return r
     },
     async createGraph(swf: string, name: string, scope: Graph['scope']): Promise<GraphResult<{ graph: Graph }>> {
-      const m = graphs.get(swf)
+      const m = graphsOf(swf)
       if (!projectDir || !m) return { ok: false, error: 'No such swf in the open project' }
       if (scope === 'menu' && [...m.values()].some((g) => g.scope === 'menu')) return { ok: false, error: 'This SWF already has its menu graph' }
       const id = newGraphId(name, new Set(m.keys()))
@@ -996,7 +1001,7 @@ export function createSession(deps: SessionDeps) {
     },
     /** Removes the file only; the caller also removes the id from the overlay `scripts` (the renderer owns overlays). */
     async deleteGraph(swf: string, id: string): Promise<GraphResult> {
-      const m = graphs.get(swf)
+      const m = graphsOf(swf)
       if (!projectDir || !m) return { ok: false, error: 'No such swf in the open project' }
       const r = await deleteGraph(projectDir, swf, id)
       if (r.ok) {
