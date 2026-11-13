@@ -1,0 +1,23 @@
+{
+  "kind": "GetThemeNames",
+  "major": 1,
+  "title": "Get Theme Names",
+  "category": "Theme",
+  "milestone": "0.7",
+  "pure": true,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "names",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/GetThemeNames.as2",
+  "extra": {
+    "inspector": {
+      "description": "The names of all the menu's themes, as a list of text."
+    }
+  }
+}

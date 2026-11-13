@@ -1,0 +1,23 @@
+{
+  "kind": "Continue",
+  "major": 1,
+  "title": "Continue",
+  "category": "Flow",
+  "milestone": "0.8",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [],
+  "fields": {},
+  "as2Template": "templates/Continue.as2",
+  "extra": {
+    "exitsLoop": true,
+    "inspector": {
+      "description": "Ends this round of the loop it is in and starts the next one."
+    }
+  }
+}

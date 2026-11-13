@@ -1,0 +1,36 @@
+{
+  "kind": "SetTextColor",
+  "major": 1,
+  "title": "Set Text Color",
+  "category": "Components",
+  "milestone": "0.8",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Text"
+    },
+    {
+      "name": "color",
+      "type": "Number",
+      "default": 16777215
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/SetTextColor.as2",
+  "extra": {
+    "inspector": {
+      "description": "Colours a text layer with a colour number (0xRRGGBB)."
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "kind": "SetBlendMode",
+  "major": 1,
+  "title": "Set Blend Mode",
+  "category": "Components",
+  "milestone": "0.8",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "layer",
+        "multiply",
+        "screen",
+        "lighten",
+        "darken",
+        "difference",
+        "add",
+        "subtract",
+        "invert",
+        "alpha",
+        "erase",
+        "overlay",
+        "hardlight"
+      ],
+      "default": "normal",
+      "description": "How the layer mixes with what is behind it"
+    }
+  },
+  "as2Template": "templates/SetBlendMode.as2",
+  "extra": {
+    "unverifiedInGame": "blendMode on GFx",
+    "inspector": {
+      "description": "Changes how a layer mixes with what is behind it."
+    }
+  }
+}

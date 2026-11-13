@@ -1,0 +1,2 @@
+// [{{node.id}}] core/GetThemeVariable@1
+({ f: function(v, t) { if (t == "Bool") return v == true; if (t == "String") return v == undefined ? "" : String(v); return Number(v) || 0; } }).f(__g.tv({{in.name}}), {{field.valueType}})

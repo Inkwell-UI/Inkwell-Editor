@@ -1,0 +1,33 @@
+{
+  "kind": "BitOr",
+  "major": 1,
+  "title": "Bit Or",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "b",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/BitOr.as2",
+  "extra": {
+    "inspector": {
+      "description": "Combines two whole numbers bit by bit: a bit is 1 where either has it."
+    }
+  }
+}

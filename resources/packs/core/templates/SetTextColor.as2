@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetTextColor@1
+{{in.target}}.textColor = {{in.color}};
+{{next.then}}

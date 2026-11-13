@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/BitNot@1
+(~(Number({{in.value}}) | 0))

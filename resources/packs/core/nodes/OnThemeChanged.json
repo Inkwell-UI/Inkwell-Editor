@@ -1,0 +1,30 @@
+{
+  "kind": "OnThemeChanged",
+  "major": 1,
+  "title": "On Theme Changed",
+  "category": "Events",
+  "milestone": "0.7",
+  "pure": false,
+  "requiresRuntime": true,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "name",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/OnThemeChanged.as2",
+  "extra": {
+    "needsGlue": "addThemeHandler",
+    "entry": true,
+    "inspector": {
+      "description": "Runs after Set Theme or Cycle Theme changed the theme."
+    }
+  }
+}

@@ -1,0 +1,5 @@
+// [{{node.id}}] core/OnThemeChanged@1
+__g.addThemeHandler(function(name) {
+    var {{out.name}} = name == undefined ? "" : String(name);
+    {{guarded.then}}
+});

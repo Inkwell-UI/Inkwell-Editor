@@ -1,0 +1,3 @@
+// [{{node.id}}] core/Play@1
+{{in.target}}.play();
+{{next.then}}

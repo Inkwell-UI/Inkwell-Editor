@@ -1,0 +1,4 @@
+// [{{node.id}}] core/GetScale@1
+var {{out.x}} = Number({{in.target}}._xscale) || 0;
+var {{out.y}} = Number({{in.target}}._yscale) || 0;
+{{next.then}}

@@ -1,0 +1,3 @@
+// [{{node.id}}] core/Break@1
+{{loop.stop}} = true;
+return;

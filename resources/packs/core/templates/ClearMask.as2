@@ -1,0 +1,3 @@
+// [{{node.id}}] core/ClearMask@1
+{{in.target}}.setMask(null);
+{{next.then}}

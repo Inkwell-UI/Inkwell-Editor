@@ -1,0 +1,43 @@
+{
+  "kind": "OnKey",
+  "major": 1,
+  "title": "On Key",
+  "category": "Events",
+  "milestone": "0.8",
+  "pure": false,
+  "requiresRuntime": true,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "code",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "ascii",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "key": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255,
+      "default": 0,
+      "description": "Flash key code that fires it (13 Enter, 27 Escape, 65 A); 0 = every key"
+    }
+  },
+  "as2Template": "templates/OnKey.as2",
+  "extra": {
+    "entry": true,
+    "unverifiedInGame": "Key.addListener in a custom menu",
+    "inspector": {
+      "description": "Runs when a key is pressed while the menu is open (a Flash key code, or any key)."
+    }
+  }
+}

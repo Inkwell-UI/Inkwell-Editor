@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetBlendMode@1
+{{in.target}}.blendMode = {{field.mode}};
+{{next.then}}

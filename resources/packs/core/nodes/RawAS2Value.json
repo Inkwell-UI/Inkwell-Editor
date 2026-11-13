@@ -1,0 +1,44 @@
+{
+  "kind": "RawAS2Value",
+  "major": 1,
+  "title": "Raw AS2 Value",
+  "category": "Debug",
+  "milestone": "0.8",
+  "pure": true,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    }
+  ],
+  "fields": {
+    "code": {
+      "type": "string",
+      "pattern": "^[\\s\\S]*$",
+      "default": "undefined",
+      "description": "An ActionScript expression"
+    },
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "String",
+        "Number",
+        "Bool",
+        "Array",
+        "Object"
+      ],
+      "default": "String",
+      "description": "Pin type of the result (it is coerced to this type)"
+    }
+  },
+  "as2Template": "templates/RawAS2Value.as2",
+  "extra": {
+    "volatile": true,
+    "inspector": {
+      "description": "Gives the value of an ActionScript expression you write yourself. Use it only when no node does the job."
+    }
+  }
+}

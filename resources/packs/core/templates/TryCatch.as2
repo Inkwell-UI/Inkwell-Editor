@@ -1,0 +1,8 @@
+// [{{node.id}}] core/TryCatch@1
+try {
+    {{next.body}}
+} catch (e) {
+    var {{out.error}} = typeof (e) == "object" ? (e.message != undefined ? String(e.message) : String(e)) : String(e);
+    {{next.catch}}
+}
+{{next.then}}

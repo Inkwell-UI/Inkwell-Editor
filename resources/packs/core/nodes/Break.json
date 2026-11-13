@@ -1,0 +1,23 @@
+{
+  "kind": "Break",
+  "major": 1,
+  "title": "Break",
+  "category": "Flow",
+  "milestone": "0.8",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [],
+  "fields": {},
+  "as2Template": "templates/Break.as2",
+  "extra": {
+    "exitsLoop": true,
+    "inspector": {
+      "description": "Stops the loop it is in (Loop, For or For Each) and continues after it, with Completed."
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "kind": "ShiftLeft",
+  "major": 1,
+  "title": "Shift Left",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "bits",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/ShiftLeft.as2",
+  "extra": {
+    "inspector": {
+      "description": "Moves the bits of a whole number to the left (like multiplying by 2 for each bit)."
+    }
+  }
+}

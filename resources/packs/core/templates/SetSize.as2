@@ -1,0 +1,4 @@
+// [{{node.id}}] core/SetSize@1
+{{in.target}}._width = {{in.width}};
+{{in.target}}._height = {{in.height}};
+{{next.then}}

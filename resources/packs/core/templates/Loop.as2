@@ -1,0 +1,9 @@
+// [{{node.id}}] core/Loop@1
+var {{node.uid}}_stop = false;
+var {{node.uid}}_body = function({{out.index}}) {
+    {{next.body}}
+};
+for (var {{node.uid}}_i = 0; {{node.uid}}_i < {{field.max}} && !{{node.uid}}_stop; {{node.uid}}_i++) {
+    {{node.uid}}_body({{node.uid}}_i);
+}
+{{next.completed}}

@@ -1,0 +1,50 @@
+{
+  "kind": "SwapDepths",
+  "major": 1,
+  "title": "Swap Depths",
+  "category": "Components",
+  "milestone": "0.8",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    },
+    {
+      "name": "other",
+      "type": "Clip"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/SwapDepths.as2",
+  "extra": {
+    "unverifiedInGame": "AS2 call on GFx",
+    "inspector": {
+      "description": "Swaps the drawing order of two layers."
+    }
+  }
+}

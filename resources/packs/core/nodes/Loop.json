@@ -1,0 +1,45 @@
+{
+  "kind": "Loop",
+  "major": 1,
+  "title": "Loop",
+  "category": "Flow",
+  "milestone": "0.8",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "body",
+      "type": "Exec"
+    },
+    {
+      "name": "completed",
+      "type": "Exec"
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "max": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "default": 1000,
+      "description": "Most rounds it runs (a safety stop)"
+    }
+  },
+  "as2Template": "templates/Loop.as2",
+  "extra": {
+    "loop": "body",
+    "inspector": {
+      "description": "Repeats the body until a Break runs (or the most rounds is reached), then continues with Completed. With a Branch and a Break it works as a while loop."
+    }
+  }
+}

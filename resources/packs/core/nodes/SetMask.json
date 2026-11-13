@@ -1,0 +1,50 @@
+{
+  "kind": "SetMask",
+  "major": 1,
+  "title": "Set Mask",
+  "category": "Components",
+  "milestone": "0.8",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    },
+    {
+      "name": "mask",
+      "type": "Clip"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/SetMask.as2",
+  "extra": {
+    "unverifiedInGame": "AS2 call on GFx",
+    "inspector": {
+      "description": "Shows a layer only where another layer is drawn."
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "kind": "TryCatch",
+  "major": 1,
+  "title": "Try Catch",
+  "category": "Flow",
+  "milestone": "0.8",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "body",
+      "type": "Exec"
+    },
+    {
+      "name": "catch",
+      "type": "Exec"
+    },
+    {
+      "name": "then",
+      "type": "Exec"
+    },
+    {
+      "name": "error",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/TryCatch.as2",
+  "extra": {
+    "inspector": {
+      "description": "Runs the body; if it fails (or a Throw or Assert fires in it), runs Catch with the error text instead of stopping the event. Then runs after either."
+    }
+  }
+}

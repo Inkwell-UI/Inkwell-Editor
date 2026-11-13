@@ -1,0 +1,9 @@
+// [{{node.id}}] core/OnKey@1
+var {{node.uid}}_l = new Object();
+{{node.uid}}_l.onKeyDown = function() {
+    var {{out.code}} = Key.getCode();
+    if ({{field.key}} != 0 && {{out.code}} != {{field.key}}) return;
+    var {{out.ascii}} = Key.getAscii() > 0 ? String.fromCharCode(Key.getAscii()) : "";
+    {{guarded.then}}
+};
+Key.addListener({{node.uid}}_l);

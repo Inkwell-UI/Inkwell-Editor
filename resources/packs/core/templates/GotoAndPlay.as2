@@ -1,0 +1,4 @@
+// [{{node.id}}] core/GotoAndPlay@1
+var {{node.uid}}_f = {{in.frame}};
+{{in.target}}.gotoAndPlay(isNaN(Number({{node.uid}}_f)) || {{node.uid}}_f == "" ? {{node.uid}}_f : Number({{node.uid}}_f));
+{{next.then}}

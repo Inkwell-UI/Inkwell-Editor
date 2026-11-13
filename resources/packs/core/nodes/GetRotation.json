@@ -1,0 +1,43 @@
+{
+  "kind": "GetRotation",
+  "major": 1,
+  "title": "Get Rotation",
+  "category": "Components",
+  "milestone": "0.8",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/GetRotation.as2",
+  "extra": {
+    "volatile": true,
+    "inspector": {
+      "description": "Reads how far a layer is turned, in degrees."
+    }
+  }
+}

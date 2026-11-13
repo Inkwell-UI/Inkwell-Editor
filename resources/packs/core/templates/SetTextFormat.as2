@@ -1,0 +1,8 @@
+// [{{node.id}}] core/SetTextFormat@1
+var {{node.uid}}_tf = {{in.target}}.getTextFormat();
+if ({{in.size}} > 0) {{node.uid}}_tf.size = {{in.size}};
+if ({{field.align}} != "keep") {{node.uid}}_tf.align = {{field.align}};
+if ({{field.bold}} != "keep") {{node.uid}}_tf.bold = ({{field.bold}} == "on");
+{{in.target}}.setTextFormat({{node.uid}}_tf);
+{{in.target}}.setNewTextFormat({{node.uid}}_tf);
+{{next.then}}

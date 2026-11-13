@@ -1,0 +1,4 @@
+// [{{node.id}}] core/GetSize@1
+var {{out.width}} = Number({{in.target}}._width) || 0;
+var {{out.height}} = Number({{in.target}}._height) || 0;
+{{next.then}}

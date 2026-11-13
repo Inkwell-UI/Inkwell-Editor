@@ -1,0 +1,3 @@
+// [{{node.id}}] core/SetTheme@1
+__g.setTheme({{in.name}});
+{{next.then}}

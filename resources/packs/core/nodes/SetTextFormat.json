@@ -1,0 +1,59 @@
+{
+  "kind": "SetTextFormat",
+  "major": 1,
+  "title": "Set Text Format",
+  "category": "Components",
+  "milestone": "0.8",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Text"
+    },
+    {
+      "name": "size",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "align": {
+      "type": "string",
+      "enum": [
+        "keep",
+        "left",
+        "center",
+        "right"
+      ],
+      "default": "keep",
+      "description": "Text alignment; keep leaves it as it is"
+    },
+    "bold": {
+      "type": "string",
+      "enum": [
+        "keep",
+        "on",
+        "off"
+      ],
+      "default": "keep",
+      "description": "Bold; keep leaves it as it is"
+    }
+  },
+  "as2Template": "templates/SetTextFormat.as2",
+  "extra": {
+    "unverifiedInGame": "TextFormat on GFx",
+    "inspector": {
+      "description": "Changes the size, alignment or boldness of a text layer. A size of 0 keeps the size."
+    }
+  }
+}

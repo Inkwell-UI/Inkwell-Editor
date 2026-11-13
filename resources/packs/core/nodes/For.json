@@ -42,7 +42,8 @@
   "as2Template": "templates/For.as2",
   "extra": {
     "inspector": {
-      "description": "Repeats the body for each whole number from first to last, then continues with Completed."
-    }
+      "description": "Repeats the body for each whole number from first to last, then continues with Completed. Break stops it early; Continue skips to the next round."
+    },
+    "loop": "body"
   }
 }

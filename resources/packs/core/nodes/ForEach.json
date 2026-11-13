@@ -40,7 +40,8 @@
   "as2Template": "templates/ForEach.as2",
   "extra": {
     "inspector": {
-      "description": "Runs the body once for every item of a list, then continues with Completed."
-    }
+      "description": "Runs the body once for every item of a list, then continues with Completed. Break stops it early; Continue skips to the next round."
+    },
+    "loop": "body"
   }
 }

@@ -1,0 +1,33 @@
+{
+  "kind": "SetTheme",
+  "major": 1,
+  "title": "Set Theme",
+  "category": "Theme",
+  "milestone": "0.7",
+  "pure": false,
+  "requiresRuntime": true,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "name",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/SetTheme.as2",
+  "extra": {
+    "inspector": {
+      "description": "Switches the menu to the named theme while it is open."
+    }
+  }
+}

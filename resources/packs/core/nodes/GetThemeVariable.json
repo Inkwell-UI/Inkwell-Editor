@@ -1,0 +1,43 @@
+{
+  "kind": "GetThemeVariable",
+  "major": 1,
+  "title": "Get Theme Variable",
+  "category": "Theme",
+  "milestone": "0.7",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "name",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0,
+      "typeFrom": "valueType"
+    }
+  ],
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "Color",
+        "Number",
+        "String",
+        "Bool"
+      ],
+      "default": "Color",
+      "description": "Type of the Figma variable. Color gives its 0xRRGGBB number (the alpha is not returned); the pin is a Number, String or Bool for the other types"
+    }
+  },
+  "as2Template": "templates/GetThemeVariable.as2",
+  "extra": {
+    "volatile": true,
+    "inspector": {
+      "description": "Reads a Figma variable (by its name) in the current theme, like Get Localized Text does for a language."
+    }
+  }
+}

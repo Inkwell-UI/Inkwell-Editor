@@ -1,0 +1,2 @@
+// [{{node.id}}] core/GetRotation@1
+(Number({{in.target}}._rotation) || 0)

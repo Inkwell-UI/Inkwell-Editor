@@ -1,0 +1,24 @@
+{
+  "kind": "GetTheme",
+  "major": 1,
+  "title": "Get Theme",
+  "category": "Theme",
+  "milestone": "0.7",
+  "pure": true,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "name",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/GetTheme.as2",
+  "extra": {
+    "volatile": true,
+    "inspector": {
+      "description": "The name of the theme in use now."
+    }
+  }
+}

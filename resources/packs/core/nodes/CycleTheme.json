@@ -1,0 +1,28 @@
+{
+  "kind": "CycleTheme",
+  "major": 1,
+  "title": "Cycle Theme",
+  "category": "Theme",
+  "milestone": "0.7",
+  "pure": false,
+  "requiresRuntime": true,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/CycleTheme.as2",
+  "extra": {
+    "inspector": {
+      "description": "Switches to the next theme, and back to the first after the last."
+    }
+  }
+}

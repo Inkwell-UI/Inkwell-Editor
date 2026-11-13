@@ -1,0 +1,51 @@
+{
+  "kind": "GotoAndPlay",
+  "major": 1,
+  "title": "Goto And Play",
+  "category": "Components",
+  "milestone": "0.8",
+  "pure": false,
+  "inputs": [
+    {
+      "name": "in",
+      "type": "Exec"
+    },
+    {
+      "name": "target",
+      "type": "Clip",
+      "typeFrom": "kind"
+    },
+    {
+      "name": "frame",
+      "type": "String",
+      "default": "1"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "then",
+      "type": "Exec"
+    }
+  ],
+  "fields": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Text",
+        "Button",
+        "List",
+        "Image",
+        "Clip"
+      ],
+      "default": "Clip",
+      "description": "Component kind of the target pin"
+    }
+  },
+  "as2Template": "templates/GotoAndPlay.as2",
+  "extra": {
+    "unverifiedInGame": "AS2 call on GFx",
+    "inspector": {
+      "description": "Jumps a layer's timeline to a frame number or label and plays from there."
+    }
+  }
+}

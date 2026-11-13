@@ -1,0 +1,3 @@
+// [{{node.id}}] core/CycleTheme@1
+__g.cycleTheme();
+{{next.then}}
