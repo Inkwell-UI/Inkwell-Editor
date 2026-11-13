@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { resolveSettings } from '../settings'
 import { checkMo2, type DoctorContext } from './checks'
@@ -21,11 +21,17 @@ describe('MO2 deploy check', () => {
     expect(r).toMatchObject({ id: 'mo2', status: 'warn', fix: { action: { kind: 'browse', setting: 'mo2ModsDir' } } })
   })
   it('valid mods directory: pass, the default mod name is the project name, the temp file is gone', async () => {
-    const mods = dir('mods-ok')
+    const mods = dir('ok', 'mods')
     const r = await checkMo2(ctx({ INKWELL_MO2_MODS: mods }), [])
     expect(r.status).toBe('pass')
     expect(r.detail).toContain(join(mods, 'My Widget'))
     expect(readdirSync(mods)).toEqual([]) // nothing left behind, and the mod folder is not created by a check
+  })
+  it('a mods directory not named "mods" warns with a Browse fix; any case and a trailing slash pass', async () => {
+    const r = await checkMo2(ctx({ INKWELL_MO2_MODS: dir('wrong', 'MO2') }), [])
+    expect(r).toMatchObject({ status: 'warn', fix: { action: { kind: 'browse', setting: 'mo2ModsDir' } } })
+    expect(r.detail).toMatch(/does not end in "mods"/)
+    expect((await checkMo2(ctx({ INKWELL_MO2_MODS: dir('case', 'Mods') + sep }), [])).status).toBe('pass')
   })
   it('missing mods directory fails and says so', async () => {
     const r = await checkMo2(ctx({ INKWELL_MO2_MODS: join(root, 'nope') }), [])
@@ -39,7 +45,7 @@ describe('MO2 deploy check', () => {
     expect(r.detail).toMatch(/is a file, not a folder/)
   })
   it('a mod folder that is a file fails', async () => {
-    const mods = dir('mods-file')
+    const mods = dir('file', 'mods')
     writeFileSync(join(mods, 'My Widget'), 'x')
     const r = await checkMo2(ctx({ INKWELL_MO2_MODS: mods }), [])
     expect(r.status).toBe('fail')
@@ -53,10 +59,10 @@ describe('MO2 deploy check', () => {
     expect(r.detail).toMatch(/inside the game's Data folder/)
     const other = dir('elsewhere', 'Data')
     expect((await checkMo2(ctx({ INKWELL_MO2_MODS: other }), [resolve(other, '..')])).status).toBe('fail') // Data of a detected install with any name
-    expect((await checkMo2(ctx({ INKWELL_MO2_MODS: other }), [])).status).toBe('pass') // not a game folder
+    expect((await checkMo2(ctx({ INKWELL_MO2_MODS: other }), [])).status).toBe('warn') // not a game folder (the name warning only)
   })
   it('an invalid mod name fails with a Clear fix; a path as name too', async () => {
-    const mods = dir('mods-name')
+    const mods = dir('name', 'mods')
     for (const name of ['a\\b', 'a/b', '..', 'x.', 'a:b']) {
       const r = await checkMo2(ctx({ INKWELL_MO2_MODS: mods }, { mo2ModName: name }), [])
       expect(r, name).toMatchObject({ status: 'fail', fix: { action: { kind: 'clear', setting: 'mo2ModName' } } })
@@ -68,7 +74,7 @@ describe('MO2 deploy check', () => {
   it('the overwrite folder is checked too, alone or with the mods directory', async () => {
     const over = dir('over')
     expect((await checkMo2(ctx({ INKWELL_MO2_OVERWRITE: over }), [])).status).toBe('pass')
-    const bad = await checkMo2(ctx({ INKWELL_MO2_MODS: dir('mods-over'), INKWELL_MO2_OVERWRITE: join(root, 'gone') }), [])
+    const bad = await checkMo2(ctx({ INKWELL_MO2_MODS: dir('over2', 'mods'), INKWELL_MO2_OVERWRITE: join(root, 'gone') }), [])
     expect(bad.status).toBe('fail')
     expect(bad.detail).toMatch(/Overwrite folder: .*does not exist/)
     expect(bad.fix).toMatchObject({ action: { setting: 'mo2OverwriteDir' } })
@@ -84,7 +90,7 @@ describe('MO2 deploy check', () => {
 
 describe('partial doctor runs', () => {
   it('runs only the requested checks, in display order', async () => {
-    const c = ctx({ INKWELL_MO2_MODS: dir('mods-partial') })
+    const c = ctx({ INKWELL_MO2_MODS: dir('partial', 'mods') })
     const r = await runDoctor({ ...c, exec: async () => Promise.reject(new Error('no')) }, ['mo2', 'java'])
     expect(r.map((x) => x.id)).toEqual(['java', 'mo2'])
     expect(await runDoctor(c, [])).toEqual([])

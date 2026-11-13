@@ -1,6 +1,6 @@
 import { existsSync, statSync } from 'node:fs'
 import { readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import type { CheckResult, Fix, ResolvedSettings } from '../../shared/doctor'
 import { FFDEC_PINNED } from '../../shared/ffdec'
 import { compilePapyrus } from '../widget/papyrusCompiler'
@@ -237,6 +237,7 @@ export async function checkMo2(ctx: DoctorContext, gameDirs: string[]): Promise<
   const lines: string[] = []
   let fix: Fix | undefined
   let failed = false
+  let warned = false
   if (mods) {
     const mod = name ?? ctx.projectName
     const nameProblem = name ? modNameProblem(name) : undefined
@@ -253,14 +254,21 @@ export async function checkMo2(ctx: DoctorContext, gameDirs: string[]): Promise<
     } else if (targetProblem) {
       fix = browseMods
       lines.push(`Mod folder: ${targetProblem}`)
-    } else lines.push(`Mod folder ${target ?? mods} is writable (${name ? 'mod name setting' : mod ? 'mod name defaults to the project name' : 'open a project or set a mod name'}).`)
+    } else {
+      lines.push(`Mod folder ${target ?? mods} is writable (${name ? 'mod name setting' : mod ? 'mod name defaults to the project name' : 'open a project or set a mod name'}).`)
+      if (basename(mods).toLowerCase() !== 'mods') {
+        warned = true
+        fix = browseMods
+        lines.push(`Mods directory: ${mods} does not end in "mods". MO2's mods directory is the "mods" folder inside its instance folder.`)
+      }
+    }
   }
   if (over) {
     const p = await folderProblem(over, gameDirs)
     if (p) (fix ??= browseOver, failed = true)
     lines.push(p ? `Overwrite folder: ${p}` : `Overwrite folder ${over} is writable.`)
   }
-  return done(failed ? 'fail' : 'pass', lines.join(' '), fix)
+  return done(failed ? 'fail' : warned ? 'warn' : 'pass', lines.join(' '), fix)
 }
 
 
