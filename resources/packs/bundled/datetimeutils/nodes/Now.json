@@ -1,0 +1,23 @@
+{
+  "kind": "Now",
+  "major": 1,
+  "title": "Now",
+  "category": "Time",
+  "pure": true,
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Now.as2",
+  "extra": {
+    "volatile": true,
+    "inspector": {
+      "description": "Gives the current date and time as a timestamp."
+    }
+  }
+}

@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/RoundTo@1
+({ f: function(v, s) { if (s == 0) return isFinite(v) ? v : 0; var r = Math.round(v / s) * s; return isFinite(r) ? r : 0; } }).f({{in.value}}, {{in.step}})

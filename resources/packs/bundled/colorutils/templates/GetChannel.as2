@@ -1,0 +1,2 @@
+// [{{node.id}}] colorutils/GetChannel@1
+({ f: function(c, ch) { var n = function(c) { c = Math.floor(c) || 0; return c < 0 ? 0 : c > 16777215 ? 16777215 : c; }; c = n(c); return ch == "r" ? (c >> 16) & 255 : ch == "g" ? (c >> 8) & 255 : c & 255; } }).f({{in.color}}, {{field.channel}})

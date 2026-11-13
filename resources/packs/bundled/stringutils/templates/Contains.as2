@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/Contains@1
+({ f: function(s, x, ic) { if (ic) { s = s.toLowerCase(); x = x.toLowerCase(); } return s.indexOf(x) >= 0; } }).f(String({{in.text}}), String({{in.find}}), {{field.ignoreCase}})

@@ -1,0 +1,34 @@
+{
+  "kind": "LogBase",
+  "major": 1,
+  "title": "Log Base",
+  "category": "Math",
+  "pure": true,
+  "description": "Logarithm of the value in the given base (0 if not finite).",
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "base",
+      "type": "Number",
+      "default": 10
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/LogBase.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the logarithm of a number in a chosen base."
+    }
+  }
+}

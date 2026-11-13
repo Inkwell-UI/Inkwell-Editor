@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Slice@1
+({ f: function(a, s, c) { a = a instanceof Array ? a : []; s = Math.floor(s) || 0; if (s < 0) s = Math.max(0, a.length + s); c = Math.floor(c); return (c < 0 || isNaN(c)) ? a.slice(s) : a.slice(s, s + c); } }).f({{in.array}}, {{in.start}}, {{in.count}})

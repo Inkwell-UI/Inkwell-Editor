@@ -1,0 +1,28 @@
+{
+  "kind": "Reverse",
+  "major": 1,
+  "title": "Array Reverse",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Reverse.as2",
+  "extra": {
+    "inspector": {
+      "description": "Flips the order of a list."
+    }
+  }
+}

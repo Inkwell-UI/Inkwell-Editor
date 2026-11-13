@@ -1,0 +1,33 @@
+{
+  "kind": "FormatThousands",
+  "major": 1,
+  "title": "Format Thousands",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "separator",
+      "type": "String",
+      "default": ","
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/FormatThousands.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a number into text with separators like 1,234,567."
+    }
+  }
+}

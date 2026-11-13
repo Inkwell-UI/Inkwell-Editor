@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Abs@1
+(Math.abs({{in.value}}) || 0)

@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Min@1
+Math.min({{in.a}}, {{in.b}})

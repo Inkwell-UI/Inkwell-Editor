@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/TitleCase@1
+({ f: function(s) { var o = "", up = true, w = " \t\r\n"; for (var i = 0; i < s.length; i++) { var c = s.charAt(i); o += up ? c.toUpperCase() : c; up = w.indexOf(c) >= 0; } return o; } }).f(String({{in.text}}))

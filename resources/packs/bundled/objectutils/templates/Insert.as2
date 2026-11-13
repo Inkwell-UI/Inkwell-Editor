@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Insert@1
+({ f: function(a, i, v) { var r = (a instanceof Array ? a : []).concat(); i = Math.floor(i) || 0; if (i < 0) i += r.length; i = Math.max(0, Math.min(r.length, i)); r.splice(i, 0, v); return r; } }).f({{in.array}}, {{in.index}}, {{in.item}})

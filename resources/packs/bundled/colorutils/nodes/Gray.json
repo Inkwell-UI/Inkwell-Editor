@@ -1,0 +1,28 @@
+{
+  "kind": "Gray",
+  "major": 1,
+  "title": "Gray",
+  "category": "Color",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "color",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Gray.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a color into its gray equivalent."
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "kind": "Append",
+  "major": 1,
+  "title": "Append",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "item",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "String",
+        "Number",
+        "Bool",
+        "Array",
+        "Object"
+      ],
+      "default": "String",
+      "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
+    }
+  },
+  "as2Template": "templates/Append.as2",
+  "extra": {
+    "inspector": {
+      "description": "Adds an item to the end of a list."
+    }
+  }
+}

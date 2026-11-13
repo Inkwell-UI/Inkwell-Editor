@@ -1,0 +1,38 @@
+{
+  "kind": "WeekdayName",
+  "major": 1,
+  "title": "Weekday Name",
+  "category": "Time",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "weekday",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "style": {
+      "type": "string",
+      "enum": [
+        "long",
+        "short"
+      ],
+      "default": "long",
+      "description": "Sunday or Sun"
+    }
+  },
+  "as2Template": "templates/WeekdayName.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a weekday number into its name."
+    }
+  }
+}

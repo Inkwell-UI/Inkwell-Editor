@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/EndsWith@1
+({ f: function(s, x, ic) { if (ic) { s = s.toLowerCase(); x = x.toLowerCase(); } return x.length <= s.length && s.substr(s.length - x.length) == x; } }).f(String({{in.text}}), String({{in.suffix}}), {{field.ignoreCase}})

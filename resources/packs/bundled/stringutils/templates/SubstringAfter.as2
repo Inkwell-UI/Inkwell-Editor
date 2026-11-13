@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/SubstringAfter@1
+({ f: function(s, d, last) { var i = last ? s.lastIndexOf(d) : s.indexOf(d); return (d == "" || i < 0) ? "" : s.substr(i + d.length); } }).f(String({{in.text}}), String({{in.delimiter}}), {{field.last}})

@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/CountOccurrences@1
+(String({{in.find}}) == "" ? 0 : String({{in.text}}).split(String({{in.find}})).length - 1)

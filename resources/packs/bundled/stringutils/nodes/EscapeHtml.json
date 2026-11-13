@@ -1,0 +1,28 @@
+{
+  "kind": "EscapeHtml",
+  "major": 1,
+  "title": "Escape HTML",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/EscapeHtml.as2",
+  "extra": {
+    "inspector": {
+      "description": "Makes a text safe to show as HTML by escaping special characters."
+    }
+  }
+}

@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Exp@1
+(isFinite(Math.exp({{in.value}})) ? (Math.exp({{in.value}})) : 0)

@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/IsBetween@1
+({ f: function(v, a, b, i) { return i ? (v >= a && v <= b) : (v > a && v < b); } }).f({{in.value}}, {{in.min}}, {{in.max}}, {{field.inclusive}})

@@ -1,0 +1,28 @@
+{
+  "kind": "IsEmpty",
+  "major": 1,
+  "title": "Array Is Empty",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/IsEmpty.as2",
+  "extra": {
+    "inspector": {
+      "description": "True when a list has no items."
+    }
+  }
+}

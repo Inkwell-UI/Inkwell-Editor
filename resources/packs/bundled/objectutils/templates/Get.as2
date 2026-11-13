@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Get@1
+({ f: function(a, i, d, t) { if (!(a instanceof Array)) a = []; i = Math.floor(i); if (i < 0) i += a.length; var v = (i >= 0 && i < a.length) ? a[i] : d; if (t == "Number") return Number(v) || 0; if (t == "Bool") return v == true || v == "true"; if (t == "Array") return v instanceof Array ? v : []; if (t == "Object") return (typeof(v) == "object" && !(v instanceof Array)) ? v : {}; return v == undefined ? "" : String(v); } }).f({{in.array}}, {{in.index}}, {{in.default}}, {{field.valueType}})

@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/StartsWith@1
+({ f: function(s, x, ic) { if (ic) { s = s.toLowerCase(); x = x.toLowerCase(); } return s.substr(0, x.length) == x; } }).f(String({{in.text}}), String({{in.prefix}}), {{field.ignoreCase}})

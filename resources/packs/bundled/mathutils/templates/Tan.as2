@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Tan@1
+(isFinite(Math.tan({{in.value}})) ? (Math.tan({{in.value}})) : 0)

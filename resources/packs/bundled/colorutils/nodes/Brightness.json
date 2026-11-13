@@ -1,0 +1,33 @@
+{
+  "kind": "Brightness",
+  "major": 1,
+  "title": "Brightness",
+  "category": "Color",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "color",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "amount",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Brightness.as2",
+  "extra": {
+    "inspector": {
+      "description": "Makes a color lighter or darker."
+    }
+  }
+}

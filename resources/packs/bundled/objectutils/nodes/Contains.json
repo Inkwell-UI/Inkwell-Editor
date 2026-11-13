@@ -1,0 +1,47 @@
+{
+  "kind": "Contains",
+  "major": 1,
+  "title": "Array Contains",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "value",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "String",
+        "Number",
+        "Bool",
+        "Array",
+        "Object"
+      ],
+      "default": "String",
+      "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
+    }
+  },
+  "as2Template": "templates/Contains.as2",
+  "extra": {
+    "inspector": {
+      "description": "True when a list holds a value."
+    }
+  }
+}

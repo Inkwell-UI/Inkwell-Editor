@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Average@1
+({ f: function(a) { var s = 0; if (!(a instanceof Array) || a.length == 0) return 0; for (var i = 0; i < a.length; i++) s += Number(a[i]) || 0; return s / a.length; } }).f({{in.array}})

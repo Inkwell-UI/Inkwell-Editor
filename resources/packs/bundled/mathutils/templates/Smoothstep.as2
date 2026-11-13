@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Smoothstep@1
+({ f: function(a, b, x) { if (a == b) return 0; var t = Math.min(Math.max((x - a) / (b - a), 0), 1); var r = t * t * (3 - 2 * t); return isFinite(r) ? r : 0; } }).f({{in.edge0}}, {{in.edge1}}, {{in.x}})

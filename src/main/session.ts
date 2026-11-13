@@ -33,7 +33,7 @@ import { createAssetStore, type AssetStore } from './images/assets'
 import { createTrust } from './sync/figmaTrust'
 import { loadSettings, normalizeValue, patchSettings, refuseReason, resolveSettings, saveSettings, settingProblems } from './settings'
 import { defaultInstalledDir, modeFromEnv, resolvePreviewFonts, type PreviewFontSet } from './previewFonts'
-import { corePackDir, loadPacks } from './packs'
+import { bundledPacksRoot, corePackDir, loadPacks, withBundledPacks } from './packs'
 import { addFunctionToLibrary, createLibrary, exportPack, importLibrary, isImportedPack, localLibraryDirs, removeLibrary, removeLibraryFunction, type ImportResult } from './packs/libraries'
 import { createPackManager, lockedPacks, parseGitHubRef, readLock, type Fetch } from './packs/manager'
 import type { PackCandidate, PackResult, PacksState } from '../shared/packs'
@@ -102,14 +102,14 @@ export function createSession(deps: SessionDeps) {
   const menus = new Map<string, { settings?: MenuSettings; error?: string }>() // swf name -> swfs/<name>/menu.json (the panel is the writer; main keeps the saved copy for deploy)
   let packs: Promise<PackSet> | undefined
   /** The bundled core pack first (it wins an id clash), then the project's cached packs that match packs.lock (`refreshPacks`). */
-  let packDirs = [corePackDir(deps.appPath)]
-  const originOf = (d: string): LoadedPack['origin'] => (d === corePackDir(deps.appPath) ? 'core' : /[\\/]libraries[\\/]/.test(d) ? (isImportedPack(d) ? 'imported' : 'library') : 'installed')
+  let packDirs = withBundledPacks(deps.appPath, [corePackDir(deps.appPath)])
+  const originOf = (d: string): LoadedPack['origin'] => (d === corePackDir(deps.appPath) || d.startsWith(bundledPacksRoot(deps.appPath)) ? 'core' : /[\\/]libraries[\\/]/.test(d) ? (isImportedPack(d) ? 'imported' : 'library') : 'installed')
   const getPacks = (): Promise<PackSet> => (packs ??= loadPacks(packDirs, originOf))
   let codegenPacks: ReturnType<typeof loadCodegenPacks> | undefined
   const packManager = createPackManager({ fetch: deps.fetch ?? fetch, ...(process.env['INKWELL_PACKS_INDEX'] ? { indexUrl: process.env['INKWELL_PACKS_INDEX'] } : {}) })
   /** Re-reads packs.lock and the cache; every pack consumer (lint, preview builds, AS2 view, deploy) loads again on next use. */
   const refreshPacks = async (dir: string | undefined): Promise<void> => {
-    packDirs = [corePackDir(deps.appPath), ...(dir ? (await lockedPacks(dir, (await readLock(dir)).lock)).dirs : []), ...(dir ? await localLibraryDirs(dir) : [])]
+    packDirs = withBundledPacks(deps.appPath, [corePackDir(deps.appPath), ...(dir ? (await lockedPacks(dir, (await readLock(dir)).lock)).dirs : []), ...(dir ? await localLibraryDirs(dir) : [])])
     packs = undefined
     codegenPacks = undefined
     pipeline?.resetPacks()
@@ -222,7 +222,7 @@ export function createSession(deps: SessionDeps) {
       const all = [...(graphs.get(i.name)?.values() ?? [])]
       if (!ir || !all.length) continue
       const layers = new Set(Object.keys(ir.nodes))
-      graphIssues.set(i.name, all.flatMap((g) => validateGraph(g, { defs, layers, siblings: all, library, target: ir.target.kind, ...(ir.target.contract ? { contract: ir.target.contract } : {}) }).map((x) => {
+      graphIssues.set(i.name, all.flatMap((g) => validateGraph(g, { defs, layers, siblings: all, library, target: ir.target.kind, themes: ir.themes ?? [], ...(ir.target.contract ? { contract: ir.target.contract } : {}) }).map((x) => {
         const layerName = x.targetId ? (ir.nodes[x.targetId]?.name ?? x.targetId) : ''
         const row: LintRow = { swfName: i.name, nodeId: x.targetId ?? '', layerName, severity: x.level, code: x.code, message: `${g.name}: ${x.message}`, graphId: g.id, graphNodeId: x.nodeId! }
         return { row, item: { severity: x.level, code: x.code, message: row.message, ...(x.targetId ? { nodeId: x.targetId, layerName } : {}) } }

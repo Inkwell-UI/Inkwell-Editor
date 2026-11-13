@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/Truncate@1
+({ f: function(s, m, x) { m = Math.max(0, Math.floor(m)); if (s.length <= m) return s; if (x.length >= m) return x.substr(0, m); return s.substr(0, m - x.length) + x; } }).f(String({{in.text}}), {{in.max}}, String({{in.suffix}}))

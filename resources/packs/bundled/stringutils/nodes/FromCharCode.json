@@ -1,0 +1,28 @@
+{
+  "kind": "FromCharCode",
+  "major": 1,
+  "title": "From Char Code",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "code",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/FromCharCode.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a character code into a character."
+    }
+  }
+}

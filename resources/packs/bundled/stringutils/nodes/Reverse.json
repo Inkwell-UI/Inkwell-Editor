@@ -1,0 +1,28 @@
+{
+  "kind": "Reverse",
+  "major": 1,
+  "title": "Reverse",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Reverse.as2",
+  "extra": {
+    "inspector": {
+      "description": "Flips a text backwards."
+    }
+  }
+}

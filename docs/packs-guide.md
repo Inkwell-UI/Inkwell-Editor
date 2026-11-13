@@ -4,7 +4,7 @@ A **node pack** adds nodes (for the graph editor) without a new editor version. 
 
 ## Add a pack to a project
 
-1. Open the **Library** tab (left side, Behaviour mode). Its **Packs** list shows the bundled core pack and the packs this project has installed, each with its state.
+1. Open the **Library** tab (left side, Behaviour mode). Its **Packs** list shows the bundled packs (core and the five utility packs MathUtils, StringUtils, ObjectUtils, DateTimeUtils and ColorUtils) and the packs this project has installed, each with its state.
 2. **Add Pack**: search the **Packs Index** by name, or type `owner/name` or a GitHub URL.
 3. The confirm view shows the repo, the version, the **SHA-256** of the downloaded `pack.zip`, how many nodes it has and its changelog. Read it, then confirm. Only then is anything written.
 4. The project now has `packs.lock` (commit it: it pins the exact pack version and hash) and `packs-cache/` (the downloaded copy; git-ignored).

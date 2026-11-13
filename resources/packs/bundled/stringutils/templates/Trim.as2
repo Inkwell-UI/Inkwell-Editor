@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/Trim@1
+({ f: function(s, m) { var a = 0, b = s.length, w = " \t\r\n"; if (m != "end") { while (a < b && w.indexOf(s.charAt(a)) >= 0) a++; } if (m != "start") { while (b > a && w.indexOf(s.charAt(b - 1)) >= 0) b--; } return s.substring(a, b); } }).f(String({{in.text}}), {{field.mode}})

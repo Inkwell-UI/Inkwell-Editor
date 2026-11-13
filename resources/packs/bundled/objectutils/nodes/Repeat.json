@@ -1,0 +1,47 @@
+{
+  "kind": "Repeat",
+  "major": 1,
+  "title": "Array Repeat",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "item",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    },
+    {
+      "name": "count",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "String",
+        "Number",
+        "Bool",
+        "Array",
+        "Object"
+      ],
+      "default": "String",
+      "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
+    }
+  },
+  "as2Template": "templates/Repeat.as2",
+  "extra": {
+    "inspector": {
+      "description": "Makes a list that repeats one item several times."
+    }
+  }
+}

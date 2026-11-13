@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/StripHtmlTags@1
+({ f: function(s) { var o = "", t = false; for (var i = 0; i < s.length; i++) { var c = s.charAt(i); if (c == "<") { t = true; } else if (c == ">" && t) { t = false; } else if (!t) { o += c; } } return o; } }).f(String({{in.text}}))

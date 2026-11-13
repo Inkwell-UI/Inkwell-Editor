@@ -1,0 +1,52 @@
+{
+  "kind": "FilterByField",
+  "major": 1,
+  "title": "Filter By Field",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "field",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "value",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "String",
+        "Number",
+        "Bool",
+        "Array",
+        "Object"
+      ],
+      "default": "String",
+      "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
+    }
+  },
+  "as2Template": "templates/FilterByField.as2",
+  "extra": {
+    "inspector": {
+      "description": "Keeps the objects in a list whose field matches a value."
+    }
+  }
+}

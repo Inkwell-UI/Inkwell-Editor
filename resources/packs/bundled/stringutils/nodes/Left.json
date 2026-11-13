@@ -1,0 +1,33 @@
+{
+  "kind": "Left",
+  "major": 1,
+  "title": "Left",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "count",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Left.as2",
+  "extra": {
+    "inspector": {
+      "description": "Takes the first characters of a text."
+    }
+  }
+}

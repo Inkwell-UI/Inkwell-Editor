@@ -1,0 +1,53 @@
+{
+  "kind": "Get",
+  "major": 1,
+  "title": "Get",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "default",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    }
+  ],
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "String",
+        "Number",
+        "Bool",
+        "Array",
+        "Object"
+      ],
+      "default": "String",
+      "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
+    }
+  },
+  "as2Template": "templates/Get.as2",
+  "extra": {
+    "inspector": {
+      "description": "Reads the item at an index, or a default when there is none."
+    }
+  }
+}

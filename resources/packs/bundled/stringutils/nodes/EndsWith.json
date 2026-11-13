@@ -1,0 +1,39 @@
+{
+  "kind": "EndsWith",
+  "major": 1,
+  "title": "Ends With",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "suffix",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {
+    "ignoreCase": {
+      "type": "boolean",
+      "default": false,
+      "description": "Compare without regard to letter case"
+    }
+  },
+  "as2Template": "templates/EndsWith.as2",
+  "extra": {
+    "inspector": {
+      "description": "True when a text ends with a suffix."
+    }
+  }
+}

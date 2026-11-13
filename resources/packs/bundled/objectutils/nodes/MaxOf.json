@@ -1,0 +1,28 @@
+{
+  "kind": "MaxOf",
+  "major": 1,
+  "title": "Max Of",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/MaxOf.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the largest number in a list."
+    }
+  }
+}

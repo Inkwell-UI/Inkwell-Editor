@@ -1,0 +1,38 @@
+{
+  "kind": "Truncate",
+  "major": 1,
+  "title": "Truncate Text",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "max",
+      "type": "Number",
+      "default": 20
+    },
+    {
+      "name": "suffix",
+      "type": "String",
+      "default": "..."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Truncate.as2",
+  "extra": {
+    "inspector": {
+      "description": "Cuts a text to a maximum length and adds a suffix."
+    }
+  }
+}

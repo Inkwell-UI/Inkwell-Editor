@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/CountOf@1
+({ f: function(a, v) { var n = 0; if (a instanceof Array) { for (var i = 0; i < a.length; i++) { if (a[i] === v) n++; } } return n; } }).f({{in.array}}, {{in.value}})

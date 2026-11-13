@@ -1,0 +1,38 @@
+{
+  "kind": "MakeColor",
+  "major": 1,
+  "title": "Make Color",
+  "category": "Color",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "r",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "g",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "b",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/MakeColor.as2",
+  "extra": {
+    "inspector": {
+      "description": "Builds a color from red, green and blue."
+    }
+  }
+}

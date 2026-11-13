@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/IsEmpty@1
+({ f: function(a) { return !(a instanceof Array) || a.length == 0; } }).f({{in.array}})

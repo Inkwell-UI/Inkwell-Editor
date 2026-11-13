@@ -1,0 +1,49 @@
+{
+  "kind": "GetDatePart",
+  "major": 1,
+  "title": "Get Date Part",
+  "category": "Time",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "timestamp",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "part": {
+      "type": "string",
+      "enum": [
+        "year",
+        "month",
+        "day",
+        "hour",
+        "minute",
+        "second",
+        "weekday",
+        "dayOfYear"
+      ],
+      "default": "year",
+      "description": "month is 1-12, weekday is 0 (Sunday) to 6, dayOfYear is 1-366"
+    },
+    "utc": {
+      "type": "boolean",
+      "default": true,
+      "description": "Read the part in UTC (the same on every PC); off reads it in the player's local time zone"
+    }
+  },
+  "as2Template": "templates/GetDatePart.as2",
+  "extra": {
+    "inspector": {
+      "description": "Reads the year, month, day, hour, minute or second of a timestamp."
+    }
+  }
+}

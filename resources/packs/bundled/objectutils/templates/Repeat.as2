@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Repeat@1
+({ f: function(v, n) { n = Math.min(1000, Math.floor(n)); var r = []; for (var i = 0; i < n; i++) r.push(v); return r; } }).f({{in.item}}, {{in.count}})

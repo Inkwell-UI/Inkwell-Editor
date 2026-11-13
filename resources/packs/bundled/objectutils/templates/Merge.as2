@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Merge@1
+({ f: function(a, b) { var o = function(x) { return (typeof(x) == "object" && x != null && !(x instanceof Array)) ? x : {}; }; var r = {}; a = o(a); b = o(b); for (var k in a) r[k] = a[k]; for (var j in b) r[j] = b[j]; return r; } }).f({{in.a}}, {{in.b}})

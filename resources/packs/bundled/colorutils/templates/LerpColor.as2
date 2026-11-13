@@ -1,0 +1,2 @@
+// [{{node.id}}] colorutils/LerpColor@1
+({ f: function(a, b, t) { var n = function(c) { c = Math.floor(c) || 0; return c < 0 ? 0 : c > 16777215 ? 16777215 : c; }; a = n(a); b = n(b); t = t > 0 ? (t < 1 ? t : 1) : 0; var m = function(s) { var x = (a >> s) & 255, y = (b >> s) & 255; return Math.round(x + (y - x) * t); }; return m(16) * 65536 + m(8) * 256 + m(0); } }).f({{in.a}}, {{in.b}}, {{in.t}})

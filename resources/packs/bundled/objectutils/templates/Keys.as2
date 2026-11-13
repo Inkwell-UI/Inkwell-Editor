@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Keys@1
+({ f: function(x) { var o = function(x) { return (typeof(x) == "object" && x != null && !(x instanceof Array)) ? x : {}; }; var r = []; for (var k in o(x)) r.push(k); r.sort(); return r; } }).f({{in.object}})

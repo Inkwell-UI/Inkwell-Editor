@@ -1,0 +1,2 @@
+// [{{node.id}}] colorutils/HexToColor@1
+({ f: function(s) { s = String(s); if (s.charAt(0) == "#") s = s.substring(1); if (s.length == 3) s = s.charAt(0) + s.charAt(0) + s.charAt(1) + s.charAt(1) + s.charAt(2) + s.charAt(2); if (s.length != 6) return 0; for (var i = 0; i < 6; i++) if ("0123456789abcdefABCDEF".indexOf(s.charAt(i)) < 0) return 0; return parseInt(s, 16); } }).f({{in.hex}})

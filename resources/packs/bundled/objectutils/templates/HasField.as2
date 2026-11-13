@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/HasField@1
+({ f: function(x, k) { var o = function(x) { return (typeof(x) == "object" && x != null && !(x instanceof Array)) ? x : {}; }; return o(x)[k] != undefined; } }).f({{in.object}}, {{in.key}})

@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/ShiftRight@1
+((Number({{in.value}}) | 0) >> ((Number({{in.bits}}) | 0) & 31))

@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/Left@1
+String({{in.text}}).substr(0, Math.max(0, {{in.count}}))

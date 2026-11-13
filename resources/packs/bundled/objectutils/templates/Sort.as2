@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Sort@1
+({ f: function(a, d) { var r = (a instanceof Array ? a : []).concat(); r.sort(function(x, y) { var c = (typeof(x) == "number" && typeof(y) == "number") ? x - y : (String(x) < String(y) ? -1 : (String(x) > String(y) ? 1 : 0)); return d ? -c : c; }); return r; } }).f({{in.array}}, {{in.descending}})

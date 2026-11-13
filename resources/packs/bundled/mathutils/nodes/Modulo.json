@@ -1,0 +1,33 @@
+{
+  "kind": "Modulo",
+  "major": 1,
+  "title": "Modulo",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "b",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Modulo.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the remainder after dividing one number by another."
+    }
+  }
+}

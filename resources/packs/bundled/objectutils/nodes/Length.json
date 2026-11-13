@@ -1,0 +1,28 @@
+{
+  "kind": "Length",
+  "major": 1,
+  "title": "Length",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Length.as2",
+  "extra": {
+    "inspector": {
+      "description": "Counts the items in a list."
+    }
+  }
+}

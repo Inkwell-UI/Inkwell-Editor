@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/RemoveField@1
+({ f: function(x, d) { var o = function(x) { return (typeof(x) == "object" && x != null && !(x instanceof Array)) ? x : {}; }; var r = {}; x = o(x); for (var k in x) if (k != d) r[k] = x[k]; return r; } }).f({{in.object}}, {{in.key}})

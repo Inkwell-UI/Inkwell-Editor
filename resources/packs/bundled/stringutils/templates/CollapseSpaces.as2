@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/CollapseSpaces@1
+({ f: function(s) { var o = "", sp = true, w = " \t\r\n"; for (var i = 0; i < s.length; i++) { var c = s.charAt(i); if (w.indexOf(c) >= 0) { sp = true; } else { if (sp && o != "") o += " "; o += c; sp = false; } } return o; } }).f(String({{in.text}}))

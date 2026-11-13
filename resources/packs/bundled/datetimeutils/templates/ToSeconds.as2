@@ -1,0 +1,2 @@
+// [{{node.id}}] datetimeutils/ToSeconds@1
+({ f: function(h, m, s) { var r = h * 3600 + m * 60 + s; return isFinite(r) ? r : 0; } }).f({{in.hours}}, {{in.minutes}}, {{in.seconds}})

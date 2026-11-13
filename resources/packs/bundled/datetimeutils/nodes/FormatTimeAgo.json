@@ -1,0 +1,28 @@
+{
+  "kind": "FormatTimeAgo",
+  "major": 1,
+  "title": "Format Time Ago",
+  "category": "Time",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "seconds",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/FormatTimeAgo.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns an elapsed time into text like 5 minutes ago."
+    }
+  }
+}

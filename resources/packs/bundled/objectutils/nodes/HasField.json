@@ -1,0 +1,33 @@
+{
+  "kind": "HasField",
+  "major": 1,
+  "title": "Has Field",
+  "category": "Object",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "object",
+      "type": "Object",
+      "default": {}
+    },
+    {
+      "name": "key",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/HasField.as2",
+  "extra": {
+    "inspector": {
+      "description": "True when an object has a field with the given name."
+    }
+  }
+}

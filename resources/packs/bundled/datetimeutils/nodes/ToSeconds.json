@@ -1,0 +1,38 @@
+{
+  "kind": "ToSeconds",
+  "major": 1,
+  "title": "To Seconds",
+  "category": "Time",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "hours",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "minutes",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "seconds",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/ToSeconds.as2",
+  "extra": {
+    "inspector": {
+      "description": "Adds hours, minutes and seconds into a total in seconds."
+    }
+  }
+}

@@ -1,0 +1,2 @@
+// [{{node.id}}] datetimeutils/FormatTimeOfDay@1
+({ f: function(h, c) { var p = function(x, w) { x = String(x); while (x.length < w) x = "0" + x; return x; }; h = isFinite(h) ? h : 0; var t = Math.floor(h * 60 + 0.000000001); t = ((t % 1440) + 1440) % 1440; var hh = Math.floor(t / 60); var mm = t % 60; return c == "24h" ? p(hh, 2) + ":" + p(mm, 2) : ((hh % 12) || 12) + ":" + p(mm, 2) + (hh < 12 ? " AM" : " PM"); } }).f({{in.hour}}, {{field.clock}})

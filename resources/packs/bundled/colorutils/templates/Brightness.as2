@@ -1,0 +1,2 @@
+// [{{node.id}}] colorutils/Brightness@1
+({ f: function(c, a) { var n = function(c) { c = Math.floor(c) || 0; return c < 0 ? 0 : c > 16777215 ? 16777215 : c; }; c = n(c); a = a > -1 ? (a < 1 ? a : 1) : -1; var k = function(s) { var x = (c >> s) & 255; return Math.round(x + (a > 0 ? (255 - x) * a : x * a)); }; return k(16) * 65536 + k(8) * 256 + k(0); } }).f({{in.color}}, {{in.amount}})

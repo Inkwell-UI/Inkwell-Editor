@@ -1,0 +1,28 @@
+{
+  "kind": "CharCode",
+  "major": 1,
+  "title": "Char Code",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/CharCode.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the character code of the first character."
+    }
+  }
+}

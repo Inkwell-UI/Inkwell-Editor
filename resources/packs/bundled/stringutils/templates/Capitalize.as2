@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/Capitalize@1
+({ f: function(s) { return s.charAt(0).toUpperCase() + s.substr(1); } }).f(String({{in.text}}))

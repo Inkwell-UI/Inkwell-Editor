@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/EscapeHtml@1
+String({{in.text}}).split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;")

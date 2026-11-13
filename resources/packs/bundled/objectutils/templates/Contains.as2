@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Contains@1
+({ f: function(a, v) { if (!(a instanceof Array)) return false; for (var i = 0; i < a.length; i++) { if (a[i] === v) return true; } return false; } }).f({{in.array}}, {{in.value}})

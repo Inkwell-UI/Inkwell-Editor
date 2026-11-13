@@ -1,0 +1,39 @@
+{
+  "kind": "SubstringBefore",
+  "major": 1,
+  "title": "Substring Before",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "delimiter",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "last": {
+      "type": "boolean",
+      "default": false,
+      "description": "Cut at the last delimiter instead of the first"
+    }
+  },
+  "as2Template": "templates/SubstringBefore.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the part of a text before a delimiter."
+    }
+  }
+}

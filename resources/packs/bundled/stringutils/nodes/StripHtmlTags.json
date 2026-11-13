@@ -1,0 +1,28 @@
+{
+  "kind": "StripHtmlTags",
+  "major": 1,
+  "title": "Strip HTML Tags",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/StripHtmlTags.as2",
+  "extra": {
+    "inspector": {
+      "description": "Removes HTML tags from a text."
+    }
+  }
+}

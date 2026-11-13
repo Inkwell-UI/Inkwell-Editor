@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/Right@1
+({ f: function(s, c) { var n = Math.max(0, c); return n >= s.length ? s : s.substr(s.length - n); } }).f(String({{in.text}}), {{in.count}})

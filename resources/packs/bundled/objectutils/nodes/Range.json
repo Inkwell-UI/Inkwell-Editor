@@ -1,0 +1,38 @@
+{
+  "kind": "Range",
+  "major": 1,
+  "title": "Range",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "start",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "count",
+      "type": "Number",
+      "default": 10
+    },
+    {
+      "name": "step",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Range.as2",
+  "extra": {
+    "inspector": {
+      "description": "Makes a list of numbers counting from a start."
+    }
+  }
+}

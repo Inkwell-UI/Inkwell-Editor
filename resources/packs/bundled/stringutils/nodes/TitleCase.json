@@ -1,0 +1,28 @@
+{
+  "kind": "TitleCase",
+  "major": 1,
+  "title": "Title Case",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/TitleCase.as2",
+  "extra": {
+    "inspector": {
+      "description": "Makes every word of a text start with a capital."
+    }
+  }
+}

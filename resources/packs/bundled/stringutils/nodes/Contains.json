@@ -1,0 +1,39 @@
+{
+  "kind": "Contains",
+  "major": 1,
+  "title": "Contains",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "find",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {
+    "ignoreCase": {
+      "type": "boolean",
+      "default": false,
+      "description": "Compare without regard to letter case"
+    }
+  },
+  "as2Template": "templates/Contains.as2",
+  "extra": {
+    "inspector": {
+      "description": "True when a text contains another text."
+    }
+  }
+}

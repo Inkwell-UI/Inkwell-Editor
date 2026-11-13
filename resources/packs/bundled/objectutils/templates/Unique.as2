@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Unique@1
+({ f: function(a) { var r = []; if (a instanceof Array) { for (var i = 0; i < a.length; i++) { var seen = false; for (var j = 0; j < r.length; j++) { if (r[j] === a[i]) { seen = true; break; } } if (!seen) r.push(a[i]); } } return r; } }).f({{in.array}})

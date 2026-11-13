@@ -1,0 +1,2 @@
+// [{{node.id}}] datetimeutils/FormatDuration@1
+({ f: function(s, ah, d) { var p = function(x, w) { x = String(x); while (x.length < w) x = "0" + x; return x; }; s = (s > 0 && isFinite(s)) ? s : 0; var q = Math.pow(10, d); var t = Math.floor(s * q + 0.000000001); var w = Math.floor(t / q); var h = Math.floor(w / 3600); var m = Math.floor((w % 3600) / 60); var r = (h > 0 || ah) ? h + ":" + p(m, 2) : String(m); r += ":" + p(w % 60, 2); if (d > 0) r += "." + p(t - w * q, d); return r; } }).f({{in.seconds}}, {{field.alwaysHours}}, {{field.decimals}})

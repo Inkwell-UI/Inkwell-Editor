@@ -1,0 +1,2 @@
+// [{{node.id}}] datetimeutils/WeekdayName@1
+({ f: function(d, st) { d = Math.floor(d); var a = "Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday".split(","); if (!(d >= 0 && d <= 6)) return ""; return st == "short" ? a[d].substring(0, 3) : a[d]; } }).f({{in.weekday}}, {{field.style}})

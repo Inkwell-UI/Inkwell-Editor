@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/Reverse@1
+String({{in.text}}).split("").reverse().join("")

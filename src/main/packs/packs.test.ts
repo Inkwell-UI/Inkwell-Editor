@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { defIndex } from '../../shared/graphs'
 import { TOOL_VERSION } from '../../shared/product'
-import { corePackDir, loadPack, loadPacks } from './index'
+import { corePackDir, loadPack, loadPacks, withBundledPacks } from './index'
 
 const fixture = resolve(__dirname, '../../../tests/fixtures/packs/test-pack')
 
@@ -53,5 +53,23 @@ describe('pack loader', () => {
   it('the core pack folder is configurable', () => {
     expect(corePackDir('/app', {})).toBe(join('/app', 'resources/packs/core'))
     expect(corePackDir('/app', { INKWELL_CORE_PACK: '/x/core' })).toBe('/x/core')
+  })
+})
+
+describe('bundled utility packs', () => {
+  const app = resolve(__dirname, '../../..')
+  const ids = async (dirs: string[]) => (await loadPacks(dirs)).packs.map((p) => p.manifest.id)
+  it('load after core, all five, without problems', async () => {
+    const set = await loadPacks(withBundledPacks(app, [corePackDir(app)]))
+    expect(set.problems).toEqual([])
+    expect(set.packs.map((p) => p.manifest.id)).toEqual(['core', 'colorutils', 'datetimeutils', 'mathutils', 'objectutils', 'stringutils'])
+  })
+  it("a pack the project locked wins over the bundled one of the same id, quietly", async () => {
+    const own = resolve(app, 'tests/fixtures/packs/mathutils')
+    const dirs = withBundledPacks(app, [corePackDir(app), own])
+    expect(dirs).toContain(own)
+    expect(dirs.filter((d) => d.includes('bundled') && d.endsWith('mathutils'))).toEqual([])
+    expect((await loadPacks(dirs)).problems).toEqual([])
+    expect(await ids(dirs)).toEqual(['core', 'mathutils', 'colorutils', 'datetimeutils', 'objectutils', 'stringutils'])
   })
 })

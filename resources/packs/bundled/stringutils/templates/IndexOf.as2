@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/IndexOf@1
+String({{in.text}}).indexOf(String({{in.find}}), Math.max(0, {{in.from}}))

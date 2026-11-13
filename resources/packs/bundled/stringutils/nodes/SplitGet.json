@@ -1,0 +1,38 @@
+{
+  "kind": "SplitGet",
+  "major": 1,
+  "title": "Split Get",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "delimiter",
+      "type": "String",
+      "default": ","
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/SplitGet.as2",
+  "extra": {
+    "inspector": {
+      "description": "Splits a text at a delimiter and reads one part."
+    }
+  }
+}

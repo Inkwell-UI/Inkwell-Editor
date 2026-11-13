@@ -1,0 +1,34 @@
+{
+  "kind": "ColorToHex",
+  "major": 1,
+  "title": "Color To Hex",
+  "category": "Color",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "color",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "uppercase": {
+      "type": "boolean",
+      "default": true,
+      "description": "Upper-case digits (#FFAA00) instead of lower-case (#ffaa00)"
+    }
+  },
+  "as2Template": "templates/ColorToHex.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a color into hex text like FF8800."
+    }
+  }
+}

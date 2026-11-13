@@ -1,0 +1,33 @@
+{
+  "kind": "Concat",
+  "major": 1,
+  "title": "Array Concat",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "other",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Concat.as2",
+  "extra": {
+    "inspector": {
+      "description": "Joins two lists into one."
+    }
+  }
+}

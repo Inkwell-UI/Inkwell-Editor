@@ -1,0 +1,33 @@
+{
+  "kind": "Merge",
+  "major": 1,
+  "title": "Merge",
+  "category": "Object",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "Object",
+      "default": {}
+    },
+    {
+      "name": "b",
+      "type": "Object",
+      "default": {}
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Object",
+      "default": {}
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Merge.as2",
+  "extra": {
+    "inspector": {
+      "description": "Combines two objects. Fields of the second win."
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "kind": "MonthName",
+  "major": 1,
+  "title": "Month Name",
+  "category": "Time",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "month",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "style": {
+      "type": "string",
+      "enum": [
+        "long",
+        "short"
+      ],
+      "default": "long",
+      "description": "January or Jan"
+    }
+  },
+  "as2Template": "templates/MonthName.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a month number into its name."
+    }
+  }
+}

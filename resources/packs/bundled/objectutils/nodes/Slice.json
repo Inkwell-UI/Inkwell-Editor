@@ -1,0 +1,38 @@
+{
+  "kind": "Slice",
+  "major": 1,
+  "title": "Slice",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "start",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "count",
+      "type": "Number",
+      "default": -1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Slice.as2",
+  "extra": {
+    "inspector": {
+      "description": "Takes part of a list, starting at an index."
+    }
+  }
+}

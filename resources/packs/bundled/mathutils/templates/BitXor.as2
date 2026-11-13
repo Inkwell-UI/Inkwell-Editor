@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/BitXor@1
+((Number({{in.a}}) | 0) ^ (Number({{in.b}}) | 0))

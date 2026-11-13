@@ -1,0 +1,33 @@
+{
+  "kind": "Right",
+  "major": 1,
+  "title": "Right",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "count",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Right.as2",
+  "extra": {
+    "inspector": {
+      "description": "Takes the last characters of a text."
+    }
+  }
+}

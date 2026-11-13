@@ -1,0 +1,28 @@
+{
+  "kind": "CollapseSpaces",
+  "major": 1,
+  "title": "Collapse Spaces",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/CollapseSpaces.as2",
+  "extra": {
+    "inspector": {
+      "description": "Squeezes runs of spaces into one space."
+    }
+  }
+}

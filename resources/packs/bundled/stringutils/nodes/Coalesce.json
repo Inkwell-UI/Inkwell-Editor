@@ -1,0 +1,33 @@
+{
+  "kind": "Coalesce",
+  "major": 1,
+  "title": "Coalesce",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "b",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Coalesce.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the first text if it has content, otherwise the second."
+    }
+  }
+}

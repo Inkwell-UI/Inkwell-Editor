@@ -1,0 +1,28 @@
+{
+  "kind": "Capitalize",
+  "major": 1,
+  "title": "Capitalize",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Capitalize.as2",
+  "extra": {
+    "inspector": {
+      "description": "Makes the first letter of a text a capital."
+    }
+  }
+}

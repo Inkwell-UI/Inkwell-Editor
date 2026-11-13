@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/FormatThousands@1
+({ f: function(v, sep) { v = Number(v) || 0; var s = String(Math.abs(v)); if (s.indexOf("e") >= 0) return String(v); var p = s.split("."), ip = p[0], o = ""; while (ip.length > 3) { o = sep + ip.substr(ip.length - 3) + o; ip = ip.substr(0, ip.length - 3); } return (v < 0 ? "-" : "") + ip + o + (p.length > 1 ? "." + p[1] : ""); } }).f({{in.value}}, String({{in.separator}}))

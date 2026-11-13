@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/DefaultIfEmpty@1
+({ f: function(s, d) { var w = " \t\r\n"; for (var i = 0; i < s.length; i++) { if (w.indexOf(s.charAt(i)) < 0) return s; } return d; } }).f(String({{in.text}}), String({{in.fallback}}))

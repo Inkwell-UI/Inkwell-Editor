@@ -1,0 +1,33 @@
+{
+  "kind": "Sort",
+  "major": 1,
+  "title": "Sort",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "descending",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Sort.as2",
+  "extra": {
+    "inspector": {
+      "description": "Sorts a list from low to high, or high to low."
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "kind": "LerpColor",
+  "major": 1,
+  "title": "Lerp Color",
+  "category": "Color",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "b",
+      "type": "Number",
+      "default": 16777215
+    },
+    {
+      "name": "t",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/LerpColor.as2",
+  "extra": {
+    "inspector": {
+      "description": "Blends between two colors."
+    }
+  }
+}

@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/RemoveAt@1
+({ f: function(a, i) { var r = (a instanceof Array ? a : []).concat(); i = Math.floor(i) || 0; if (i < 0) i += r.length; if (i >= 0 && i < r.length) r.splice(i, 1); return r; } }).f({{in.array}}, {{in.index}})

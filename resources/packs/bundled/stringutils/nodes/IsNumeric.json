@@ -1,0 +1,28 @@
+{
+  "kind": "IsNumeric",
+  "major": 1,
+  "title": "Is Numeric",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/IsNumeric.as2",
+  "extra": {
+    "inspector": {
+      "description": "True when a text is a valid number."
+    }
+  }
+}

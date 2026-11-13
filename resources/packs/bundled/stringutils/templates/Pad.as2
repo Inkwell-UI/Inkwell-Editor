@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/Pad@1
+({ f: function(s, n, c, side) { n = Math.min(1000, Math.floor(n)); var need = n - s.length; if (need <= 0 || c == "") return s; var p = ""; while (p.length < need) p += c; p = p.substr(0, need); return side == "start" ? p + s : s + p; } }).f(String({{in.text}}), {{in.length}}, String({{in.char}}), {{field.side}})

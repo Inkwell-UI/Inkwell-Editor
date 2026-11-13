@@ -1,0 +1,28 @@
+{
+  "kind": "RemoveWhitespace",
+  "major": 1,
+  "title": "Remove Whitespace",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/RemoveWhitespace.as2",
+  "extra": {
+    "inspector": {
+      "description": "Removes all spaces, tabs and line breaks from a text."
+    }
+  }
+}

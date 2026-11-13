@@ -21,3 +21,14 @@ for (const [repo, id] of [['Inkwell-MathUtils-Pack', 'mathutils'], ['Inkwell-Inv
   for (const f of ['manifest.json', 'nodes', 'templates']) cpSync(join(from, f), join(to, f), { recursive: true })
   console.log(`${id} pack copied to ${to}`)
 }
+// The optional utility packs ship with the editor (resources/packs/bundled/<id>), loaded after core unless the project locked its own copy of the id.
+const bundled = resolve(here, '..', 'resources', 'packs', 'bundled')
+rmSync(bundled, { recursive: true, force: true })
+for (const [repo, id] of [['Inkwell-MathUtils-Pack', 'mathutils'], ['Inkwell-StringUtils-Pack', 'stringutils'], ['Inkwell-ObjectUtils-Pack', 'objectutils'], ['Inkwell-DateTimeUtils-Pack', 'datetimeutils'], ['Inkwell-ColorUtils-Pack', 'colorutils']]) {
+  const from = resolve(here, '..', '..', repo)
+  if (!existsSync(join(from, 'manifest.json'))) throw new Error(`${repo} not found at ${from}`)
+  const to = join(bundled, id)
+  mkdirSync(to, { recursive: true })
+  for (const f of ['manifest.json', 'nodes', 'templates']) cpSync(join(from, f), join(to, f), { recursive: true })
+  console.log(`${id} bundled to ${to}`)
+}

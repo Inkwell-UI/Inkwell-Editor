@@ -1,0 +1,33 @@
+{
+  "kind": "RemoveField",
+  "major": 1,
+  "title": "Remove Field",
+  "category": "Object",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "object",
+      "type": "Object",
+      "default": {}
+    },
+    {
+      "name": "key",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Object",
+      "default": {}
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/RemoveField.as2",
+  "extra": {
+    "inspector": {
+      "description": "Removes a field from an object."
+    }
+  }
+}

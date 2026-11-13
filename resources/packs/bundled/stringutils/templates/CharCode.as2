@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/CharCode@1
+(String({{in.text}}).charCodeAt(0) || 0)

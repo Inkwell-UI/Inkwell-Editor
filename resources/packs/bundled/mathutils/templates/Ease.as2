@@ -1,0 +1,2 @@
+// [{{node.id}}] mathutils/Ease@1
+({ f: function(t, c, m) { t = Math.min(Math.max(t, 0), 1); var e = function(x) { return c == "quad" ? x * x : c == "cubic" ? x * x * x : c == "sine" ? 1 - Math.cos(x * Math.PI / 2) : (x == 0 ? 0 : Math.pow(2, 10 * (x - 1))); }; var r = m == "in" ? e(t) : m == "out" ? 1 - e(1 - t) : (t < 0.5 ? e(t * 2) / 2 : 1 - e((1 - t) * 2) / 2); return isFinite(r) ? r : 0; } }).f({{in.t}}, {{field.curve}}, {{field.mode}})

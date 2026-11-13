@@ -1,0 +1,53 @@
+{
+  "kind": "MakeTimestamp",
+  "major": 1,
+  "title": "Make Timestamp",
+  "category": "Time",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "year",
+      "type": "Number",
+      "default": 1970
+    },
+    {
+      "name": "month",
+      "type": "Number",
+      "default": 1
+    },
+    {
+      "name": "day",
+      "type": "Number",
+      "default": 1
+    },
+    {
+      "name": "hour",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "minute",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "second",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/MakeTimestamp.as2",
+  "extra": {
+    "inspector": {
+      "description": "Builds a timestamp from a date and a time."
+    }
+  }
+}

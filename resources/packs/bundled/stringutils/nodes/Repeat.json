@@ -1,0 +1,33 @@
+{
+  "kind": "Repeat",
+  "major": 1,
+  "title": "Repeat",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "count",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Repeat.as2",
+  "extra": {
+    "inspector": {
+      "description": "Repeats a text several times."
+    }
+  }
+}

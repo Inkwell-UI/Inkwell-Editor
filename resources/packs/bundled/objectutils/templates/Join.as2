@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Join@1
+({ f: function(a, sep) { return a instanceof Array ? a.join(sep) : ""; } }).f({{in.array}}, {{in.separator}})

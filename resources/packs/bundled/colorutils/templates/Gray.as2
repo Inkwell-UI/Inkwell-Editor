@@ -1,0 +1,2 @@
+// [{{node.id}}] colorutils/Gray@1
+({ f: function(c) { var n = function(c) { c = Math.floor(c) || 0; return c < 0 ? 0 : c > 16777215 ? 16777215 : c; }; c = n(c); return Math.round(0.299 * ((c >> 16) & 255) + 0.587 * ((c >> 8) & 255) + 0.114 * (c & 255)) * 65793; } }).f({{in.color}})

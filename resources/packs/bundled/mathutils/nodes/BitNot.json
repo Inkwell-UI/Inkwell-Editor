@@ -1,0 +1,28 @@
+{
+  "kind": "BitNot",
+  "major": 1,
+  "title": "Bit Not",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/BitNot.as2",
+  "extra": {
+    "inspector": {
+      "description": "Flips every bit of a whole number."
+    }
+  }
+}

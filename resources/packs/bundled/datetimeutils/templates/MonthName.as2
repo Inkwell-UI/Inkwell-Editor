@@ -1,0 +1,2 @@
+// [{{node.id}}] datetimeutils/MonthName@1
+({ f: function(m, st) { m = Math.floor(m); var a = "January,February,March,April,May,June,July,August,September,October,November,December".split(","); if (!(m >= 1 && m <= 12)) return ""; return st == "short" ? a[m - 1].substring(0, 3) : a[m - 1]; } }).f({{in.month}}, {{field.style}})

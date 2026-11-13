@@ -1,0 +1,28 @@
+{
+  "kind": "Unique",
+  "major": 1,
+  "title": "Unique",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Unique.as2",
+  "extra": {
+    "inspector": {
+      "description": "Removes repeated items from a list."
+    }
+  }
+}

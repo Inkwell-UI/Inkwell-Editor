@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Reverse@1
+({ f: function(a) { var r = (a instanceof Array ? a : []).concat(); r.reverse(); return r; } }).f({{in.array}})

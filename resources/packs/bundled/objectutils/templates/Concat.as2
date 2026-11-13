@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Concat@1
+({ f: function(a, b) { return (a instanceof Array ? a : []).concat(b instanceof Array ? b : []); } }).f({{in.array}}, {{in.other}})

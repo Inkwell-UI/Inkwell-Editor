@@ -1,0 +1,52 @@
+{
+  "kind": "Insert",
+  "major": 1,
+  "title": "Insert",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "item",
+      "type": "String",
+      "default": "",
+      "typeFrom": "valueType"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {
+    "valueType": {
+      "type": "string",
+      "enum": [
+        "String",
+        "Number",
+        "Bool",
+        "Array",
+        "Object"
+      ],
+      "default": "String",
+      "description": "Pin type of the untyped item or value (the Any-like convention: the output is coerced to this type)"
+    }
+  },
+  "as2Template": "templates/Insert.as2",
+  "extra": {
+    "inspector": {
+      "description": "Adds an item into a list at an index."
+    }
+  }
+}

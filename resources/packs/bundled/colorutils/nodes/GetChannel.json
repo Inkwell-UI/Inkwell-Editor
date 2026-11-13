@@ -1,0 +1,39 @@
+{
+  "kind": "GetChannel",
+  "major": 1,
+  "title": "Get Channel",
+  "category": "Color",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "color",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {
+    "channel": {
+      "type": "string",
+      "enum": [
+        "r",
+        "g",
+        "b"
+      ],
+      "default": "r",
+      "description": "Which channel (0-255) to read"
+    }
+  },
+  "as2Template": "templates/GetChannel.as2",
+  "extra": {
+    "inspector": {
+      "description": "Reads the red, green or blue part of a color."
+    }
+  }
+}

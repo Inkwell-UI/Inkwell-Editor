@@ -1,0 +1,33 @@
+{
+  "kind": "EqualsIgnoreCase",
+  "major": 1,
+  "title": "Equals Ignore Case",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "a",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "b",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/EqualsIgnoreCase.as2",
+  "extra": {
+    "inspector": {
+      "description": "True when two texts match, ignoring upper or lower case."
+    }
+  }
+}

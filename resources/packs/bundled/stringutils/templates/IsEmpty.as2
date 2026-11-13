@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/IsEmpty@1
+({ f: function(s) { var w = " \t\r\n"; for (var i = 0; i < s.length; i++) { if (w.indexOf(s.charAt(i)) < 0) return false; } return true; } }).f(String({{in.text}}))

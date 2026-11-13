@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/SplitGet@1
+({ f: function(s, d, i) { var p = s.split(d); i = Math.floor(i); return (i >= 0 && i < p.length) ? String(p[i]) : ""; } }).f(String({{in.text}}), String({{in.delimiter}}), {{in.index}})

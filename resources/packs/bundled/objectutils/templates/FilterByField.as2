@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/FilterByField@1
+({ f: function(a, f, v) { var r = []; if (a instanceof Array) { for (var i = 0; i < a.length; i++) { if (a[i] != undefined && a[i][f] === v) r.push(a[i]); } } return r; } }).f({{in.array}}, {{in.field}}, {{in.value}})

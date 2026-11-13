@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/Coalesce@1
+(String({{in.a}}) != "" ? String({{in.a}}) : String({{in.b}}))

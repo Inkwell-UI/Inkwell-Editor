@@ -1,0 +1,33 @@
+{
+  "kind": "Join",
+  "major": 1,
+  "title": "Array Join",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "separator",
+      "type": "String",
+      "default": ","
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Join.as2",
+  "extra": {
+    "inspector": {
+      "description": "Joins the items of a list into one text with a separator."
+    }
+  }
+}

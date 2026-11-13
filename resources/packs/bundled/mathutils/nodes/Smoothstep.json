@@ -1,0 +1,38 @@
+{
+  "kind": "Smoothstep",
+  "major": 1,
+  "title": "Smoothstep",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "edge0",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "edge1",
+      "type": "Number",
+      "default": 1
+    },
+    {
+      "name": "x",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Smoothstep.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives a smooth 0 to 1 ramp as a number moves between two edges."
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "kind": "DefaultIfEmpty",
+  "major": 1,
+  "title": "Default If Empty",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "fallback",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/DefaultIfEmpty.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives a fallback text when the text is empty."
+    }
+  }
+}

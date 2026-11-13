@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/CharAt@1
+({ f: function(s, i) { return i < 0 ? "" : s.charAt(Math.floor(i)); } }).f(String({{in.text}}), {{in.index}})

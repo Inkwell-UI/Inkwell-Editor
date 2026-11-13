@@ -1,0 +1,48 @@
+{
+  "kind": "Pad",
+  "major": 1,
+  "title": "Pad",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "length",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "char",
+      "type": "String",
+      "default": " "
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "side": {
+      "type": "string",
+      "enum": [
+        "start",
+        "end"
+      ],
+      "default": "start",
+      "description": "Add the padding before or after the text"
+    }
+  },
+  "as2Template": "templates/Pad.as2",
+  "extra": {
+    "inspector": {
+      "description": "Fills a text with a character up to a length."
+    }
+  }
+}

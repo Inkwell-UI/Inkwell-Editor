@@ -1,0 +1,41 @@
+{
+  "kind": "FormatDuration",
+  "major": 1,
+  "title": "Format Duration",
+  "category": "Time",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "seconds",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "alwaysHours": {
+      "type": "boolean",
+      "default": false,
+      "description": "Show hours even when they are 0 (0:05:07 instead of 5:07)"
+    },
+    "decimals": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "default": 0,
+      "description": "Digits after the seconds; cut off, never rounded up, so 59.999 never shows as 60.00"
+    }
+  },
+  "as2Template": "templates/FormatDuration.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns a number of seconds into text like 1:05:09."
+    }
+  }
+}

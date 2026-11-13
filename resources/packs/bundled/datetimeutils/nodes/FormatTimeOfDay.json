@@ -1,0 +1,38 @@
+{
+  "kind": "FormatTimeOfDay",
+  "major": 1,
+  "title": "Format Time Of Day",
+  "category": "Time",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "hour",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "clock": {
+      "type": "string",
+      "enum": [
+        "12h",
+        "24h"
+      ],
+      "default": "12h",
+      "description": "12h gives 3:30 PM, 24h gives 15:30"
+    }
+  },
+  "as2Template": "templates/FormatTimeOfDay.as2",
+  "extra": {
+    "inspector": {
+      "description": "Turns an hour of the day into text like 3:30 PM."
+    }
+  }
+}

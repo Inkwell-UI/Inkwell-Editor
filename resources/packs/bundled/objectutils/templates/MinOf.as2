@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/MinOf@1
+({ f: function(a) { if (!(a instanceof Array) || a.length == 0) return 0; var m = Number(a[0]) || 0; for (var i = 1; i < a.length; i++) m = Math.min(m, Number(a[i]) || 0); return m; } }).f({{in.array}})

@@ -1,0 +1,28 @@
+{
+  "kind": "Sum",
+  "major": 1,
+  "title": "Sum",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Sum.as2",
+  "extra": {
+    "inspector": {
+      "description": "Adds up the numbers in a list."
+    }
+  }
+}

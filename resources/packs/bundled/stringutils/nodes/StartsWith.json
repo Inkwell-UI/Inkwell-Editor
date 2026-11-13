@@ -1,0 +1,39 @@
+{
+  "kind": "StartsWith",
+  "major": 1,
+  "title": "Starts With",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "prefix",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Bool",
+      "default": false
+    }
+  ],
+  "fields": {
+    "ignoreCase": {
+      "type": "boolean",
+      "default": false,
+      "description": "Compare without regard to letter case"
+    }
+  },
+  "as2Template": "templates/StartsWith.as2",
+  "extra": {
+    "inspector": {
+      "description": "True when a text starts with a prefix."
+    }
+  }
+}

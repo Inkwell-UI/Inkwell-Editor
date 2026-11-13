@@ -1,0 +1,2 @@
+// [{{node.id}}] datetimeutils/Now@1
+Math.floor(new Date().getTime() / 1000)

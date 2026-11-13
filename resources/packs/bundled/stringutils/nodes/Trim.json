@@ -1,0 +1,39 @@
+{
+  "kind": "Trim",
+  "major": 1,
+  "title": "Trim",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "fields": {
+    "mode": {
+      "type": "string",
+      "enum": [
+        "both",
+        "start",
+        "end"
+      ],
+      "default": "both",
+      "description": "Which ends to strip: space, tab, CR and LF"
+    }
+  },
+  "as2Template": "templates/Trim.as2",
+  "extra": {
+    "inspector": {
+      "description": "Removes spaces from the ends of a text."
+    }
+  }
+}

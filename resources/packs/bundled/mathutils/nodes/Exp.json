@@ -1,0 +1,29 @@
+{
+  "kind": "Exp",
+  "major": 1,
+  "title": "Exp",
+  "category": "Math",
+  "pure": true,
+  "description": "e raised to the value.",
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Exp.as2",
+  "extra": {
+    "inspector": {
+      "description": "Raises e to the power of a number."
+    }
+  }
+}

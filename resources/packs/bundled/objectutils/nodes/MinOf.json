@@ -1,0 +1,28 @@
+{
+  "kind": "MinOf",
+  "major": 1,
+  "title": "Min Of",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/MinOf.as2",
+  "extra": {
+    "inspector": {
+      "description": "Gives the smallest number in a list."
+    }
+  }
+}

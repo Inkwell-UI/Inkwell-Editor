@@ -1,0 +1,33 @@
+{
+  "kind": "RemoveAt",
+  "major": 1,
+  "title": "Remove At",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    },
+    {
+      "name": "index",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/RemoveAt.as2",
+  "extra": {
+    "inspector": {
+      "description": "Removes the item at an index from a list."
+    }
+  }
+}

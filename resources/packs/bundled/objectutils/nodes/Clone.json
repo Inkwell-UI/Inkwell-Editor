@@ -1,0 +1,28 @@
+{
+  "kind": "Clone",
+  "major": 1,
+  "title": "Clone",
+  "category": "Object",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "object",
+      "type": "Object",
+      "default": {}
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Object",
+      "default": {}
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Clone.as2",
+  "extra": {
+    "inspector": {
+      "description": "Makes an independent copy of an object."
+    }
+  }
+}

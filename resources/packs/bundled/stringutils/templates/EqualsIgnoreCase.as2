@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/EqualsIgnoreCase@1
+(String({{in.a}}).toLowerCase() == String({{in.b}}).toLowerCase())

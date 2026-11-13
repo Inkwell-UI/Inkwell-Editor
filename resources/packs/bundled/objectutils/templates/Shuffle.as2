@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/Shuffle@1
+({ f: function(a) { var r = (a instanceof Array ? a : []).concat(); for (var i = r.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = r[i]; r[i] = r[j]; r[j] = t; } return r; } }).f({{in.array}})

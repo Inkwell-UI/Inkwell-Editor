@@ -1,0 +1,33 @@
+{
+  "kind": "CountOccurrences",
+  "major": 1,
+  "title": "Count Occurrences",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "find",
+      "type": "String",
+      "default": ""
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/CountOccurrences.as2",
+  "extra": {
+    "inspector": {
+      "description": "Counts how many times a text appears inside another."
+    }
+  }
+}

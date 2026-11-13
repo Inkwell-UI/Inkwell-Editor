@@ -1,0 +1,28 @@
+{
+  "kind": "Shuffle",
+  "major": 1,
+  "title": "Shuffle",
+  "category": "Array",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "array",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Array",
+      "default": []
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/Shuffle.as2",
+  "extra": {
+    "inspector": {
+      "description": "Puts the items of a list in random order."
+    }
+  }
+}

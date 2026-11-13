@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/IndexOfField@1
+({ f: function(a, f, v) { if (!(a instanceof Array)) return -1; for (var i = 0; i < a.length; i++) { if (a[i] != undefined && a[i][f] === v) return i; } return -1; } }).f({{in.array}}, {{in.field}}, {{in.value}})

@@ -1,3 +1,4 @@
+import { readdirSync, readFileSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { Graph, NodeDef, PackManifest } from '@inkwell-ui/spec'
@@ -60,6 +61,34 @@ export async function loadPacks(dirs: readonly string[], originOf: (dir: string)
     else set.packs.push(r.pack)
   }
   return set
+}
+
+/** `<app>/resources/packs/bundled`: the optional utility packs (MathUtils, StringUtils, ObjectUtils, DateTimeUtils, ColorUtils) that ship with the editor, one folder per pack id (`yarn sync:core-pack`). */
+export const bundledPacksRoot = (appPath: string): string => join(appPath, 'resources/packs/bundled')
+
+const packIdOf = (dir: string): string | undefined => {
+  try {
+    const id = (JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8')) as { id?: unknown }).id
+    return typeof id === 'string' ? id : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * The folders to load: `dirs` (core, then the project's locked and library packs) and after them the bundled utility packs. A bundled pack whose id is already among `dirs` is left out,
+ * so a project that locked its own MathUtils version keeps it and no "already loaded" problem appears.
+ */
+export function withBundledPacks(appPath: string, dirs: readonly string[]): string[] {
+  const taken = new Set(dirs.map(packIdOf))
+  const root = bundledPacksRoot(appPath)
+  let names: string[] = []
+  try {
+    names = readdirSync(root).sort()
+  } catch {
+    // no bundled packs in this build
+  }
+  return [...dirs, ...names.map((n) => join(root, n)).filter((d) => !taken.has(packIdOf(d)))]
 }
 
 /** Folder of the bundled core pack: `INKWELL_CORE_PACK` overrides `<app>/resources/packs/core` (a snapshot of Inkwell-Core-Pack, copied in when it ships). */

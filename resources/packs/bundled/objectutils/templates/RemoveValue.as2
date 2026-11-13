@@ -1,0 +1,2 @@
+// [{{node.id}}] objectutils/RemoveValue@1
+({ f: function(a, v) { var r = []; if (a instanceof Array) { for (var i = 0; i < a.length; i++) { if (a[i] !== v) r.push(a[i]); } } return r; } }).f({{in.array}}, {{in.value}})

@@ -1,0 +1,2 @@
+// [{{node.id}}] colorutils/MakeColor@1
+({ f: function(r, g, b) { var c = function(x) { x = Math.round(x); return x > 0 ? (x < 255 ? x : 255) : 0; }; return c(r) * 65536 + c(g) * 256 + c(b); } }).f({{in.r}}, {{in.g}}, {{in.b}})

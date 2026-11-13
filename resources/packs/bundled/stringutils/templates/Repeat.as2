@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/Repeat@1
+({ f: function(s, c) { var n = Math.min(1000, Math.floor(c)), o = ""; for (var i = 0; i < n; i++) o += s; return o; } }).f(String({{in.text}}), {{in.count}})

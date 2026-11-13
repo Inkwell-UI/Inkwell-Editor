@@ -1,0 +1,2 @@
+// [{{node.id}}] stringutils/FromCharCode@1
+({ f: function(c) { c = Math.floor(c); return (c > 0 && c < 65536) ? String.fromCharCode(c) : ""; } }).f({{in.code}})

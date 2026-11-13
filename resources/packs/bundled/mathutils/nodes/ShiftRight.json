@@ -1,0 +1,33 @@
+{
+  "kind": "ShiftRight",
+  "major": 1,
+  "title": "Shift Right",
+  "category": "Math",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    },
+    {
+      "name": "bits",
+      "type": "Number",
+      "default": 1
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/ShiftRight.as2",
+  "extra": {
+    "inspector": {
+      "description": "Moves the bits of a whole number to the right, keeping its sign (like dividing by 2 for each bit)."
+    }
+  }
+}

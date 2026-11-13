@@ -1,0 +1,2 @@
+// [{{node.id}}] datetimeutils/GetDurationPart@1
+({ f: function(s, k) { s = (s > 0 && isFinite(s)) ? Math.floor(s) : 0; return k == "days" ? Math.floor(s / 86400) : k == "hours" ? Math.floor((s % 86400) / 3600) : k == "minutes" ? Math.floor((s % 3600) / 60) : s % 60; } }).f({{in.seconds}}, {{field.part}})

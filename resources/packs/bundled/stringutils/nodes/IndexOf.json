@@ -1,0 +1,38 @@
+{
+  "kind": "IndexOf",
+  "major": 1,
+  "title": "Index Of",
+  "category": "Text",
+  "pure": true,
+  "inputs": [
+    {
+      "name": "text",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "find",
+      "type": "String",
+      "default": ""
+    },
+    {
+      "name": "from",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "outputs": [
+    {
+      "name": "value",
+      "type": "Number",
+      "default": 0
+    }
+  ],
+  "fields": {},
+  "as2Template": "templates/IndexOf.as2",
+  "extra": {
+    "inspector": {
+      "description": "Finds where a text first appears inside another, or -1."
+    }
+  }
+}
