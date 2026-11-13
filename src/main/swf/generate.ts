@@ -15,7 +15,7 @@ import { packVersion, FIRST_RUNTIME_VERSION, themeModes } from '@inkwell-ui/spec
 import { generateGraphClasses, type GraphClass, type WidgetCall } from '../codegen/codegen'
 import { menuClassName, menuClassSource, menuFrameCode } from '../codegen/menuGlue'
 import { replacementClassName, replacementFrameCode, replacementGlue } from '../codegen/replacementGlue'
-import { themeOps } from '../codegen/themeOps'
+import { themeOps, themeVars } from '../codegen/themeOps'
 import type { CodegenPacks } from '../codegen/packs'
 import { listAttachCode, listClassName, listClassSource, type ListInfo } from './listAs2'
 import { scrollAttachCode, scrollClassName, scrollClassSource, type ScrollInfo } from './scrollAs2'
@@ -807,9 +807,12 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
   const menu = ir.target.kind === 'customMenu' && !opts.widget // S7: a custom menu gets the glue class; `widget` is the HUD flavour and wins if both are asked for
   const baseExpr = widget && wf ? 'widget' : 'this'
   const basePrefix = widget && wf ? 'root.widget.' : 'root.'
+  // the theme nodes (docs/themes.md): the graph classes get the themes and the variable table; the menu class switches (it also needs its tables when no layer is bound)
+  const themeNodes = !!opts.graphs?.graphs.some((g) => g.nodes.some((n) => /^core\/(GetTheme|GetThemeNames|GetThemeVariable|SetTheme|CycleTheme|OnThemeChanged)@/.test(n.kind)))
+  const themeIn = themeNodes ? { modes: themeModes(ir).length ? themeModes(ir) : [''], baked: opts.theme ?? themeModes(ir)[0] ?? '', vars: themeVars(ir) } : undefined
   const gen = opts.graphs?.graphs.length
     ? generateGraphClasses({
-        modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}), ...(menu ? { menu: true } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}), ...(flowInfos.length ? { flow: flowClassName(mod) } : {}),
+        modId: mod, swfCls, graphs: opts.graphs.graphs, packs: opts.graphs.packs, ...(opts.bindings ? { bindings: opts.bindings } : {}), ...(opts.preview ? { preview: true } : {}), ...(menu ? { menu: true } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}), ...(flowInfos.length ? { flow: flowClassName(mod) } : {}), ...(themeIn ? { theme: themeIn } : {}),
         componentLinkage: (id) => componentSymbols.find((c) => c.id === id)?.linkage,
         componentSizes: Object.fromEntries(componentSymbols.map((c) => [c.id, c.size])),
         layerPath: (id, g) => (g.scope === 'blueprint' ? componentPath(id) : id === (widget && wf ? wf.frame.id : ir.root) ? '' : layerPaths.get(id)?.startsWith(basePrefix) ? layerPaths.get(id)!.slice(basePrefix.length) : undefined)
@@ -921,7 +924,7 @@ export function generate(source: Swf, opts: GenerateOptions): Generated {
       const clip = a ? pathOf(glyphId(pid, d)) : undefined
       return a && clip ? [{ clip, file: a.file, sprite: a.sprite, h: Math.round(ir.nodes[glyphId(pid, d)]?.transform.height ?? 0) }] : []
     })).filter((a) => a.h > 0)
-    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, stage: ir.stage, ...(artGlue.length ? { art: artGlue, ...(opts.preview ? { previewArt: true } : {}) } : {}), graphs: gen?.classes.filter((c) => !c.fn && !c.component).sort((a, b) => depthOf(a.graphId) - depthOf(b.graphId)).map((c) => ({ cls: c.cls, id: c.graphId, ...(opts.graphs?.graphs.find((g) => g.id === c.graphId)?.scope === 'menu' ? { menu: true as const } : {}) })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length ? { themed: { themes: themeModes(ir), ops: themed, ...(opts.theme ? { baked: opts.theme } : {}) } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(scrollInfos.length ? { scrollClass: scrollClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
+    addClass(menuClassName(swfCls), menuClassSource({ modId: mod, swfCls, stage: ir.stage, ...(artGlue.length ? { art: artGlue, ...(opts.preview ? { previewArt: true } : {}) } : {}), graphs: gen?.classes.filter((c) => !c.fn && !c.component).sort((a, b) => depthOf(a.graphId) - depthOf(b.graphId)).map((c) => ({ cls: c.cls, id: c.graphId, ...(opts.graphs?.graphs.find((g) => g.id === c.graphId)?.scope === 'menu' ? { menu: true as const } : {}) })) ?? [], focusable: byRole('button', 'list').sort(), ...(focusGlue ? { focus: focusGlue } : {}), ...(promptGlue.length ? { prompts: promptGlue } : {}), ...(themed.length || (themeNodes && themeModes(ir).length) ? { themed: { themes: themeModes(ir), ops: themed, ...(opts.theme ? { baked: opts.theme } : {}) } } : {}), ...(translatedTexts.length ? { translated: translatedTexts.map((t) => ({ path: t.path, key: t.key })) } : {}), ...(listInfos.length ? { listClass: listClassName(mod) } : {}), ...(flowInfos.length ? { flowClass: flowClassName(mod) } : {}), ...(scrollInfos.length ? { scrollClass: scrollClassName(mod) } : {}), ...(menu && opts.dev && !opts.preview ? { dev: true } : {}) }))
     if (opts.preview) {
       const paths = Object.fromEntries(Object.entries(opts.roles ?? {}).filter(([, role]) => role === 'button').flatMap(([id]) => (pathOf(id) !== undefined ? [[id, pathOf(id)!]] : [])))
       frameCode.push(...previewMenuBridge(`${mod}_${swfCls}`, `mods.${mod}.${menuClassName(swfCls)}`, paths, [...listInfos.map((l) => listAttachCode(mod, l, '_root')), ...scrollInfos.map((x) => scrollAttachCode(mod, x, '_root')), ...flowInfos.map((f) => flowAttachCode(mod, f, '_root')), ...scrollbarInfos.map((x) => scrollbarAttachCode(mod, x, '_root'))]))

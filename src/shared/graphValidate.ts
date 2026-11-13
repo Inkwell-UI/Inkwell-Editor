@@ -1,4 +1,4 @@
-import { pinCompat, PinType, SAVED_LIMITS, SAVED_TYPES, type Graph, type GraphNode, type NodeDef } from '@inkwell-ui/spec'
+import { pinCompat, PinType, SAVED_LIMITS, SAVED_TYPES, themeModes, type Graph, type GraphNode, type NodeDef, type Theme } from '@inkwell-ui/spec'
 import type { Issue } from '@nicklaj/knotwork'
 import { menuVariablesFor, nodeName } from './graphs'
 
@@ -18,6 +18,8 @@ export type GraphCode =
   | 'runtime-required'
   | 'saved-variable-invalid'
   | 'contract-node-target'
+  | 'theme-unknown'
+  | 'graph-loop-control'
 
 /** A Knotwork Issue pinned to a graph node id, plus where it lives. `targetId` is the Figma node id for `graph-target-missing`. */
 export type GraphIssue = Issue<{ code: GraphCode; graphId: string; targetId?: string; pin?: string }>
@@ -40,6 +42,8 @@ export interface ValidateCtx {
   target?: 'hudWidget' | 'customMenu' | 'menuReplacement'
   /** Library functions of the installed packs by `<packId>/<functionId>` (Call Function nodes may call them). */
   library?: ReadonlyMap<string, Graph>
+  /** The SWF's Figma variable collections (`ir.themes ?? []`): Get Theme Variable and Set Theme with a typed name the project does not have get a warning. Absent = the check is skipped. */
+  themes?: readonly Theme[]
   /** A menu replacement's `target.contract` (W5): contract nodes (`NodeDef.contract`) are only allowed in a replacement of that contract. */
   contract?: string
 }
@@ -187,6 +191,31 @@ export function validateGraph(g: Graph, ctx: ValidateCtx): GraphIssue[] {
       const where = ctx.target === 'hudWidget' ? 'a HUD widget' : 'a menu replacement'
       if (d && needsRuntime(d)) add(n.id, 'runtime-required', 'warning', `${d.title} needs the Inkwell Runtime and does nothing in ${where} (only a custom menu is served by the runtime).`)
     }
+  // Break and Continue (`extra.exitsLoop`) only work in the body of a loop (`extra.loop` names the body pin of Loop, For, For Each).
+  // shortcut: a Delay or timer continuation inside the body is not told apart (the Break then runs after the loop is over); upgrade when the pack marks asynchronous exec pins.
+  const loopExits = g.nodes.filter((n) => (defOf.get(n.id)?.extra as { exitsLoop?: unknown } | undefined)?.exitsLoop === true)
+  if (loopExits.length) {
+    const inLoop = new Set<string>()
+    const queue = g.edges.filter((e) => (defOf.get(e.from.node)?.extra as { loop?: unknown } | undefined)?.loop === e.from.pin).map((e) => e.to.node)
+    for (let id = queue.pop(); id !== undefined; id = queue.pop()) {
+      if (inLoop.has(id)) continue
+      inLoop.add(id)
+      queue.push(...(execOut.get(id) ?? []))
+    }
+    for (const n of loopExits) if (!inLoop.has(n.id)) add(n.id, 'graph-loop-control', 'error', `${defOf.get(n.id)!.title} only works in the body of a loop (Loop, For, For Each).`)
+  }
+  // theme nodes: a typed variable or theme name the project does not have (a wired name is unknown until run time)
+  if (ctx.themes) {
+    const variables = new Set(ctx.themes.flatMap((t) => Object.values(t.variables ?? {}).map((v) => v.name)))
+    const modes = themeModes({ themes: [...ctx.themes] })
+    for (const n of g.nodes) {
+      const kind = /^core\/(GetThemeVariable|SetTheme)@/.exec(n.kind)?.[1]
+      const v = n.fields['name']
+      if (!kind || typeof v !== 'string' || v === '' || wiredInputs.get(n.id)?.has('name')) continue
+      if (kind === 'GetThemeVariable' && !variables.has(v)) add(n.id, 'theme-unknown', 'warning', `Get Theme Variable: the project has no Figma variable named "${v}"; it gives 0, "" or false.`, { pin: 'name' })
+      if (kind === 'SetTheme' && !modes.includes(v)) add(n.id, 'theme-unknown', 'warning', `Set Theme: the project has no theme "${v}"${modes.length ? ` (themes: ${modes.join(', ')})` : ''}; the switch is ignored.`, { pin: 'name' })
+    }
+  }
   // W5: a contract node talks to one engine menu, so it is an error anywhere but a replacement of that menu
   if (ctx.target !== undefined)
     for (const n of g.nodes) {

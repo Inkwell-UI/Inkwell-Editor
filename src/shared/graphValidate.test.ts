@@ -155,3 +155,34 @@ describe('events shared by several graphs', () => {
     expect(dups({ ...emptyGraph('g', 'g', 'menu'), nodes: mod }, [])).toEqual([]) // a list event: both nodes run
   })
 })
+
+describe('theme nodes (theme-unknown)', () => {
+  const themes = [{ name: 'Colors', modes: ['Dark', 'Light'], variables: { A: { name: 'colors/accent', type: 'color' as const, values: { Dark: { r: 1, g: 0, b: 0 }, Light: { r: 0, g: 0, b: 1 } } } } }]
+  const themeCodes = (g: Graph, ctx: Partial<Parameters<typeof validateGraph>[1]> = { themes }) => validateGraph(g, { defs, ...ctx }).filter((i) => i.code === 'theme-unknown')
+  it('a typed variable or theme name the project lacks is a warning on the name pin; known names, wired names and an unchecked context are clean', () => {
+    const g = graph([node('GetThemeVariable', { name: 'colors/accent' }, 'ok'), node('GetThemeVariable', { name: 'colors/accnt' }, 'bad'), node('SetTheme', { name: 'Light' }, 's1'), node('SetTheme', { name: 'Sepia' }, 's2'), node('SetTheme', {}, 's3')])
+    expect(themeCodes(g).map((i) => [i.nodeId, i.level, i.pin])).toEqual([['bad', 'warning', 'name'], ['s2', 'warning', 'name']])
+    expect(themeCodes(g)[1]!.message).toContain('themes: Dark, Light')
+    expect(themeCodes(g, {})).toEqual([])
+    const wired = graph([node('GetThemeVariable', { name: 'nope' }, 'v'), node('Log', {}, 'l')], [wire('l', 'then', 'v', 'name')])
+    expect(themeCodes(wired)).toEqual([])
+  })
+  it('without any Figma variables every typed name is unknown', () => {
+    expect(themeCodes(graph([node('GetThemeVariable', { name: 'x' }, 'v')]), { themes: [] })).toHaveLength(1)
+  })
+})
+
+describe('Break and Continue (graph-loop-control)', () => {
+  let core: ReturnType<typeof defIndex>
+  beforeAll(async () => void (core = defIndex(await loadPacks([resolve(__dirname, '../../resources/packs/core')]))))
+  const lc = (g: Graph) => validateGraph(g, { defs: core }).filter((i) => i.code === 'graph-loop-control').map((i) => i.nodeId)
+  it('is an error outside a loop body and fine inside one, also through a Branch and a nested loop', () => {
+    const g = graph([node('OnWidgetCall', { name: 'Go', params: [] }, 'e'), node('Loop', {}, 'lp'), node('Branch', {}, 'b'), node('Break', {}, 'in1'), node('For', {}, 'f'), node('Continue', {}, 'in2'), node('Break', {}, 'out1'), node('Continue', {}, 'out2')],
+      [wire('e', 'then', 'lp', 'in'), wire('lp', 'body', 'b', 'in'), wire('b', 'true', 'in1', 'in'), wire('b', 'false', 'f', 'in'), wire('f', 'body', 'in2', 'in'), wire('lp', 'completed', 'out1', 'in'), wire('f', 'completed', 'out2', 'in')])
+    // out2 follows the For's Completed, which is still inside the Loop's body
+    expect(lc(g)).toEqual(['out1'])
+  })
+  it('a Break nobody wires into a loop is an error', () => {
+    expect(lc(graph([node('Break', {}, 'x')]))).toEqual(['x'])
+  })
+})

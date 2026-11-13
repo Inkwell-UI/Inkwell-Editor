@@ -8,7 +8,7 @@ import { frame, rectShape, swf, textNode } from '../swf/ir.testutil'
 import { createFfdecWrapper } from '../build/ffdecWrapper'
 import { compileSwf } from '../swf/compile'
 import { generate } from '../swf/generate'
-import { themeOps } from './themeOps'
+import { themeOps, themeVars } from './themeOps'
 
 const col: Theme = {
   name: 'Colors', modes: ['Vanilla', 'Nordic'],
@@ -99,4 +99,21 @@ describe.skipIf(!can)('themed menu through FFDec', () => {
       ffdec.stop()
     }
   }, 120_000)
+})
+
+describe('themeVars', () => {
+  it('every variable by name with its value in every theme; a colour is 0xRRGGBB, the first collection holding a name wins, a single-mode collection fills every theme', () => {
+    const fixed: Theme = { name: 'Fixed', modes: ['Only'], variables: { F: { name: 'gap', type: 'number', values: { Only: 8 } }, D: { name: 'accent', type: 'string', values: { Only: 'shadowed' } } } }
+    const vars = themeVars({ themes: [col, fixed] })
+    const by = Object.fromEntries(vars.map((v) => [v.name, v]))
+    expect(by['accent']).toEqual({ name: 'accent', type: 'color', values: { Vanilla: 0xffffff, Nordic: 0x0000ff } })
+    expect(by['gap']!.values).toEqual({ Vanilla: 8, Nordic: 8 })
+    expect(by['alpha']!.values).toEqual({ Vanilla: 100, Nordic: 50 })
+    expect(vars.filter((v) => v.name === 'accent')).toHaveLength(1)
+  })
+  it('a project without a themed collection has one theme named "" and keeps single-mode variables', () => {
+    const fixed: Theme = { name: 'Fixed', modes: ['Only'], variables: { F: { name: 'gap', type: 'number', values: { Only: 8 } } } }
+    expect(themeVars({ themes: [fixed] })).toEqual([{ name: 'gap', type: 'number', values: { '': 8 } }])
+    expect(themeVars({})).toEqual([])
+  })
 })

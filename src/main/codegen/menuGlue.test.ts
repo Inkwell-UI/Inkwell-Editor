@@ -166,3 +166,24 @@ describe('generate() for a customMenu SWF', () => {
     expect(g.as2.map((f) => f.source).join(' ')).not.toContain('inkwellMenu')
   })
 })
+
+describe('menu class theme switching (Set Theme, Cycle Theme, On Theme Changed)', () => {
+  const src = menuClassSource({ modId: 'M', swfCls: 'T', graphs: [{ cls: 'G', id: 'g' }], themed: { themes: ['Dark', 'Light'], baked: 'Light', ops: [] } })
+  it('remembers the theme in use, starting with the baked one, and applyTheme updates it', () => {
+    expect(src).toContain('    var theme;')
+    expect(src).toContain('this.theme = "Light";')
+    expect(src).toContain('this.theme = name;')
+  })
+  it('Set Theme ignores an unknown name (logged) and the current one, applies a real change and tells the graphs that handle it', () => {
+    expect(src).toContain(`[Theme] unknown theme '" + name + "', keeping the current one`)
+    expect(src).toContain('if (name == this.theme) return;')
+    expect(src).toContain('if (this.graphs[k].handleTheme != undefined) this.graphs[k].handleTheme(name);')
+  })
+  it('Cycle Theme walks the modes in order and wraps', () => {
+    expect(src).toContain('var names = ["Dark", "Light"];')
+    expect(src).toContain('if (names[k] == this.theme) next = names[k + 1];')
+  })
+  it('a menu without themes has none of it', () => {
+    expect(menuClassSource({ modId: 'M', swfCls: 'T', graphs: [] })).not.toContain('setTheme')
+  })
+})

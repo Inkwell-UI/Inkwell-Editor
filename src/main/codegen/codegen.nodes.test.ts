@@ -181,3 +181,66 @@ describe('Raw AS2', () => {
     for (let k = 0; k < 4; k++) expect(r.classes[0]!.map.lines[String(i + 1 + k)]).toBe('x')
   })
 })
+
+describe('Theme nodes', () => {
+  const theme = { modes: ['Dark', 'Light'], baked: 'Dark', vars: [{ name: 'colors/accent', type: 'color' as const, values: { Dark: 0xff0000, Light: 0x0000ff } }, { name: 'label', type: 'string' as const, values: { Dark: 'Night', Light: 'Day' } }] }
+  const g = graph('t', [entry, node('v', 'core/GetThemeVariable@1', { valueType: 'Color' }), node('n', 'core/GetTheme@1'), node('s', 'core/SetTheme@1'), node('c', 'core/CycleTheme@1'), setText('a')], [
+    wire('e', 'then', 'a', 'in'), wire('a', 'then', 's', 'in'), wire('s', 'then', 'c', 'in'), wire('n', 'name', 'a', 'text')
+  ])
+  const run = (menu: boolean, graphs = [g]) => generateGraphClasses({ modId: 'M', swfCls: 'T', graphs, packs, theme, ...(menu ? { menu: true } : {}), layerPath: (id) => (id === 'L' ? 'title' : undefined) })
+  it('a menu graph reads the current theme from the menu class and holds every theme in the variable table', () => {
+    const r = run(true)
+    expect(r.issues).toEqual([])
+    const src = r.classes[0]!.source
+    expect(src).toContain('var m = _root.inkwellMenu;')
+    expect(src).toContain(['if (m == "Dark") {', '            r["colors/accent"] = 16711680;', '            r["label"] = "Night";', '        } else if (m == "Light") {', '            r["colors/accent"] = 255;'].join('\n'))
+    expect(src).toContain('return ["Dark", "Light"];')
+    expect(src).toContain('_root.inkwellMenu.setTheme(name);')
+    expect(src).toContain('_root.inkwellMenu.cycleTheme();')
+    expect(src).not.toContain('themeHandlers')
+  })
+  it('a HUD widget gets the baked theme only and switches that do nothing', () => {
+    const src = run(false).classes[0]!.source
+    expect(src).not.toContain('_root.inkwellMenu')
+    expect(src).toContain('return "Dark";')
+    expect(src).toContain(['if (m == "Dark") {', '            r["colors/accent"] = 16711680;'].join('\n'))
+    expect(src).not.toContain('else if')
+    expect(src).not.toContain('"Day"')
+  })
+  it('Get Theme Variable coerces by the field and On Theme Changed registers a handler', () => {
+    const h = graph('h', [node('o', 'core/OnThemeChanged@1'), node('v', 'core/GetThemeVariable@1', { valueType: 'String', name: 'label' }), setText('a')], [wire('o', 'then', 'a', 'in'), wire('v', 'value', 'a', 'text')])
+    const src = run(true, [h]).classes[0]!.source
+    expect(src).toContain('var themeHandlers;')
+    expect(src).toContain('function handleTheme(name) {')
+    expect(src).toContain('__g.addThemeHandler(function(name) {')
+    expect(src).toContain('.f(__g.tv("label"), "String")')
+  })
+  it('a graph without theme nodes gets none of it', () => {
+    const src = run(true, [graph('p', [entry, setText('a')], [wire('e', 'then', 'a', 'in')])]).classes[0]!.source
+    expect(src).not.toContain('function th()')
+  })
+})
+
+describe('Loop, Break and Continue', () => {
+  const loopGraph = (...extra: Parameters<typeof graph>[1]) => graph('lp', [entry, node('lp', 'core/Loop@1', { max: 50 }), ...extra], [wire('e', 'then', 'lp', 'in')])
+  it('Break sets the flag of the loop it is in and returns from the body; the loop checks the flag', () => {
+    const g = loopGraph(node('b', 'core/Branch@1'), node('br', 'core/Break@1'), setText('a'))
+    g.edges.push(wire('lp', 'body', 'b', 'in'), wire('b', 'true', 'br', 'in'), wire('b', 'false', 'a', 'in'))
+    const r = gen(g)
+    expect(r.issues).toEqual([])
+    const src = r.classes[0]!.source
+    expect(src).toMatch(/var lp_stop = false;/)
+    expect(src).toMatch(/lp_i < 50 && !lp_stop/)
+    expect(src).toMatch(/lp_stop = true;\s+return;/)
+  })
+  it('Continue only returns from the body; For and For Each also stop on the flag', () => {
+    const g = graph('f', [entry, node('f', 'core/For@1'), node('fe', 'core/ForEach@1'), node('c', 'core/Continue@1'), node('br', 'core/Break@1')], [wire('e', 'then', 'f', 'in'), wire('f', 'body', 'fe', 'in'), wire('fe', 'body', 'br', 'in'), wire('f', 'completed', 'c', 'in')])
+    const r = gen(g)
+    const src = r.classes[0]!.source
+    expect(src).toMatch(/f_i <= f_last && !f_stop/)
+    expect(src).toMatch(/fe_i < fe_arr\.length && !fe_stop/)
+    expect(src).toMatch(/fe_stop = true;/) // the innermost loop, not f
+    expect(src).not.toMatch(/f_stop = true;/)
+    expect(r.issues.map((x) => x.message)).toEqual([expect.stringContaining('only work inside the body of a loop')]) // the Continue after Completed is outside any loop body
+  })
+})

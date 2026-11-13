@@ -11,7 +11,7 @@ Graphs (`swfs/<swf>/graphs/<id>.json`) compile to AS2 classes inside the SWF. Te
 
 ## The bundled core pack
 
-`resources/packs/core` (manifest, `nodes/`, `templates/`) is a copy of `../Inkwell-Core-Pack`; `yarn sync:core-pack` refreshes it. Edit templates in the Core-Pack repo, never here. `compatible.tool` is still not evaluated (docs/graphs.md); the loader finds the pack by default, so `^0.2.0` cannot fail.
+`resources/packs/core` (manifest, `nodes/`, `templates/`) is a copy of `../Inkwell-Core-Pack`; `yarn sync:core-pack` refreshes it. Edit templates in the Core-Pack repo, never here. `compatible.tool` is still not evaluated (docs/graphs.md); the loader finds the pack by default, so `^0.2.0` cannot fail. The five utility packs (math, string, object, date and time, colour) are copied to `resources/packs/bundled/<id>` the same way and load after core; a pack the project locked with the same id replaces the bundled one (`withBundledPacks`).
 
 ## What one class looks like
 
@@ -50,6 +50,10 @@ In a menu class the `text` input of Set Text is wrapped in `__g.tr(...)` when it
 
 No generated code counts frames: a custom menu runs `onEnterFrame` about 700 times a second while the game is paused. Get Time is `getTimer() / 1000` (pure, volatile) and On Update is a `setInterval` every `seconds` (default 0.1) whose `delta` output is measured with `getTimer()`; Stop Timer stops it by its `name`. Templates: Core-Pack `docs/templates.md`.
 
+### Loops, Break and Continue (0.8)
+
+A loop node (`extra.loop` names its body exec output: Loop, For, For Each) runs its body as a closure and declares `var <uid>_stop = false;`. The `Ctx` of the nodes behind the body pin carries `loop` (the innermost loop node id); `{{loop.stop}}` in Break resolves to that loop's `<uid>_stop` and Continue is a bare `return`. A node with `extra.exitsLoop` outside any loop body is skipped with an issue ("only work inside the body of a loop"); `graphValidate` reports the same as `graph-loop-control`. A Break after an asynchronous continuation (Delay) inside the body sets the flag after the loop has finished, which does nothing.
+
 ### Pure nodes: inline, temp, volatile
 
 - Used by one consumer: inlined.
@@ -59,7 +63,7 @@ No generated code counts frames: a custom menu runs `onEnterFrame` about 700 tim
 - **Scope.** A temp lives in the block where it was first needed. Branch arms, Sequence outputs, `guarded` closures and For Each bodies are child blocks: they see the temps of the enclosing blocks but their own temps are not reused by siblings or by code after them (Flash 8 has no block scope, so reuse would read an unset variable on the other path). A node that depends on `{{out.item}}` or `{{out.index}}` of a loop is therefore evaluated inside the body function, once per iteration. Temp names are unique per class (`t_p`, `t_p_2`).
 - shortcut: a loop-independent pure node first used inside a loop body is evaluated once per iteration (correct, but not hoisted before the loop); an exec node reachable by two exec wires is emitted twice with the same local names.
 
-## Node notes (the 88-node core pack)
+## Node notes (the core pack)
 
 Codegen has no per-node code except the Set Variable / Toggle rule below; everything else is in the templates (`Inkwell-Core-Pack/docs/templates.md`). What the generated AS2 relies on:
 

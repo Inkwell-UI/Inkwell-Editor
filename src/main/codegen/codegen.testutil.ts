@@ -47,7 +47,11 @@ export function kindGraph(packId: string, d: NodeDef): Graph | null {
   } else {
     if (!isEntry(d)) {
       nodes.unshift(node('e', 'core/OnWidgetCall@1', { name: 'Run', params: [{ name: 'title', type: 'String' }, { name: 'hold', type: 'Number' }] }))
-      edges.push(wire('e', 'then', 'n1', 'in'))
+      // Break and Continue only work in a loop body: hang them off a Loop
+      if ((d.extra as { exitsLoop?: boolean } | undefined)?.exitsLoop) {
+        nodes.push(node('lp', 'core/Loop@1', { max: 5 }))
+        edges.push(wire('e', 'then', 'lp', 'in'), wire('lp', 'body', 'n1', 'in'))
+      } else edges.push(wire('e', 'then', 'n1', 'in'))
     }
     for (const p of pins.outputs.filter((x) => x.type === 'Exec')) {
       log(`l_${p.name}`)

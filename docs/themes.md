@@ -24,7 +24,7 @@ One rule, `shared/theme.ts` `bindingMode`, drives the lint, the Inspector chips 
 ## Default theme and the INI
 
 - The **default theme** is the menu's Default Theme (Menu settings dropdown, `menu.json` `userDefaults.theme`, also written to the default INI as `Theme=`), else the first mode. It is **baked into the SWF** (`applyTheme` before the compile), so a menu with no runtime theming looks as designed. A HUD widget only ever gets this.
-- The generated menu class carries one table per mode for the runtime bindings and `applyTheme(bridge.theme)` runs in `begin()`: the player's INI `Theme=<mode>` wins. **An empty name keeps the baked theme; an unknown name logs `[Theme] unknown theme 'X', keeping the default` and changes nothing.** The theme is read once when the menu opens: no switching while it is open.
+- The generated menu class carries one table per mode for the runtime bindings and `applyTheme(bridge.theme)` runs in `begin()`: the player's INI `Theme=<mode>` wins. **An empty name keeps the baked theme; an unknown name logs `[Theme] unknown theme 'X', keeping the default` and changes nothing.** The INI theme is read once when the menu opens; a graph can switch it later with Set Theme (see Theme nodes).
 - Shapes are only reachable from AS2 inside a sprite, so a themed shape (and the `fill` background of a themed frame) is wrapped in one.
 
 ## Editor
@@ -42,3 +42,22 @@ One rule, `shared/theme.ts` `bindingMode`, drives the lint, the Inspector chips 
 
 Figma variables cannot hold an image, so use layers: put each theme's image on its own layer (a rectangle with the image fill, or a frame), create a Boolean variable per image in the themed collection (true in the theme it belongs to) and bind each layer's **Visible** to its variable. The INI `Theme` key then shows one and hides the others in game; the stage toolbar's theme control does the same in the preview. A layer that a theme shows is compiled even when the default theme hides it (the menu class applies the baked theme first, `GenerateOptions.theme`, so it starts hidden); a layer hidden in every theme is still not compiled (`node-hidden`). All the images are in the SWF (embedded) or deployed (dds), so each extra theme image adds its size. To ship only the default theme's layers, set **Theme layers** to *Default theme only* in Menu settings > Advanced (`menu.json` `stripThemeLayers`): the build, the preview and the deploy then hold only what the default theme shows, and the INI `Theme` key can no longer show the left-out layers (its colours and other bindings still switch). The image fill of one layer cannot change by itself.
 
+## Theme nodes (core pack 0.7)
+
+Graphs can read and switch themes (category Theme in the node picker; Design Spec, Themes from Figma variables).
+
+| Node | Does |
+| --- | --- |
+| **Get Theme** (pure) | the name of the theme in use |
+| **Get Theme Names** (pure) | every theme, in Figma's order, as an Array of text |
+| **Get Theme Variable** (pure) | the Figma variable whose name you type (`colors/accent`) in the current theme, like Get Localized Text for a language. Field `valueType`: **Color** (a Number, `0xRRGGBB`, the alpha is not returned), **Number**, **String** or **Bool**, the four types Figma variables have. An unknown name gives 0, `""` or false |
+| **Set Theme** | switches to the named theme while the menu is open |
+| **Cycle Theme** | the next theme, the first after the last |
+| **On Theme Changed** (event) | runs after Set Theme or Cycle Theme changed the theme; output `name` |
+
+- **How it works.** Every variable of every collection can be read by name (the first collection with that name wins), each in its own collection's mode for the theme (the rule of bindings above). A graph with a theme node gets `th()`, `thNames()`, `tv(name)`, `setTheme(name)`, `cycleTheme()` and `addThemeHandler(fn)`; the menu class owns the current theme (`theme`, `setTheme`, `cycleTheme`) and `_root.inkwellMenu` reaches it. The table is a chain of `r["name"] = value;` assignments, because AS2 object literals cannot have quoted keys. Set Theme re-applies every runtime binding (`applyTheme`, so only the properties in the table above change), skips the name already in use, and tells the layer and menu graphs (component and function graphs have no On Theme Changed). An unknown name logs `[Theme] unknown theme 'X', keeping the current one`.
+- **Not saved.** The next open starts with the INI `Theme=` (or the default theme) again. To keep the player's choice, store the name in a saved variable and call Set Theme from On Open.
+- **HUD widgets.** There is no menu class: Get Theme and Get Theme Variable give the baked default theme, and Set Theme, Cycle Theme and On Theme Changed do nothing (they carry `requiresRuntime`, so the lint `runtime-required` warns).
+- **Lint:** `theme-unknown` (warning) for a typed Get Theme Variable name the SWF has no variable of, or a typed Set Theme name that is not a theme. A wired name is not checked.
+- **Preview:** the Ruffle preview runs the same menu class, so Set Theme works there; the stage toolbar's theme control still picks the baked theme.
+- **Not done:** a colour variable's alpha is not returned, a layer's pinned mode is not applied to variables read by name, and image fills do not change by theme (use layers, above).

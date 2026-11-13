@@ -1,4 +1,4 @@
-import { boundIn, isThemeBindingKey, pinsOf, themeModes, type Swf } from '@inkwell-ui/spec'
+import { boundIn, isThemeBindingKey, modeIn, pinsOf, themeModes, type Swf } from '@inkwell-ui/spec'
 import { bindingMode } from '../../shared/theme'
 
 // The runtime part of theming (SPEC-CHANGES V6.4): what the menu class sets when the INI names a theme. Pure; the compile-time default is `applyTheme`.
@@ -60,4 +60,36 @@ export function themeOps(ir: Swf): ThemeOp[] {
     else out.push({ nodeId: t.node.id, target: t.target, kind: 'a', values })
   }
   return out
+}
+
+/** One Figma variable for the theme nodes: its name, and its value in every theme (a colour as 0xRRGGBB, the alpha is dropped; Number, Boolean and String as they are). */
+export interface ThemeVar {
+  name: string
+  type: 'color' | 'number' | 'boolean' | 'string'
+  values: Record<string, number | boolean | string>
+}
+
+/**
+ * Every variable of every collection by name (Get Theme Variable), each resolved in its own collection's mode for the theme (`modeIn`: the mode of that name, else its first mode). The first
+ * collection that holds a name wins. Without a themed collection the one theme is `''` and only single-mode collections' variables resolve.
+ * shortcut: a colour variable's alpha is not returned, and a variable never gets a layer's pinned mode; upgrade when a node needs either.
+ */
+export function themeVars(ir: Pick<Swf, 'themes'>): ThemeVar[] {
+  const modes = themeModes(ir)
+  const out = new Map<string, ThemeVar>()
+  for (const col of ir.themes ?? []) {
+    for (const v of Object.values(col.variables ?? {})) {
+      if (out.has(v.name)) continue
+      const values: ThemeVar['values'] = {}
+      for (const m of modes.length ? modes : ['']) {
+        const x = v.values[modeIn(col, m)]
+        if (x === undefined) continue
+        if (v.type === 'color') {
+          if (typeof x === 'object' && x && typeof (x as { r?: unknown }).r === 'number') values[m] = rgb(x as { r: number; g: number; b: number })
+        } else if (typeof x === v.type) values[m] = x as number | boolean | string
+      }
+      out.set(v.name, { name: v.name, type: v.type, values })
+    }
+  }
+  return [...out.values()]
 }

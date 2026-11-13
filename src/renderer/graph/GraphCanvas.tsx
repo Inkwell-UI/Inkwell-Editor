@@ -101,6 +101,7 @@ function Canvas({ swf, overlay, store, defs, focusNode, fitSignal }: Parameters<
         siblings: openGraphs(swf.id),
         library: getLibraryFunctions(),
         target: swf.ir.target.kind,
+        themes: swf.ir.themes ?? [],
         ...(swf.ir.target.contract ? { contract: swf.ir.target.contract } : {})
       })),
     [store, defs, swf.ir, swf.id, comp]

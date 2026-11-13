@@ -8,6 +8,7 @@ import { FLOW_RUN_PIN, FLOW_TIMER_PIN } from '../../shared/devLink'
 import { ident } from '../../shared/overlay'
 import { SET_TEXT } from '../../shared/localizationLint'
 import type { CodegenPacks } from './packs'
+import type { ThemeVar } from './themeOps'
 
 /** Template format: Inkwell-Core-Pack `docs/templates.md`. The renderer and its decisions: `docs/codegen.md`. */
 
@@ -79,6 +80,11 @@ export interface CodegenInput {
    * `bridge.watch(graph, name, scope, value)` and the class gets `dumpVariables()`. Only for a dev deploy into a game folder; the normal game build and Package Mod never set it.
    */
   dev?: boolean
+  /**
+   * The theme nodes (Get Theme, Get Theme Names, Get Theme Variable, Set Theme, Cycle Theme, On Theme Changed; docs/themes.md): the themes (`modes`, `['']` is a project without themes), the one baked into the
+   * SWF and the variables by name with their value in every theme. A graph with such a node gets `th`, `thNames`, `tv`, `setTheme`, `cycleTheme` and (On Theme Changed) `addThemeHandler`. A HUD widget only has the baked theme.
+   */
+  theme?: { modes: readonly string[]; baked: string; vars: readonly ThemeVar[] }
 }
 
 interface Line {
@@ -150,6 +156,8 @@ interface Ctx {
   entry: string
   /** Exec nodes on the way here, to stop cycles. */
   stack: ReadonlySet<string>
+  /** The innermost loop (a node with `extra.loop`) whose body this node is in: Break and Continue's `{{loop.stop}}` is that loop's `<uid>_stop` flag. */
+  loop?: string
 }
 
 interface Val {
@@ -206,6 +214,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   const names = new Set<string>() // generated locals; node uids are prefixes, so keep the namespaces apart with `t_`
   const temp = (base: string): string => uniq(`t_${base}`, names)
   let usesTr = false // a Set Text went through __g.tr: the class gets tr()
+  let curLoop: string | undefined // the loop around the node being filled (set right before each `fill` of an exec node: emitting a child changes it)
 
   const dataIn = new Map<string, { node: string; pin: string }>() // node\0input pin -> source output
   const execTo = new Map<string, string[]>() // node\0exec output pin -> target nodes
@@ -311,6 +320,10 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           const ok = Array.isArray(s.enum) ? s.enum.includes(v) : typeof s.pattern === 'string' && typeof v === 'string' && new RegExp(s.pattern).test(v)
           if (!ok) throw new Skip(`field "${nm}" must be one of the allowed values or match its pattern to be written as code (got ${JSON.stringify(v)}).`)
           return String(v)
+        }
+        case 'loop': {
+          if (nm !== 'stop' || curLoop === undefined) throw new Skip('Break and Continue only work inside the body of a loop (Loop, For, For Each).')
+          return `${uids.get(curLoop)}_stop`
         }
         case 'var': {
           const v = fieldOf(n, d, nm)
@@ -457,6 +470,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     const isEntry = (d.extra as { entry?: unknown } | undefined)?.entry === true
     const ctx: Ctx = { ...parent, pre: [], entry: isEntry ? n.id : parent.entry, stack: new Set([...parent.stack, n.id]) }
     try {
+      if ((d.extra as { exitsLoop?: unknown } | undefined)?.exitsLoop === true && parent.loop === undefined) throw new Skip('Break and Continue only work inside the body of a loop (Loop, For, For Each).')
       const lines = bodyOf(n, d)
       const { args } = argsOf(n, d, lines.join('\n'), ctx, new Set())
       // V13.2: in a menu, Set Text asks the runtime translator for a $KEY literal and for any wired text (`tr` checks for a leading "$" at run time); plain literals stay as they are
@@ -495,7 +509,8 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
         const own = /^(\s*)\{\{(next|guarded)\.(\w+)\}\}\s*$/.exec(raw)
         if (own) {
           if (!(pinsOf.get(n.id)?.outputs ?? []).some((p) => p.name === own[3] && p.type === 'Exec')) throw new Skip(`template uses the unknown exec output "${own[3]}".`)
-          const sub = chain(n, own[3]!, ctx)
+          const loopPin = (d.extra as { loop?: unknown } | undefined)?.loop
+          const sub = chain(n, own[3]!, own[3] === loopPin ? { ...ctx, loop: n.id } : ctx)
           if (own[2] === 'guarded' && isEntry && (i.preview || dev) && lines.some((l) => l.includes('{{params}}')))
             for (const p of [...outs].reverse()) sub.unshift({ t: `__g.pv("${safeId(n.id)}", "${safeId(p)}", ${uids.get(n.id)}_${p});`, n: n.id })
           if (own[2] === 'guarded' && flow && timerOf(d)?.timer) {
@@ -527,6 +542,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
             )
         } else {
           if (/\{\{(next|guarded)\./.test(raw)) throw new Skip('a continuation placeholder must be alone on its line.')
+          curLoop = parent.loop
           const filled = i.menu ? toBridgeLog(fill(raw, n, d, args, outs)) : fill(raw, n, d, args, outs)
           // a multi-line field (Raw AS2) must stay one entry per line, or the source map's line numbers drift
           for (const t of filled.split(/\r?\n/)) out.push({ t, n: n.id })
@@ -621,6 +637,8 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
   const onLoad = g.nodes.find((n) => n.kind.split('/')[1]?.startsWith('OnLoad@') && init.some((l) => l.n === n.id))
   if (onLoad) init.push({ t: 'if (__g.onLoad != undefined) __g.onLoad();', n: onLoad.id })
 
+  const usesTheme = g.nodes.some((n) => /^core\/(GetTheme|GetThemeNames|GetThemeVariable|SetTheme|CycleTheme|OnThemeChanged)@/.test(n.kind))
+  const hasThemeEvent = !fn && g.nodes.some((n) => /^core\/OnThemeChanged@/.test(n.kind))
   const head: Line[] = [
     { t: `// Generated by Inkwell from the graph "${g.name.replace(/[\r\n]+/g, ' ').replace(/\*\//g, '* /')}" (${g.id.replace(/[\r\n]+/g, ' ')}). Do not edit.` },
     { t: '// AS2 sealing is a compile-time check only and the FFDec AS2 compiler does not parse the keyword `dynamic`; members are added freely (s_, t_, h_, v_).' },
@@ -640,6 +658,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           ...(comp ? [{ t: '    var owner;' }, { t: '    var props;' }] : foreign.length ? [{ t: '    var owner;' }] : []),
           { t: '    var inputHandlers;' },
           ...(i.menu ? [{ t: '    var bridge;' }, { t: '    var messageHandlers;' }, { t: '    var modEventHandlers;' }] : []),
+          ...(hasThemeEvent ? [{ t: '    var themeHandlers;' }] : []),
           { t: `    function ${cls}(base${comp ? ', props, owner' : ''}) {` },
           { t: '        this.base = base;' },
           ...(comp
@@ -653,6 +672,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
             : []),
           { t: '        this.inputHandlers = {};' },
           ...(i.menu ? [{ t: '        this.messageHandlers = [];' }, { t: '        this.modEventHandlers = [];' }] : []),
+          ...(hasThemeEvent ? [{ t: '        this.themeHandlers = [];' }] : []),
           { t: '    }' }
         ]),
     ...(foreign.length
@@ -706,6 +726,7 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
           { t: '        }' },
           { t: '    }' }
         ]),
+    ...(usesTheme ? themeMethods(i, hasThemeEvent) : []),
     ...(dev
       ? [
           { t: '    // dev build only (S6): live pin values and the full variable dump go to the runtime, which streams them to the editor' },
@@ -835,6 +856,45 @@ function generateOne(g: Graph, cls: string, i: CodegenInput, issues: CodegenIssu
     source: all.map((l) => l.t).join('\n') + '\n',
     map: { version: 1, graph: g.id, file, lines }
   }
+}
+
+/**
+ * The theme methods of a graph class (docs/themes.md). The menu class (`menuGlue.ts`) owns the current theme: `th()` reads `_root.inkwellMenu.theme` (the frame code puts the menu class there), and the
+ * switches call it. A HUD widget has no menu class: `th()` is the baked theme and the switches do nothing (the lint `runtime-required` warns). The tables hold every theme in a menu, only the baked one in a widget.
+ */
+function themeMethods(i: CodegenInput, event: boolean): Line[] {
+  const t = i.theme ?? { modes: [''], baked: '', vars: [] }
+  const modes = i.menu ? t.modes : [t.baked]
+  // AS2 has no quoted keys in an object literal: the row of the current theme is filled by assignments
+  const rows = modes.flatMap((m, k) => [
+    `        ${k ? '} else if' : 'if'} (m == ${as2Literal(m)}) {`,
+    ...t.vars.filter((v) => m in v.values).map((v) => `            r[${as2Literal(v.name)}] = ${as2Literal(v.values[m])};`)
+  ])
+  const names = t.modes.filter((m) => m !== '')
+  const lines = [
+    '    // theme nodes: the current theme, its variables, and (menu) switching it',
+    '    function th() {',
+    ...(i.menu ? ['        var m = _root.inkwellMenu;', `        return m != undefined && m.theme != undefined ? m.theme : ${as2Literal(t.baked)};`] : [`        return ${as2Literal(t.baked)};`]),
+    '    }',
+    '    function thNames() {',
+    `        return [${names.map((m) => as2Literal(m)).join(', ')}];`,
+    '    }',
+    '    function tv(name) {',
+    '        var r = {};',
+    '        var m = this.th();',
+    ...rows,
+    ...(rows.length ? ['        }'] : []),
+    '        return r[name];',
+    '    }',
+    '    function setTheme(name) {',
+    ...(i.menu ? ['        _root.inkwellMenu.setTheme(name);'] : []),
+    '    }',
+    '    function cycleTheme() {',
+    ...(i.menu ? ['        _root.inkwellMenu.cycleTheme();'] : []),
+    '    }',
+    ...(event ? ['    // On Theme Changed: the menu class calls handleTheme(name) after a switch', '    function addThemeHandler(fn) {', '        this.themeHandlers.push(fn);', '    }', '    function handleTheme(name) {', '        for (var k = 0; k < this.themeHandlers.length; k++) this.themeHandlers[k](name);', '    }'] : [])
+  ]
+  return lines.map((t) => ({ t }))
 }
 
 /** Compiles every graph to a class. Pure: the result holds sources, source maps and the Widget Call signatures; `issues` are nodes that were skipped. */
